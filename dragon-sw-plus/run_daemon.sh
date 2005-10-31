@@ -18,6 +18,7 @@ if ! test -f ./narb/narb.conf -o -f /usr/local/etc/narb.conf; then
 fi      
 
 if test -f ./rce/rce; then
+    killall -9 rce
     ./rce/rce -d -s $SCHEMA_FILE
 else
     echo 'dragon-sw-plus: RCE executable does not exist...'
@@ -25,6 +26,7 @@ else
 fi
 
 if test -f ./narb/narb; then
+    killall -9 narb
     ./narb/narb -d
 else
     echo 'dragon-sw-plus: NARB executable does not exist...'
