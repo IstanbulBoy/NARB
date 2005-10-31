@@ -1,8 +1,6 @@
 #!/bin/sh
 #
 
-SCHEMA_FILE=./rce/schema_combo.rsd
-
 if test -f ./rce/schema_combo.rsd; then
     SCHEMA_FILE=$SCHEMA_FILE
 elif test -f /usr/local/etc/schema_combo.rsd; then
