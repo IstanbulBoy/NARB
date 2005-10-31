@@ -38,10 +38,10 @@ pkglibdir = $(libdir)/rce
 pkgincludedir = $(includedir)/rce
 top_builddir = .
 
-ACLOCAL = ${SHELL} /root/dragon-sw-plus/rce/missing --run aclocal-1.6
-AUTOCONF = ${SHELL} /root/dragon-sw-plus/rce/missing --run autoconf
-AUTOMAKE = ${SHELL} /root/dragon-sw-plus/rce/missing --run automake-1.6
-AUTOHEADER = ${SHELL} /root/dragon-sw-plus/rce/missing --run autoheader
+ACLOCAL = aclocal-1.6
+AUTOCONF = autoconf
+AUTOMAKE = automake-1.6
+AUTOHEADER = autoheader
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = /usr/bin/install -c
@@ -65,7 +65,7 @@ host_triplet = i686-pc-linux-gnu
 EXEEXT = 
 OBJEXT = o
 PATH_SEPARATOR = :
-AMTAR = ${SHELL} /root/dragon-sw-plus/rce/missing --run tar
+AMTAR = tar
 AR = ar
 AWK = gawk
 CC = gcc
@@ -80,7 +80,7 @@ STRIP =
 VERSION = 0.2
 am__include = include
 am__quote = 
-install_sh = /root/dragon-sw-plus/rce/install-sh
+install_sh = /root/test/dragon-sw-plus/rce/install-sh
 
 INCLUDES = -I.
 
