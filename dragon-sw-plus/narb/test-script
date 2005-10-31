@@ -1,0 +1,3 @@
+### single region multi-domain testing
+./narb_test -H sands200 -S 10.2.1.101 -D 10.2.2.202 -O -x 150 -e 2
+

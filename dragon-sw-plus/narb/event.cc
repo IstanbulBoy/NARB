@@ -1,0 +1,326 @@
+/*
+ * Copyright (c) 2005
+ * DRAGON Project.
+ * University of Southern California/Information Sciences Institute.
+ * All rights reserved.
+ *
+ * Created by Xi Yang 2004-2006
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+#include "log.hh"
+#include "event.hh"
+#include <errno.h>
+
+EventMaster EventMaster::master;
+
+// Global variable - the only instance of EventMaster.
+EventMaster& eventMaster = EventMaster::Instance();
+
+EventMaster::~EventMaster()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        list<Event*>::iterator it;
+        for (it = eventLists[i].begin(); it != eventLists[i].end(); it++)
+        {
+            Event * e = *it;
+            if (e && e->ShouldAutoDelete() == true)
+                delete e;
+        }
+        eventLists[i].clear();
+    }
+}
+
+void EventMaster::Schedule(Event* event)
+{
+    list<Event*>::iterator iter;
+
+    switch(event->type)
+    {
+    case EVENT_TIMER:
+        Timer *timer;
+        
+        for (iter = timers.begin(); iter != timers.end(); iter++)
+        {
+            timer = (Timer *)*iter;
+            if (timer && (*(Timer*)event) < *timer)
+            {
+                timers.insert(iter, event);
+                return;
+            }
+        }
+        timers.push_back(event);
+        break;
+        
+    case EVENT_PRIORITY:
+        priorities.push_back(event);
+        break;
+    case EVENT_READ:
+       if (FD_ISSET(((Selector*)event)->fd, &readfd))
+       {
+            LOGF("There has been read on [%d]\n", ((Selector*)event)->fd);
+            return;
+        }
+        FD_SET(((Selector*)event)->fd, &readfd);
+        reads.push_back(event);
+        break;
+    case EVENT_WRITE:
+       if (FD_ISSET(((Selector*)event)->fd, &writefd))
+       {
+            LOGF("There has been write on [%d]\n", ((Selector*)event)->fd);
+            return;
+        }
+        FD_SET(((Selector*)event)->fd, &writefd);
+        writes.push_back(event);
+        break;
+    default:
+        LOGF("No such an event type (%d)", event->type);
+    }
+}
+
+void
+EventMaster::Remove(Event *event)
+{
+    assert (event && event->type < 5 && event->type >= 0);
+    
+    list<Event*> *eList = &eventLists[event->type];
+    event->SetObsolete(true);
+    event->SetRepeats(0);
+
+    if (event->type == EVENT_READ && ((Selector*)event)->fd > 0 && (FD_ISSET (((Selector*)event)->fd, &readfd)))
+    {
+        FD_CLR(((Selector*)event)->fd, &readfd);
+        close(((Selector*)event)->fd);
+    }
+    if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0 && (FD_ISSET (((Selector*)event)->fd, &writefd)))
+    {
+        FD_CLR(((Selector*)event)->fd, &writefd);
+        close(((Selector*)event)->fd);
+    }
+
+    eList->remove(event);
+    //@@@@ memory leakage here: Event removed from a schedule may not be deleted
+}
+
+void
+EventMaster::Run()
+{
+    Event *event;
+    while (1)
+    {
+        event = this->Fetch();
+
+        if (!event)
+            continue;
+
+        event->Run();
+
+        if (event->repeats >  0 || event->repeats == FOREVER)
+        {
+            event->Cycle();
+            this->Schedule(event);
+        } else if (event->repeats == 0)
+        {
+            event->SetObsolete(true);
+        }
+
+        if (event->Obsolete() && event->ShouldAutoDelete())
+        {
+            if (event->type == EVENT_READ && ((Selector*)event)->fd > 0)
+            {
+                if (FD_ISSET (((Selector*)event)->fd, &readfd))
+                    FD_CLR(((Selector*)event)->fd, &readfd);
+                close(((Selector*)event)->fd);
+            }
+            if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0)
+            {
+                if (FD_ISSET (((Selector*)event)->fd, &writefd))
+                    FD_CLR(((Selector*)event)->fd, &writefd);
+                close(((Selector*)event)->fd);
+            }
+            delete event;
+        }
+    }
+}
+
+
+struct timeval
+EventMaster::WaitLimit ()
+{
+  struct timeval timer_now, timer_min;
+
+  gettimeofday (&timer_now, NULL);
+
+  list<Event*>::iterator iter;
+  Timer* timer = NULL;
+
+  for (iter = timers.begin(); iter != timers.end(); iter++)
+  {
+      if (! timer)
+          timer = (Timer *)*iter;
+      else if (*(Timer*)(*iter) < *timer)
+          *timer = *(Timer *)*iter;
+  }
+
+  if (timer && timers.size() > 0)
+    {
+      timer_min = timer->due;
+      timer_min = timer_min - timer_now;
+      if (timer_min.tv_sec < 0)
+	{
+	  timer_min.tv_sec = 0;
+	  timer_min.tv_usec = 50;
+	}
+      return timer_min;
+    }
+
+  timer_min = (struct timeval){0, 50};
+  return timer_min;
+}
+
+void
+EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
+{
+  list<Event*>::iterator iter;
+  Selector *event;
+      
+  for (iter = reads.begin(); iter != reads.end(); iter++)
+    {
+        event = (Selector*)*iter;
+        if (!event)
+            break;
+        if (FD_ISSET (event->fd, pReadfd))
+        {
+            assert (FD_ISSET (event->fd, &readfd));
+            FD_CLR(event->fd, &readfd);
+            reads.remove (event);
+            iter--;
+            ready.push_back (event);
+            if (reads.size() == 0)
+                break;
+        }
+    }
+
+  for (iter = writes.begin(); iter != writes.end(); iter++)
+    {
+        event = (Selector*)*iter;              
+        if (!event)
+            break;
+        if (FD_ISSET (event->fd, pWritefd))
+  	 {
+            assert (FD_ISSET (event->fd, &writefd));
+            FD_CLR(event->fd, &writefd);
+            writes.remove (event);
+            iter--;
+            ready.push_back (event);
+            if (writes.size() == 0)
+                break;
+  	 }
+    }
+}
+
+
+Event* 
+EventMaster::Fetch()
+{
+  Event* event;
+  Timer* timer;
+  
+  fd_set s_readfd;
+  fd_set s_writefd;
+  fd_set s_exceptfd;
+  
+  struct timeval timer_now;
+  struct timeval timeout;
+
+  list<Event*>::iterator iter;
+  int numSelect;
+
+  while (1)
+  {
+      // Handling events with priorities
+      if (event = priorities.front())
+      {
+          priorities.pop_front();
+          return event;
+      }
+
+      // Handling timers
+      gettimeofday (&timer_now, NULL);
+
+      for (iter = timers.begin(); iter != timers.end(); iter++)
+      {
+          timer = (Timer*)*iter;
+          if (timer->due < timer_now || timer->due == timer_now)
+          {
+              timers.remove (timer);
+              return timer;
+          }
+      }
+      // Handling ready events
+      if (event = ready.front())
+      {
+          ready.pop_front();
+          return event;
+      }
+
+      //Calculating timeout form select operation
+      timeout = WaitLimit ();
+
+      s_readfd = readfd;
+      s_writefd = writefd;
+      s_exceptfd = exceptfd;
+      numSelect = select (FD_SETSIZE, &s_readfd, &s_writefd, &s_exceptfd, &timeout);
+
+      if (numSelect == 0)
+	continue;
+
+      if (numSelect < 0)
+	{
+	  // A signal was delivered before the time limit expired.
+	  if (errno == EINTR)
+	    continue;
+	  //Other error  //LOG
+	  return NULL;
+	}
+
+      ModifyFDSets (&s_readfd, &s_writefd);
+
+      if (event = ready.front())
+      {
+          ready.pop_front();
+          return event;
+      }
+  }
+}
+
+void Selector::Close()
+{
+    close(fd);
+    eventMaster.Remove(this);
+}
+

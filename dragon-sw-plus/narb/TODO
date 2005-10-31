@@ -1,0 +1,38 @@
+TODAY:
+(1) Message Queue in APIWriter
+(2) Reply from the CSPF module
+
+///1. Handler class provides functions to convert LSA data or SQL-like strings into resource objects, and actions (Query/Insert/Update/Delete)
+	LSAHandler, XMLHandler, ...
+
+2. Indexing classes
+
+///3. Filtering classes
+
+///4. CSPF common classes and derives
+
+///5. LSP computation master class
+
+Time Slot = 0xffffffff OR ...forever...
+
+--------------------
+a. inject inter-domain LSA's from NARB
+b. dump/show all the LSA's 
+c. create CSPF class
+	c.1. Filter list
+	c.2. Function & data structures to apply filters
+	c.3. Toplogy generation
+	c.4. Virtual PathComputation Algorithm
+	c.5. Vitual topology reduction function or Additional filter
+--------------------
+
+6. OSPFAPI Handler/OSPFReader ... (OSPF_APIClient)
+	Suck LSDB directly from OSPFd's
+
+7. Event interuption/checkpoint scheduling technique?
+	For heavy-task event. Write a sequence of section-funcions
+	The Event will keep the execution states. EventMaster will 
+	re-queue it after the next (or next two) events. Run() will
+	resume the execution to the next sectioned/sub-function in order.
+	(insert after the first event that has fewer sections executed
+	or insert after the least executed ones in the next three~five)
