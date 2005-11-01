@@ -26,7 +26,7 @@ case `uname` in
 
     echo '' && \
 	echo 'configuring narb...'
-    cd ../zebra
+    cd ../narb
     ./configure CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
 	echo "dragon-sw-plus: narb configure error!"
