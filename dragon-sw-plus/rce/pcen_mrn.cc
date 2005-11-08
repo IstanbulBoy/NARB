@@ -309,6 +309,7 @@ int PCEN_MRN::PerformComputation()
         {
             nextLink = *it_nextLink;
             assert (nextLink);
+            bool link_visited = (nextLink->lflg.lfg.visited == 1);
             nextLink->lflg.lfg.visited = 1;
 
             nextNode = nextLink->rmt_end;
@@ -372,10 +373,10 @@ int PCEN_MRN::PerformComputation()
             if ((nextNode->nflg.nfg.visited == 1))
             {
                 double new_cost = headNode->minCost+(nextLink->PCENmetric());
-                if (nextNode->minCost <= new_cost)
+                if (nextNode->minCost > new_cost || !link_visited)
+                    nextNode->minCost = new_cost;
+                else 
                     continue;
-
-                nextNode->minCost = new_cost;
             }
             else
             {

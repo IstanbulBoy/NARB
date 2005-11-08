@@ -492,7 +492,7 @@ s,@AUTOMAKE@,automake-1.6,;t t
 s,@AUTOHEADER@,autoheader,;t t
 s,@MAKEINFO@,makeinfo,;t t
 s,@AMTAR@,tar,;t t
-s,@install_sh@,/root/test/dragon-sw-plus/rce/install-sh,;t t
+s,@install_sh@,/root/dragon-sw-plus/rce/install-sh,;t t
 s,@STRIP@,,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
