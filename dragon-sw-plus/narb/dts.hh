@@ -199,6 +199,9 @@ public:
     router_id_info* LookupRouterById(in_addr id);
     link_info* LookupLinkByLclIf(in_addr id);
     link_info* LookupLinkByRmtIf(in_addr id);
+    link_info* LookupInterdomainLinkByLclIf(in_addr id);
+    link_info* LookupInterdomainLinkByRmtIf(in_addr id);
+    void SearchAndProcessInterdomainLink(list<ero_subobj*>&ero);
     if_narb_info * LookupNarbByAddr(char *addr);
     if_narb_info * LookupNarbByRmtIf(in_addr rmt_if);
     bool FromSameRouter(in_addr& id1, in_addr& id2);

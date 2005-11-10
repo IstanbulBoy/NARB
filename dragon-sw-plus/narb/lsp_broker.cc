@@ -418,8 +418,10 @@ int LSPQ::HandlePartialERO()
 
     assert (SystemConfig::routing_mode == RT_MODE_ALL_STRICT_ONLY ||
                 SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED);
+    
 
-    interdomain_link_into_strict_hops(ero);
+    NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
+
     if (is_all_strict_hops(ero))
         return HandleCompleteERO();
 

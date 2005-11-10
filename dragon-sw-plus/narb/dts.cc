@@ -148,6 +148,46 @@ link_info* DomainInfo::LookupLinkByRmtIf(in_addr id)
     return NULL;
 }
 
+link_info* DomainInfo::LookupInterdomainLinkByLclIf(in_addr id)
+{
+    link_info* link;
+    for (int i = 0; i < inter_domain_te_links.size(); i++)
+        if (inter_domain_te_links[i]->lclIfAddr == id.s_addr)
+            return inter_domain_te_links[i];
+
+    return NULL;
+}
+
+link_info* DomainInfo::LookupInterdomainLinkByRmtIf(in_addr id)
+{
+    link_info* link;
+    for (int i = 0; i < inter_domain_te_links.size(); i++)
+        if (inter_domain_te_links[i]->rmtIfAddr == id.s_addr)
+            return inter_domain_te_links[i];
+
+    return NULL;
+}
+
+void DomainInfo::SearchAndProcessInterdomainLink(list<ero_subobj*>&ero)
+{
+    list<ero_subobj*>::iterator it;
+ 
+    for (it = ero.begin(); it != ero.end(); it++)
+    {
+        if ((*it) && (*it)->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            if (LookupInterdomainLinkByLclIf((*it)->addr) != NULL)
+            {
+                (*it)->hop_type = ERO_TYPE_STRICT_HOP;
+                it++;
+                assert(it != ero.end());
+                (*it)->hop_type = ERO_TYPE_STRICT_HOP;
+            }
+            return;
+        }
+     }
+}
+
 bool DomainInfo::FromSameRouter(in_addr& id1, in_addr& id2)
 {
     if (id1.s_addr == id2.s_addr)

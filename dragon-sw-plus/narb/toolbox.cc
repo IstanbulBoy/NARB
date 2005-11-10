@@ -109,23 +109,6 @@ ero_subobj* first_loose_hop(list<ero_subobj*>&ero)
     return NULL;
 }
 
-void interdomain_link_into_strict_hops(list<ero_subobj*>&ero)
-{
-    list<ero_subobj*>::iterator it;
- 
-    for (it = ero.begin(); it != ero.end(); it++)
-    {
-        if ((*it) && (*it)->hop_type == ERO_TYPE_LOOSE_HOP)
-        {
-            (*it)->hop_type = ERO_TYPE_STRICT_HOP;
-            it++;
-            assert(it != ero.end());
-            (*it)->hop_type = ERO_TYPE_STRICT_HOP;
-            return;
-        }
-     }
-}
-
 // each opaque LSA from the same advertising router needs a unique opaque_id
 u_int32_t narb_ospf_opaque_id (void)
 {

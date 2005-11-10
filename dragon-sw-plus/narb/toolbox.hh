@@ -46,7 +46,7 @@ ero_subobj* last_strict_hop(list<ero_subobj*>&ero);
 
 ero_subobj* first_loose_hop(list<ero_subobj*>&ero);
 
-void interdomain_link_into_strict_hops(list<ero_subobj*>&ero);
+//void interdomain_link_into_strict_hops(list<ero_subobj*>&ero);
 
 u_int32_t narb_ospf_opaque_id (void);
 
