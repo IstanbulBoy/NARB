@@ -107,8 +107,9 @@ int main( int argc, char* argv[])
     signal_init ();
 
     char log_file[20];
-    u_int32_t pid = getpid();
-    sprintf(log_file, "rce-%d.log", pid);    
+    //u_int32_t pid = getpid();
+    //sprintf(log_file, "rce-%d.log", pid);    
+    sprintf(log_file, "/var/log/rce.log");    
     Log::Init(LOG_ALL, log_file);
     Log::SetDebug(true);
     LOG("DRAGON RCE Started..."<<endl);

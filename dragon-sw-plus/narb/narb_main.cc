@@ -128,8 +128,9 @@ int main( int argc, char* argv[])
 
     //System log initilization
     char log_file[20];
-    u_int32_t pid = getpid();
-    sprintf(log_file, "narb-%d.log", pid);
+    //u_int32_t pid = getpid();
+    //sprintf(log_file, "narb-%d.log", pid);
+    sprintf(log_file, "/var/log/narb.log");
     Log::Init(LOG_ALL, log_file);
     Log::SetDebug(true);
     LOG("DRAGON NARB Started..."<<endl);
