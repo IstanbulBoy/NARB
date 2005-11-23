@@ -35,7 +35,7 @@
 /* #undef HAVE_EXT_ATTR */
 
 /* Define to 1 if you have the `getifaddrs' function. */
-#define HAVE_GETIFADDRS 1
+/* #undef HAVE_GETIFADDRS */
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #define HAVE_GETOPT_H 1

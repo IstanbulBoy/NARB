@@ -32,9 +32,11 @@ fi
 
 if test -f ./rce/rce; then
     killall -9 rce
+    sleep 3
     ./rce/rce -d -s $SCHEMA_FILE
 elif test -f /usr/local/dragon/sbin/rce; then
     killall -9 rce
+    sleep 3
     /usr/local/dragon/sbin/rce -d -s $SCHEMA_FILE
 else
     echo '******* ERROR: RCE executable does not exist *******'
@@ -43,9 +45,11 @@ fi
 
 if test -f ./narb/narb; then
     killall -9 narb
+    sleep 3
     ./narb/narb -d -f $NARB_CONF
 elif test -f /usr/local/dragon/sbin/narb; then
     killall -9 narb
+    sleep 3
     /usr/local/dragon/sbin/narb -d -f $NARB_CONF
 else
     echo '******* ERROR: NARB executable does not exist *******'
