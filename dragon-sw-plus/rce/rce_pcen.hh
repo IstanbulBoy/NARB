@@ -156,6 +156,14 @@ public:
                     it--;
                 }
         }
+    void DisplayTags()
+        {
+            list<u_int32_t>::iterator it;
+            cout << "Tags: ";
+            for (it = tag_list.begin(); it != tag_list.end(); it++)
+                cout << (*it) << ' ';
+            cout << endl;
+        }
 };
 
 class PCENLink;

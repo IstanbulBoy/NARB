@@ -278,6 +278,23 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     return -1;
 }
 
+void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
+{
+    TSpecStack.push_front(node.tspec);
+    WaveSetStack.push_front(node.waveset);
+    VtagSetStack.push_front(node.vtagset);
+}
+
+void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node)
+{
+    node.tspec = TSpecStack.front();
+    TSpecStack.pop_front();
+    node.waveset = WaveSetStack.front();
+    WaveSetStack.pop_front();
+    node.vtagset = VtagSetStack.front();
+    VtagSetStack.pop_front();    
+}
+    
 int PCEN_MRN::PerformComputation()
 {
     // Get the source and destination nodes
@@ -289,39 +306,41 @@ int PCEN_MRN::PerformComputation()
     if (is_e2e_tagged_vlan)
         srcNode->vtagset.AddTag(vtag);
     PStack.push_front(srcNode);
+    PreserveScenceToStacks(*srcNode);
 
     while (PStack.size() > 0)
     {
         PCENNode *headNode = PStack.front();
         PStack.pop_front();
         assert(headNode);
+        RestoreScenceFromStacks(*headNode);
 
-        // @@@@
-        //cout<<"Head Node ";
-        //headNode->DisplayInfo();
-        //cout<<endl;
-        
+#ifdef DISPLAY_ROUTING_DETAILS
+        cout<<"Head Node ";
+        headNode->DisplayInfo();
+        cout<<endl;
+#endif
+
         PCENLink *nextLink;
         PCENNode *nextNode;
-        
+        bool link_visited;
+        ConstraintTagSet nextTagSet;
+
         list<PCENLink*>::iterator it_nextLink;
         for (it_nextLink = headNode->out_links.begin(); it_nextLink != headNode->out_links.end(); it_nextLink++)
         {
             nextLink = *it_nextLink;
-            assert (nextLink);
-            bool link_visited = (nextLink->lflg.lfg.visited == 1);
+            link_visited = (nextLink->lflg.lfg.visited == 1);
             nextLink->lflg.lfg.visited = 1;
-
             nextNode = nextLink->rmt_end;
             if (!nextNode)
                 continue;
-
-            // @@@@
-            //cout<<"Trying next: ";
-            //nextLink->DisplayInfo();
-            //nextNode->DisplayInfo();
-            //cout<<endl;
-        
+#ifdef DISPLAY_ROUTING_DETAILS
+            cout<<"Trying next: ";
+            nextLink->DisplayInfo();
+            nextNode->DisplayInfo();
+            cout<<endl;
+#endif
             // Does nextLink satisfy Tspec constraints of headNode?
             if (!nextLink->IsAvailableForTspec(headNode->tspec))
                 continue;
@@ -330,11 +349,19 @@ int PCEN_MRN::PerformComputation()
             // If (headNode->tspec.SWtype == LSC)
             //handling Wavelength Continuity constraints
 
-            ConstraintTagSet nextTagSet;
+            nextTagSet.TagSet().clear();
             //Handling E2E Tagged VLAN constraint
             if (is_e2e_tagged_vlan)
             {
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "HeadNode ";
+                headNode->vtagset.DisplayTags();
+#endif
                 nextLink->ProceedByUpdatingVtags(headNode->vtagset, nextTagSet); //nextNode->vtagset
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "NextLink ";
+                nextTagSet.DisplayTags();
+#endif
                 if (nextTagSet.IsEmpty())
                     continue;
             }
@@ -389,13 +416,13 @@ int PCEN_MRN::PerformComputation()
 
             (nextNode->path).assign(headNode->path.begin(), headNode->path.end());
             nextNode->path.push_back(nextLink);
-
-            // @@@@
-            //nextNode->DisplayInfo();
-            //nextNode->ShowPath();
-            //cout << endl;
-            
+#ifdef DISPLAY_ROUTING_DETAILS
+            nextNode->DisplayInfo();
+            nextNode->ShowPath();
+            cout << endl;
+#endif
             PStack.push_front(nextNode);
+            PreserveScenceToStacks(*nextNode);
         }
     }
 

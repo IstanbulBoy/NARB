@@ -38,16 +38,23 @@
 #include <list>
 using namespace std;
 
+#undef DISPLAY_ROUTING_DETAILS
+    
 class PCEN_MRN: public PCEN
 {
 private:
     list<PCENNode*> PStack;
+    list<TSpec> TSpecStack;
+    list<ConstraintTagSet> WaveSetStack;
+    list<ConstraintTagSet> VtagSetStack;
 public:
     PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t vtag = 0);
     virtual ~PCEN_MRN();
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
+    void PCEN_MRN::PreserveScenceToStacks(PCENNode& node);
+    void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node);
 
     virtual int PerformComputation();
     void PostBuildTopology();
