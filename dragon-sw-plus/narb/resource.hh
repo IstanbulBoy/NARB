@@ -257,6 +257,8 @@ public:
         }
 };
 
+#define MAX_VLAN_NUM 4096
+
 class Link: public Resource
 {
 protected:
@@ -281,8 +283,8 @@ protected:
     list<Link*> dependings; //@@@ need to check dependence...
     list<Link*> dependents; //@@@ need to check dependence...
     ResvTable resvTable;
-    list<u_int32_t> vlanTags; //$$$$
-    
+    u_char vtagBitMask[MAX_VLAN_NUM/8]; //up to 4096 vlan ids, one per bit
+
 public:
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId) {Init();}
     Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, LocalInfo::domainMask, advRtId, lnkId) {Init();}
@@ -300,11 +302,16 @@ public:
     float MaxBandwidth() {return maxBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
     float* UnreservedBandwidth() { return unreservedBandwidth; }
-    list<u_int32_t>& VlanTags() { return vlanTags; }
+    u_char* VtagBitMask() { return vtagBitMask; }
+    bool IsVtagSet(u_int32_t vlanID) { return (vtagBitMask[vlanID/8] & (0x80 >> (vlanID-1)%8)) != 0; }
+    void SetVtag(u_int32_t vlanID) { vtagBitMask[vlanID/8] = vtagBitMask[vlanID/8] | (0x80 >> (vlanID-1)%8); }
+    void ResetVtag(u_int32_t vlanID) { vtagBitMask[vlanID/8] = vtagBitMask[vlanID/8] & ~(0x80 >> (vlanID-1)%8); }
+
     void Init()  
         { 
             linkType = 0; maxBandwidth = maxReservableBandwidth = minReservableBandwidth = 0; metric = 0;
             lclId = rmtId = 0; memset(unreservedBandwidth, 0, 32);
+            memset(vtagBitMask, 0, 512);
         }
     virtual Prefix Index() 
         { 

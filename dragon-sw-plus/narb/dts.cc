@@ -454,7 +454,7 @@ int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)link->ifswcap);
       if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN))
-          opaquedata = ospf_te_link_subtlv_set_swcap_vlan((te_tlv_header*)opaquedata, link->vlanTags);
+          opaquedata = ospf_te_link_subtlv_set_swcap_vlan((te_tlv_header*)opaquedata, link->vtagBitMask);
     }
 
   if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_RESV))

@@ -479,7 +479,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
-                  if (ReadConfigParameterList(link_body, "vlan_tags", link->vlanTags))
+                  if (ReadConfigVlanTagSet(link_body, "vlan_tags", link->vtagBitMask))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
                   }
@@ -637,12 +637,12 @@ int ConfigFile::ReadConfigParameter(char * buf, char * id, char * fmt, void * pa
 }
 
 // reading a parameter of list<u_int32_t> type from a config block (char *buf).
-int ConfigFile::ReadConfigParameterList(char * buf, char * id, list<u_int32_t> &list_para)
+int ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
 {
     char *str;
     static char buf_para[256];
-    u_int32_t data;
-    list_para.clear();
+    u_int32_t vlan;
+    int n, range;
 
     str = strstr(buf, id);
     if (!str)
@@ -665,10 +665,21 @@ int ConfigFile::ReadConfigParameterList(char * buf, char * id, list<u_int32_t> &
 
     while (str)
     {
-        if (sscanf(str, "%d", &data) != 1)
-            return 0;
+	 n = sscanf(str, "%d:%d", &vlan, &range);
 
-        list_para.push_back(data);
+        if (n == 1) {
+		vtagMask[vlan/8] = vtagMask[vlan/8] | (0x80 >> ((vlan-1)%8));
+        } 
+        else if (n == 2) {
+		range += vlan;
+		if (range > MAX_VLAN_NUM)
+			return 0;
+		for (; vlan < range; vlan++) {
+			vtagMask[vlan/8] = vtagMask[vlan/8] |(0x80 >> ((vlan-1)%8));
+		}
+	 }
+        else
+            return 0;
         str = strtok(NULL, " \t,;[]()|");
     }
 

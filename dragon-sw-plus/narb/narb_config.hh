@@ -139,7 +139,7 @@ public:
     void ConfigFromFile(ifstream &ifs , DomainInfo & domain_info);
     int ReadConfigBlock(char *buf, char * header, char * body, char ** next);
     int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
-    int ReadConfigParameterList(char * buf, char * id, list<u_int32_t> &list_para);
+    int ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask);
 
 };
 

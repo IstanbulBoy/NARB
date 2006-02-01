@@ -634,7 +634,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
             }
             if (vtag != 0)
-                link1->VlanTags().remove(vtag);
+                link1->ResetVtag(vtag);
             NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
         }
     }
@@ -747,12 +747,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 }
                 if (vtag != 0)
                 {
-                    list<u_int32_t>::iterator it_tag;
-                    for (it_tag = link1->VlanTags().begin(); it_tag != link1->VlanTags().end(); it_tag++)
-                        if (*it_tag == vtag)
-                            break;
-                    if (it_tag == link1->VlanTags().end())
-                        link1->VlanTags().push_back(vtag);
+                    link1->SetVtag(vtag);
                 }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }

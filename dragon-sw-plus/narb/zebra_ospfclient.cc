@@ -1036,35 +1036,26 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
     return tlv_header_appended;
 }
 
-te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, list<u_int32_t> &vlan_tags)
+te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask)
 {
     te_tlv_header *tlv_header_appended = tlv_header;
+
     int tlv_size = sizeof(te_tlv_header) + ntohs(tlv_header->length);
     int sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
     te_link_subtlv_link_ifswcap * ifswcap_tlv;
-    int padding_len = vlan_tags.size() % 2 == 1 ? 0 : 2;
+    int vlan_data_len = MAX_VLAN_NUM/8 + 3;
+    vlan_data_len = (vlan_data_len/4 + ((vlan_data_len%4) > 0 ? 1 : 0 ))*4;
 
-    if (vlan_tags.size() > 3)
-    {
-        tlv_header_appended = (te_tlv_header*)malloc(tlv_size  + (vlan_tags.size() - 3)*2 + padding_len);
-        memset(tlv_header_appended, 0, tlv_size  + (vlan_tags.size() - 3)*2 + padding_len);
-        memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
-        tlv_header_appended->length = htons(ntohs(tlv_header->length) + (vlan_tags.size() - 3)*2 + padding_len);
-        free(tlv_header);
-    }
+    tlv_header_appended = (te_tlv_header*)malloc(tlv_size + vlan_data_len);
+    memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
+    tlv_header_appended->length = htons(ntohs(tlv_header->length) + vlan_data_len);
+    free(tlv_header);
+
     ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
-    ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + ((vlan_tags.size() - 3 > 0) ? ((vlan_tags.size() - 3)*2 + padding_len) : 0));
-    if (vlan_tags.size()  <= 1)
-        ifswcap_tlv->header.length = htons(ntohs(ifswcap_tlv->header.length) + 4);
+    ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + vlan_data_len);
     ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.version = IFSWCAP_SPECIFIC_VLAN_VERSION;
-    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.vlan_num = vlan_tags.size();
-    list<u_int32_t>::iterator it;
-    int i =0;
-    for (it = vlan_tags.begin(); it != vlan_tags.end(); it++)
-    {
-        ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.vlan_id[i] = (u_int16_t)(*it);
-        i++;
-    }
+    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.length= MAX_VLAN_NUM/8 + 3;
+    memcpy(ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.bitmask, vtagMask, MAX_VLAN_NUM/8);
 
     return tlv_header_appended;
 }

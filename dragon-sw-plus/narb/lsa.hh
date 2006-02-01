@@ -263,9 +263,9 @@ struct link_ifswcap_specific_tdm {
 // Link Sub-TLV / Switching Capability-specific information: VLAN/Ethernet
 #define IFSWCAP_SPECIFIC_VLAN_VERSION 0x2
 struct link_ifswcap_specific_vlan {
-	u_char	 	version;       //fixed to be 0x2
-	u_char	 	vlan_num;   //up to 255 vlan's in theory
-	u_int16_t        vlan_id[3];
+	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
+	u_char	 	version;       //fixed to be 0x2, other vaule is reserved for compression versions
+	u_char           bitmask[1];
 };
 
 //
@@ -326,6 +326,7 @@ struct te_link_subtlv_link_ifadcap
     u_char	encoding_new;
     u_int32_t max_lsp_bw_at_priority[8];
 };
+
 
 struct te_link_subtlv_domain_id
 {
