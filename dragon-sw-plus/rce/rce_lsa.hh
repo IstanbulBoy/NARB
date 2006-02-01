@@ -258,6 +258,19 @@ struct link_ifswcap_specific_tdm {
 	u_char		padding[3];
 };
 
+// Maximum number of available vlan's that a port/IP is assigned to
+#define MAX_VLAN_NUM 4096
+// Link Sub-TLV / Switching Capability-specific information: VLAN/Ethernet
+#define IFSWCAP_SPECIFIC_VLAN_VERSION 0x2
+struct link_ifswcap_specific_vlan {
+	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
+	u_char	 	version;       //fixed to be 0x2, other vaule is reserved for compression versions
+	u_char           bitmask[MAX_VLAN_NUM/8];
+};
+#define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
+#define SET_VLAN(P, VID) P[VID/8] = (P[VID/8] | (0x80 >> (VID-1)%8))
+#define RESET_VLAN(P, VID) P[VID/8] = (P[VID/8] & ~(0x80 >> (VID-1)%8))
+
 //
 //  Switching Capability-specific information for L2SC, LSC and FSC will be added later on
 //  Some of those information is still under development or vendor-specific
@@ -297,6 +310,7 @@ struct te_link_subtlv_link_ifswcap
        union {
 		struct link_ifswcap_specific_psc  ifswcap_specific_psc;
 		struct link_ifswcap_specific_tdm ifswcap_specific_tdm; 
+       	struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
        } ifswcap_specific_info;
   } link_ifswcap_data;
 };

@@ -461,10 +461,10 @@ int PCEN_MRN::PerformComputation()
         // @@@@ hacked for e2e tagged vlan
         if (is_e2e_tagged_vlan)
         {
-            if (pcen_link->link && pcen_link->link->iscds.front()->vlan_version == IFSWCAP_SPECIFIC_VLAN_VERSION)
+            if (pcen_link->link && pcen_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
                 *(u_int16_t *)subobj1->pad = (u_int16_t)vtag;
             if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->reverse_link->link->iscds.front()
-                && pcen_link->reverse_link->link->iscds.front()->vlan_version == IFSWCAP_SPECIFIC_VLAN_VERSION)
+                && pcen_link->reverse_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
                 *(u_int16_t *)subobj2->pad = (u_int16_t)vtag;
         } 
         ero.push_back(subobj1);

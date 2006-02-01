@@ -243,10 +243,10 @@ Resource* LSAHandler::Parse()
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC))
                             {
-                                memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 2);
-                                if (swcap->vlan_version == IFSWCAP_SPECIFIC_VLAN_VERSION)
-                                    memcpy((char*)swcap + ISCD_MADATORY_SIZE + 2, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE + 2,
-                                        swcap->vlan_num*2);
+                                memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 4);
+                                if (swcap->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION) //&& swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                                    memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE,
+                                        ntohs(swcap->vlan_info.length));
                             }                        
                             else
                                 swcap->min_lsp_bw = 0; //ntohf_mbps(swcap->min_lsp_bw);  //min_lsp_bw (for TDM) will be handled in future

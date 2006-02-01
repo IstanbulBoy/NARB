@@ -140,7 +140,10 @@ public:
     friend class PCEN_MRN;
 };
 
-#define MAX_NUM_VLANS 23
+#ifndef MAX_VLAN_NUM
+#define MAX_VLAN_NUM 4096
+#endif
+
 struct IfSwCapDesc
 {
     u_char	swtype;
@@ -150,15 +153,14 @@ struct IfSwCapDesc
 // ISCD specific information defined below
     union {
         float min_lsp_bw;
-        struct {
-            u_char vlan_version;
-            u_char vlan_num;
-            u_int16_t vlan_id[MAX_NUM_VLANS];
-        }; // L2SC Specific Infor for E2E Tagged VLAN only...
-    };
+	 struct {
+            u_int16_t	length;
+            u_char	version;
+            u_char      bitmask[MAX_VLAN_NUM/8];
+        }vlan_info;
+    }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
 #define ISCD_MADATORY_SIZE 36
-#define IFSWCAP_SPECIFIC_VLAN_VERSION 0x2
 
 struct IfAdptCapDesc
 {
