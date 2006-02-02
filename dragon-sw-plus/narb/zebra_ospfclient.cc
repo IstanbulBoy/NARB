@@ -1054,7 +1054,7 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
     ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
     ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + vlan_data_len);
     ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.version = IFSWCAP_SPECIFIC_VLAN_VERSION;
-    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.length= htons(vlan_data_len);
+    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.length= htons(MAX_VLAN_NUM/8 + 3);
     memcpy(ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.bitmask, vtagMask, MAX_VLAN_NUM/8);
 
     return tlv_header_appended;
