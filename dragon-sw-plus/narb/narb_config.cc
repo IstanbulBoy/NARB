@@ -462,7 +462,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       memcpy(link->ifswcap->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
-                  if (ReadConfigParameter(link_body, "encoding", "%d", &encoding))
+                  if (ReadConfigParameter(link_body, "enc_type", "%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
                       link->ifswcap->encoding = (u_char)encoding;
@@ -542,7 +542,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             {
                 if (!ReadConfigParameter(blk_body, "sw_type", "%d", &p_service->sw_type))
                     LOG("ReadConfigParameter failed on service : sw_type"<<endl);
-                if (!ReadConfigParameter(blk_body, "encoding", "%d", &p_service->encoding))
+                if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_service->encoding))
                     LOG("ReadConfigParameter failed on service : encoding" <<endl);
                 if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_service->max_bw))
                     LOG("ReadConfigParameter failed on service : max_bw"<<endl);
