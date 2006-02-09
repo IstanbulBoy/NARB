@@ -334,6 +334,16 @@ struct ero_subobj
     u_char hop_type;
     u_char prefix_len;
     u_char pad[2];
+    //added parameters in the private, composite ERO sub-object
+    u_char sw_type;
+    u_char encoding;
+    union {
+        u_int16_t lsc_lambda;
+        u_char tdm_indication;
+        u_int16_t l2sc_vlantag;
+        u_int16_t psc_mtu;
+    };
+    float bandwidth;
 };
 
 ZebraOspfSync *zebra_client_inter = NULL;

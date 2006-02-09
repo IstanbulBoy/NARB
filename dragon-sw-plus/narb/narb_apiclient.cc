@@ -103,9 +103,8 @@ void NARB_APIClient::AssociateTEAddr(in_addr ip)
 void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t options, u_int32_t vtag)
 {
     api_msg *narb_msg;
-    narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(rec_cspf_req.app_req_data), &rec_cspf_req.rec_req_data, rec_cspf_req.lspb_id, rec_cspf_req.app_seqnum, vtag);
+    narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(rec_cspf_req) - 12, ((char*)&rec_cspf_req) + 12, rec_cspf_req.lspb_id, rec_cspf_req.app_seqnum, vtag);
     narb_msg->header.options = htonl(options);
-
     SendMessage(narb_msg); 
 }
 
@@ -119,7 +118,6 @@ void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_s
     api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_confirm);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
-
     narb_msg = api_msg_new(NARB_MSG_LSPQ, length, buf, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));
     SendMessage(narb_msg);    
 }

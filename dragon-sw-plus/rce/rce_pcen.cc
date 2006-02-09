@@ -299,7 +299,7 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
     return false;
 }
 
-bool PCENLink::CanBeEgressLink(TSpec& tspec, u_int8_t ingress_enctype)
+bool PCENLink::CanBeEgressLink(TSpec& tspec)
 {
     TSpec tspec_link;
     ISCD * iscd;
@@ -309,7 +309,7 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec, u_int8_t ingress_enctype)
         iscd = *it;
         assert(iscd);
         tspec_link.Update(iscd->swtype, iscd->encoding, iscd->max_lsp_bw[7]);
-        if (tspec_link.ENCtype != ingress_enctype)
+        if (tspec_link.ENCtype != tspec.ENCtype)
             continue;
 
         if (tspec == tspec_link)
@@ -553,7 +553,7 @@ int PCEN::VerifyRequest()
     // Add the switching capability filter
     if (!(options & LSP_OPT_MRN))
     {
-        SwitchingTypeFilter * swTypeFilter = new SwitchingTypeFilter(switching_type);
+        SwitchingTypeFilter * swTypeFilter = new SwitchingTypeFilter(switching_type_egress);
         filters.push_back(swTypeFilter);
     }
     
@@ -942,29 +942,28 @@ int PCEN::PerformComputation()
             i++;
             k=path[dest_index * node_number + i];
         }
-        ero_subobj* local_if_ip = new (ero_subobj);
-        memset(local_if_ip, 0, sizeof(ero_subobj));
-        ero_subobj* remote_if_ip=  new (ero_subobj);
-        memset(remote_if_ip, 0, sizeof(ero_subobj));
-        if (ret = GetLinkEndsByIndex(routers, links, j, k, &local_if_ip->addr, &remote_if_ip->addr))
+        ero_subobj local_if_ip, remote_if_ip;
+        memset(&local_if_ip, 0, sizeof(ero_subobj));
+        memset(&remote_if_ip, 0, sizeof(ero_subobj));
+        if (ret = GetLinkEndsByIndex(routers, links, j, k, &local_if_ip.addr, &remote_if_ip.addr))
             goto _out;
 
         Prefix prefix; 
         prefix.length = 128;
         prefix_word(prefix, 0) = routers[j]->router->id;
         prefix_word(prefix, 1) = routers[k]->router->id;
-        prefix_word(prefix, 2) = local_if_ip->addr.s_addr;
-        prefix_word(prefix, 3) = remote_if_ip->addr.s_addr;
+        prefix_word(prefix, 2) = local_if_ip.addr.s_addr;
+        prefix_word(prefix, 3) = remote_if_ip.addr.s_addr;
         if (RDB.LookupByPrefix(RTYPE_LOC_PHY_LNK, &prefix) != NULL)
-            local_if_ip->hop_type = remote_if_ip->hop_type = ERO_TYPE_STRICT_HOP;
+            local_if_ip.hop_type = remote_if_ip.hop_type = ERO_TYPE_STRICT_HOP;
         else 
-            local_if_ip->hop_type = remote_if_ip->hop_type = ERO_TYPE_LOOSE_HOP;
+            local_if_ip.hop_type = remote_if_ip.hop_type = ERO_TYPE_LOOSE_HOP;
         
-        local_if_ip->prefix_len = 32;
-        if (local_if_ip->addr.s_addr != 0)
+        local_if_ip.prefix_len = 32;
+        if (local_if_ip.addr.s_addr != 0)
             ero.push_back(local_if_ip);
-        remote_if_ip->prefix_len = 32;
-        if (remote_if_ip->addr.s_addr != 0)
+        remote_if_ip.prefix_len = 32;
+        if (remote_if_ip.addr.s_addr != 0)
             ero.push_back(remote_if_ip);
     }    
 
@@ -1035,10 +1034,10 @@ void PCEN::ReplyERO ()
     tlv->type = htons(TLV_TYPE_NARB_ERO);
     ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
     int i;
-    list<ero_subobj*>::iterator iter; 
+    list<ero_subobj>::iterator iter; 
     for (i = 0, iter = ero.begin(); iter != ero.end(); iter++, i++)
     {
-        *(ero_hop+i) = *(*iter);
+        *(ero_hop+i) = (*iter);
     }
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, tlv, lspq_id, seqnum, TLV_HDR_SIZE + len, vtag);
     delete [] (char*)tlv;
@@ -1064,12 +1063,6 @@ PCEN::~PCEN()
     for (filter_iter = filters.begin();  filter_iter != filters.end(); filter_iter++)
         if (*filter_iter)
             delete *filter_iter;
-
-    //clean ero list
-    list<ero_subobj*>::iterator addr_iter;
-    for (addr_iter = ero.begin();  addr_iter != ero.end(); addr_iter++)
-        if (*addr_iter)
-            delete *addr_iter;
 
     //clean prefix list
     list<Prefix*>::iterator prefix_iter;

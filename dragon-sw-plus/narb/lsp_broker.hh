@@ -74,6 +74,7 @@ private:
     u_int32_t app_options;
     u_int32_t req_vtag;
     msg_app2narb_request req_spec;    // information extracted from the request message
+    msg_app2narb_request mrn_spec;    // for multi-region networks
 
     //state of the current LSPQ request, values defined below
     u_char state;
@@ -107,6 +108,7 @@ private:
 public:
     LSPQ(LSP_Broker* b, in_addr s, in_addr d, u_int32_t bw, u_char swt, u_char enc, u_int32_t seq, u_int32_t op = 0);
     LSPQ(LSP_Broker* b, msg_app2narb_request& r, u_int32_t seq, u_int32_t op = 0);
+    LSPQ(LSP_Broker* b, msg_app2narb_request& r,  msg_app2narb_request& mr, u_int32_t seq, u_int32_t op = 0);
     ~LSPQ();
     void Init();
     u_int32_t ReqUcid() { return req_ucid; }
@@ -114,6 +116,7 @@ public:
     void SetReqVtag(u_int32_t x) { req_vtag = x; }
     void SetReqOptions(u_int32_t x) { app_options = x; }
     void SetReqAppMsg(msg_app2narb_request& r) { req_spec = r; }
+    void SetReqMrnMsg(msg_app2narb_request& mr) { mrn_spec = mr; }
     u_char State() {  return state;  }
     void SetState(u_char s) {  state = s;  }
     void DescribeLSP(string& desc);
@@ -215,7 +218,7 @@ struct msg_narb_recursive_cspf_request
     u_int32_t app_seqnum;
     struct in_addr area_id;
     struct msg_app2narb_request app_req_data;
-    struct msg_app2narb_request rec_req_data;    
+    struct msg_app2narb_request rec_req_data;    // data structure for relaying mrn-multidomain tspec
 }; 
 
 // the internal data type defined for the node data of ERO list
@@ -225,6 +228,16 @@ struct ero_subobj
     u_char hop_type;
     u_char prefix_len;
     u_char pad[2];
+    //added parameters in the private, composite ERO sub-object
+    u_char sw_type;
+    u_char encoding;
+    union {
+        u_int16_t lsc_lambda;
+        u_char tdm_indication;
+        u_int16_t l2sc_vlantag;
+        u_int16_t psc_mtu;
+    };
+    float bandwidth;
 };
 
 // data structure of an IPv4 prefix type ERO sub-object
@@ -257,8 +270,8 @@ enum  narb_msg_type
     MSG_REPLY_ERROR = 0x22,
     MSG_REPLY_REMOVE_CONFIRM = 0x23,
 
-    MSG_PEER_CSPF_REQUEST = 0x41,
-//    MSG_PEER_CSPF_REPLY = 0x42,
+    MSG_PEER_REQUEST = 0x41,
+//    MSG_PEER_REPLY = 0x42,
 //    MSG_PEER_CONFIRM = 0x43,
 //    MSG_PEER_REMOVE = 0x43,
 };

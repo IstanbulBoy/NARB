@@ -60,7 +60,9 @@ enum api_action
     ACT_UPDATE = 0x04,
     ACT_ACK = 0x05,
     ACT_ACKDATA = 0x06,
-    ACT_ERROR = 0x07
+    ACT_ERROR = 0x07,
+    //extensions:
+    ACT_QUERY_MRN = 0x10
 };
 
 struct api_msg_header

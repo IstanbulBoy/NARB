@@ -42,6 +42,7 @@
 #define LSP_OPT_STRICT  ((u_int32_t)(0x01 << 16)) //otherwise LSP_OPT_LOOSE
 #define LSP_OPT_PREFERRED ((u_int32_t)(0x02 << 16)) //otherwise LSP_OPT_ONLY
 #define LSP_OPT_MRN ((u_int32_t)(0x04 << 16))
+//#define LSP_OPT_MRN_RELAY ((u_int32_t)0x08 << 16)  //relay path computation for multiregion multidomain networks
 #define LSP_OPT_BIDIRECTIONAL ((u_int32_t)(0x10 << 16))
 #define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x20 << 16)) //otherwise Untgged VLAN for E2E Ethernet
 
@@ -64,10 +65,13 @@ class LSPHandler: public Event
 private:
     in_addr source;
     in_addr destination;
-    u_int8_t  encoding_type;
-    u_int8_t  switching_type;
-    u_int16_t gpid; // may not be used
-    float bandwidth;
+    u_int8_t  encoding_type_ingress;
+    u_int8_t  switching_type_ingress;   
+    float bandwidth_ingress;
+    u_int8_t  encoding_type_egress;
+    u_int8_t  switching_type_egress;   
+    float bandwidth_egress;
+
     u_int32_t options;
     u_int32_t tag;
     u_int32_t lspq_id;
@@ -79,8 +83,9 @@ private:
 
     APIWriter* api_writer;
     void Init ()
-        {  source.s_addr = 0; destination.s_addr = 0; encoding_type = 0; switching_type = 0; gpid = 0; 
-            bandwidth = 0; options = 0; tag = 0; lspq_id = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
+        {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
+            switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
+            options = 0; tag = 0; lspq_id = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
             api_writer = NULL;  }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}

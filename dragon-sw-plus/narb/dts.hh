@@ -133,14 +133,14 @@ class service_info
 public:
     int service_id;
     int sw_type;
-    int enc_type;
+    int encoding;
     float max_bw;
 
     service_info()
         {
             service_id = 0;
             sw_type = 0;
-            enc_type = 0;
+            encoding = 0;
             max_bw = 0;
         }
 };

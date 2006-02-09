@@ -382,7 +382,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   char loc_if[MAX_ADDR_LEN];
                   char rem_if[MAX_ADDR_LEN];
                   int link_type;
-                  int enc_type, sw_type;
+                  int encoding, sw_type;
                   link_info *link;
                     
                   ret = ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
@@ -462,10 +462,10 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       memcpy(link->ifswcap->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
-                  if (ReadConfigParameter(link_body, "enc_type", "%d", &enc_type))
+                  if (ReadConfigParameter(link_body, "encoding", "%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-                      link->ifswcap->encoding = (u_char)enc_type;
+                      link->ifswcap->encoding = (u_char)encoding;
                   }
   
                   if (ReadConfigParameter(link_body, "sw_type", "%d", &sw_type))
@@ -542,8 +542,8 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             {
                 if (!ReadConfigParameter(blk_body, "sw_type", "%d", &p_service->sw_type))
                     LOG("ReadConfigParameter failed on service : sw_type"<<endl);
-                if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_service->enc_type))
-                    LOG("ReadConfigParameter failed on service : enc_type" <<endl);
+                if (!ReadConfigParameter(blk_body, "encoding", "%d", &p_service->encoding))
+                    LOG("ReadConfigParameter failed on service : encoding" <<endl);
                 if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_service->max_bw))
                     LOG("ReadConfigParameter failed on service : max_bw"<<endl);
                 domain_info.services.push_back(p_service);

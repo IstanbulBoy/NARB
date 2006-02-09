@@ -95,8 +95,20 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t options, u_int32_t vtag)
 {
     api_msg *rce_msg;
-    ero_subobj * subobj, * new_subobj;
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
+    rce_msg->header.options = htonl(options);
+
+    SendMessage(rce_msg); 
+}
+
+void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t options, u_int32_t vtag)
+{
+    api_msg *rce_msg;
+    char buf[256];
+    memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
+    memcpy(buf+sizeof(cspf_req.app_req_data), &mrn_spec, sizeof(mrn_spec));
+    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, 
+        sizeof(cspf_req.app_req_data)+sizeof(mrn_spec), buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
 
     SendMessage(rce_msg); 

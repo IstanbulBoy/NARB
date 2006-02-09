@@ -48,13 +48,15 @@ private:
     list<ConstraintTagSet> WaveSetStack;
     list<ConstraintTagSet> VtagSetStack;
 public:
-    PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t vtag = 0);
+    PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
+                float bw_egress, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag = 0);
     virtual ~PCEN_MRN();
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
-    void PCEN_MRN::PreserveScenceToStacks(PCENNode& node);
-    void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node);
+    void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
+    void PreserveScenceToStacks(PCENNode& node);
+    void RestoreScenceFromStacks(PCENNode& node);
 
     virtual int PerformComputation();
     void PostBuildTopology();

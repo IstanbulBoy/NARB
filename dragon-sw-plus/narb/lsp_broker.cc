@@ -51,6 +51,7 @@ broker(b), app_seqnum(seq), app_options(op)
     req_spec.switching_type = swt; 
     req_spec.type = htons(MSG_APP_REQUEST); 
     req_spec.length = htons(sizeof(req_spec));
+    mrn_spec = req_spec; //@@@@
 }
 
 LSPQ::LSPQ(LSP_Broker* b, msg_app2narb_request& r, u_int32_t seq, u_int32_t op):
@@ -58,6 +59,15 @@ broker(b), app_seqnum(seq), app_options(op)
 { 
     Init(); 
     req_spec = r; 
+    mrn_spec = r; //@@@@
+}
+
+LSPQ::LSPQ(LSP_Broker* b, msg_app2narb_request& r, msg_app2narb_request& mr, u_int32_t seq, u_int32_t op):
+broker(b), app_seqnum(seq), app_options(op)
+{ 
+    Init(); 
+    req_spec = r; 
+    mrn_spec = mr;
 }
 
 void LSPQ::Init()
@@ -342,7 +352,7 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
 
-    rce_client->QueryLsp(cspf_req, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED |  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0), req_vtag); 
+    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED |  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0), req_vtag); 
 }
 
 /////// STATE_RCE_REPLY  ////////
@@ -432,20 +442,25 @@ int LSPQ::HandlePartialERO()
     link_info * link = NarbDomainInfo.LookupLinkByRmtIf(new_src_subobj->addr);
     if (!link)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
-    
+
     msg_narb_recursive_cspf_request rec_cspf_req;
+    memset(&rec_cspf_req, 0, sizeof(struct msg_narb_recursive_cspf_request));
     rec_cspf_req.app_seqnum = app_seqnum;
     rec_cspf_req.lspb_id = broker->lspb_id;
-    rec_cspf_req.app_req_data = req_spec;
-
-    rec_cspf_req.rec_req_data = req_spec;
-    rec_cspf_req.rec_req_data.type = htons(MSG_PEER_CSPF_REQUEST);
+    rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data = req_spec;
+    rec_cspf_req.rec_req_data.type = htons(MSG_PEER_REQUEST);
     rec_cspf_req.rec_req_data.src.s_addr = link->Id();
 
-    //@@@@ How about Multi-Region Networks?
-    //rec_cspf_req.rec_req_data.switching_type =?
-    //rec_cspf_req.rec_req_data.encoding_type = ?
-    //rec_cspf_req.rec_req_data.bandwidth = ?
+    //multi-region network
+    new_src_subobj = first_loose_hop(ero);
+    if (new_src_subobj->sw_type != rec_cspf_req.app_req_data.switching_type ||
+        new_src_subobj->encoding != rec_cspf_req.app_req_data.encoding_type)
+    {
+        rec_cspf_req.rec_req_data.switching_type = new_src_subobj->sw_type;
+        rec_cspf_req.rec_req_data.encoding_type = new_src_subobj->encoding;
+        rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
+        //LSP_OPT_MRN_RELAY//@@@@
+    }
 
     NARB_APIClient * peer_narb = NarbFactory.GetClient(new_src_subobj->addr);
 
@@ -846,17 +861,16 @@ void LSP_Broker::Run()
 
     assert (ntohs(msg->header.type) == NARB_MSG_LSPQ);
 
-    msg_app2narb_request * app_msg = (msg_app2narb_request*)msg->body;
-
     LSPQ* lspq = LspqLookup(ntohl(msg->header.seqnum));
+    msg_app2narb_request * app_req = (msg_app2narb_request*)msg->body;
 
-    switch (ntohs(app_msg->type))
+    switch (ntohs(app_req->type))
     {
     case MSG_APP_REQUEST:
        {
             if (!lspq)
             {
-                lspq = new LSPQ(this, *app_msg, ntohl(msg->header.seqnum), ntohl(msg->header.options));
+                lspq = new LSPQ(this, *app_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq_list.push_back(lspq);
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
@@ -864,7 +878,8 @@ void LSP_Broker::Run()
             }
             else // retransmission of lsp query
             {
-                lspq->SetReqAppMsg(*app_msg);
+                lspq->SetReqAppMsg(*app_req);
+                lspq->SetReqMrnMsg(*app_req); //the same *app_req
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
@@ -885,11 +900,12 @@ void LSP_Broker::Run()
             api_msg_delete(msg);
         }
         break;
-    case MSG_PEER_CSPF_REQUEST:
+    case MSG_PEER_REQUEST:
        {
+            msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
-                lspq = new LSPQ(this, *app_msg, ntohl(msg->header.seqnum), ntohl(msg->header.options));
+                lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq_list.push_back(lspq);
@@ -897,7 +913,8 @@ void LSP_Broker::Run()
             }
             else // retransmission of lsp query
             {
-                lspq->SetReqAppMsg(*app_msg);
+                lspq->SetReqAppMsg(*app_req);
+                lspq->SetReqMrnMsg(*mrn_req);
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
@@ -942,7 +959,7 @@ void LSP_Broker::Run()
         }
         break;
     default:
-        LOGF("Unknow APP->NARB message type (%d)\n", app_msg->type);
+        LOGF("Unknow APP->NARB message type (%d)\n", app_req->type);
     }
 }
 

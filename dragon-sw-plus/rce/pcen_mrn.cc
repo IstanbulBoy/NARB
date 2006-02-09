@@ -38,9 +38,11 @@
 #include "pcen_mrn.hh"
 #include <math.h>
 
-PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, 
-    float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t vtag):
-    PCEN(src, dest, sw_type, enc_type, bw, opts, lspq_id, msg_seqnum, vtag) 
+PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
+        float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
+        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag)
+    :   PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
+        bw_egress,opts, lspq_id, msg_seqnum, vtag) 
 {
 }
 
@@ -59,9 +61,9 @@ void PCEN_MRN::PostBuildTopology()
     for (i = 0; i < routers.size(); i++)
     {
         pcen_node = routers[i];
-        pcen_node->tspec.SWtype = switching_type;
-        pcen_node->tspec.ENCtype = encoding_type;
-        pcen_node->tspec.Bandwidth = bandwidth;
+        pcen_node->tspec.SWtype = switching_type_ingress; //$$$$
+        pcen_node->tspec.ENCtype = encoding_type_ingress; //$$$$
+        pcen_node->tspec.Bandwidth = bandwidth_ingress; //$$$$
     }
 
     //Init reverseLink
@@ -279,6 +281,38 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     return -1;
 }
 
+void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
+{
+    ero_subobj subobj1, subobj2;
+    memset(&subobj1, 0, sizeof(ero_subobj));
+    subobj1.prefix_len = 32;
+    subobj1.addr.s_addr = pcen_link->link->lclIfAddr;
+    memset(&subobj2, 0, sizeof(ero_subobj));
+    subobj2.prefix_len = 32;
+    subobj2.addr.s_addr = pcen_link->link->rmtIfAddr;
+
+    if (pcen_link->link->type == RTYPE_LOC_PHY_LNK)
+        subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
+    else 
+        subobj1.hop_type = subobj2.hop_type = ERO_TYPE_LOOSE_HOP;
+
+    subobj1.sw_type = subobj2.sw_type = pcen_link->lcl_end->tspec.SWtype;
+    subobj1.encoding = subobj2.encoding = pcen_link->lcl_end->tspec.ENCtype;
+    subobj1.bandwidth= subobj2.bandwidth = pcen_link->lcl_end->tspec.Bandwidth;
+
+    if (is_e2e_tagged_vlan)
+    {
+        if (pcen_link->link && pcen_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
+            subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+        if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->reverse_link->link->iscds.front()
+            && pcen_link->reverse_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
+            subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+    } 
+
+    ero_track.push_back(subobj1);
+    ero_track.push_back(subobj2);
+}
+
 void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);
@@ -326,6 +360,8 @@ int PCEN_MRN::PerformComputation()
         PCENNode *nextNode;
         bool link_visited;
         ConstraintTagSet nextTagSet;
+        TSpec tspec_egress;
+        tspec_egress.Update(switching_type_egress, encoding_type_egress, bandwidth_egress);
 
         list<PCENLink*>::iterator it_nextLink;
         for (it_nextLink = headNode->out_links.begin(); it_nextLink != headNode->out_links.end(); it_nextLink++)
@@ -374,7 +410,8 @@ int PCEN_MRN::PerformComputation()
                 {
                     LOGF("Wrong TE link [%x->%x]", headNode->path.front()->link->advRtId, headNode->path.front()->link->id);
                 }
-                if (!nextLink->CanBeEgressLink(headNode->tspec, headNode->path.front()->lcl_end->tspec.ENCtype))
+
+                if (!nextLink->CanBeEgressLink(tspec_egress))
                     continue;
             }
 
@@ -417,6 +454,10 @@ int PCEN_MRN::PerformComputation()
 
             (nextNode->path).assign(headNode->path.begin(), headNode->path.end());
             nextNode->path.push_back(nextLink);
+
+            (nextNode->ero_track).assign(headNode->ero_track.begin(), headNode->ero_track.end());
+            AddLinkToEROTrack(nextNode->ero_track, nextLink);
+
 #ifdef DISPLAY_ROUTING_DETAILS
             nextNode->DisplayInfo();
             nextNode->ShowPath();
@@ -427,8 +468,6 @@ int PCEN_MRN::PerformComputation()
         }
     }
 
-    if (destNode->path.size() == 0)
-        return ERR_PCEN_NO_ROUTE;
 
     //Handling E2E Tagged VLAN constraint
     if (is_e2e_tagged_vlan)
@@ -436,41 +475,13 @@ int PCEN_MRN::PerformComputation()
         if (destNode->vtagset.IsEmpty())
             return ERR_PCEN_NO_ROUTE;
         if (vtag == ANY_VTAG)
-            vtag = destNode->vtagset.TagSet().front();
+            vtag  = destNode->ero_track.back().l2sc_vlantag = destNode->vtagset.TagSet().front();
     }
 
-    list<PCENLink*>::iterator it_path;
-    PCENLink *pcen_link;
-    ero_subobj *subobj1, *subobj2;
-    for (it_path = destNode->path.begin(); it_path != destNode->path.end(); it_path++)
-    {
-        PCENLink *pcen_link = *it_path;
-        ero_subobj *subobj1 = new (struct ero_subobj);
-        memset(subobj1, 0, sizeof(ero_subobj));
-        subobj1->prefix_len = 32;
-        subobj1->addr.s_addr = pcen_link->link->lclIfAddr;
-        subobj2 = new (struct ero_subobj);
-        memset(subobj2, 0, sizeof(ero_subobj));
-        subobj2->prefix_len = 32;
-        subobj2->addr.s_addr = pcen_link->link->rmtIfAddr;
+    if (destNode->path.size() == 0)
+        return ERR_PCEN_NO_ROUTE;
 
-        if (pcen_link->link->type == RTYPE_LOC_PHY_LNK)
-            subobj1->hop_type = subobj2->hop_type = ERO_TYPE_STRICT_HOP;
-        else 
-            subobj1->hop_type = subobj2->hop_type = ERO_TYPE_LOOSE_HOP;
-
-        // @@@@ hacked for e2e tagged vlan
-        if (is_e2e_tagged_vlan)
-        {
-            if (pcen_link->link && pcen_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
-                *(u_int16_t *)subobj1->pad = (u_int16_t)vtag;
-            if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->reverse_link->link->iscds.front()
-                && pcen_link->reverse_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
-                *(u_int16_t *)subobj2->pad = (u_int16_t)vtag;
-        } 
-        ero.push_back(subobj1);
-        ero.push_back(subobj2);
-    }
+    ero.assign(destNode->ero_track.begin(), destNode->ero_track.end());
     return ERR_PCEN_NO_ERROR;
 }
 

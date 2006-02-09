@@ -624,12 +624,11 @@ link_info* DomainInfo::VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_pro
     cspf_req.app_req_data.src.s_addr = svc_probe->router->id;
     cspf_req.app_req_data.dest.s_addr = router->id;
     cspf_req.app_req_data.switching_type = svc_probe->service->sw_type;
-    cspf_req.app_req_data.encoding_type = svc_probe->service->enc_type;
+    cspf_req.app_req_data.encoding_type = svc_probe->service->encoding;
     cspf_req.app_req_data.bandwidth = svc_probe->service->max_bw;
     seqnum = 0xffffffff; //$$$$
   
     api_msg *rce_msg;
-    ero_subobj * subobj, * new_subobj;
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum);
     rce_msg->header.options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT;
     
@@ -658,7 +657,7 @@ link_info* DomainInfo::VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_pro
         link->lclIfAddr = ero.back()->addr.s_addr;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
         link->ifswcap->swtype = (u_char)svc_probe->service->sw_type;
-        link->ifswcap->encoding = (u_char)svc_probe->service->enc_type;
+        link->ifswcap->encoding = (u_char)svc_probe->service->encoding;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
         link->maxBandwidth = link->maxReservableBandwidth  = svc_probe->service->max_bw;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);

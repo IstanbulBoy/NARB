@@ -250,36 +250,28 @@ void PathT::CalculatePathCost() {
 	}
 }
 
-int PathT::GetERO(list<ero_subobj*>& ero)
+int PathT::GetERO(list<ero_subobj>& ero)
 {
-    list<ero_subobj*>::iterator addr_iter = ero.begin();
-    while (addr_iter != ero.end())
-    {
-        assert(*addr_iter);
-        delete *addr_iter;
-        addr_iter++;
-    }
+    list<ero_subobj>::iterator addr_iter = ero.begin();
     ero.clear();
 
     list<PCENLink*>::iterator it;
     PCENLink * pcen_link;
-    ero_subobj* subobj1, *subobj2;
+    ero_subobj subobj1, subobj2;
     for (it = path.begin(); it != path.end(); it++)
     {
         pcen_link = *it;
-        subobj1 = new (struct ero_subobj);
-        memset(subobj1, 0, sizeof(ero_subobj));
-        subobj1->prefix_len = 32;
-        subobj1->addr.s_addr = pcen_link->link->lclIfAddr;
-        subobj2 = new (struct ero_subobj);
-        memset(subobj2, 0, sizeof(ero_subobj));
-        subobj2->prefix_len = 32;
-        subobj2->addr.s_addr = pcen_link->link->rmtIfAddr;
+        memset(&subobj1, 0, sizeof(ero_subobj));
+        subobj1.prefix_len = 32;
+        subobj1.addr.s_addr = pcen_link->link->lclIfAddr;
+        memset(&subobj2, 0, sizeof(ero_subobj));
+        subobj2.prefix_len = 32;
+        subobj2.addr.s_addr = pcen_link->link->rmtIfAddr;
 
         if (pcen_link->link->type == RTYPE_LOC_PHY_LNK)
-            subobj1->hop_type = subobj2->hop_type = ERO_TYPE_STRICT_HOP;
+            subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
         else 
-            subobj1->hop_type = subobj2->hop_type = ERO_TYPE_LOOSE_HOP;
+            subobj1.hop_type = subobj2.hop_type = ERO_TYPE_LOOSE_HOP;
  
         ero.push_back(subobj1);
         ero.push_back(subobj2);

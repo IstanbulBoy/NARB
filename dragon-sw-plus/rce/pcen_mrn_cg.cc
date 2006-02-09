@@ -321,9 +321,9 @@ void PCEN_MRN_CG::AddLink(int linkid, int localNodeId, int remoteNodeId, double 
 	links.push_back(pceLink);	
 }
 
-PCEN_MRN_CG::PCEN_MRN_CG(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, 
+PCEN_MRN_CG::PCEN_MRN_CG(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, 
     float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum):
-    PCEN_KSP(src, dest, sw_type, enc_type, bw, opts, lspq_id, msg_seqnum) 
+    PCEN_KSP(src, dest, sw_type, encoding, bw, opts, lspq_id, msg_seqnum) 
 {
 
 }
@@ -1057,7 +1057,7 @@ void PCEN_MRN_CG::Run()
     PCENNode* dest_node = GetNodeByIp(routers,&destination);
     assert (src_node && dest_node);
 
-    SearchMRNKSP(src_node->ref_num, dest_node->ref_num, switching_type, encoding_type, bandwidth, 10);
+    SearchMRNKSP(src_node->ref_num, dest_node->ref_num, switching_type_egress, encoding_type_egress, bandwidth_egress, 10);
     LOGF("Found %d shortest paths...\n", KSP_MRN.size());
     
     if (KSP_MRN.size() > 0)

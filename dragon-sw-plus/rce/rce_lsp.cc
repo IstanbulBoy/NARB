@@ -52,14 +52,28 @@ void LSPHandler::Load(api_msg *msg)
     {
         narb_lsp_request_tlv*  narb_req_tlv = (narb_lsp_request_tlv*)tlv;
         tlv += sizeof(narb_lsp_request_tlv);
-        
-        source = narb_req_tlv->src;
-        destination = narb_req_tlv->dest;
-        encoding_type = narb_req_tlv->encoding_type;
-        switching_type = narb_req_tlv->switching_type;
-        gpid = narb_req_tlv->gpid;
-        bandwidth = narb_req_tlv->bandwidth;
-        //time attributes...
+        narb_lsp_request_tlv*  mrn_spec_tlv = (narb_lsp_request_tlv*)tlv;
+
+        switch (msg->hdr.action)
+        {
+        case ACT_QUERY:
+            source = narb_req_tlv->src;
+            destination = narb_req_tlv->dest;
+            encoding_type_ingress = encoding_type_egress = narb_req_tlv->encoding_type;
+            switching_type_ingress = switching_type_egress = narb_req_tlv->switching_type;
+            bandwidth_ingress = bandwidth_egress = narb_req_tlv->bandwidth;
+            break;
+        case ACT_QUERY_MRN:
+            source = mrn_spec_tlv->src;
+            destination = narb_req_tlv->dest;
+            encoding_type_ingress = mrn_spec_tlv->encoding_type; 
+            encoding_type_egress = narb_req_tlv->encoding_type;
+            switching_type_ingress = mrn_spec_tlv->switching_type;
+            switching_type_egress = narb_req_tlv->switching_type;
+            bandwidth_ingress = mrn_spec_tlv->bandwidth;
+            bandwidth_egress = narb_req_tlv->bandwidth;            
+            break;
+        }
     }
     // continue to get second tlv if applicable ...
     api_msg_delete(msg);
@@ -72,11 +86,12 @@ void LSPHandler::Run()
     options |= LSP_OPT_MRN;
     if ((options & LSP_OPT_MRN) == 0)
     {
-        pcen_event = new PCEN(source, destination, switching_type, encoding_type, bandwidth, options, lspq_id, seqnum, tag);
+        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag);
     }
     else
     {
-        pcen_event = new PCEN_MRN(source, destination, switching_type, encoding_type, bandwidth, options, lspq_id, seqnum, tag);
+        pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag);
     }
 
     pcen_event->AssociateWriter (api_writer);

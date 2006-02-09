@@ -164,6 +164,7 @@ void APIReader::HandleMessage (api_msg *msg)
         switch(msg->hdr.action)
         {
         case ACT_QUERY:
+        case ACT_QUERY_MRN:
             LSPHandler * lspEvent = new LSPHandler(fd);
             lspEvent->SetAutoDelete(true);
             assert(api_writer);

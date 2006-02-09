@@ -48,6 +48,16 @@ struct ero_subobj
     u_char hop_type;
     u_char prefix_len;
     u_char pad[2];
+    //added parameters in the private, composite ERO sub-object
+    u_char sw_type;
+    u_char encoding;
+    union {
+        u_int16_t lsc_lambda;
+        u_char tdm_indication;
+        u_int16_t l2sc_vlantag;
+        u_int16_t psc_mtu;
+    };
+    float bandwidth;
 };
 
 // definitions of loose/strict hop indicator
@@ -65,10 +75,10 @@ public:
     u_int8_t ENCtype;
     float Bandwidth;
     TSpec ():SWtype(0), ENCtype(0), Bandwidth(0) {}
-    void Update(u_int8_t sw_type, u_int8_t enc_type, float bw)
+    void Update(u_int8_t sw_type, u_int8_t encoding, float bw)
         {
             SWtype = sw_type;
-            ENCtype = enc_type;
+            ENCtype = encoding;
             Bandwidth = bw;
         }
     bool operator == (TSpec &t)
@@ -186,15 +196,16 @@ public:
         struct nodeFlag 
         {
             unsigned visited: 1;
-            unsigned filteroff: 1;
-            unsigned maskoff: 1;
+            unsigned filteroff: 1; // not used
+            unsigned maskoff: 1;// not used
         } nfg;
     } nflg;
 
-    unsigned long auxvar1;
-    unsigned long auxvar2;
+    unsigned long auxvar1; // not used
+    unsigned long auxvar2; // not used
     double minCost;				// Remember the minimal cost from source node to this node
     list<PCENLink*> path;			// Remember the path from source node to this node
+    list<ero_subobj> ero_track;                   // Keep the track of path using a list of composite ero subobjects
     ///////////////////////////////////////
 
     void Init()
@@ -235,9 +246,9 @@ public:
     int linkID;
     PCENNode* lcl_end;
     PCENNode* rmt_end;
-    Link * link;
+    Link* link;
     PCENLink* reverse_link;
-    
+
     ////////// Shujia's additions //////////////
     union LinkFlag 
     {
@@ -245,8 +256,8 @@ public:
         struct linkFlag 
         {
             unsigned visited: 1;
-            unsigned filteroff: 1;
-            unsigned maskoff: 1;
+            unsigned filteroff: 1; // not used
+            unsigned maskoff: 1; // not used
         } lfg;
     } lflg;
     unsigned long auxvar1;	// this variable can be used as ID in WG or CG
@@ -279,7 +290,7 @@ public:
 #endif
 
     bool IsAvailableForTspec(TSpec& tspec);
-    bool CanBeEgressLink(TSpec& tspec, u_int8_t ingress_enctype);
+    bool CanBeEgressLink(TSpec& tspec);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
 
     PCENNode* search_PCENNode(vector<PCENNode*>& routers, int NodeId);
@@ -306,14 +317,17 @@ protected:
     vector<PCENLink*> links;
     list<Prefix*> prefix_list;
     list<Filter*>  filters;
-    list<ero_subobj*> ero; //Currently we do NOT support label ERO. Only IPv4 ERO is supported.
+    list<ero_subobj> ero; //Currently we do NOT support label ERO. Only IPv4 ERO is supported.
 
     in_addr source;
     in_addr destination;
-    u_int8_t switching_type;
-    u_int8_t encoding_type;
-    u_int16_t gpid;
-    float bandwidth;
+    u_int8_t switching_type_ingress;
+    u_int8_t encoding_type_ingress;
+    float bandwidth_ingress;
+    u_int8_t switching_type_egress;
+    u_int8_t encoding_type_egress;
+    float bandwidth_egress;
+
     u_int32_t options;
     u_int32_t uptime;
     u_int32_t duration;
@@ -328,10 +342,25 @@ protected:
     int originalGraphSize;
     APIWriter* api_writer;
 public:
-    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0):
-            source(src), destination(dest), switching_type(sw_type), encoding_type(enc_type), bandwidth(bw), lspq_id(ucid), seqnum(msg_seqnum),
-            options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0):
+            source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
+                switching_type_ingress = switching_type_egress = sw_type;
+                encoding_type_ingress = encoding_type_egress = encoding;
+                bandwidth_ingress = bandwidth_egress = bw;
+                is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
+                is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
+            }
+    PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
+                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0): source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), 
+                options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+            {
+                switching_type_ingress = switching_type_egress = sw_type_ingress;
+                encoding_type_ingress = encoding_type_egress = encoding_ingress;
+                bandwidth_ingress = bandwidth_egress = bw_ingress;
+                switching_type_egress = sw_type_egress;
+                encoding_type_egress = encoding_egress;
+                bandwidth_egress = bw_egress;
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
             }

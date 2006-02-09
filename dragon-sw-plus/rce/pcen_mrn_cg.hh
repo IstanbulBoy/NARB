@@ -66,7 +66,7 @@ protected:
     vector<PathT_MRN*> KSP_MRN;//added by qian
 
 public:
-    PCEN_MRN_CG(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t enc_type, float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum);
+    PCEN_MRN_CG(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum);
     virtual ~PCEN_MRN_CG();
     void AddCGLink(int linkid, int localNodeId, int remoteNodeId, double metric, int passNode);//added by qian
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric, u_char swtype1);//added by qian
