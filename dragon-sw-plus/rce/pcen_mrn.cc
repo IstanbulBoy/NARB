@@ -42,7 +42,7 @@ PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t
         float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
         u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag)
     :   PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
-        bw_egress,opts, lspq_id, msg_seqnum, vtag) 
+        bw_egress,opts, lspq_id, msg_seqnum, tag) 
 {
 }
 
