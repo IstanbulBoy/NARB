@@ -447,9 +447,9 @@ int LSPQ::HandlePartialERO()
     memset(&rec_cspf_req, 0, sizeof(struct msg_narb_recursive_cspf_request));
     rec_cspf_req.app_seqnum = app_seqnum;
     rec_cspf_req.lspb_id = broker->lspb_id;
-    rec_cspf_req.rec_req_data.type = htons(MSG_PEER_REQUEST);
-    rec_cspf_req.rec_req_data.length = htons(sizeof(struct msg_narb_recursive_cspf_request));
-    rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data = req_spec;
+    rec_cspf_req.app_req_data = req_spec;
+    rec_cspf_req.app_req_data.type = htons(MSG_PEER_REQUEST);
+    rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data;
     rec_cspf_req.rec_req_data.src.s_addr = link->Id();
 
     NARB_APIClient * peer_narb = NarbFactory.GetClient(new_src_subobj->addr);
@@ -889,6 +889,10 @@ void LSP_Broker::Run()
                     if (lspq->req_retran_counter-- > 0)
                     {
                         lspq->HandleLSPQRequest();
+                    }
+                    else
+                    {
+                        lspq->HandleErrorCode(NARB_ERROR_EXCEED_MAX_RETRAN);
                     }
                 }
                 else if (lspq->State() == STATE_ERO_COMPLETE)
