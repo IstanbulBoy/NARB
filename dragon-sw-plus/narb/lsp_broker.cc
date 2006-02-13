@@ -447,20 +447,10 @@ int LSPQ::HandlePartialERO()
     memset(&rec_cspf_req, 0, sizeof(struct msg_narb_recursive_cspf_request));
     rec_cspf_req.app_seqnum = app_seqnum;
     rec_cspf_req.lspb_id = broker->lspb_id;
-    rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data = req_spec;
     rec_cspf_req.rec_req_data.type = htons(MSG_PEER_REQUEST);
+    rec_cspf_req.rec_req_data.length = htons(sizeof(struct msg_narb_recursive_cspf_request));
+    rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data = req_spec;
     rec_cspf_req.rec_req_data.src.s_addr = link->Id();
-
-    //multi-region network
-    new_src_subobj = first_loose_hop(ero);
-    if (new_src_subobj->sw_type != rec_cspf_req.app_req_data.switching_type ||
-        new_src_subobj->encoding != rec_cspf_req.app_req_data.encoding_type)
-    {
-        rec_cspf_req.rec_req_data.switching_type = new_src_subobj->sw_type;
-        rec_cspf_req.rec_req_data.encoding_type = new_src_subobj->encoding;
-        rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
-        //LSP_OPT_MRN_RELAY//@@@@
-    }
 
     NARB_APIClient * peer_narb = NarbFactory.GetClient(new_src_subobj->addr);
 
@@ -475,6 +465,17 @@ int LSPQ::HandlePartialERO()
             NarbFactory.RemoveClient(peer_narb);
             return HandleErrorCode(NARB_ERROR_INTERNAL);
         }
+    }
+
+    //multi-region network
+    new_src_subobj = first_loose_hop(ero);
+    if (new_src_subobj->sw_type != rec_cspf_req.app_req_data.switching_type ||
+        new_src_subobj->encoding != rec_cspf_req.app_req_data.encoding_type)
+    {
+        rec_cspf_req.rec_req_data.switching_type = new_src_subobj->sw_type;
+        rec_cspf_req.rec_req_data.encoding_type = new_src_subobj->encoding;
+        rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
+        //LSP_OPT_MRN_RELAY//@@@@
     }
 
     peer_narb->QueryLspRecursive(rec_cspf_req, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag);
