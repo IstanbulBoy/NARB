@@ -51,8 +51,7 @@ void LSPHandler::Load(api_msg *msg)
     if (options & LSP_TLV_NARB_REQ)
     {
         narb_lsp_request_tlv*  narb_req_tlv = (narb_lsp_request_tlv*)tlv;
-        tlv += sizeof(narb_lsp_request_tlv);
-        narb_lsp_request_tlv*  mrn_spec_tlv = (narb_lsp_request_tlv*)tlv;
+        narb_lsp_request_tlv*  mrn_spec_tlv = (narb_lsp_request_tlv*)((char*)tlv+sizeof(narb_lsp_request_tlv));
 
         switch (msg->hdr.action)
         {
