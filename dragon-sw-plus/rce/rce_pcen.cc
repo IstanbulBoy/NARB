@@ -275,10 +275,15 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
     {
         iscd = *it;
         assert(iscd);
-        tspec_link.Update(iscd->swtype, iscd->encoding, iscd->max_lsp_bw[7]);
+        tspec_link.Update(iscd->swtype, iscd->encoding, iscd->max_lsp_bw[7]);//?
 
         if (tspec == tspec_link)
             return true;
+
+//@@@@@ Temp for testing only
+        if ( (tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC)
+            && tspec_link.SWtype == tspec.SWtype && tspec_link.ENCtype == tspec.ENCtype )
+                return true;
 
         if (tspec <= tspec_link)
         {
@@ -304,11 +309,15 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
     TSpec tspec_link;
     ISCD * iscd;
     list<ISCD*>::iterator it;
-    for (it = link->iscds.begin(); it != link->iscds.end(); it++)
+
+    //@@@@ link ==> reverse_link
+    if (reverse_link == NULL || reverse_link->link == NULL)
+        return false;
+    for (it = reverse_link->link->iscds.begin(); it != reverse_link->link->iscds.end(); it++)
     {
         iscd = *it;
         assert(iscd);
-        tspec_link.Update(iscd->swtype, iscd->encoding, iscd->max_lsp_bw[7]);
+        tspec_link.Update(iscd->swtype, iscd->encoding, iscd->max_lsp_bw[7]);//?
         if (tspec_link.ENCtype != tspec.ENCtype)
             continue;
 

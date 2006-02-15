@@ -268,10 +268,10 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                     * pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];
+                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
-                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];
+                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
                 break;
             }
             return 0;
