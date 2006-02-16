@@ -1043,7 +1043,7 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
     int tlv_size = sizeof(te_tlv_header) + ntohs(tlv_header->length);
     int sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
     te_link_subtlv_link_ifswcap * ifswcap_tlv;
-    int vlan_data_len = MAX_VLAN_NUM/8 + 3;
+    int vlan_data_len = MAX_VLAN_NUM/8 + 3 - sizeof(link_ifswcap_specific_vlan);
     vlan_data_len = (vlan_data_len/4 + ((vlan_data_len%4) > 0 ? 1 : 0 ))*4;
 
     tlv_header_appended = (te_tlv_header*)malloc(tlv_size + vlan_data_len);
