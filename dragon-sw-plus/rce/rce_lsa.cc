@@ -249,7 +249,7 @@ Resource* LSAHandler::Parse()
                                     memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
                                     */
                                 memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 
-                                    ntohs(sub_tlvh->length) - ISCD_MADATORY_SIZE);
+                                    ntohs(sub_tlvh->length) - TLV_HDR_SIZE - ISCD_MADATORY_SIZE);
                             }                        
                             else
                                 swcap->min_lsp_bw = 0; //ntohf_mbps(swcap->min_lsp_bw);  //min_lsp_bw (for TDM) will be handled in future
