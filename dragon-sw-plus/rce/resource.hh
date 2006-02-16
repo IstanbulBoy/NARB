@@ -157,6 +157,7 @@ struct IfSwCapDesc
             u_int16_t	length;
             u_char	version;
             u_char      bitmask[MAX_VLAN_NUM/8];
+            u_char      padding[1];
         }vlan_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
