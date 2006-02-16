@@ -151,6 +151,13 @@ public:
         }
     bool HasTag(u_int32_t tag)
         {
+            if (tag == ANY_VTAG)
+            {
+                if(tag_list.size() > 0)
+                    return true;
+                return false;
+            }
+
             list<u_int32_t>::iterator it;
             for (it = tag_list.begin(); it != tag_list.end(); it++)
                 if (*it == tag)

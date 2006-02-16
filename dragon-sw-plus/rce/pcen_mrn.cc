@@ -203,10 +203,10 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                 //bandwidth constraint unchanged
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
-                tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             }
             return 0;
@@ -229,10 +229,10 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                 //bandwidth constraint unchanged
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
-                tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
                 tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
@@ -263,15 +263,20 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                 //bandwidth constraint unchanged
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
+                //@@@@ bandwidth constraint unchanged
+                /*
                 if (!float_equal(pcen_link->reverse_link->link->iscds.front()->min_lsp_bw, 0))
                     tspec.Bandwidth = ceilf(tspec.Bandwidth /pcen_link->reverse_link->link->iscds.front()->min_lsp_bw)
                     * pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
+                */
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
+                //@@@@ bandwidth constraint unchanged
+                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
-                tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
+                //@@@@ bandwidth constraint unchanged
+                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
                 break;
             }
             return 0;
@@ -389,7 +394,7 @@ int PCEN_MRN::PerformComputation()
             nextNode->DisplayInfo();
             cout<<endl;
 #endif
-            // Does nextLink satisfy Tspec constraints of headNode?
+            // check if nextLink satisfies Tspec constraints of headNode
             if (!nextLink->IsAvailableForTspec(headNode->tspec))
                 continue;
 
@@ -398,9 +403,11 @@ int PCEN_MRN::PerformComputation()
             //handling Wavelength Continuity constraints
 
             nextTagSet.TagSet().clear();
+
             //Handling E2E Tagged VLAN constraint
             if (is_e2e_tagged_vlan)
             {
+                // @@@@ bidirectional constraints (TODO)
 #ifdef DISPLAY_ROUTING_DETAILS
                 cout << "HeadNode ";
                 headNode->vtagset.DisplayTags();
@@ -424,17 +431,24 @@ int PCEN_MRN::PerformComputation()
 
                 if (!nextLink->CanBeEgressLink(tspec_egress))
                     continue;
+
+                // @@@@ With VTAG constraint, the link can be egress only if its reverse link also satisfies the vtag constraint.
+                // @@@@ Move above as part of the *birectional* contraint
+                /*
+                if (is_e2e_tagged_vlan) 
+                    if (!nextNode->vtagset.HasTag(vtag))
+                        continue;
+                */
             }
 
-            // Does headNode->path + nextNode makes a loop?
+            // check if headNode->path + nextNode makes a loop
             if (IsLoop(headNode->path, nextNode))
                 continue;
-            
 
             nextNode->tspec = headNode->tspec;
 
 
-            // Does nextLink cross region boundary?
+            // check if nextLink cross region boundary
             if (IsCrossingRegionBoundary(nextLink, nextNode->tspec))
             {
                 // Update nextNode->tspec according to the next region constraints
