@@ -38,8 +38,7 @@
 #include <list>
 using namespace std;
 
-//#undef DISPLAY_ROUTING_DETAILS
-#define DISPLAY_ROUTING_DETAILS
+#undef DISPLAY_ROUTING_DETAILS
     
 class PCEN_MRN: public PCEN
 {
@@ -48,6 +47,10 @@ private:
     list<TSpec> TSpecStack;
     list<ConstraintTagSet> WaveSetStack;
     list<ConstraintTagSet> VtagSetStack;
+    list<double> MinCostStack;
+    list< list<PCENLink*> > PathStack;
+    list< list<ero_subobj> > EROTrackStack;
+
 public:
     PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag = 0);

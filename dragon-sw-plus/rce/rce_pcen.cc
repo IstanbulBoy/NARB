@@ -280,10 +280,12 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
         if (tspec == tspec_link)
             return true;
 
-//@@@@@ Temp for testing only
+        //@@@@ A temporary matching (available) condition for LSC and FSC links
+        //@@@@ A testing code for now. We need to further consider meaning of bandwidth parameters in LSC and FSC.
         if ( (tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC)
             && tspec_link.SWtype == tspec.SWtype && tspec_link.ENCtype == tspec.ENCtype )
                 return true;
+        //@@@@ End
 
         if (tspec <= tspec_link)
         {

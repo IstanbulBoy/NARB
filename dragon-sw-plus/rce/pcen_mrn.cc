@@ -318,6 +318,9 @@ void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
     TSpecStack.push_front(node.tspec);
     WaveSetStack.push_front(node.waveset);
     VtagSetStack.push_front(node.vtagset);
+    MinCostStack.push_front(node.minCost);
+    PathStack.push_front(node.path);
+    EROTrackStack.push_front(node.ero_track);
 }
 
 void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node)
@@ -328,6 +331,12 @@ void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node)
     WaveSetStack.pop_front();
     node.vtagset = VtagSetStack.front();
     VtagSetStack.pop_front();    
+    node.minCost = MinCostStack.front();
+    MinCostStack.pop_front();
+    node.path = PathStack.front();
+    PathStack.pop_front();
+    node.ero_track = EROTrackStack.front();
+    EROTrackStack.pop_front();
 }
     
 int PCEN_MRN::PerformComputation()
