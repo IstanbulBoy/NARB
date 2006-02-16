@@ -341,6 +341,8 @@ void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node)
     
 int PCEN_MRN::PerformComputation()
 {
+    double final_cost = PCEN_INFINITE_COST;
+    ero.clear();
     // Get the source and destination nodes
     PCENNode * srcNode = GetNodeByIp(routers, &source);
     PCENNode * destNode = GetNodeByIp(routers, &destination);
@@ -467,6 +469,12 @@ int PCEN_MRN::PerformComputation()
             (nextNode->ero_track).assign(headNode->ero_track.begin(), headNode->ero_track.end());
             AddLinkToEROTrack(nextNode->ero_track, nextLink);
 
+            //keep the best result
+            if (nextNode == destNode && final_cost > nextNode->minCost)
+            {
+                final_cost = destNode->minCost;
+                ero.assign(destNode->ero_track.begin(), destNode->ero_track.end());
+            }
 #ifdef DISPLAY_ROUTING_DETAILS
             nextNode->DisplayInfo();
             nextNode->ShowPath();
@@ -487,10 +495,9 @@ int PCEN_MRN::PerformComputation()
             vtag  = destNode->ero_track.back().l2sc_vlantag = destNode->vtagset.TagSet().front();
     }
 
-    if (destNode->path.size() == 0)
+    if (ero.size() == 0)
         return ERR_PCEN_NO_ROUTE;
 
-    ero.assign(destNode->ero_track.begin(), destNode->ero_track.end());
     return ERR_PCEN_NO_ERROR;
 }
 
