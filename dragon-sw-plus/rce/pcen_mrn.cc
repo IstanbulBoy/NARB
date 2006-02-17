@@ -171,7 +171,9 @@ bool PCEN_MRN::IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec)
     if (pcen_link->reverse_link && pcen_link->reverse_link->link && 
         pcen_link->link->iscds.size() == 1 && pcen_link->reverse_link->link->iscds.size() == 1)
     {
-        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype)
+        //@@@@ Does encoding matter?
+        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype
+            || pcen_link->link->iscds.front()->encoding != pcen_link->reverse_link->link->iscds.front()->encoding)
             return true;
     }
 
@@ -247,7 +249,9 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     if (pcen_link->reverse_link && pcen_link->reverse_link->link && 
         pcen_link->link->iscds.size() == 1 && pcen_link->reverse_link->link->iscds.size() == 1)
     {
-        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype)
+        //@@@@ Does encoding matter?
+        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype
+            || pcen_link->link->iscds.front()->encoding != pcen_link->reverse_link->link->iscds.front()->encoding)
         {
             tspec.SWtype = pcen_link->reverse_link->link->iscds.front()->swtype;
             tspec.ENCtype = pcen_link->reverse_link->link->iscds.front()->encoding;
