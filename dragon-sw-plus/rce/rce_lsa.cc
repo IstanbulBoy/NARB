@@ -239,21 +239,17 @@ Resource* LSAHandler::Parse()
                             memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
                             for (i = 0; i < 8; i++)
                                 ntohf_mbps(swcap->max_lsp_bw[i]); 
-                            /*
                             if (ntohs(sub_tlvh->length) > ISCD_MADATORY_SIZE &&                              
                                 (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC))
                             {
                                 //memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 4);
-                                //if (swcap->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION && swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) //@? no 2nd cond?
-                                //    memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
-                                memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 
-                                    ntohs(sub_tlvh->length) - TLV_HDR_SIZE - ISCD_MADATORY_SIZE);
+                                if (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && swcap->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION) //@? no 1st cond?
+                                    memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
                             }                        
                             else
                                 swcap->min_lsp_bw = 0; //ntohf_mbps(swcap->min_lsp_bw);  //min_lsp_bw (for TDM) will be handled in future
-                            */
                             link->iscds.push_back(swcap);
         		       #ifdef HAVE_EXT_ATTR
                                 assert (a_index > 0);
