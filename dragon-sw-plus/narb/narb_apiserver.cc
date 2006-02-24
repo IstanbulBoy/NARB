@@ -162,7 +162,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
             subobj_unum->length = sizeof(unum_if_subobj);
             subobj_unum->addr.s_addr = subobj_narb->addr.s_addr;
             //#define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
-            subobj_unum->ifid = htonl((0x4 << 16) |(*(u_int16_t*)subobj_narb->l2sc_vlantag));
+            subobj_unum->ifid = htonl((0x4 << 16) | subobj_narb->l2sc_vlantag);
 
             subobj_unum->resvd[0] = subobj_unum->resvd[1] = 0;
             subobj_size = sizeof(unum_if_subobj);
