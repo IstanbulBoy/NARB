@@ -144,7 +144,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         ero_subobj * subobj_narb = *it;
         if(subobj_narb->hop_type == 0xff)
             continue;
-        if (*(u_int16_t*)subobj_narb->pad == 0)
+        if (subobj_narb->l2sc_vlantag == 0)
         {
             ipv4_prefix_subobj * subobj_ipv4 = (ipv4_prefix_subobj *)((char *)tlv + offset);
             subobj_ipv4->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x01);
@@ -156,6 +156,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         }
         else
         {//Generating UNumIf Subobjects for E2E Tagged VLAN 
+            assert (subobj_narb->l2sc_vlantag != ANY_VTAG);
             unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
             subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
             subobj_unum->length = sizeof(unum_if_subobj);
