@@ -59,6 +59,7 @@ public:
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
     void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
+    void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
     void PreserveScenceToStacks(PCENNode& node);
     void RestoreScenceFromStacks(PCENNode& node);
 

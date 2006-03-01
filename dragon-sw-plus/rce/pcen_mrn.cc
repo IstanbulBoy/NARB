@@ -322,6 +322,16 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     ero_track.push_back(subobj2);
 }
 
+void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
+{
+    list<ero_subobj>::iterator iter;
+
+    for (iter = ero_track.begin(); iter != ero_track.end(); iter++) 
+    {
+          (*iter).l2sc_vlantag = vtag;
+     }
+}
+
 void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);
@@ -509,8 +519,10 @@ int PCEN_MRN::PerformComputation()
     {
         if (destNode->vtagset.IsEmpty())
             return ERR_PCEN_NO_ROUTE;
-        if (vtag == ANY_VTAG)
-            vtag  = destNode->ero_track.back().l2sc_vlantag = destNode->vtagset.TagSet().front();
+        if (vtag == ANY_VTAG) {
+            vtag  = destNode->vtagset.TagSet().front();
+            SetVTagToEROTrack(destNode->ero_track, vtag);
+        }
     }
 
     if (ero.size() == 0)
