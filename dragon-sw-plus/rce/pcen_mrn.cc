@@ -521,7 +521,7 @@ int PCEN_MRN::PerformComputation()
             return ERR_PCEN_NO_ROUTE;
         if (vtag == ANY_VTAG) {
             vtag  = destNode->vtagset.TagSet().front();
-            SetVTagToEROTrack(destNode->ero_track, vtag);
+            SetVTagToEROTrack(ero, vtag);
         }
     }
 
