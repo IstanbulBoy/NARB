@@ -628,7 +628,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
         src.s_addr = link1->AdvRtId();
         dest.s_addr = link1->Id();
-        vtag = *(u_int16_t*)subobj->pad;
+        vtag = subobj->l2sc_vlantag;
 
         //found a corresponding abstract link
         if (zebra_client && !zebra_client->GetWriter() && zebra_client->Alive())
@@ -738,7 +738,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
         src.s_addr = link1->AdvRtId();
         dest.s_addr = link1->Id();
-        vtag = *(u_int16_t*)subobj->pad;
+        vtag = subobj->l2sc_vlantag;
 
         //found a corresponding abstract link
         if (link1->AdvRtId() == src.s_addr)
