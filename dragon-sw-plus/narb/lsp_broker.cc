@@ -165,7 +165,8 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             memcpy(&new_subobj->addr, &subobj_unum->addr, 4);
             new_subobj->hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj->prefix_len = 32;
-            *(u_int16_t*)new_subobj->pad = (u_int16_t)ntohl(subobj_unum->ifid);
+            *(u_int16_t*)new_subobj->pad = 0; //(u_int16_t)ntohl(subobj_unum->ifid);
+            new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
             LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, subobj_unum->ifid);
 
             len -= sizeof(unum_if_subobj);
@@ -178,6 +179,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             new_subobj->hop_type = (subobj_ipv4->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj->prefix_len = 32;
             *(u_int16_t*)new_subobj->pad = 0;
+            new_subobj->l2sc_vlantag = 0;
             LOGF("HOP-TYPE [%s]: %s\n", (subobj_ipv4->l_and_type & (1<<7)) == 0?"strict":"loose", addr);
 
             len -= sizeof(ipv4_prefix_subobj);
