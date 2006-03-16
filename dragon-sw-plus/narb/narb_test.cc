@@ -128,20 +128,8 @@ int narbapi_connect ()
     }
   #endif /* SO_REUSEPORT */
   
-    memset (&addr, 0, sizeof (struct sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons (port+1000);
-    size = sizeof (struct sockaddr_in);
-                                                                                  
-    ret = bind (fd, (struct sockaddr *) &addr, size);
-    if (ret < 0)
-    {
-        cerr<< "narbapi_connect: bind sync socket failed" <<endl;
-        close (fd);
-        return (-1);
-    }
-                                                                                  
     /* Prepare address structure for connect */
+    memset (&addr, 0, sizeof (struct sockaddr_in));
     memcpy (&addr.sin_addr, hp->h_addr, hp->h_length);
     addr.sin_family = AF_INET;
     addr.sin_port = htons (port);

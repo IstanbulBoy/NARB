@@ -112,21 +112,8 @@ int APIClient::Connect(char *host, int port)
     }
   #endif /* SO_REUSEPORT */
   
-    memset (&addr, 0, sizeof (struct sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons (port+1000);
-    //addr.sin_len = sizeof (struct sockaddr_in);
-    size = sizeof (struct sockaddr_in);
-                                                                                  
-    ret = bind (fd, (struct sockaddr *) &addr, size);
-    if (ret < 0)
-    {
-        fprintf (stderr, "APIClient::Connect: bind sync socket failed\n");
-        close (fd);
-        return (-1);
-    }
-                                                                                  
     /* Prepare address structure for connect */
+    memset (&addr, 0, sizeof (struct sockaddr_in));
     memcpy (&addr.sin_addr, hp->h_addr, hp->h_length);
     addr.sin_family = AF_INET;
     addr.sin_port = htons (port);
