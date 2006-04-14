@@ -334,6 +334,23 @@ struct ero_subobj
     float bandwidth;
 };
 
+static const char* err_cstrs[] = {
+	"Unrecognized Error Code",
+	"Unknown Source Address",
+	"Unknown Destination Address",
+	"No Routing Path Found",
+	"Corrupt Req. Message Packet",
+	"Invalid Path Request",
+	"System Warming Up",
+	"Max. Retransmission of Request Exceeded",
+};
+
+const char* error_code_to_cstr(u_int32_t errcode)
+{
+	if (0 < errcode  && 8 > errcode)
+		return err_cstrs[errcode];
+	return err_cstrs[0];
+}
 ZebraOspfSync *zebra_client_inter = NULL;
 ZebraOspfSync *zebra_client_intra = NULL;
 
@@ -443,7 +460,7 @@ int main(int argc, char* argv[])
             break;
         case TLV_TYPE_NARB_ERROR_CODE:
             assert (rce_reply->hdr.action = ACT_ERROR);
-            LOGF("Request failed with error code %d\n", ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header))));
+            LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
             break;
         }
         api_msg_delete(rce_reply);
