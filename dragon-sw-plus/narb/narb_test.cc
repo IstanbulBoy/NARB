@@ -295,6 +295,24 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
   return narb_msg;
 }
 
+static const char* err_cstrs[] = {
+	"Unrecognized Error Code",
+	"Unknown Source Address",
+	"Unknown Destination Address",
+	"No Routing Path Found",
+	"NARB Internal Error",
+	"Invalid Path Request",
+	"System Warming Up",
+	"Max. Retransmission of Request Exceeded",
+};
+
+const char* error_code_to_cstr(u_int32_t errcode)
+{
+	if (0 < errcode  && 8 > errcode)
+		return err_cstrs[errcode];
+	return err_cstrs[0];
+}
+
 
 ZebraOspfSync * zebra_client = NULL;
 DomainTopologyOriginator * dts_originator = NULL;
@@ -422,7 +440,7 @@ int main(int argc, char* argv[])
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
             break;
         case MSG_REPLY_ERROR:
-            LOGF("Request failed with error code %d\n", ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header))));
+            LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
             break;
         }
 
