@@ -457,7 +457,7 @@ int LSPQ::HandlePartialERO()
     NARB_APIClient * peer_narb = NarbFactory.GetClient(new_src_subobj->addr);
 
     if(!peer_narb)
-        return HandleErrorCode(NARB_ERROR_INTERNAL);
+        return HandleErrorCode(NARB_ERROR_NO_ROUTE);
 
     if (!peer_narb->IsAlive())
     {

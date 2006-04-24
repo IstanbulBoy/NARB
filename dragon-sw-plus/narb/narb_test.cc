@@ -320,10 +320,10 @@ ConfigFile configMaster;
 
 int main(int argc, char* argv[])
 {
-    char log_file[20];
-    u_int32_t pid = getpid();
-    sprintf(log_file, "test_narb-%d.log", pid);    
-    Log::Init(LOG_ALL, log_file);
+    //char log_file[20];
+    //u_int32_t pid = getpid();
+    //sprintf(log_file, "test_narb-%d.log", pid);    
+    Log::Init(LOG_ALL, "./test_narb.log");
     Log::SetDebug(true);
 
     strcpy(host, "localhost");
