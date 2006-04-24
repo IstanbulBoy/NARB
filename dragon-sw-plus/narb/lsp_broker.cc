@@ -864,7 +864,7 @@ void LSP_Broker::Run()
 
     assert (ntohs(msg->header.type) == NARB_MSG_LSPQ);
 
-    LSPQ* lspq = LspqLookup(ntohl(msg->header.seqnum));
+    LSPQ* lspq = LspqLookup(*msg);
     msg_app2narb_request * app_req = (msg_app2narb_request*)msg->body;
 
     switch (ntohs(app_req->type))
@@ -971,7 +971,7 @@ void LSP_Broker::Run()
 }
 
 // searching for a request data record on lspq_list using msg sequence number
-LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
+LSPQ * LSP_Broker::LspqLookup (api_msg& msg)
 {
     list<LSPQ*>::iterator it;
 
@@ -980,7 +980,7 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
         if (!(*it))
             continue;
 
-        if (seqnum == (*it)->app_seqnum)
+        if (ntohl(msg.header.ucid) == (*it)->req_ucid && ntohl(msg.header.seqnum) == (*it)->app_seqnum)
             return *it;
     }
 
