@@ -176,6 +176,6 @@ LSPQ* APIClient::FindOwnerLSPQ(api_msg *msg)
     if (!broker)
         return NULL;
 
-     return broker->LspqLookup(*msg);
+     return broker->LspqLookup(ntohl(msg->header.seqnum));
 }
 

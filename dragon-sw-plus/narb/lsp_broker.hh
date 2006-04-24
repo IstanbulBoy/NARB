@@ -181,7 +181,7 @@ public:
     virtual ~LSP_Broker();
     virtual void Run();
     u_int32_t LspbId() { return lspb_id; }
-    LSPQ * LspqLookup (api_msg& msg);
+    LSPQ * LspqLookup (u_int32_t seqnum);
     void DescribeLSPbyState(u_char state, vector<string>& desc_v);
 
     static u_int32_t get_unique_lspb_id();
