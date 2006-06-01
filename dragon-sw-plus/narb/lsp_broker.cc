@@ -819,7 +819,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                         link2->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
                     }
                     if (vtag != 0)
-                        link2->ResetVtag(vtag);
+                        link2->SetVtag(vtag);
                     NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link2);
                 }
             }
