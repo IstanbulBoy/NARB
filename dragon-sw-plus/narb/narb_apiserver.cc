@@ -142,8 +142,6 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
     for (it = ero.begin(); it != ero.end(); it++)
     {
         ero_subobj * subobj_narb = *it;
-        if(subobj_narb->hop_type == 0xff)
-            continue;
         if (subobj_narb->l2sc_vlantag == 0)
         {
             ipv4_prefix_subobj * subobj_ipv4 = (ipv4_prefix_subobj *)((char *)tlv + offset);
