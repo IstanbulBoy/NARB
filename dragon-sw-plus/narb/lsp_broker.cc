@@ -655,6 +655,33 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 link1->ResetVtag(vtag);
             NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
         }
+
+        //handling the link state updates in the reverse direction
+        if ((app_options & LSP_OPT_BIDIRECTIONAL) != 0)
+        {
+            link2 = NarbDomainInfo.FirstLink();
+            while (link2 != NULL)
+            {
+                if (link2->LclIfAddr() == link1->RmtIfAddr() && link2->RmtIfAddr() == link1->LclIfAddr())
+                    break;
+                link2 = NarbDomainInfo.NextLink();
+            }
+
+            if (link2 != NULL)
+            {
+                if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        link2->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
+                        link2->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
+                    }
+                    if (vtag != 0)
+                        link2->ResetVtag(vtag);
+                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link2);
+                }
+            }
+        }
     }
 
     //proceed to the next domain if any
@@ -768,6 +795,33 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                     link1->SetVtag(vtag);
                 }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+            }
+        }
+
+        //handling the link state updates in the reverse direction
+        if ((app_options & LSP_OPT_BIDIRECTIONAL) != 0)
+        {
+            link2 = NarbDomainInfo.FirstLink();
+            while (link2 != NULL)
+            {
+                if (link2->LclIfAddr() == link1->RmtIfAddr() && link2->RmtIfAddr() == link1->LclIfAddr())
+                    break;
+                link2 = NarbDomainInfo.NextLink();
+            }
+
+            if (link2 != NULL)
+            {
+                if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        link2->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
+                        link2->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
+                    }
+                    if (vtag != 0)
+                        link2->ResetVtag(vtag);
+                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link2);
+                }
             }
         }
     }
