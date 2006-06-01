@@ -598,7 +598,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     link_info *link1, *link2;
     link_info *reverse_link1, *reverse_link2;
 
-    for (it = ero_confirm.begin(); it != ero_confirm.end(); it++)
+    for (it = ero_confirm.begin(); it != ero_confirm.end();  it++)
     {
         u_int32_t vtag = 0;
         subobj = *it;
@@ -643,7 +643,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
 
         //found a corresponding abstract link in the forward direction
-        if (link1 == link2)
+        if (link1 != NULL && link1 == link2)
         {
             vtag = subobj->l2sc_vlantag;
             if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
@@ -660,7 +660,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
 
         //handling the link state updates in the reverse direction
-        if (reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
+        if (reverse_link1 != NULL && reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
         {
             vtag = reverse_subobj->l2sc_vlantag;
             if (reverse_link1 != NULL)
@@ -776,7 +776,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
 
         //found a corresponding abstract link in the forward direction
-        if (link1 == link2)
+        if (link1 != NULL && link1 == link2)
         {
             vtag = subobj->l2sc_vlantag;
             if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
@@ -793,7 +793,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
 
         //handling the link state updates in the reverse direction
-        if (reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
+        if (reverse_link1 != NULL && reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
         {
             vtag = reverse_subobj->l2sc_vlantag;
             if (reverse_link1 != NULL)
