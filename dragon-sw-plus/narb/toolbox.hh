@@ -8,13 +8,33 @@
 #define RETSIGTYPE void
 #endif 
 
-void ntohf_mbps(u_int32_t &x);
+inline void ntohf_mbps(u_int32_t &x)
+{
+    x = ntohl(x);
+    float *p = (float*)&x;
+    (*p) = (*p)*8/1000000;
+}
 
-void ntohf_mbps(float &x);
+inline void ntohf_mbps(float &x)
+{
+    u_int32_t *p = (u_int32_t*)&x;
+    *p = ntohl(*p);
+    x = x*8/1000000;
+}
 
-void htonf_mbps(u_int32_t &x);
+inline void htonf_mbps(float &x)
+{
+    x = x*1000000/8;
+    u_int32_t * p = (u_int32_t*)&x;
+    *p = htonl(*p);
+}
 
-void htonf_mbps(float &x);
+inline void htonf_mbps(u_int32_t &x)
+{
+    float *p = (float*)&x;
+    *p = (*p)*1000000/8;
+    x = htonl(x);
+}
 
 enum G_PID {
 	G_Illegal = 0,

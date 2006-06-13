@@ -117,32 +117,6 @@ u_int32_t narb_ospf_opaque_id (void)
     return opaque_id;
 }
 
-void ntohf_mbps(u_int32_t &x)
-{
-    x = ntohl(x);
-    float *p = (float*)&x;
-    (*p) = (*p)*8/1000000;
-}
-
-void ntohf_mbps(float &x)
-{
-    u_int32_t *p = (u_int32_t*)&x;
-    ntohf_mbps(*p);
-}
-
-void htonf_mbps(float &x)
-{
-    x = x*1000000/8;
-    u_int32_t * p = (u_int32_t*)&x;
-    *p = htonl(*p);
-}
-
-void htonf_mbps(u_int32_t &x)
-{
-    float *p = (float*)&x;
-    htonf_mbps(*p);
-}
-
 // SIGHUP handler
 void sighup (int sig)
 {
@@ -313,6 +287,7 @@ struct string_value_conversion str_val_conv_encoding =
 	{ "fiber", 		LINK_IFSWCAP_SUBTLV_ENC_FIBER, 			2}, 
 	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
 };
+
 
 struct string_value_conversion str_val_conv_gpid = 
 {
