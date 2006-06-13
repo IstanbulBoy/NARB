@@ -45,6 +45,7 @@ using namespace std;
 
 #define NARB_API_PORT 2609
 #define NARB_CLI_PORT 2626
+#define NARB_XML_PORT 2627
 
 //Default auto-generated virtual link metrics, forcing through-traffic to use border routers
 #define HOST_BORDER_METRIC 5

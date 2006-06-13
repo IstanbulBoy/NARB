@@ -38,6 +38,7 @@
 #include "zebra_ospfclient.hh"
 #include "narb_apiserver.hh"
 #include "narb_apiclient.hh"
+#include "narb_xmlserver.hh"
 #include "narb_config.hh"
 #include "dts.hh"
 #include "cli.hh"
@@ -148,6 +149,10 @@ int main( int argc, char* argv[])
     //Start NARB CLI
     CLIServer cli_server(NARB_CLI_PORT);
     cli_server.Start();
+
+    //Start NARB XML Server
+    NARB_XMLServer xml_server(NARB_XML_PORT);
+    xml_server.Start();
 
     if (NarbDomainInfo.ospfd_inter.addr[0] == 0 || NarbDomainInfo.ospfd_inter.port == 0)
     {

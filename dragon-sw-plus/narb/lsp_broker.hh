@@ -180,6 +180,8 @@ public:
     LSP_Broker(int sock, NARB_APIServer* server);
     virtual ~LSP_Broker();
     virtual void Run();
+    virtual int HandleMessage(api_msg * msg);
+    virtual int HandleReplyMessage (api_msg* msg);
     u_int32_t LspbId() { return lspb_id; }
     LSPQ * LspqLookup (u_int32_t seqnum);
     void DescribeLSPbyState(u_char state, vector<string>& desc_v);

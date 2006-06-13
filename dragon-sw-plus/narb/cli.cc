@@ -1114,32 +1114,6 @@ extern ConfigFile configMaster;
 extern ZebraOspfSync* zebra_client;
 extern DomainTopologyOriginator* dts_originator;
 
-struct string_value_conversion str_val_conv_swcap = 
-{
-	8,
-	{{ "psc1", 	LINK_IFSWCAP_SUBTLV_SWCAP_PSC1, 		4},
-	{ "psc2", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC2, 		4}, 
-	{ "psc3", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC3, 		4}, 
-	{ "psc4", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC4, 		4},
-	{ "l2sc", 		LINK_IFSWCAP_SUBTLV_SWCAP_L2SC, 		2},
-	{ "tdm", 		LINK_IFSWCAP_SUBTLV_SWCAP_TDM, 		1}, 
-	{ "lsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_LSC, 		2}, 
-	{ "fsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_FSC, 		1}}
-};
-
-struct string_value_conversion str_val_conv_encoding = 
-{
-	8,
-	{{ "packet", 	LINK_IFSWCAP_SUBTLV_ENC_PKT, 			2}, 
-	{ "ethernet", 	LINK_IFSWCAP_SUBTLV_ENC_ETH, 			1}, 
-	{ "pdh", 		LINK_IFSWCAP_SUBTLV_ENC_PDH, 			2}, 
-	{ "sdh", 		LINK_IFSWCAP_SUBTLV_ENC_SONETSDH, 		1},
-	{ "dwrapper", LINK_IFSWCAP_SUBTLV_ENC_DIGIWRAP, 		1}, 
-	{ "lambda", 	LINK_IFSWCAP_SUBTLV_ENC_LAMBDA, 		1}, 
-	{ "fiber", 		LINK_IFSWCAP_SUBTLV_ENC_FIBER, 			2}, 
-	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
-};
-
 /////////////////////////////////////////////////////////////////////
 
 COMMAND(cmd_exit, "exit", "Exit the current command level\n")
@@ -1757,7 +1731,7 @@ COMMAND (cmd_set_link_sw_bw,"set sw_capability {lsc|tdm|psc1|psc2|psc3|psc4} enc
 {
     assert (link_to_update);
   
-    link_to_update->GetISCD()->swtype= string_to_value(&str_val_conv_swcap, argv[0].c_str());
+    link_to_update->GetISCD()->swtype= string_to_value(&str_val_conv_switching, argv[0].c_str());
     link_to_update->GetISCD()->encoding = string_to_value(&str_val_conv_encoding, argv[1].c_str());
     float bw;
     sscanf(argv[2].c_str(), "%f", &bw);
@@ -1800,7 +1774,7 @@ COMMAND(cmd_show_link, "show link {updated | original}",
     CLI_OUT("\t Interfaces: {lcl_if (%s)->rmt_if (%s)} %s",
                   addr_buf3, addr_buf4, cli_cstr_newline);
     CLI_OUT("\t \t {metric = %d, sw_cap = %s, encoding = %s} %s", 
-                  link->Metric(), value_to_string(&str_val_conv_swcap, (u_int32_t)link->GetISCD()->swtype),
+                  link->Metric(), value_to_string(&str_val_conv_switching, (u_int32_t)link->GetISCD()->swtype),
                   value_to_string(&str_val_conv_encoding, (u_int32_t)link->GetISCD()->encoding), cli_cstr_newline);
     cli_node->ShowPrompt();
 }

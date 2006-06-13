@@ -529,7 +529,7 @@ int LSPQ::HandleErrorCode(u_int32_t errcode)
     assert(rmsg);
     rmsg->header.tag = htonl(req_vtag);
 
-    broker->api_writer->PostMessage(rmsg);
+    broker->HandleReplyMessage(rmsg);
     return 0;
 }
 
@@ -549,7 +549,7 @@ int LSPQ::HandleCompleteERO()
         HandleErrorCode(NARB_ERROR_NO_ROUTE);
     rmsg->header.tag = htonl(req_vtag);
 
-    broker->api_writer->PostMessage(rmsg);
+    broker->HandleReplyMessage(rmsg);
     return 0;
 }
 
@@ -851,7 +851,7 @@ int LSPQ::HandleResvReleaseConfirm()
 
     assert(rmsg);
 
-    broker->api_writer->PostMessage(rmsg);
+    broker->HandleReplyMessage(rmsg);
     return 0;
    
 }
@@ -903,6 +903,11 @@ void LSP_Broker::Run()
         return;
     }
 
+    int ret = HandleMessage(msg);
+}
+
+int LSP_Broker::HandleMessage(api_msg * msg)
+{
     assert (ntohs(msg->header.type) == NARB_MSG_LSPQ);
 
     LSPQ* lspq = LspqLookup(ntohl(msg->header.seqnum));
@@ -989,7 +994,7 @@ void LSP_Broker::Run()
             if (!lspq)
             {
                 LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (seqnum = %d) no longer exists.", ntohl(msg->header.seqnum));
-                return;
+                return -1;
             }
 
             lspq->HandleResvConfirm(msg);
@@ -1000,7 +1005,7 @@ void LSP_Broker::Run()
             if (!lspq)
             {
                 LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (seqnum = %d) no longer exists.", ntohl(msg->header.seqnum));
-                return;
+                return -1;
             }
 
             lspq->HandleResvRelease(msg);
@@ -1009,7 +1014,10 @@ void LSP_Broker::Run()
     default:
         LOGF("Unknow APP->NARB message type (%d)\n", app_req->type);
     }
+
+    return 0;
 }
+
 
 // searching for a request data record on lspq_list using msg sequence number
 LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
@@ -1027,6 +1035,19 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
 
     return NULL;
 }
+
+int LSP_Broker::HandleReplyMessage (api_msg* rmsg)
+{
+    int ret = -1;
+
+    if (rmsg) {
+        api_writer->PostMessage(rmsg);
+        ret = 0;
+    }
+
+    return ret;
+}
+
 
 void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
 {

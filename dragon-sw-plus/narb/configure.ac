@@ -139,6 +139,11 @@ AC_CHECK_LIB(resolv, res_init)
 AC_CHECK_LIB(m, main)
 
 dnl ---------------------------------------------------
+dnl Check existance of libxml2
+dnl ---------------------------------------------------
+AC_CHECK_LIB(xml2, xmlParseFile)
+ 
+dnl ---------------------------------------------------
 dnl BSD/OS 4.1 define inet_XtoY function as __inet_XtoY
 dnl ---------------------------------------------------
 AC_CHECK_FUNC(__inet_ntop, AC_DEFINE(HAVE_INET_NTOP))
