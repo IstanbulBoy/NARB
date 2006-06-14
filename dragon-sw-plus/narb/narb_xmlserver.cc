@@ -479,20 +479,12 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
 
         bool loose = ((subobj->hop_type >> 7) == ERO_TYPE_LOOSE_HOP);
         strcpy(ipbuf, inet_ntoa(subobj->addr));
-        switch (subobj->hop_type & 0x7f)
-        {
-        case 1: //IPv4
+        if (subobj->l2sc_vlantag ==0)//IPv4
             xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<ipv4 loose=\"%s\" ip=\"%s\" />\n",
                 loose? "false":"true", ipbuf);
-            break;
-        case 4:
+        else//Unnum
             xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<unmum loose=\"%s\" ip=\"%s\" ifid=\"%d\" />\n",
-                loose? "false":"true", ipbuf, subobj->l2sc_vlantag ==0?0:(0x0400&subobj->l2sc_vlantag));
-            break; //Unnum
-        default: // Unrecognized
-            break;
-        }
-
+                loose? "false":"true", ipbuf, 0x0400&subobj->l2sc_vlantag);
         xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</ero>\n");
     }
 }
