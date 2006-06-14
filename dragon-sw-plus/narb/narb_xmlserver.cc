@@ -202,7 +202,7 @@ int XML_LSP_Broker::ParseAll()
         if (strcasecmp((char*)level1Node->name, "lsp") == 0)
         {
             LSPQ* lspq = ParseLSPQuery(level1Node);
-            if (lspq != NULL) {
+            if (lspq == NULL) {
                 ret = -1; goto _out;
             }
             // add the broker into a list ...
@@ -499,7 +499,7 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
 
 void XML_LSP_Broker::PrintXML_ErrCode (te_tlv_header* tlv_ero)
 {
-    //const char* errmsg =  error_code_to_cstr(ntohl(*(u_int32_t*)(tlv_ero + sizeof(TLV_HDR_SIZE))));
-    //xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<error_message>%s</error_message>\n", errmsg); 
+    const char* errmsg =  error_code_to_cstr(ntohl(*(u_int32_t*)(tlv_ero + sizeof(TLV_HDR_SIZE))));
+    xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<error_message>%s</error_message>\n", errmsg); 
 }
 

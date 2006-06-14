@@ -288,3 +288,22 @@ const char * value_to_string(struct string_value_conversion *db, u_int32_t value
 	}
 	return def_string;
 }
+
+const char* err_cstrs[] = {
+        "Unrecognized Error Code",
+        "Unknown Source Address",
+        "Unknown Destination Address",
+        "No Routing Path Found",
+        "NARB Internal Error",
+        "Invalid Path Request",
+        "System Warming Up",
+        "Max. Retransmission of Request Exceeded",
+};
+
+const char* error_code_to_cstr(u_int32_t errcode)
+{
+        if (0 < errcode  && 8 > errcode)
+                return err_cstrs[errcode];
+        return err_cstrs[0];
+}
+

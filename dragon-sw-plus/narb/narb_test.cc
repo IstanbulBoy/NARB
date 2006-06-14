@@ -421,7 +421,7 @@ int main(int argc, char* argv[])
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
             break;
         case MSG_REPLY_ERROR:
-            //LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
+            LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
             break;
         }
 
