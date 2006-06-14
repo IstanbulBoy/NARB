@@ -299,11 +299,11 @@ ZebraOspfSync * zebra_client = NULL;
 DomainTopologyOriginator * dts_originator = NULL;
 ConfigFile configMaster;
 
+char xml_buf[4000];
+
 int main(int argc, char* argv[])
 {
-    //char log_file[20];
-    //u_int32_t pid = getpid();
-    //sprintf(log_file, "test_narb-%d.log", pid);    
+    char* xml_file = NULL;
     Log::Init(LOG_ALL, "./test_narb.log");
     Log::SetDebug(true);
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMV", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:BLOMV", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -359,6 +359,9 @@ int main(int argc, char* argv[])
         case 'V':
             opt_e2e_vlan= LSP_OPT_E2E_VTAG;
             break;
+        case 'X':
+            xml_file = optarg;
+            break;
         default:
             usage();
             exit(1);
@@ -366,7 +369,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (source.s_addr == 0 || destination.s_addr == 0)
+    if ((source.s_addr == 0 || destination.s_addr == 0) && !xml_file)
     {
         usage();
         exit(1);
@@ -375,6 +378,19 @@ int main(int argc, char* argv[])
     if ((sock = narbapi_connect()) < 0)
         exit(2);
 
+    if (xml_file)
+    {
+        FILE* fp;
+        int rn = 0;
+        fp = fopen (xml_file, "r");
+        if (!fp) 
+            exit(3);
+        while(fread(xml_buf+rn, 1, 1, fp) == 1)
+            rn++;
+        xml_buf[rn] = '\0';
+        write(sock, xml_buf, rn);
+        return 0;
+    }
 
     msg_app2narb_request * app_req = new_app_request();
     api_msg * narb_reply =  narbapi_query_lsp(0, 0, 0, app_req);
