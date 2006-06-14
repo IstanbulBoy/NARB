@@ -206,7 +206,7 @@ int XML_LSP_Broker::ParseAll()
                 ret = -1; goto _out;
             }
             // add the broker into a list ...
-            lspq_list.push_back(lspq);
+            LSP_Broker::lspq_list.push_back(lspq);
         }
         else if (strcasecmp((char*)level1Node->name, "topology") == 0)
         {

@@ -167,7 +167,6 @@ class LSP_Broker: public APIReader
 {
 private:
     u_int32_t lspb_id;    // broker's ID
-    list<LSPQ*> lspq_list;    // request querry list
 
     // Note that an API Writer pointer is stored in APIReader...
 
@@ -176,6 +175,10 @@ private:
     //  int rec_narb_fd;
 
     LSP_Broker():APIReader(-1, NULL) {}
+
+protected:
+    list<LSPQ*> lspq_list;    // request querry list
+
 public:
     LSP_Broker(int sock, NARB_APIServer* server);
     virtual ~LSP_Broker();

@@ -54,7 +54,7 @@ public:
     virtual void Run();
 
 private:
-    list<XML_LSP_Broker*> broker_list;    // XML parser (one per XML interface connection) list
+    //list<XML_LSP_Broker*> broker_list;    // XML parser (one per XML interface connection) list
 
 };
 
@@ -78,7 +78,7 @@ public:
     void PrintXML_ErrCode(te_tlv_header* tlv_ero);
 
 private:
-    list<LSPQ*> lspq_list;
+    //list<LSPQ*> lspq_list;
     char* xml_ibuffer;
     int xml_ibufsize;
     char* xml_obuffer;
