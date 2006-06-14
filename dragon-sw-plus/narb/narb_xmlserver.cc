@@ -122,11 +122,11 @@ void XML_LSP_Broker::Run()
         this->SetWriter(api_writer);
     }
 
-    if (xml_ibuffer == NULL)
+    if (xml_ibufsize == 0)
     {
         xml_ibufsize = ReadXML();
 
-        if (!xml_ibuffer)
+        if (xml_ibufsize == 0)
         {
             Close();
             api_writer->Close();
@@ -217,7 +217,6 @@ int XML_LSP_Broker::ParseAll()
 
 _out:
       xmlFreeDoc(doc);
-      xml_ibuffer = 0;
       return ret;
 }
 
@@ -366,6 +365,7 @@ void XML_LSP_Broker::WaitForAllQueries()
 
         Close();
         api_writer->Close();
+        xml_ibuffer = 0;
     }
     //timer ???
 }
