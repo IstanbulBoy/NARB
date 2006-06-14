@@ -219,6 +219,16 @@ _out:
 
 extern struct string_value_conversion str_val_conv_switching;
 extern struct string_value_conversion str_val_conv_encoding;
+struct string_value_conversion str_val_conv_gpid = 
+{
+	5,
+	{{"atm",			32,		1},
+	{ "ethernet",		33,		2},
+	{ "sdh",			34, 		2},
+	{ "wrapper",		36, 		1},
+	{ "lambda",		37		1}}
+};
+
 
 LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
 {
@@ -298,7 +308,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 else if (strcasecmp((char*)level2Node->name, "gpid") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.gpid = htons(33); //G_Ether by default
+                    app_req.gpid = htons(string_to_value(&str_val_conv_gpid, (char*)key));
                 }
                 else if (strcasecmp((char*)level2Node->name, "vtag") == 0)
                 {
