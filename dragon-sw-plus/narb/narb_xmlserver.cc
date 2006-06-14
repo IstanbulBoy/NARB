@@ -165,7 +165,7 @@ int XML_LSP_Broker::ParseAll()
     xmlNodePtr cur, level1Node;
     char keyToFound[100];
   
-    if (xml_ibuffer == NULL || xml_ibuffer <= 0)
+    if (xml_ibuffer == NULL || xml_ibufsize <= 0)
         return 0;
   
     doc = xmlParseMemory(xml_ibuffer, xml_ibufsize);
@@ -196,11 +196,7 @@ int XML_LSP_Broker::ParseAll()
     //break down into sublevel parse
     for (level1Node = cur->xmlChildrenNode; level1Node; level1Node = level1Node->next) 
     {
-        key = xmlNodeGetContent(level1Node->xmlChildrenNode);
-        if (!key)
-            continue;
-
-        if (strcasecmp((char*)key, "lsp") == 0)
+        if (strcasecmp((char*)level1Node->name, "lsp") == 0)
         {
             LSPQ* lspq = ParseLSPQuery(level1Node);
             if (lspq != NULL) {
@@ -209,7 +205,7 @@ int XML_LSP_Broker::ParseAll()
             // add the broker into a list ...
             lspq_list.push_back(lspq);
         }
-        else if (strcasecmp((char*)key, "topology") == 0)
+        else if (strcasecmp((char*)level1Node->name, "topology") == 0)
         {
             ret = ParseTopoQuery(level1Node);
             goto _out;
@@ -231,7 +227,7 @@ struct string_value_conversion str_val_conv_gpid =
 	{ "ethernet",		33,		2},
 	{ "sdh",			34, 		2},
 	{ "wrapper",		36, 		1},
-	{ "lambda",		37		1}}
+	{ "lambda",		37,		1}}
 };
 
 
