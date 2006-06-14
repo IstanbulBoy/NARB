@@ -46,9 +46,9 @@ xmlNodePtr findxmlnode(xmlNodePtr cur, char* keyToFound)
   if (strcasecmp((char*)cur->name, keyToFound) == 0)
     return cur;
 
-  cur = cur->xmlChildrenNode;
+  cur = cur->children;
   while (cur) {
-    if (cur->xmlChildrenNode)  {
+    if (cur->children)  {
       if (strcasecmp((char*)cur->name, keyToFound) == 0) 
 	return cur;
       return findxmlnode(cur, keyToFound);
@@ -194,7 +194,7 @@ int XML_LSP_Broker::ParseAll()
     }
 
     //break down into sublevel parse
-    for (level1Node = cur->xmlChildrenNode; level1Node; level1Node = level1Node->next) 
+    for (level1Node = cur->children; level1Node; level1Node = level1Node->next) 
     {
         if (strcasecmp((char*)level1Node->name, "lsp") == 0)
         {
@@ -260,7 +260,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             level1Node = findxmlnode(cur, "source");
             if (!level1Node)
                 return NULL;
-            for (level2Node = level1Node->xmlChildrenNode; level2Node; level2Node = level2Node->next)
+            for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
             {
                 if (strcasecmp((char*)level2Node->name, "router_id") == 0)
                 {
@@ -274,7 +274,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             level1Node = findxmlnode(cur, "destination");
             if (!level1Node)
                 return NULL;
-            for (level2Node = level1Node->xmlChildrenNode; level2Node; level2Node = level2Node->next)
+            for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
             {
                 if (strcasecmp((char*)level2Node->name, "router_id") == 0)
                 {
@@ -288,7 +288,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             level1Node = findxmlnode(cur, "te_params");
             if (!level1Node)
                 return NULL;
-            for (level2Node = level1Node->xmlChildrenNode; level2Node; level2Node = level2Node->next)
+            for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
             {
                 key = NULL;
                 if (strcasecmp((char*)level2Node->name, "bandwidth") == 0)
