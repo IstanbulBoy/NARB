@@ -43,6 +43,7 @@
 // C function from ast_master
 xmlNodePtr findxmlnode(xmlNodePtr cur, char* keyToFound)
 {
+  xmlNodePtr ret = NULL;
   if (strcasecmp((char*)cur->name, keyToFound) == 0)
     return cur;
 
@@ -51,7 +52,9 @@ xmlNodePtr findxmlnode(xmlNodePtr cur, char* keyToFound)
     if (cur->children)  {
       if (strcasecmp((char*)cur->name, keyToFound) == 0) 
 	return cur;
-      return findxmlnode(cur, keyToFound);
+      ret = findxmlnode(cur, keyToFound);
+      if (ret)
+        return ret;
     } 
     cur = cur->next;
   }
