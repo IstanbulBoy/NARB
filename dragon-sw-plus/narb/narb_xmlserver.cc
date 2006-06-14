@@ -351,7 +351,7 @@ void XML_LSP_Broker::WaitForAllQueries()
     for (iter = lspq_list.begin(); iter != lspq_list.end(); iter++)
     {
         LSPQ* lspq = *iter;
-        if (lspq->State() != STATE_ERO_COMPLETE || lspq->State() != STATE_ERROR)
+        if (lspq->State() != STATE_ERO_COMPLETE && lspq->State() != STATE_ERROR)
         {
             complete = false;
         }
