@@ -150,6 +150,11 @@ void XML_LSP_Broker::Run()
 
         WaitForAllQueries();
     }
+    else 
+    {
+        Close();
+        api_writer->Close();
+    }
 }
 
 int XML_LSP_Broker::ParseAll()
