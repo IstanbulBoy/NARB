@@ -280,7 +280,8 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             {
                 if (strcasecmp((char*)level2Node->name, "router_id") == 0)
                 {
-                    key = xmlNodeGetContent(level2Node);
+                    key = xmlNodeListGetString(level2Node->doc, level2Node->xmlChildrenNode, 1); 
+                    //key = xmlNodeGetContent(level2Node);
                     inet_aton((char*)key, &app_req.dest);  
                     xmlFree(key);
                 }
