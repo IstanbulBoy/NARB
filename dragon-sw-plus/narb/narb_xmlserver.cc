@@ -301,12 +301,12 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 else if (strcasecmp((char*)level2Node->name, "switching") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.switching_type = htons(string_to_value(&str_val_conv_switching, skip_xml_space(key)));
+                    app_req.switching_type = string_to_value(&str_val_conv_switching, skip_xml_space(key));
                 }
                 else if (strcasecmp((char*)level2Node->name, "encoding") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.encoding_type = htons(string_to_value(&str_val_conv_encoding, skip_xml_space(key)));
+                    app_req.encoding_type = string_to_value(&str_val_conv_encoding, skip_xml_space(key));
                 }
                 else if (strcasecmp((char*)level2Node->name, "gpid") == 0)
                 {
