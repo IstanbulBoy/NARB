@@ -36,6 +36,7 @@
 #include <libxml/tree.h>
 #include <arpa/inet.h>
 #include "narb_xmlserver.hh"
+#include "lsa.hh"
 #include "toolbox.hh"
 
 
