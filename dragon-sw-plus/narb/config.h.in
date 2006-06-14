@@ -87,6 +87,9 @@
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
+/* Define to 1 if you have the `xml2' library (-lxml2). */
+#undef HAVE_LIBXML2
+
 /* Define to 1 if you have the `xnet' library (-lxnet). */
 #undef HAVE_LIBXNET
 

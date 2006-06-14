@@ -9,10 +9,23 @@
 #endif 
 
 void ntohf_mbps(u_int32_t &x);
+
 void ntohf_mbps(float &x);
-void htonf_mbps(float &x);
+
 void htonf_mbps(u_int32_t &x);
 
+void htonf_mbps(float &x);
+
+
+/* Structure for string<-->value conversion */
+struct string_value_conversion {
+	u_char 	   number;
+	struct {
+		const char *string;
+		u_int32_t	   value;
+		u_char 	   len;
+	} sv[255];
+};
 
 extern "C"
 {
@@ -52,11 +65,7 @@ bool float_equal(float x, float y);
 bool float_evenly_dividable(float x, float y);
 
 u_int32_t string_to_value(struct string_value_conversion *db, const char *str);
-
 const char *value_to_string(struct string_value_conversion *db, u_int32_t value);
-
-const char* error_code_to_cstr(u_int32_t errcode);
-
 }
 
 #endif

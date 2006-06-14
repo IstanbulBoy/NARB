@@ -941,10 +941,20 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
             lcrmt_id->link_remote_id = htonl(*((u_int32_t *)value + 1));
         }
         break;
-    //case TE_LINK_SUBTLV_LINK_PROTYPE: 
-    //    break;
-    //case TE_LINK_SUBTLV_LINK_SRLG: 
-    //    break;
+   #if 0
+        case TE_LINK_SUBTLV_LINK_PROTYPE: 
+          {
+            te_link_subtlv_link_protype *protype 
+              = (te_link_subtlv_link_protype *)(buf + tlv_size);
+  
+            protype->header.type = htons(TE_LINK_SUBTLV_LINK_PROTYPE);
+            sub_tlv_size = sizeof (te_link_subtlv_link_protype);
+            protype->header.length = htons(1);
+            memset(&(protype->value4), 0, 4);
+            protype->value4.value = *((u_char *)value);
+            break;
+          }
+  #endif
     case TE_LINK_SUBTLV_LINK_IFSWCAP:
         {
             int i; float x;
@@ -962,6 +972,31 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
             }
         }
         break;
+  #if 0
+        case TE_LINK_SUBTLV_LINK_SRLG:
+          {
+            listnode node;
+            list srlg_list = (list)value;
+            int sub_tlv_length = 0;
+            te_tlv_header *header
+              = (te_tlv_header *)(buf + tlv_size);
+  
+            header->type = htons(TE_LINK_SUBTLV_LINK_SRLG);
+            for (node = listhead(srlg_list); node; nextnode(node))
+              {
+                u_int32_t* data = getdata(node);
+                *data = htonl(*data);
+                memcpy(buf + tlv_size + sizeof(te_tlv_header) 
+                          + sub_tlv_length, data, 4);
+                sub_tlv_length += 4;
+              }
+            sub_tlv_size = sizeof(te_tlv_header) + sub_tlv_length;
+            header->length = htons(sub_tlv_length);
+            memcpy((char *)(buf + tlv_size), (void *)header,
+                      sizeof(te_tlv_header));
+            break;
+          }
+  #endif
     case TE_LINK_SUBTLV_RESV_SCHEDULE:
         {
             te_tlv_header *resv_header = (te_tlv_header*)(buf + tlv_size);

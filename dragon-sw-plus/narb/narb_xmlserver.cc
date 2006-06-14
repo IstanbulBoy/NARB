@@ -217,6 +217,9 @@ _out:
       return ret;
 }
 
+extern struct string_value_conversion str_val_conv_switching;
+extern struct string_value_conversion str_val_conv_encoding;
+
 LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
 {
     LSPQ*lspq = NULL;
@@ -295,7 +298,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 else if (strcasecmp((char*)level2Node->name, "gpid") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.gpid = htons(string_to_value(&str_val_conv_gpid, (char*)key));
+                    app_req.gpid = htons(33); //G_Ether by default
                 }
                 else if (strcasecmp((char*)level2Node->name, "vtag") == 0)
                 {
@@ -482,7 +485,7 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
 
 void XML_LSP_Broker::PrintXML_ErrCode (te_tlv_header* tlv_ero)
 {
-    const char* errmsg =  error_code_to_cstr(ntohl(*(u_int32_t*)(tlv_ero + sizeof(TLV_HDR_SIZE))));
-    xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<error_message>%s</error_message>\n", errmsg); 
+    //const char* errmsg =  error_code_to_cstr(ntohl(*(u_int32_t*)(tlv_ero + sizeof(TLV_HDR_SIZE))));
+    //xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<error_message>%s</error_message>\n", errmsg); 
 }
 

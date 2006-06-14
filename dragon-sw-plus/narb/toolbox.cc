@@ -6,32 +6,6 @@
 #include "event.hh"
 #include "log.hh"
 
-void ntohf_mbps(u_int32_t &x)
-{
-    x = ntohl(x);
-    float *p = (float*)&x;
-    (*p) = (*p)*8.0/1000000.0;
-}
-
-void ntohf_mbps(float &x)
-{
-    u_int32_t *p = (u_int32_t*)&x;
-    ntohf_mbps(*p);
-}
-
-void htonf_mbps(float &x)
-{
-    x = x*1000000.0/8.0;
-    u_int32_t * p = (u_int32_t*)&x;
-    *p = htonl(*p);
-}
-
-void htonf_mbps(u_int32_t &x)
-{
-    float *p = (float*)&x;
-    htonf_mbps(*p);
-}
-
 int readn (int fd, char *ptr, int nbytes)
 {
   int nleft;
@@ -141,6 +115,32 @@ u_int32_t narb_ospf_opaque_id (void)
     static u_int32_t opaque_id = 0;
     opaque_id++;
     return opaque_id;
+}
+
+void ntohf_mbps(u_int32_t &x)
+{
+    x = ntohl(x);
+    float *p = (float*)&x;
+    (*p) = (*p)*8/1000000;
+}
+
+void ntohf_mbps(float &x)
+{
+    u_int32_t *p = (u_int32_t*)&x;
+    ntohf_mbps(*p);
+}
+
+void htonf_mbps(float &x)
+{
+    x = x*1000000/8;
+    u_int32_t * p = (u_int32_t*)&x;
+    *p = htonl(*p);
+}
+
+void htonf_mbps(u_int32_t &x)
+{
+    float *p = (float*)&x;
+    htonf_mbps(*p);
 }
 
 // SIGHUP handler
@@ -288,22 +288,3 @@ const char * value_to_string(struct string_value_conversion *db, u_int32_t value
 	}
 	return def_string;
 }
-
-const char* err_cstrs[] = {
-	"Unrecognized Error Code",
-	"Unknown Source Address",
-	"Unknown Destination Address",
-	"No Routing Path Found",
-	"NARB Internal Error",
-	"Invalid Path Request",
-	"System Warming Up",
-	"Max. Retransmission of Request Exceeded",
-};
-
-const char* error_code_to_cstr(u_int32_t errcode)
-{
-	if (0 < errcode  && 8 > errcode)
-		return err_cstrs[errcode];
-	return err_cstrs[0];
-}
-

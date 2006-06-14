@@ -312,63 +312,6 @@ struct te_link_subtlv_link_ifswcap
   } link_ifswcap_data;
 };
 
-
-#define G_Illegal 0
-#define G_Reserved1 1
-#define G_Reserved2 2
-#define G_Reserved3 3
-#define G_Reserved4 4
-#define G_Asyn_E4 5
-#define G_Asyn_DS3 6
-#define G_Asyn_E3 7
-#define G_BitSyn_E3 8
-#define G_ByteSyn_E3 9
-#define G_Asyn_DS2 10
-#define G_BitSyn_DS2 11
-#define G_Reserved5 12
-#define G_Asyn_E1 13
-#define G_ByteSyn_E1 14
-#define G_ByteSyn_31DS0 15
-#define G_Asyn_DS1 16
-#define G_BitSyn_DS1 17
-#define G_ByteSyn_T1 18
-#define G_VC11 19
-#define G_Reserved6 20
-#define G_Reserved7 21
-#define G_DS1SFAsyn 22
-#define G_DS1ESFAsyn 23
-#define G_DS3M23Asyn 24
-#define G_DS3CBitAsyn 25
-#define G_VT_LOVC 26
-#define G_STS_HOVC 27
-#define G_POSUnscr16 28
-#define G_POSUnscr32 29
-#define G_POSScram16 30
-#define G_POSScram32 31
-#define G_ATM 32
-#define G_Eth 33
-#define G_SONET_SDH 34
-#define G_Reserved 35
-#define G_DigiWrapper 36
-#define G_Lambda 37
-
-
-/* Structure for string<-->value conversion */
-struct string_value_conversion {
-	u_char 	   number;
-	struct {
-		const char *string;
-		u_int32_t	   value;
-		u_char 	   len;
-	} sv[255];
-};
-extern struct string_value_conversion str_val_conv_switching;
-
-extern struct string_value_conversion str_val_conv_encoding;
-
-extern struct string_value_conversion str_val_conv_gpid;
-
-
 #define DRAGON_TLV_TYPE_BASE 0x4000
 #define TE_LINK_SUBTLV_RESV_SCHEDULE  DRAGON_TLV_TYPE_BASE + 1
 #define TE_LINK_SUBTLV_LINK_IFADCAP DRAGON_TLV_TYPE_BASE + 2

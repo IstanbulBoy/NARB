@@ -1114,6 +1114,32 @@ extern ConfigFile configMaster;
 extern ZebraOspfSync* zebra_client;
 extern DomainTopologyOriginator* dts_originator;
 
+struct string_value_conversion str_val_conv_switching = 
+{
+	8,
+	{{ "psc1", 	LINK_IFSWCAP_SUBTLV_SWCAP_PSC1, 		4},
+	{ "psc2", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC2, 		4}, 
+	{ "psc3", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC3, 		4}, 
+	{ "psc4", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC4, 		4},
+	{ "l2sc", 		LINK_IFSWCAP_SUBTLV_SWCAP_L2SC, 		2},
+	{ "tdm", 		LINK_IFSWCAP_SUBTLV_SWCAP_TDM, 		1}, 
+	{ "lsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_LSC, 		2}, 
+	{ "fsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_FSC, 		1}}
+};
+
+struct string_value_conversion str_val_conv_encoding = 
+{
+	8,
+	{{ "packet", 	LINK_IFSWCAP_SUBTLV_ENC_PKT, 			2}, 
+	{ "ethernet", 	LINK_IFSWCAP_SUBTLV_ENC_ETH, 			1}, 
+	{ "pdh", 		LINK_IFSWCAP_SUBTLV_ENC_PDH, 			2}, 
+	{ "sdh", 		LINK_IFSWCAP_SUBTLV_ENC_SONETSDH, 		1},
+	{ "dwrapper", LINK_IFSWCAP_SUBTLV_ENC_DIGIWRAP, 		1}, 
+	{ "lambda", 	LINK_IFSWCAP_SUBTLV_ENC_LAMBDA, 		1}, 
+	{ "fiber", 		LINK_IFSWCAP_SUBTLV_ENC_FIBER, 			2}, 
+	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
+};
+
 /////////////////////////////////////////////////////////////////////
 
 COMMAND(cmd_exit, "exit", "Exit the current command level\n")
