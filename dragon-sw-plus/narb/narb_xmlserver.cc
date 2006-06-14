@@ -329,7 +329,6 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             if (vtag != 0)
                 lsp_opt |= LSP_OPT_E2E_VTAG;
             lspq = new LSPQ(this, app_req, ucid, lsp_opt);
-            lspq_list.push_back(lspq);
             lspq->SetReqUcid(ucid);
             lspq->SetReqVtag(vtag);
         }
@@ -483,10 +482,10 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
             xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<ipv4 loose=\"%s\" ip=\"%s\" />\n",
                 loose? "false":"true", ipbuf);
         else//Unnum
-            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<unmum loose=\"%s\" ip=\"%s\" ifid=\"%d\" />\n",
+            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<unnum loose=\"%s\" ip=\"%s\" ifid=\"%d\" />\n",
                 loose? "false":"true", ipbuf, 0x0400&subobj->l2sc_vlantag);
-        xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</ero>\n");
     }
+    xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</ero>\n");
 }
 
 void XML_LSP_Broker::PrintXML_ErrCode (te_tlv_header* tlv_ero)
