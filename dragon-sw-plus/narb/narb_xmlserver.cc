@@ -267,7 +267,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 if (strcasecmp((char*)level2Node->name, "router_id") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    inet_aton((char*)key, &app_req.src);
+                    inet_aton(skip_xml_space(key), &app_req.src);
                     xmlFree(key);
                 }
             }
@@ -281,7 +281,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 if (strcasecmp((char*)level2Node->name, "router_id") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    inet_aton((char*)key, &app_req.dest);  
+                    inet_aton(skip_xml_space(key), &app_req.dest);  
                     xmlFree(key);
                 }
             }
@@ -296,27 +296,27 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
                 if (strcasecmp((char*)level2Node->name, "bandwidth") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    sscanf((char*)key, "%f", &app_req.bandwidth);
+                    sscanf(skip_xml_space(key), "%f", &app_req.bandwidth);
                 }
                 else if (strcasecmp((char*)level2Node->name, "switching") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.switching_type = htons(string_to_value(&str_val_conv_switching, (char*)key));
+                    app_req.switching_type = htons(string_to_value(&str_val_conv_switching, skip_xml_space(key)));
                 }
                 else if (strcasecmp((char*)level2Node->name, "encoding") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.encoding_type = htons(string_to_value(&str_val_conv_encoding, (char*)key));
+                    app_req.encoding_type = htons(string_to_value(&str_val_conv_encoding, skip_xml_space(key)));
                 }
                 else if (strcasecmp((char*)level2Node->name, "gpid") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    app_req.gpid = htons(string_to_value(&str_val_conv_gpid, (char*)key));
+                    app_req.gpid = htons(string_to_value(&str_val_conv_gpid, skip_xml_space(key)));
                 }
                 else if (strcasecmp((char*)level2Node->name, "vtag") == 0)
                 {
                     key = xmlNodeGetContent(level2Node);
-                    sscanf((char*)key, "%d", &vtag);
+                    sscanf(skip_xml_space(key), "%d", &vtag);
                 }
                 if (key)
                     xmlFree(key);

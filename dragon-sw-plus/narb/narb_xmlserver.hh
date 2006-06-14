@@ -87,9 +87,9 @@ private:
     int xml_obufsize;
 };
 
-inline char* skip_space(xmlChar* key)
+inline char* skip_xml_space(xmlChar* key)
 {
-    char *ptr = key;
+    char *ptr = (char*)key;
     while(ptr && isspace(*ptr)) 
         ptr++;
     return ptr;
