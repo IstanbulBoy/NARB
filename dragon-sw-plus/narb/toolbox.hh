@@ -8,33 +8,10 @@
 #define RETSIGTYPE void
 #endif 
 
-inline void ntohf_mbps(u_int32_t &x)
-{
-    x = ntohl(x);
-    float *p = (float*)&x;
-    (*p) = (*p)*8/1000000;
-}
-
-inline void ntohf_mbps(float &x)
-{
-    u_int32_t *p = (u_int32_t*)&x;
-    *p = ntohl(*p);
-    x = x*8/1000000;
-}
-
-inline void htonf_mbps(float &x)
-{
-    x = x*1000000/8;
-    u_int32_t * p = (u_int32_t*)&x;
-    *p = htonl(*p);
-}
-
-inline void htonf_mbps(u_int32_t &x)
-{
-    float *p = (float*)&x;
-    *p = (*p)*1000000/8;
-    x = htonl(x);
-}
+void ntohf_mbps(u_int32_t &x);
+void ntohf_mbps(float &x);
+void htonf_mbps(float &x);
+void htonf_mbps(u_int32_t &x);
 
 
 /* Structure for string<-->value conversion */

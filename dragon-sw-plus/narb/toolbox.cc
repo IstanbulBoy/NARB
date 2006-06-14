@@ -6,6 +6,32 @@
 #include "event.hh"
 #include "log.hh"
 
+void ntohf_mbps(u_int32_t &x)
+{
+    x = ntohl(x);
+    float *p = (float*)&x;
+    (*p) = (*p)*8.0/1000000.0;
+}
+
+void ntohf_mbps(float &x)
+{
+    u_int32_t *p = (u_int32_t*)&x;
+    ntohf_mbps(*p);
+}
+
+void htonf_mbps(float &x)
+{
+    x = x*1000000.0/8.0;
+    u_int32_t * p = (u_int32_t*)&x;
+    *p = htonl(*p);
+}
+
+void htonf_mbps(u_int32_t &x)
+{
+    float *p = (float*)&x;
+    htonf_mbps(*p);
+}
+
 int readn (int fd, char *ptr, int nbytes)
 {
   int nleft;
