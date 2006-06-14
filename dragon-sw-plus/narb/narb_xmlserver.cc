@@ -80,7 +80,7 @@ void NARB_XMLServer::Run()
     broker->SetAutoDelete(true);
     broker->SetRepeats(FOREVER);
 
-    broker_list.push_back(broker);
+    NARB_APIServer::lsp_brokers.push_back(broker);
     eventMaster.Schedule(broker);
 
     LOG_DEBUG("Accepted an XML API connection on socket(" <<new_sock <<")" << endl);
