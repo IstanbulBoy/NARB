@@ -40,7 +40,9 @@
 #include "apiserver.hh"
 #include "narb_config.hh"
 #include "lsp_broker.hh"
-#include "libxml/parser.h"
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 using namespace std;
 #include <list>
@@ -84,6 +86,14 @@ private:
     char* xml_obuffer;
     int xml_obufsize;
 };
+
+inline char* skip_space(xmlChar* key)
+{
+    char *ptr = key;
+    while(ptr && isspace(*ptr)) 
+        ptr++;
+    return ptr;
+}
 
 #endif
 
