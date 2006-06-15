@@ -100,18 +100,24 @@ XML_LSP_Broker::XML_LSP_Broker(int sock, NARB_XMLServer * server): LSP_Broker(so
     api_writer = NULL;
     xml_ibuffer = xml_obuffer = NULL;
     xml_ibufsize = xml_obufsize = 0;
+    polling_timer = NULL;
 }
 
 
 XML_LSP_Broker::~XML_LSP_Broker()
 {
+    // cleanning XML_LSP_Broker's
     if (xml_ibuffer)
         delete[] xml_ibuffer;
 
     if (xml_obuffer)
         delete[] xml_obuffer;
 
-    // cleanning XML_LSP_Broker's
+    if (polling_timer && !polling_timer->Obsolete())
+    {
+        eventMaster.Remove(polling_timer);
+        delete polling_timer;
+    }
 }
 
 
@@ -155,14 +161,27 @@ void XML_LSP_Broker::Run()
         }
 
         // scheduling a polling event ... --> Timer to call WaitForAllQueries()
-        WaitForAllQueries();
-        read(fd, xml_ibuffer+xml_ibufsize, 0);
+        polling_timer = new XML_LSP_PollingTimer(this);
+        eventMaster.Schedule(polling_timer);
     }
-    else
+    else //all other cases (queries) are done in one shot
     {
-        Close();
-        api_writer->Close();
+        Stop();
     }
+}
+
+void XML_LSP_Broker::Stop()
+{
+    Close();
+    api_writer->Close();
+
+    if (polling_timer && !polling_timer->Obsolete())
+    {
+        eventMaster.Remove(polling_timer);
+        delete polling_timer;
+        polling_timer = NULL;
+    }
+
 }
 
 int XML_LSP_Broker::ParseAll()
@@ -433,8 +452,7 @@ void XML_LSP_Broker::WaitForAllQueries()
         xml_obuffer[xml_obufsize++] = '\0';
         ret = WriteXML();
 
-        Close();
-        api_writer->Close();
+        Stop();
         xml_ibuffer = 0;
     }
 }
@@ -589,3 +607,10 @@ void XML_LSP_Broker::PrintXML_Topology (char* filter1, char* filter2)
         }
     }
 }
+
+void XML_LSP_Broker::PrintXML_Timeout ()
+{
+    xml_obufsize += sprintf(xml_obuffer, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<narb version=\"1.0\">\n");
+    xml_obufsize += sprintf(xml_obuffer, "<info>timeout</info>\n</narb>\n");
+}
+

@@ -62,6 +62,7 @@ private:
 
 #define XML_BUF_BLOCK_SIZE 8192 //8 KB
 
+class XML_LSP_PollingTimer;
 class XML_LSP_Broker: public LSP_Broker
 {
 public:
@@ -78,7 +79,9 @@ public:
     int WriteXML();
     void PrintXML_ERO (te_tlv_header* tlv_ero);
     void PrintXML_ErrCode(te_tlv_header* tlv_ero);
+    void PrintXML_Timeout ();
     void PrintXML_Topology (char* filter1, char* filter2);
+    void Stop();
 
 private:
     //list<LSPQ*> lspq_list;
@@ -86,6 +89,34 @@ private:
     int xml_ibufsize;
     char* xml_obuffer;
     int xml_obufsize;
+    XML_LSP_PollingTimer* polling_timer;
+};
+
+#define XML_LSPQ_POLLING_INTERVAL   200 //in miliseconds, less than 1000
+class XML_LSP_PollingTimer: public Timer
+{
+public:
+    XML_LSP_PollingTimer(XML_LSP_Broker* b, int msec_interval =XML_LSPQ_POLLING_INTERVAL, int max_times=10)
+        : broker(b), Timer((int)0, msec_interval*1000) {
+            SetInterval(0, msec_interval*1000);
+            SetRepeats(max_times);
+        }
+    virtual ~XML_LSP_PollingTimer() { }
+    virtual void Run() {
+            assert(broker);
+            if (repeats > 0)
+            {
+                broker->WaitForAllQueries();
+            }
+            else
+            {
+                broker->PrintXML_Timeout();
+                broker->Stop();
+            }
+        }
+
+private:
+    XML_LSP_Broker* broker;
 };
 
 inline char* skip_xml_space(xmlChar* key)
