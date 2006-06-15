@@ -387,7 +387,8 @@ int main(int argc, char* argv[])
             exit(3);
         while(fread(xml_buf+rn, 1, 1, fp) == 1)
             rn++;
-        xml_buf[rn] = '\0';
+        fclose(fp);
+        xml_buf[rn++] = '\0';
         write(sock, xml_buf, rn);
         return 0;
     }
