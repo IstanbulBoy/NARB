@@ -139,7 +139,6 @@ void XML_LSP_Broker::Run()
         }
 
         int ret = ParseAll();
-        // return;
     }
 
     if (lspq_list.size() > 0)
@@ -152,11 +151,12 @@ void XML_LSP_Broker::Run()
             if (lspq->State() == STATE_IDLE) 
             {
                 lspq->HandleLSPQRequest();
-                //return; //Hanlde one LSPQ each time to be fair to other lsp_brokers
             }
         }
 
+        // scheduling a polling event ... --> Timer to call WaitForAllQueries()
         WaitForAllQueries();
+        read(fd, xml_ibuffer+xml_ibufsize, 0);
     }
     else
     {
@@ -437,7 +437,6 @@ void XML_LSP_Broker::WaitForAllQueries()
         api_writer->Close();
         xml_ibuffer = 0;
     }
-    //timer ???
 }
 
 int XML_LSP_Broker::ReadXML()
