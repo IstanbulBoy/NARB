@@ -495,8 +495,8 @@ int XML_LSP_Broker::WriteXML()
         return ret;
 
     ret = write (fd, xml_obuffer, xml_obufsize);
-    for (int i = 0; i < xml_obufsize; i++) //debug
-        putchar((int)xml_obuffer[i]);
+    //for (int i = 0; i < xml_obufsize; i++) //debug output
+    //    putchar((int)xml_obuffer[i]);
     if (ret == xml_obufsize)
     {
         xml_obufsize = 0;

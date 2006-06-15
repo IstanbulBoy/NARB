@@ -39,7 +39,12 @@
 #include "toolbox.hh"
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/sendfile.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
  
 #ifndef HAVE_DECL_GETOPT
   #define HAVE_DECL_GETOPT 1
@@ -380,16 +385,25 @@ int main(int argc, char* argv[])
 
     if (xml_file)
     {
-        FILE* fp;
-        int rn = 0;
-        fp = fopen (xml_file, "r");
-        if (!fp) 
-            exit(3);
-        while(fread(xml_buf+rn, 1, 1, fp) == 1)
-            rn++;
-        fclose(fp);
-        xml_buf[rn++] = '\0';
-        write(sock, xml_buf, rn);
+	int fd = open(xml_file, O_RDONLY);
+        struct stat file_stat;
+        if (fstat(fd, &file_stat) == -1) {
+            printf("fstat failed\n");
+            exit(1);
+  	}
+
+        int total = sendfile(sock, fd, 0, file_stat.st_size);
+        if (total <= 0) {
+            printf("sendfile() returns %d\n", total);
+            exit(1);
+        }
+        total = recv(sock, xml_buf, 4000, 0);
+        if (total <= 0) {
+            printf("recv() returns %d\n", total);
+            exit(1);
+        }
+        write(1, xml_buf, total);
+        sleep(5);
         return 0;
     }
 
