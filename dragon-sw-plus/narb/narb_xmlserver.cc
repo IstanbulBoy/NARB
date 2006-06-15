@@ -35,6 +35,9 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "narb_xmlserver.hh"
 #include "lsa.hh"
 #include "toolbox.hh"
@@ -79,6 +82,8 @@ void NARB_XMLServer::Run()
     XML_LSP_Broker* broker = new XML_LSP_Broker(new_sock, this);
     broker->SetAutoDelete(true);
     broker->SetRepeats(FOREVER);
+    int opts = fcntl (new_sock, F_GETFL, 0);
+    fcntl (new_sock, F_SETFL, (opts | O_NONBLOCK));
 
     NARB_APIServer::lsp_brokers.push_back(broker);
     eventMaster.Schedule(broker);
@@ -147,7 +152,7 @@ void XML_LSP_Broker::Run()
             if (lspq->State() == STATE_IDLE) 
             {
                 lspq->HandleLSPQRequest();
-                return; //Hanlde one LSPQ each time to be fair to other lsp_brokers
+                //return; //Hanlde one LSPQ each time to be fair to other lsp_brokers
             }
         }
 
@@ -448,7 +453,7 @@ int XML_LSP_Broker::ReadXML()
     if (xml_ibuffer == NULL)
         return -1;
 
-    while ((rlen = readn (fd, xml_ibuffer+offset, XML_BUF_BLOCK_SIZE-1)) > 0 )
+    while ((rlen = read (fd, xml_ibuffer+offset, XML_BUF_BLOCK_SIZE-1)) > 0 )
     {
         offset += rlen;
         if (offset >= (bufsize -XML_BUF_BLOCK_SIZE/2))
@@ -472,7 +477,7 @@ int XML_LSP_Broker::WriteXML()
     if (xml_obuffer == NULL || xml_obufsize == 0)
         return ret;
 
-    ret = writen(fd, xml_obuffer, xml_obufsize);
+    ret = write (fd, xml_obuffer, xml_obufsize);
     for (int i = 0; i < xml_obufsize; i++) //debug
         putchar((int)xml_obuffer[i]);
     if (ret == xml_obufsize)
