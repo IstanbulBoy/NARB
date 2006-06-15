@@ -393,7 +393,7 @@ int XML_LSP_Broker::ParseTopoQuery(xmlNodePtr cur)
             }
 
             xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</topology>\n");
-            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</narb>");
+            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</narb>\n");
             xml_obuffer[xml_obufsize++] = '\0';
 
             if (xml_obufsize > 0)
@@ -424,7 +424,7 @@ void XML_LSP_Broker::WaitForAllQueries()
     
     if (complete)
     {
-        xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</narb>");
+        xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</narb>\n");
         xml_obuffer[xml_obufsize++] = '\0';
         ret = WriteXML();
 
@@ -553,7 +553,7 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
                 loose? "false":"true", ipbuf);
         else//Unnum
             xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<unnum loose=\"%s\" ip=\"%s\" ifid=\"%d\" />\n",
-                loose? "false":"true", ipbuf, 0x0400|subobj->l2sc_vlantag);
+                loose? "false":"true", ipbuf, 0x40000 |subobj->l2sc_vlantag);
     }
     xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</ero>\n");
 }
