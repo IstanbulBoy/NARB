@@ -153,7 +153,7 @@ void XML_LSP_Broker::Run()
 
         WaitForAllQueries();
     }
-    else 
+    else
     {
         Close();
         api_writer->Close();
@@ -339,12 +339,76 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
 
 int XML_LSP_Broker::ParseTopoQuery(xmlNodePtr cur)
 {
-    // Return topology and WriteXML
-    return 0;
+    int ret = 0;
+    if (!cur) return ret;
+    int ucid = 0;
+    char filter[20]; filter[0] = '\0';
+
+    xmlNodePtr level1Node, level2Node;
+    
+    xmlChar* xml_ucid= xmlGetProp(cur, (xmlChar*)"ucid");
+    if (xml_ucid)
+        sscanf((char*)xml_ucid, "%d", &ucid);
+
+    xmlChar* xml_action= xmlGetProp(cur, (xmlChar*)"action");
+    if (xml_action)
+    {
+        if (strcasecmp((char*)xml_action, "query")==0)
+        {
+            xmlChar* key;
+            int bufsize = XML_BUF_BLOCK_SIZE;
+            char* swap_buffer = NULL;
+
+            if (xml_obuffer == NULL) {
+                xml_obuffer = new char[bufsize];
+                xml_obufsize = 0;
+                xml_obuffer[0] = '\0';
+                if (xml_obuffer == NULL)
+                    return ret;
+                xml_obufsize += sprintf(xml_obuffer, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<narb version=\"1.0\">\n");
+            }
+            if (xml_obufsize >= (bufsize -XML_BUF_BLOCK_SIZE/2))
+            {
+                swap_buffer = xml_ibuffer;
+                bufsize += XML_BUF_BLOCK_SIZE/2;
+                xml_ibuffer = new char[bufsize];
+                if (xml_ibuffer == NULL)
+                    return ret;
+                memcpy(xml_ibuffer, swap_buffer, xml_obufsize);
+                delete[] swap_buffer;
+            }
+
+            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<topology ucid=\"%d\" action=\"query-reply\">\n", ucid);
+
+            for (level1Node = cur->children; level1Node; level1Node = level1Node->next)
+            {
+                if (strcasecmp((char*)level1Node->name, "router_id") == 0)
+                {
+                    key = xmlNodeGetContent(level1Node);
+                    if (key)
+                    {
+                        PrintXML_Topology("router_id", skip_xml_space(key));
+                    }
+                }
+            }
+
+            xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</topology>\n");
+
+            if (xml_obufsize > 0)
+            {
+                ret += WriteXML();
+                if (ret <= 0)
+                    return ret;
+            }
+        }
+    }
+
+    return ret;
 }
 
 void XML_LSP_Broker::WaitForAllQueries()
 {
+    int ret;
     bool complete = true;
     list<LSPQ*>::iterator iter;
     for (iter = lspq_list.begin(); iter != lspq_list.end(); iter++)
@@ -360,7 +424,7 @@ void XML_LSP_Broker::WaitForAllQueries()
     {
         xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "</narb>");
         xml_obuffer[xml_obufsize++] = '\0';
-        int ret = WriteXML();
+        ret = WriteXML();
 
         Close();
         api_writer->Close();
@@ -408,7 +472,10 @@ int XML_LSP_Broker::WriteXML()
 
     ret = writen(fd, xml_obuffer, xml_obufsize);
     if (ret == xml_obufsize)
+    {
         xml_obufsize = 0;
+        xml_obuffer[0] = '\0';
+    }
 
     return ret;
 }
@@ -475,7 +542,6 @@ void XML_LSP_Broker::PrintXML_ERO (te_tlv_header* tlv_ero)
     for (iter = ero.begin(); iter != ero.end(); iter++)
     {
         subobj = *iter;
-
         bool loose = ((subobj->hop_type >> 7) == ERO_TYPE_LOOSE_HOP);
         strcpy(ipbuf, inet_ntoa(subobj->addr));
         if (subobj->l2sc_vlantag ==0)//IPv4
@@ -494,3 +560,24 @@ void XML_LSP_Broker::PrintXML_ErrCode (te_tlv_header* tlv_ero)
     xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<error_message>%s</error_message>\n", errmsg); 
 }
 
+void XML_LSP_Broker::PrintXML_Topology (char* filter1, char* filter2)
+{
+    router_id_info * rtid;
+    in_addr ip;
+    char ipbuf[20];
+
+    if (strcasecmp(filter1, "router_id") == 0)
+    {
+        if (strncasecmp(filter2, "all", 3) == 0)
+        {
+            rtid = NarbDomainInfo.FirstRouterId();
+            while (rtid)
+            {
+                ip.s_addr = rtid->ID();
+                strcpy(ipbuf, inet_ntoa(ip));
+                xml_obufsize += sprintf(xml_obuffer+xml_obufsize, "<router_id> %s </router_id>\n", ipbuf);
+                rtid = NarbDomainInfo.NextRouterId();
+            }
+        }
+    }
+}

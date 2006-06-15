@@ -78,6 +78,7 @@ public:
     int WriteXML();
     void PrintXML_ERO (te_tlv_header* tlv_ero);
     void PrintXML_ErrCode(te_tlv_header* tlv_ero);
+    void PrintXML_Topology (char* filter1, char* filter2);
 
 private:
     //list<LSPQ*> lspq_list;
@@ -93,6 +94,16 @@ inline char* skip_xml_space(xmlChar* key)
     while(ptr && isspace(*ptr)) 
         ptr++;
     return ptr;
+}
+
+inline char* chop_xml_space(xmlChar* key)
+{
+    char *ptr = (char*)key;
+    ptr += (strlen(ptr) - 1);
+    while(ptr && isspace(*ptr)) 
+        ptr--;
+    *(++ptr) = '\0';
+    return (char*)key;
 }
 
 #endif
