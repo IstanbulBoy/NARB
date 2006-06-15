@@ -182,6 +182,7 @@ void XML_LSP_Broker::Stop()
         polling_timer = NULL;
     }
 
+    LOG_DEBUG("XML API connection on socket(" <<fd <<") closed." << endl);
 }
 
 int XML_LSP_Broker::ParseAll()
