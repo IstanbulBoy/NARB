@@ -3,6 +3,10 @@
 
 INCLUDES = -I. -I/usr/include -I/usr/local/include -I/usr/include/libxml2 -I/usr/local/include/libxml2
 
+DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
+
+INSTALL_SDATA=@INSTALL@ -m 600
+
 sbin_PROGRAMS = narb narb_test
 
 ##lib_LIBRARIES = libxxx.a
@@ -16,6 +20,18 @@ narb_test_SOURCES = \
 
 narb_LDADD = -lc -lstdc++ -lxml2
 narb_test_LDADD = -lc -lstdc++ -lxml2
+
+sysconf_DATA = narb.conf.sample 
+RC_SCRIPT = run_narb.sh
+
+install-sysconfDATA: $(sysconf_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	echo " $(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA)";
+	@$(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA);
+	echo "$(INSTALL) $(RC_SCRIPT) $(DESTDIR)$(bindir)/$(RC_SCRIPT)";
+	@$(INSTALL) $(RC_SCRIPT) $(DESTDIR)$(bindir)/$(RC_SCRIPT);
+
 
 clean-local:
 	-rm -rf *.log

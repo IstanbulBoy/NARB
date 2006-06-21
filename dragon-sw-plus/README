@@ -10,7 +10,7 @@ integrative components of the DRAGON GMPLS software suite. NARB and
 RCE are developed independent of any other existing code except that
 they both support the GNU zebra OSPF API client interface.
 
-See the file LICENSE for copyright and license information.
+See the file COPYRIGHT for copyright and license information.
 
 See the file INSTALL for building and installation instructions.
 
