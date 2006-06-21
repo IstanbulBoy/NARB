@@ -23,8 +23,8 @@ else
     exit 1
 fi      
 
-ospf_intra_pid=`ps axwww | grep -v awk | awk '{if (match($0, ".*/ospfd-intra")  || match($0, ".*/ospfd.*conf")) print $1}'`
-ospf_inter_pid=`ps axwww | grep -v awk | awk '{if (match($0, ".*/ospfd-inter")) print $1}'`
+ospf_intra_pid=`ps axwww | grep -v awk | awk '{if (match($0, ".*/ospfd-intra")  || match($0, "ospfd -d -f"))) print $1}'`
+ospf_inter_pid=`ps axwww | grep -v awk | awk '{if (match($0, ".*/ospfd-inter") || match($0, "ospfd -d -P 2614 -I -f")) print $1}'`
 
 if test "$ospf_intra_pid" = ""; then
     echo '****** WARNING: IntRA-domain OSPFd not running! ******'
