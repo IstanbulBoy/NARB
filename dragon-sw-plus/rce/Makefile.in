@@ -84,6 +84,12 @@ install_sh = @install_sh@
 
 INCLUDES = -I.
 
+DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
+
+INSTALL_SDATA = @INSTALL@ -m 600
+
+sysconf_DATA = schema_combo.rsd.sample
+
 sbin_PROGRAMS = rce rce_test
 
 rce_SOURCES = \
@@ -125,8 +131,6 @@ am_rce_test_OBJECTS = rce_test.$(OBJEXT) event.$(OBJEXT) \
 rce_test_OBJECTS = $(am_rce_test_OBJECTS)
 rce_test_DEPENDENCIES =
 rce_test_LDFLAGS =
-
-DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
@@ -151,10 +155,11 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
+DATA = $(sysconf_DATA)
+
 DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
-	Makefile.in NEWS TODO aclocal.m4 config.guess config.h.in \
-	config.sub configure configure.ac depcomp install-sh missing \
-	mkinstalldirs
+	Makefile.in NEWS aclocal.m4 config.guess config.h.in config.sub \
+	configure configure.ac depcomp install-sh missing mkinstalldirs
 SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
 
 all: config.h
@@ -270,6 +275,15 @@ distclean-depend:
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
+sysconfDATA_INSTALL = $(INSTALL_DATA)
+
+uninstall-sysconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(sysconf_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(sysconfdir)/$$f"; \
+	  rm -f $(DESTDIR)$(sysconfdir)/$$f; \
+	done
 
 ETAGS = etags
 ETAGSFLAGS =
@@ -396,10 +410,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) config.h
+all-am: Makefile $(PROGRAMS) $(DATA) config.h
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(sbindir)
+	$(mkinstalldirs) $(DESTDIR)$(sbindir) $(DESTDIR)$(sysconfdir)
 
 install: install-am
 install-exec: install-exec-am
@@ -444,7 +458,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-sbinPROGRAMS
+install-exec-am: install-sbinPROGRAMS install-sysconfDATA
 
 install-info: install-info-am
 
@@ -461,7 +475,8 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
+uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS \
+	uninstall-sysconfDATA
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic clean-local \
 	clean-sbinPROGRAMS dist dist-all dist-gzip distcheck distclean \
@@ -469,12 +484,19 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 	distclean-hdr distclean-tags distcleancheck distdir dvi dvi-am \
 	info info-am install install-am install-data install-data-am \
 	install-exec install-exec-am install-info install-info-am \
-	install-man install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic tags uninstall uninstall-am \
-	uninstall-info-am uninstall-sbinPROGRAMS
+	install-man install-sbinPROGRAMS install-strip \
+	install-sysconfDATA installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-sbinPROGRAMS \
+	uninstall-sysconfDATA
 
+
+install-sysconfDATA: $(sysconf_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	echo " $(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA)";
+	@$(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA);
 
 clean-local:
 	-rm -rf *.log

@@ -2,6 +2,12 @@
 
 INCLUDES = -I.
 
+DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
+
+INSTALL_SDATA=@INSTALL@ -m 600
+
+sysconf_DATA = schema_combo.rsd.sample
+
 sbin_PROGRAMS = rce rce_test
 
 ##lib_LIBRARIES = libxxx.a
@@ -17,6 +23,12 @@ rce_test_SOURCES = \
 
 rce_LDADD = -lc -lstdc++
 rce_test_LDADD = -lc -lstdc++
+
+install-sysconfDATA: $(sysconf_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	echo " $(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA)";
+	@$(INSTALL_SDATA) $(sysconf_DATA) $(DESTDIR)$(sysconfdir)/$(sysconf_DATA);
 
 clean-local:
 	-rm -rf *.log
