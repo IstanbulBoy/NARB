@@ -3,6 +3,11 @@
 
 PREFIX=/usr/local/dragon
 
+if test ! -f $PREFIX/bin/dragon.sh; then
+	echo "narb-sw-builder: $PREFIX/bin/dragon.sh does not exit. Install dragon-sw first."
+	exit 1
+    fi
+
 case `uname` in
   *BSD)
     echo This is BSD Unix
@@ -12,7 +17,7 @@ case `uname` in
     cd rce
     ./configure --with-ext-attr CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
-	echo "dragon-sw-plus: rce configure error!"
+	echo "narb-sw-builder: rce configure error!"
 	exit 1
     fi
 
@@ -20,7 +25,7 @@ case `uname` in
 	echo 'making rce...'
     make
     if test $? != 0; then
-	echo "dragon-sw-plus: rce make error!"
+	echo "narb-sw-builder: rce make error!"
 	exit 1
     fi
 
@@ -29,7 +34,7 @@ case `uname` in
     cd ../narb
     ./configure CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
-	echo "dragon-sw-plus: narb configure error!"
+	echo "narb-sw-builder: narb configure error!"
 	exit 1
     fi
 
@@ -37,12 +42,12 @@ case `uname` in
 	echo 'making narb...'
     make
     if test $? != 0; then
-	echo "dragon-sw-plus: narb make error!"
+	echo "narb-sw-builder: narb make error!"
 	exit 1
     fi
 
     echo '' && \
-	echo 'dragon-sw-plus build finished.'
+	echo 'narb-sw-builder build finished.'
 
     echo '' && \
         echo "Now, as root, run 'sh do_install.sh' to complete the installation."
@@ -55,7 +60,7 @@ case `uname` in
     cd rce
     ./configure --prefix=$PREFIX --with-ext-attr CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
-	echo "dragon-sw-plus: rce configure error!"
+	echo "narb-sw-builder: rce configure error!"
 	exit 1
     fi
 
@@ -63,7 +68,7 @@ case `uname` in
 	echo 'making rce...'
     make
     if test $? != 0; then
-	echo "dragon-sw-plus: rce make error!"
+	echo "narb-sw-builder: rce make error!"
 	exit 1
     fi
 
@@ -72,7 +77,7 @@ case `uname` in
     cd ../narb
     ./configure --prefix=$PREFIX CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
-        echo "dragon-sw-plus: narb configure error!"
+        echo "narb-sw-builder: narb configure error!"
         exit 1
     fi
 
@@ -80,7 +85,7 @@ case `uname` in
 	echo 'making narb...'
     make
     if test $? != 0; then
-        echo "dragon-sw-plus: narb make error!"
+        echo "narb-sw-builder-builder: narb make error!"
         exit 1
     fi
 

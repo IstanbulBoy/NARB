@@ -21,7 +21,7 @@ case `uname` in
     cd rce
     make install
     if test $? != 0; then
-	echo "dragon-sw-plus: rce make install error!"
+	echo "narb-sw-installer: rce make install error!"
 	exit 1
     fi
 
@@ -30,12 +30,12 @@ case `uname` in
     cd ../narb
     make install
     if test $? != 0; then
-	echo "dragon-sw-plus: narb make install error!"
+	echo "narb-sw-installer: narb make install error!"
 	exit 1
     fi
 
     echo '' && \
-     echo "dragon-sw-plus install finished."
+     echo "narb-sw-installer install finished."
     ;;
   *[lL]inux*|*IX*)
     echo This is some other Unix, likely Linux
@@ -45,7 +45,7 @@ case `uname` in
     cd rce
     make install
     if test $? != 0; then
-	echo "dragon-sw-plus: rce make install error!"
+	echo "narb-sw-installer: rce make install error!"
 	exit 1
     fi
 
@@ -54,12 +54,12 @@ case `uname` in
     cd ../narb
     make install
     if test $? != 0; then
-        echo "dragon-sw-plus: narb make install error!"
+        echo "narb-sw-installer: narb make install error!"
         exit 1
     fi
 
     echo '' && \
-     echo "dragon-sw-plus install finished."
+     echo "narb-sw-installer install finished."
     ;;
   *)
     echo Do not know what kind of system this is, do it by hand
