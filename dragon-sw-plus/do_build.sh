@@ -6,7 +6,7 @@ PREFIX=/usr/local/dragon
 if test ! -f $PREFIX/bin/dragon.sh; then
 	echo "narb-sw-builder: $PREFIX/bin/dragon.sh does not exit. Install dragon-sw first."
 	exit 1
-    fi
+fi
 
 case `uname` in
   *BSD)
