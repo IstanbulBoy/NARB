@@ -64,4 +64,23 @@ case `uname` in
   *)
     echo Do not know what kind of system this is, do it by hand
     ;;
+
 esac
+
+echo ""
+echo "    #######################################################"
+echo "    #                                                     #"
+echo "    #      Instructions for configuration and running     #"
+echo "    #                                                     #"
+echo "    #######################################################"
+echo ""
+echo "Samples of configuratin files have been installed under $PREFIX/etc/."
+echo "Before running, customize your configuration files following the samples."
+echo ""
+echo "You need zebra.conf, ospfd-intra.conf, ospfd-inter.conf and narb.conf."
+echo ""
+echo "To run NARB, you must have installed the dragon software suite."
+echo ""
+echo "After configuration, use $PREFIX/bin/dragon.sh to start the service."
+echo "To start NARB separtely, use $PREFIX/bin/run_narb.sh."
+echo ""
