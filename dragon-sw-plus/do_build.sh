@@ -4,7 +4,8 @@
 PREFIX=/usr/local/dragon
 
 if test ! -f $PREFIX/bin/dragon.sh; then
-	echo "narb-sw-builder: $PREFIX/bin/dragon.sh does not exit. Install dragon-sw first."
+	echo "narb-sw-builder: $PREFIX/bin/dragon.sh does not exit. Install dragon software swuite first."
+	echo "Go http://dragon.east.isi.edu/twiki/bin/view/Main/VLSR to download dragon-sw-snapshot.xxxx.tar.gz."
 	exit 1
 fi
 
