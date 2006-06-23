@@ -16,7 +16,7 @@ case `uname` in
     echo '' && \
 	echo 'configuring rce...'
     cd rce
-    ./configure --with-ext-attr CFLAG=-g CPPFLAG=-g
+    ./configure  --prefix=$PREFIX --with-ext-attr CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
 	echo "narb-sw-builder: rce configure error!"
 	exit 1
@@ -33,7 +33,7 @@ case `uname` in
     echo '' && \
 	echo 'configuring narb...'
     cd ../narb
-    ./configure CFLAG=-g CPPFLAG=-g
+    ./configure  --prefix=$PREFIX CFLAG=-g CPPFLAG=-g
     if test $? != 0; then
 	echo "narb-sw-builder: narb configure error!"
 	exit 1
