@@ -1,7 +1,11 @@
 #!/bin/sh
 #
 
-PREFIX=/usr/local/dragon
+if test "$DRAGON_PREFIX" = ""; then
+    PREFIX=/usr/local/dragon
+else
+    PREFIX=$DRAGON_PREFIX
+fi
 
 # This script must be run as root.
 WHOAMI=`whoami`
@@ -74,7 +78,7 @@ echo "    #      Instructions for configuration and running     #"
 echo "    #                                                     #"
 echo "    #######################################################"
 echo ""
-echo "Samples of configuratin files have been installed under $PREFIX/etc/."
+echo "Samples of configuration files have been installed under $PREFIX/etc/."
 echo "Before running, customize your configuration files following the samples."
 echo ""
 echo "You need zebra.conf, ospfd-intra.conf, ospfd-inter.conf and narb.conf."

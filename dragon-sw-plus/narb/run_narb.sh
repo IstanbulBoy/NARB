@@ -1,7 +1,12 @@
 #!/bin/sh
 #
 
-PREFIX=/usr/local/dragon
+if test "$DRAGON_PREFIX" = ""; then
+    PREFIX=/usr/local/dragon
+else
+    PREFIX=$DRAGON_PREFIX
+fi
+
 PREFIX2=/usr/local
 
 if test ! -f $PREFIX/bin/dragon.sh; then
