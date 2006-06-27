@@ -1,6 +1,0 @@
-aclocal
-autoheader
-automake --add-missing
-autoconf
-./configure --enable-ext-attr
-make
