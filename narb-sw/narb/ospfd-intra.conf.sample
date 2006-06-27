@@ -1,0 +1,20 @@
+! Intra-domain ospfd configuration for narb
+!   2005/03/11 16:32:10
+!
+hostname myhost 
+password xxxxxx
+log stdout
+!
+!
+!
+interface gre1
+  description GRE tunnel between narb-server and some-switch-node
+  ip ospf network point-to-point
+!
+router ospf
+  ospf router-id 10.100.10.241
+  network 10.100.10.164/30 area 0.0.0.0
+!                                                     
+line vty                                              
+!                                                     
+

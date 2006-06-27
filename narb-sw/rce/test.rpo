@@ -1,0 +1,9 @@
+M test.cc
+D /root/rce
+A '-g' '-frepo' '-c' '-c'
+O _ZN9RadixNodeIiE7SetDataEPi
+O _ZN9RadixNodeIiEC1EP6PrefixPi
+O _ZN9RadixNodeIiEC2EP6PrefixPi
+O _ZN9RadixTreeIiE10InsertNodeEP6PrefixPi
+O _ZN9RadixTreeIiEC1EP6PrefixPi
+O _ZN9RadixTreeIiEC2EP6PrefixPi

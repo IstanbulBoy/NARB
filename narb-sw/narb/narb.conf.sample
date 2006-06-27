@@ -1,0 +1,116 @@
+!
+domain-id {ip 10.100.0.0}
+!
+inter-domain-ospfd {address localhost port 2607
+        originate-interface 140.173.100.2 area 0.0.0.1}
+!
+intra-domain-ospfd {address localhost port 2617
+        originate-interface 10.100.97.166 area 0.0.0.0}
+!
+router {id 10.100.10.233
+        link {id 10.100.10.240 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.161  remote_if 10.100.10.162
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+        link {id 10.100.10.241 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.157  remote_if 10.100.10.158
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+        link {id 10.100.20.233 type 1
+                max_bw 10000.0 max_rsv_bw 10000.0
+                unrsv_bw0 10000.0 unrsv_bw1 10000.0 unrsv_bw2 10000.0 unrsv_bw3 10000.0 unrsv_bw4 10000.0 unrsv_bw5 10000.0 unrsv_bw6 10000.0 unrsv_bw7 10000.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.37  remote_if 10.100.10.38
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+        link {id 140.173.10.232 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 140.173.97.38  remote_if 140.173.97.37
+                vlan_tags(3010, 3011)
+        }
+        link {id 140.173.10.232 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 20
+            local_if 140.173.97.46  remote_if 140.173.97.45
+                vlan_tags(3000, 3001)
+        }
+        link {id 140.173.10.232 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 30
+            local_if 140.173.97.54  remote_if 140.173.97.53
+                vlan_tags(3020, 3021)
+        }
+}
+!
+router {id 10.100.10.240
+        link {id 10.100.10.233 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.162 remote_if 10.100.10.161
+        }
+}
+!
+router {id 10.100.10.241
+        link {id 10.100.10.233 type 1
+                max_bw 1250.0 max_rsv_bw 1250.0
+                unrsv_bw0 1250.0 unrsv_bw1 1250.0 unrsv_bw2 1250.0 unrsv_bw3 1250.0 unrsv_bw4 1250.0 unrsv_bw5 1250.0 unrsv_bw6 1250.0 unrsv_bw7 1250.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.158 remote_if 10.100.10.157
+        }
+}
+!
+router {id 10.100.20.233
+        link {id 10.100.10.233 type 1
+                max_bw 10000.0 max_rsv_bw 10000.0
+                unrsv_bw0 10000.0 unrsv_bw1 10000.0 unrsv_bw2 10000.0 unrsv_bw3 10000.0 unrsv_bw4 10000.0 unrsv_bw5 10000.0 unrsv_bw6 10000.0 unrsv_bw7 10000.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.38 remote_if 10.100.10.37
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+        link {id 10.100.30.233 type 1
+                max_bw 10000.0 max_rsv_bw 10000.0
+                unrsv_bw0 10000.0 unrsv_bw1 10000.0 unrsv_bw2 10000.0 unrsv_bw3 10000.0 unrsv_bw4 10000.0 unrsv_bw5 10000.0 unrsv_bw6 10000.0 unrsv_bw7 10000.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.45 remote_if 10.100.10.46
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+}
+!
+router {id 10.100.30.233
+        link {id 10.100.20.233 type 1
+                max_bw 10000.0 max_rsv_bw 10000.0
+                unrsv_bw0 10000.0 unrsv_bw1 10000.0 unrsv_bw2 10000.0 unrsv_bw3 10000.0 unrsv_bw4 10000.0 unrsv_bw5 10000.0 unrsv_bw6 10000.0 unrsv_bw7 10000.0
+                enc_type 2 sw_type 51
+                metric 10
+            local_if 10.100.10.46 remote_if 10.100.10.45
+                vlan_tags(3000, 3001, 3010, 3011, 3020, 3021)
+        }
+}
+!
+inter-domain-te-link {id 140.173.97.37 narb-peer 140.173.100.1 port 2609}
+inter-domain-te-link {id 140.173.97.45 narb-peer 140.173.100.1 port 2609}
+inter-domain-te-link {id 140.173.97.53 narb-peer 140.173.100.1 port 2609}
+!
+cli {host hopi-narb password dragon}
+!
