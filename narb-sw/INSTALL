@@ -18,4 +18,3 @@ should work:
         $ ./configure
         $ make
         $ sudo make install
-
