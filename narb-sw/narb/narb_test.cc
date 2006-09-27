@@ -284,7 +284,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
   struct api_msg *narb_msg;
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(msg_app2narb_request), (void*)app_req, lspq_id, seqnum, vtag);
-  narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn | opt_e2e_vlan);
+  narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn | opt_e2e_vlan | opt_via_movaz);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
