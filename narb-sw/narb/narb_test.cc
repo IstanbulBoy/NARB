@@ -65,7 +65,7 @@ u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
 u_int32_t opt_e2e_vlan = 0;
-
+u_int32_t opt_via_movaz = 0;
 struct option longopts[] = 
 {
     { "host",        no_argument,       NULL, 'H'},
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:BLOMV", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:BLOmMV", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -357,6 +357,9 @@ int main(int argc, char* argv[])
             break;
         case 'O':
             opt_preferred = 0;
+            break;
+        case 'm':
+            opt_via_movaz= LSP_OPT_VIA_MOVAZ;
             break;
         case 'M':
             opt_mrn = LSP_OPT_MRN;
