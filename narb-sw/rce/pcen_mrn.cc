@@ -36,6 +36,7 @@
 #include "rce_filter.hh"
 #include "rce_pcen.hh"
 #include "pcen_mrn.hh"
+#include "rce_movaz_types.hh"
 #include <math.h>
 
 PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
@@ -290,6 +291,27 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     return -1;
 }
 
+int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
+{
+    MovazTeLambda * tel;
+    PCENLink * reverseLink = nextLink->reverse_link;
+    list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("MOVAZ_TE_LGRID"));
+    if (reverseLink == NULL || p_list == NULL)
+      return -1;
+  
+    waveset.TagSet().clear();
+    list<void*>::iterator it;
+    for (it = p_list->begin(); it!= p_list->end(); it++)
+    {
+        tel = (MovazTeLambda*)(*it);
+        waveset.AddTag(tel->channel_id);
+    }
+
+    if (waveset.IsEmpty())
+        return -1;
+    return 0;
+}
+
 void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
 {
     ero_subobj subobj1, subobj2;
@@ -317,6 +339,9 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             && pcen_link->reverse_link->link->iscds.front()->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
             subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
     } 
+
+    //@@@@
+    //$$$$ Movaz special handling ==> Unnumbered ERO subobject
 
     ero_track.push_back(subobj1);
     ero_track.push_back(subobj2);
@@ -389,7 +414,8 @@ int PCEN_MRN::PerformComputation()
         PCENLink *nextLink;
         PCENNode *nextNode;
         bool link_visited;
-        ConstraintTagSet nextTagSet;
+        ConstraintTagSet nextWaveSet;
+        ConstraintTagSet nextVtagSet;
         TSpec tspec_egress;
         tspec_egress.Update(switching_type_egress, encoding_type_egress, bandwidth_egress);
 
@@ -412,26 +438,43 @@ int PCEN_MRN::PerformComputation()
             if (!nextLink->IsAvailableForTspec(headNode->tspec))
                 continue;
 
-            // @@@@ 
-            // If (headNode->tspec.SWtype == LSC)
-            //handling Wavelength Continuity constraints
-
-            nextTagSet.TagSet().clear();
-
+            // @@@@ handling Wavelength Continuity constraints
+            // A wavelength set has existed in headNode, now match it with the set of available waves on the link.
+            //$$$$ Movaz special handling for wavelength constraints
+            nextWaveSet.TagSet().clear();
+            if (is_via_movaz &&  headNode->tspec.SWtype == MOVAZ_LSC)
+            {
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "HeadNode->waveset: ";
+                headNode->waveset.DisplayTags();
+#endif
+                nextLink->ProceedByUpdatingWaves(headNode->waveset, nextWaveSet); 
+                //nextNode->waveset to be updaed later
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "NextLink ";
+                nextWaveSet.DisplayTags();
+#endif
+                if (nextWaveSet.IsEmpty())
+                    continue;
+            }
+            
             //Handling E2E Tagged VLAN constraint
+            nextVtagSet.TagSet().clear();
             if (is_e2e_tagged_vlan)
             {
                 // @@@@ bidirectional constraints (TODO)
 #ifdef DISPLAY_ROUTING_DETAILS
-                cout << "HeadNode ";
+                cout << "HeadNode->vtagset: ";
                 headNode->vtagset.DisplayTags();
 #endif
-                nextLink->ProceedByUpdatingVtags(headNode->vtagset, nextTagSet); //nextNode->vtagset
+                nextLink->ProceedByUpdatingVtags(headNode->vtagset, nextVtagSet);
+                //nextNode->vtagset to be updaed later
 #ifdef DISPLAY_ROUTING_DETAILS
                 cout << "NextLink ";
-                nextTagSet.DisplayTags();
+                nextVtagSet.DisplayTags();
 #endif
-                if (nextTagSet.IsEmpty())
+                //$$$$Note that nextVtagSet should be equal to headNodeTagSet if next link is not a VLAN tagged link
+                if (nextVtagSet.IsEmpty())
                     continue;
             }
             
@@ -461,13 +504,26 @@ int PCEN_MRN::PerformComputation()
 
             nextNode->tspec = headNode->tspec;
 
-
             // check if nextLink cross region boundary
             if (IsCrossingRegionBoundary(nextLink, nextNode->tspec))
             {
+                //$$$$ VLSR<->RayExpress crossing should be properly recognized
                 // Update nextNode->tspec according to the next region constraints
                 GetNextRegionTspec(nextLink, nextNode->tspec);
-                // LOG("Crossing region boudary"<<endl);
+				
+                //$$$$ Get MOVAZ proprietary information, e.g. TE lambda's. 
+                //$$$$ Picka set of lambda's by mapping capacity/encoding, requiring proper configuration of port rate
+                //$$$$ ---> using a fixed mapping table ...
+                //$$$$ change MOVAZ Switching Type to 151 (MOVAZ_LSC instead of standard LSC (150)) ???
+
+                //@@@@Movaz special handling
+                if (is_via_movaz && nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+                {
+                    nextNode->tspec.SWtype = MOVAZ_LSC;
+                    //Setting intial TE lambda/wavelength information into nextNode->waveset
+                    if (InitiateMovazWaves(nextNode->waveset, nextLink) < 0)
+                        continue;
+                }
             }
 
             if (is_bidirectional)
@@ -488,8 +544,11 @@ int PCEN_MRN::PerformComputation()
                 nextNode->nflg.nfg.visited = 1;
             }
 
+            //proceed with new wavelengthSet
+            nextNode->waveset = nextWaveSet;
+
             //proceed with new vlanTagSet
-            nextNode->vtagset = nextTagSet;
+            nextNode->vtagset = nextVtagSet;
 
             (nextNode->path).assign(headNode->path.begin(), headNode->path.end());
             nextNode->path.push_back(nextLink);

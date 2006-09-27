@@ -260,6 +260,7 @@ struct link_ifswcap_specific_tdm {
 
 // Maximum number of available vlan's that a port/IP is assigned to
 #define MAX_VLAN_NUM 4096
+#define MAX_WAVE_NUM 40
 // Link Sub-TLV / Switching Capability-specific information: VLAN/Ethernet
 #define IFSWCAP_SPECIFIC_VLAN_VERSION 0x2
 struct link_ifswcap_specific_vlan {

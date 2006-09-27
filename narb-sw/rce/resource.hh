@@ -106,6 +106,7 @@ public:
     void SetAttribute(int attrIndex, u_int16_t type, u_int16_t len, void* data);
     void SetAttribute(int attrIndex, TLP *tlp);
     TLP* GetAttribute(int attrIndex);
+    TLP* GetAttribute(string attrTag) { return GetAttribute(ResourceSchema::AttrIndexByTag(attrTag)); }
 #endif
 
     friend class ResourceDB;

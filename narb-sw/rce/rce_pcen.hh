@@ -307,6 +307,7 @@ public:
 
     bool IsAvailableForTspec(TSpec& tspec);
     bool CanBeEgressLink(TSpec& tspec);
+    void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
 
     PCENNode* search_PCENNode(vector<PCENNode*>& routers, int NodeId);
@@ -352,6 +353,7 @@ protected:
     u_int32_t vtag;    
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
+    bool is_via_movaz;
     
     float * gGraph;
     int gSize;
@@ -366,6 +368,7 @@ public:
                 bandwidth_ingress = bandwidth_egress = bw;
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
+                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0): source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), 
@@ -379,6 +382,7 @@ public:
                 bandwidth_egress = bw_egress;
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
+                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
             }
     virtual ~PCEN();
 

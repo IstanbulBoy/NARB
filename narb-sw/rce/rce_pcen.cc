@@ -36,6 +36,7 @@
 #include "rce_filter.hh"
 #include "rce_pcen.hh"
 #include "rce_lsa.hh"
+#include "rce_movaz_types.hh"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -285,6 +286,14 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
         if ( (tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC)
             && tspec_link.SWtype == tspec.SWtype && tspec_link.ENCtype == tspec.ENCtype )
                 return true;
+
+        //@@@@ Movaz special handling
+        if ( tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && tspec_link.SWtype == MOVAZ_LSC 
+            ||tspec_link.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && tspec.SWtype == MOVAZ_LSC )
+                return true;
+
+        // $$$$ No bandwidth constraints for now. OK for MOVAZ special handling. 
+        // $$$$ Wavelength (lambda) constraints will be taken care after this function call.
         //@@@@ End
 
         if (tspec <= tspec_link)
@@ -343,6 +352,26 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
     }
 
     return false;
+}
+
+//$$$$ Movaz special handling
+void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset)
+{
+    head_waveset.TagSet().clear();
+    bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
+    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag((const char*)"MOVAZ_TE_LGRID"));
+
+    int l;
+    for (l = 0; l < sizeof(wavegrid->out_channels); l++)
+    {
+        if ((wavegrid->out_channels[l] & 0xf0) == 0xf0)
+            next_waveset.AddTag(wavegrid->base+l*200);
+        if ((wavegrid->out_channels[l] & 0x0f) == 0x0f)
+            next_waveset.AddTag(wavegrid->base+l*200+100);
+    }
+
+    if (!any_wave_ok)
+        next_waveset.Intersect(head_waveset);
 }
 
 void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset)

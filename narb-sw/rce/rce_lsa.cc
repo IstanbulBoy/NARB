@@ -239,7 +239,7 @@ Resource* LSAHandler::Parse()
                             memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
                             for (i = 0; i < 8; i++)
                                 ntohf_mbps(swcap->max_lsp_bw[i]); 
-                            if (ntohs(sub_tlvh->length) > ISCD_MADATORY_SIZE &&                              
+                            if (ntohs(sub_tlvh->length) > ISCD_MADATORY_SIZE &&
                                 (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC))

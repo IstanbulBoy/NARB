@@ -44,6 +44,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
+#include "config.h"
 
 #ifndef NULL
 #define NULL 0
