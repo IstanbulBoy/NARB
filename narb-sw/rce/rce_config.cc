@@ -52,7 +52,7 @@ int SystemConfig::narb_port = 2609;
 
 int SystemConfig::api_port = 2678;
 int SystemConfig::cli_port = 2688;
-int SystemConfig::metric_interdomain_nice_incremental = 100;
+int SystemConfig::metric_interdomain_nice_incremental = 1000;
     
 string SystemConfig::cli_password("dragon");
 string SystemConfig::cli_address("localhost");
