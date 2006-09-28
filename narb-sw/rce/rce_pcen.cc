@@ -181,10 +181,10 @@ void*  PCENLink::AttributeById (u_int16_t tlv_type)
 void*  PCENLink::AttributeByTag (const char * tag)
 {
     int index = ATTR_INDEX_BY_TAG(tag);
-    if (index < 0 || index > link->attrTable.size())
+    if (index < 0 || index > link->attrTable.size() - 1)
         return NULL;
 
-    return link->attrTable[index-1].p;
+    return link->attrTable[index].p;
 }
 #endif
 
