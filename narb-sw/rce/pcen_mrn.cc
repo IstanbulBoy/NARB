@@ -318,9 +318,11 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     memset(&subobj1, 0, sizeof(ero_subobj));
     subobj1.prefix_len = 32;
     subobj1.addr.s_addr = pcen_link->link->lclIfAddr;
+    subobj1.if_id = pcen_link->link->lclRmtId[0];
     memset(&subobj2, 0, sizeof(ero_subobj));
     subobj2.prefix_len = 32;
     subobj2.addr.s_addr = pcen_link->link->rmtIfAddr;
+    subobj1.if_id = pcen_link->link->lclRmtId[1];
 
     if (pcen_link->link->type == RTYPE_LOC_PHY_LNK)
         subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;

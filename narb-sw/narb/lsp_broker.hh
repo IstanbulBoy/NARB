@@ -233,6 +233,7 @@ struct ero_subobj
     u_char hop_type;
     u_char prefix_len;
     u_char pad[2];
+    u_int32_t if_id;
     //added parameters in the private, composite ERO sub-object
     u_char sw_type;
     u_char encoding;
