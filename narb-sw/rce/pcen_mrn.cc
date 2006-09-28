@@ -295,7 +295,7 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
 {
     MovazTeLambda * tel;
     PCENLink * reverseLink = nextLink->reverse_link;
-    list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
+    list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
     if (reverseLink == NULL || p_list == NULL)
       return -1;
   

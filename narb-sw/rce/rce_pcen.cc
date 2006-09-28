@@ -359,7 +359,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
 {
     head_waveset.TagSet().clear();
     bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
-    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
+    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
 
     int l;
     for (l = 0; l < sizeof(wavegrid->out_channels); l++)
