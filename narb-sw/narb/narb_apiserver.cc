@@ -144,7 +144,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         ero_subobj * subobj_narb = *it;
         if (subobj_narb->l2sc_vlantag == 0)
         {
-            if (subobj_narb->addr.s_addr == 0)
+            if (subobj_narb->if_id != 0)
             {
                 unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
                 subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
