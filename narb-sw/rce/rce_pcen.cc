@@ -359,6 +359,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
 {
     head_waveset.TagSet().clear();
     bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
+    //$$$$ Movaz specific Begin
     MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
     if (wavegrid == NULL)
         return;
@@ -371,6 +372,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
         if ((wavegrid->out_channels[l] & 0x0f) == 0x0f)
             next_waveset.AddTag(wavegrid->base+l*200+100);
     }
+    //$$$$ Movaz specific End
 
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);

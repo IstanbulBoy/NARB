@@ -81,7 +81,7 @@ void PCEN_MRN::PostBuildTopology()
         {
             assert(*it_link);
             if ((*it_link)->rmt_end == pcen_link->lcl_end && (*it_link)->link->rmtIfAddr == pcen_link->link->lclIfAddr
-				&& (*it_link)->link->type == pcen_link->link->type)
+                && (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
             {
                 pcen_link->reverse_link = *it_link;
                 break;
