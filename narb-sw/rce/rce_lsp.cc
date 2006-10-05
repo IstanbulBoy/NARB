@@ -78,6 +78,19 @@ void LSPHandler::Load(api_msg *msg)
     api_msg_delete(msg);
 }
 
+void LSPHandler::SetOptionalConstraints(api_msg* msg)
+{
+    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(narb_lsp_request_tlv));
+    if ( (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
+        && ntohs(msg->hdr.msglen) >= sizeof(narb_lsp_request_tlv) + sizeof(narb_lsp_vtagmask_tlv)
+        && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
+    {
+        if (!vtag_mask)
+            vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+        memcpy(vtag_mask, vtagMask, sizeof(narb_lsp_vtagmask_tlv));
+    }
+}
+
 void LSPHandler::Run()
 {
     PCEN * pcen_event;
@@ -90,7 +103,7 @@ void LSPHandler::Run()
     else
     {
         pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag);
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, vtag_mask);
     }
 
     pcen_event->AssociateWriter (api_writer);

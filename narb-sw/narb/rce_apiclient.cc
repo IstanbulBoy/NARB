@@ -36,6 +36,7 @@
 #include "toolbox.hh"
 #include "lsp_broker.hh"
 #include "rce_apiclient.hh"
+#include "narb_config.hh"
 
 
 RCE_APIClient::~RCE_APIClient()
@@ -92,21 +93,30 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 }
 
 
-void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t options, u_int32_t vtag)
+void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
-    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
+    char buf[1024];
+    memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
+    if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
+        memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
+    u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : MAX_VLAN_NUM/8);
+
+    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
 
     SendMessage(rce_msg); 
 }
 
-void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t options, u_int32_t vtag)
+void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
-    char buf[256];
+    char buf[1024];
     memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
     memcpy(buf+sizeof(cspf_req.app_req_data), &mrn_spec, sizeof(mrn_spec));
+    if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
+        memcpy(buf+sizeof(cspf_req.app_req_data)*2, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
+    
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, 
         sizeof(cspf_req.app_req_data)+sizeof(mrn_spec), buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);

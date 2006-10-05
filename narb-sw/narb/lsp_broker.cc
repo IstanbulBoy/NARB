@@ -78,8 +78,11 @@ void LSPQ::Init()
     ero_state = ERO_NONE;
     req_retran_counter = MAX_REQ_RETRAN;
     memset(&req_spec, 0, sizeof(req_spec));
+    req_spec.type = htons(TLV_TYPE_NARB_REQUEST);
+    req_spec.length = htons(sizeof(req_spec) - 4);
+    mrn_spec = req_spec;
+    vtag_mask = NULL;
 }
-
 
 LSPQ::~LSPQ()
 {
@@ -88,6 +91,9 @@ LSPQ::~LSPQ()
     for (it = ero.begin(); it != ero.end(); it++)
         if (*it)
             delete (ero_subobj*)(*it);
+
+    if (vtag_mask)
+        delete vtag_mask;
 }
 
 void LSPQ::DescribeLSP(string& desc)
@@ -320,7 +326,7 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
-    rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag);
+    rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, vtag_mask);
     return 0;
 }
 
@@ -354,7 +360,7 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
 
-    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED |  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0), req_vtag); 
+    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED |  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0), req_vtag, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
@@ -923,6 +929,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq_list.push_back(lspq);
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
+                lspq->SetOptionalConstraints(msg);
                 lspq->HandleLSPQRequest();
             }
             else // retransmission of lsp query
@@ -932,6 +939,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
+                lspq->SetOptionalConstraints(msg);
                 if (lspq->State() == STATE_ERROR)
                 {
                     if (lspq->req_retran_counter-- > 0)
@@ -961,6 +969,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
+                //lspq->SetOptionalConstraints(msg);
                 lspq_list.push_back(lspq);
                 lspq->HandleRecursiveRequest();
             }
@@ -971,6 +980,8 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
+                // lspq->SetOptionalConstraints(msg);
+
                 //@@@@ Always retry / recompute
                 //if (lspq->State() == STATE_ERROR)
                 //{
@@ -1016,6 +1027,19 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     }
 
     return 0;
+}
+
+void LSPQ::SetOptionalConstraints(api_msg* msg)
+{
+    msg_app2narb_vtag_mask* vtagMask = (msg_app2narb_vtag_mask*)(msg->body + sizeof(msg_app2narb_request));
+    if ( (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
+        && ntohs(msg->header.length) >= sizeof(msg_app2narb_request) + sizeof(msg_app2narb_vtag_mask)
+        && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
+    {
+        if (!vtag_mask)
+            vtag_mask = new (struct msg_app2narb_vtag_mask);
+        memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+    }
 }
 
 

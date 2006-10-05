@@ -1114,6 +1114,9 @@ PCEN::~PCEN()
         if (*prefix_iter)
             delete *prefix_iter;
     
+    if (vtag_mask)
+        delete vtag_mask;
+
     FreeGraph();
 }
 

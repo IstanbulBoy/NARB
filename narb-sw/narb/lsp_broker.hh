@@ -61,6 +61,14 @@ struct msg_app2narb_confirm
     te_tlv_header ero;
 };
 
+// APP->NARB optional constraint structs
+struct msg_app2narb_vtag_mask
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_char bitmask[MAX_VLAN_NUM/8];
+};
+
 #define msg_app2narb_release msg_app2narb_confirm
 
 class LSP_Broker;
@@ -75,6 +83,7 @@ private:
     u_int32_t req_vtag;
     msg_app2narb_request req_spec;    // information extracted from the request message
     msg_app2narb_request mrn_spec;    // for multi-region networks
+    msg_app2narb_vtag_mask* vtag_mask;
 
     //state of the current LSPQ request, values defined below
     u_char state;
@@ -119,6 +128,7 @@ public:
     void SetReqMrnMsg(msg_app2narb_request& mr) { mrn_spec = mr; }
     u_char State() {  return state;  }
     void SetState(u_char s) {  state = s;  }
+    void SetOptionalConstraints (api_msg* msg);
     void DescribeLSP(string& desc);
     u_int32_t SeqNum() {  return app_seqnum;  }
     static void GetERO(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
@@ -287,7 +297,8 @@ enum  narb_tlv_type
 {
     TLV_TYPE_NARB_REQUEST = 0x02,
     TLV_TYPE_NARB_ERO = 0x03,
-    TLV_TYPE_NARB_ERROR_CODE = 0x04
+    TLV_TYPE_NARB_ERROR_CODE = 0x04,
+    TLV_TYPE_NARB_VTAG_MASK = 0x05,
 };
 
 // definitions of NARB error code as proccessing a request fails

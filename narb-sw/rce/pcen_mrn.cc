@@ -41,9 +41,9 @@
 
 PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
         float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
-        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag)
-    :   PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
-        bw_egress,opts, lspq_id, msg_seqnum, tag) 
+        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag, narb_lsp_vtagmask_tlv* vtm):
+        PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
+        bw_egress,opts, lspq_id, msg_seqnum, tag, vtm) 
 {
 }
 
@@ -81,7 +81,7 @@ void PCEN_MRN::PostBuildTopology()
         {
             assert(*it_link);
             if ((*it_link)->rmt_end == pcen_link->lcl_end && (*it_link)->link->rmtIfAddr == pcen_link->link->lclIfAddr
-                && (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
+			&& (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
             {
                 pcen_link->reverse_link = *it_link;
                 break;
@@ -396,10 +396,20 @@ int PCEN_MRN::PerformComputation()
 
     // Initialization
     if (is_e2e_tagged_vlan)
-        srcNode->vtagset.AddTag(vtag);
+    {
+        if (vtag_mask)
+        {
+            srcNode->vtagset.AddTags(vtag_mask->bitmask, vtag_mask->length*8);
+        }
+        else
+        {
+            srcNode->vtagset.AddTag(vtag);
+        }
+    }
     PStack.push_front(srcNode);
     PreserveScenceToStacks(*srcNode);
 
+    // Searching...
     while (PStack.size() > 0)
     {
         PCENNode *headNode = PStack.front();

@@ -34,6 +34,7 @@
 #ifndef __RCE_LSP_H__
 #define __RCE_LSP_H__
 #include "rce_api.hh"
+#include "resource.hh"
 
 // TLV's wrapped in the LSP querry message.
 // The types of wrapped TLV's are indicated in msgtag[0].
@@ -46,9 +47,18 @@
 #define LSP_OPT_BIDIRECTIONAL ((u_int32_t)(0x10 << 16))
 #define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x20 << 16)) //otherwise Untgged VLAN for E2E Ethernet
 #define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x40 << 16)) //using MOVAZ proprietary TLVs for optical layer routing
+#define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x80 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing
+
+enum  narb_tlv_type
+{
+    TLV_TYPE_NARB_REQUEST = 0x02,
+    TLV_TYPE_NARB_ERO = 0x03,
+    TLV_TYPE_NARB_ERROR_CODE = 0x04,
+    TLV_TYPE_NARB_VTAG_MASK = 0x05,
+};
 
 struct narb_lsp_request_tlv
 {
@@ -62,6 +72,13 @@ struct narb_lsp_request_tlv
     float bandwidth;
 };
 
+struct narb_lsp_vtagmask_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_char bitmask[MAX_VLAN_NUM/8];
+};
+
 class LSPHandler: public Event
 {
 private:
@@ -73,6 +90,8 @@ private:
     u_int8_t  encoding_type_egress;
     u_int8_t  switching_type_egress;   
     float bandwidth_egress;
+
+    narb_lsp_vtagmask_tlv* vtag_mask;
 
     u_int32_t options;
     u_int32_t tag;
@@ -88,13 +107,14 @@ private:
         {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
             options = 0; tag = 0; lspq_id = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
-            api_writer = NULL;  }
+            api_writer = NULL;  vtag_mask = NULL;}
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}
-    virtual ~LSPHandler() {}
+    virtual ~LSPHandler() { if (vtag_mask) delete vtag_mask; }
     void Load(api_msg *msg);
     virtual void Run();
     void AssociateWriter (APIWriter *writer) { assert (writer); api_writer = writer; }
+    void SetOptionalConstraints (api_msg* msg);    
 };
 
 #endif

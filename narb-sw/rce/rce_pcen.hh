@@ -346,6 +346,8 @@ protected:
     u_int8_t encoding_type_egress;
     float bandwidth_egress;
 
+    narb_lsp_vtagmask_tlv* vtag_mask;
+
     u_int32_t options;
     u_int32_t uptime;
     u_int32_t duration;
@@ -361,19 +363,28 @@ protected:
     int originalGraphSize;
     APIWriter* api_writer;
 public:
-    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0):
+    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
             source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type;
                 encoding_type_ingress = encoding_type_egress = encoding;
                 bandwidth_ingress = bandwidth_egress = bw;
+                if ((opts&LSP_OPT_VTAG_MASK) && vtm)
+                {
+                    vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+                    *vtag_mask = *vtm;
+                }
+                else 
+                {
+                    vtag_mask = NULL;
+                }
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
-                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0): source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), 
-                options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL): 
+                source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type_ingress;
                 encoding_type_ingress = encoding_type_egress = encoding_ingress;
@@ -381,6 +392,15 @@ public:
                 switching_type_egress = sw_type_egress;
                 encoding_type_egress = encoding_egress;
                 bandwidth_egress = bw_egress;
+                if ((opts&LSP_OPT_VTAG_MASK) && vtm)
+                {
+                    vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+                    *vtag_mask = *vtm;
+                }
+                else
+                {
+                    vtag_mask = NULL;
+                }
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);

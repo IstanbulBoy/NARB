@@ -53,7 +53,7 @@ private:
 
 public:
     PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
-                float bw_egress, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag = 0);
+                float bw_egress, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL);
     virtual ~PCEN_MRN();
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
