@@ -73,6 +73,7 @@ void LSPHandler::Load(api_msg *msg)
             bandwidth_egress = narb_req_tlv->bandwidth;            
             break;
         }
+        SetOptionalConstraints(msg);
     }
     // continue to get second tlv if applicable ...
     api_msg_delete(msg);
