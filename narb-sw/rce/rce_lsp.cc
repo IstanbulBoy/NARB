@@ -61,6 +61,11 @@ void LSPHandler::Load(api_msg *msg)
             encoding_type_ingress = encoding_type_egress = narb_req_tlv->encoding_type;
             switching_type_ingress = switching_type_egress = narb_req_tlv->switching_type;
             bandwidth_ingress = bandwidth_egress = narb_req_tlv->bandwidth;
+            if (options & LSP_OPT_VTAG_MASK && ntohs(msg->hdr.msglen)>=sizeof(narb_lsp_request_tlv)+sizeof(narb_lsp_vtagmask_tlv))
+            {
+                vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+                memcpy(vtag_mask, (char*)tlv+sizeof(narb_lsp_request_tlv), sizeof(narb_lsp_vtagmask_tlv));
+            }            
             break;
         case ACT_QUERY_MRN:
             source = mrn_spec_tlv->src;
@@ -71,6 +76,11 @@ void LSPHandler::Load(api_msg *msg)
             switching_type_egress = narb_req_tlv->switching_type;
             bandwidth_ingress = mrn_spec_tlv->bandwidth;
             bandwidth_egress = narb_req_tlv->bandwidth;            
+            if (options & LSP_OPT_VTAG_MASK && ntohs(msg->hdr.msglen)>=sizeof(narb_lsp_request_tlv)*2+sizeof(narb_lsp_vtagmask_tlv))
+            {
+                vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+                memcpy(vtag_mask, (char*)tlv+sizeof(narb_lsp_request_tlv)*2, sizeof(narb_lsp_vtagmask_tlv));
+            }
             break;
         }
     }
@@ -80,9 +90,9 @@ void LSPHandler::Load(api_msg *msg)
 
 void LSPHandler::SetOptionalConstraints(api_msg* msg)
 {
-    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(narb_lsp_request_tlv));
+    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(msg_app2narb_request));
     if ( (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
-        && ntohs(msg->hdr.msglen) >= sizeof(narb_lsp_request_tlv) + sizeof(narb_lsp_vtagmask_tlv)
+        && ntohs(msg->hdr.msglen) >= sizeof(msg_app2narb_request) + sizeof(narb_lsp_vtagmask_tlv)
         && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
     {
         if (!vtag_mask)
