@@ -100,7 +100,7 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t options
     memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
         memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
-    u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : MAX_VLAN_NUM/8);
+    u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_app2narb_vtag_mask));
 
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
