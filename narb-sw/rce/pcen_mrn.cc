@@ -399,7 +399,7 @@ int PCEN_MRN::PerformComputation()
     {
         if (vtag_mask)
         {
-            srcNode->vtagset.AddTags(vtag_mask->bitmask, vtag_mask->length*8);
+            srcNode->vtagset.AddTags(vtag_mask->bitmask, ntohs(vtag_mask->length)*8);
         }
         else
         {
