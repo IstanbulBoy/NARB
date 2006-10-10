@@ -375,7 +375,7 @@ int main(int argc, char* argv[])
         case 'E':
             sscanf(optarg, "%d", &opt_excluded_layers);
             //1: excluding layer-1; 2: layer-tdm; 4: layer-2; 8: layer-3 ; 3: both layer 1 (optical) and tdm
-            opt_excluded_layers << 4;
+            opt_excluded_layers <<= 4;
             break;
         default:
             usage();
