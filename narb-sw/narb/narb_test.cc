@@ -66,6 +66,7 @@ u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
 u_int32_t opt_e2e_vlan = 0;
 u_int32_t opt_via_movaz = 0;
+u_int32_t opt_excluded_layers = 0;
 struct option longopts[] = 
 {
     { "host",        no_argument,       NULL, 'H'},
@@ -318,7 +319,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:BLOmMV", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:E:BLOmMV", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -369,6 +370,11 @@ int main(int argc, char* argv[])
             break;
         case 'X':
             xml_file = optarg;
+            break;
+        case 'E':
+            sscanf(optarg, "%d", &opt_excluded_layers);
+            //1: excluding layer-1; 2: layer-tdm; 4: layer-2; 8: layer-3 ; 3: both layer 1 (optical) and tdm
+            opt_excluded_layers << 4;
             break;
         default:
             usage();
