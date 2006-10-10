@@ -181,6 +181,33 @@ bool PCEN_MRN::IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec)
     return false;
 }
 
+bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
+{
+    u_int32_t layer_excluded;
+    switch (node->tspec.SWtype)
+    {
+    case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
+    case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
+    case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
+    case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
+        layer_excluded = LSP_OPT_EXCLUD_L3;
+        break;
+    case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
+        layer_excluded = LSP_OPT_EXCLUD_L2;
+        break;
+    case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
+        layer_excluded = LSP_OPT_EXCLUD_TDM;
+        break;
+    case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
+    case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
+        layer_excluded = LSP_OPT_EXCLUD_L1;
+        break;
+    }
+    if ((layer_excluded & this->options) != 0)
+        return true;
+    return false;
+}
+
 int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
 {
     assert(pcen_link && pcen_link->link);
@@ -416,6 +443,10 @@ int PCEN_MRN::PerformComputation()
         PStack.pop_front();
         assert(headNode);
         RestoreScenceFromStacks(*headNode);
+
+        // checking excluded swcap layers
+        if (IsInExcludedLayer(headNode))
+            continue;
 
 #ifdef DISPLAY_ROUTING_DETAILS
         cout<<"Head Node ";

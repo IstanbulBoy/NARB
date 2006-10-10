@@ -38,16 +38,23 @@
 
 // TLV's wrapped in the LSP querry message.
 // The types of wrapped TLV's are indicated in msgtag[0].
-#define LSP_TLV_NARB_REQ    0x01
+#define LSP_TLV_NARB_REQ    0x0001
+
+// Indicating layers excluded from path computation
+#define LSP_OPT_EXCLUD_L1      0x0010
+#define LSP_OPT_EXCLUD_TDM   0x0020
+#define LSP_OPT_EXCLUD_L2      0x0040
+#define LSP_OPT_EXCLUD_L3      0x0080
+
 // LSP computation options
-#define LSP_OPT_STRICT  ((u_int32_t)(0x01 << 16)) //otherwise LSP_OPT_LOOSE
-#define LSP_OPT_PREFERRED ((u_int32_t)(0x02 << 16)) //otherwise LSP_OPT_ONLY
-#define LSP_OPT_MRN ((u_int32_t)(0x04 << 16))
+#define LSP_OPT_STRICT  ((u_int32_t)(0x0001 << 16)) //otherwise LSP_OPT_LOOSE
+#define LSP_OPT_PREFERRED ((u_int32_t)(0x0002 << 16)) //otherwise LSP_OPT_ONLY
+#define LSP_OPT_MRN ((u_int32_t)(0x0004 << 16))
 //#define LSP_OPT_MRN_RELAY ((u_int32_t)0x08 << 16)  //relay path computation for multiregion multidomain networks
-#define LSP_OPT_BIDIRECTIONAL ((u_int32_t)(0x10 << 16))
-#define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x20 << 16)) //otherwise Untgged VLAN for E2E Ethernet
-#define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x40 << 16)) //using MOVAZ proprietary TLVs for optical layer routing
-#define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x80 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
+#define LSP_OPT_BIDIRECTIONAL ((u_int32_t)(0x0010 << 16))
+#define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x0020 << 16)) //otherwise Untgged VLAN for E2E Ethernet
+#define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x0040 << 16)) //using MOVAZ proprietary TLVs for optical layer routing
+#define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x0080 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing

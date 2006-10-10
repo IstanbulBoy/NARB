@@ -383,7 +383,7 @@ public:
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
-                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL): 
+                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
                 source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type_ingress;

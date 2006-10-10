@@ -57,6 +57,7 @@ public:
     virtual ~PCEN_MRN();
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
+    bool IsInExcludedLayer(PCENNode* node);
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
