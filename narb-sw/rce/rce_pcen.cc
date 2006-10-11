@@ -354,25 +354,41 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
     return false;
 }
 
-//$$$$ Movaz special handling
+//$$$$ only Movaz specific handling for now
 void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset)
 {
     head_waveset.TagSet().clear();
     bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
-    //$$$$ Movaz specific Begin
-    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
-    if (wavegrid == NULL)
-        return;
 
-    int l;
-    for (l = 0; l < sizeof(wavegrid->out_channels); l++)
+    //$$$$ Movaz specific TE info
+    // Retieve available wavelength information based on TE Wavelength Grid (present in LSAs originated from ROADMs)
+    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
+    if (wavegrid != NULL)
     {
-        if ((wavegrid->out_channels[l] & 0xf0) == 0xf0)
-            next_waveset.AddTag(wavegrid->base+l*200);
-        if ((wavegrid->out_channels[l] & 0x0f) == 0x0f)
-            next_waveset.AddTag(wavegrid->base+l*200+100);
+        int l;
+        for (l = 0; l < sizeof(wavegrid->out_channels); l++)
+        {
+            if ((wavegrid->out_channels[l] & 0xf0) == 0x70) // f == channel unavailable; 0~7 == priority level
+                next_waveset.AddTag(wavegrid->base+l*200);
+            if ((wavegrid->out_channels[l] & 0x0f) == 0x07)
+                next_waveset.AddTag(wavegrid->base+l*200+100);
+        }
     }
-    //$$$$ Movaz specific End
+
+    //$$$$ Movaz specific TE info
+    // Retieve available wavelength information based on TE Lambda list (present in LSAs originated from REs)
+    list<void*> *p_list = (list<void*>*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
+    if (p_list != NULL)
+    {
+        list<void*>::iterator it;
+        MovazTeLambda * tel;
+        for (it = p_list->begin(); it!= p_list->end(); it++)
+        {
+            tel = (MovazTeLambda*)(*it);
+            if (tel->priority == 0x07)
+                next_waveset.AddTag(tel->channel_id);
+        }
+    }
 
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);

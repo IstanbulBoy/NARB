@@ -331,7 +331,8 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
     for (it = p_list->begin(); it!= p_list->end(); it++)
     {
         tel = (MovazTeLambda*)(*it);
-        waveset.AddTag(tel->channel_id);
+        if (tel->priority == 0x07)
+            waveset.AddTag(tel->channel_id);
     }
 
     if (waveset.IsEmpty())
