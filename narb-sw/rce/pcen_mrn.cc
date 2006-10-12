@@ -565,7 +565,7 @@ int PCEN_MRN::PerformComputation()
                 {
                     nextNode->tspec.SWtype = MOVAZ_LSC;
                     //Setting intial TE lambda/wavelength information into nextNode->waveset
-                    if (InitiateMovazWaves(nextNode->waveset, nextLink) < 0)
+                    if (InitiateMovazWaves(nextWaveSet, nextLink) < 0)
                         continue;
                 }
             }
