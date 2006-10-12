@@ -358,7 +358,7 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
 //$$$$ only Movaz specific handling for now
 void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset)
 {
-    head_waveset.TagSet().clear();
+    next_waveset.TagSet().clear();
     bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
 
     //$$$$ Movaz specific TE info
