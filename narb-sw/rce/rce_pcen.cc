@@ -288,7 +288,8 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
                 return true;
 
         //@@@@ Movaz special handling
-        if ( tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && tspec_link.SWtype == MOVAZ_LSC 
+        if ( tspec.SWtype == MOVAZ_LSC && tspec_link.SWtype == MOVAZ_LSC 
+            ||tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && tspec_link.SWtype == MOVAZ_LSC 
             ||tspec_link.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && tspec.SWtype == MOVAZ_LSC )
                 return true;
 
