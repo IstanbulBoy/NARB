@@ -366,6 +366,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
     if (wavegrid != NULL)
     {
+        ntoh_wavegrid(*wavegrid);
         int l;
         for (l = 0; l < sizeof(wavegrid->out_channels); l++)
         {
@@ -382,12 +383,13 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     if (p_list != NULL)
     {
         list<void*>::iterator it;
-        MovazTeLambda * tel;
+        MovazTeLambda tel;
         for (it = p_list->begin(); it!= p_list->end(); it++)
         {
-            tel = (MovazTeLambda*)(*it);
-            if (tel->priority == 0x07)
-                next_waveset.AddTag(tel->channel_id);
+            tel = *(MovazTeLambda*)(*it);
+            ntoh_telambda(tel);
+            if (tel.priority == 0x07)
+                next_waveset.AddTag(tel.channel_id);
         }
     }
 

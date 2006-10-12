@@ -62,6 +62,19 @@ typedef struct movaz_tlvdata_te_lambda_info //36 Bytes MOVAZ_TE_LAMBDA
 
 #define MOVAZ_LSC 151
 
+inline void ntoh_wavegrid(MovazWaveGrid& wavegrid)
+{
+    wavegrid.base = ntohl(wavegrid.base);
+    wavegrid.size = ntohs(wavegrid.size);
+    wavegrid.interval = ntohs(wavegrid.interval);
+}
+
+inline void ntoh_telambda(MovazTeLambda& tel)
+{
+    tel.channel_id = ntohl(tel.channel_id);
+    //? tel.data_rate
+}
+
 
 //////////////////////////////////////////////////////
 /// fixed data-rate, encoding, swcap mapping table            ////
