@@ -322,7 +322,7 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
 
 int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
 {
-    MovazTeLambda * tel;
+    MovazTeLambda tel;
     PCENLink * reverseLink = nextLink->reverse_link;
     list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
     if (reverseLink == NULL || p_list == NULL)
@@ -332,9 +332,10 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
     list<void*>::iterator it;
     for (it = p_list->begin(); it!= p_list->end(); it++)
     {
-        tel = (MovazTeLambda*)(*it);
-        if (tel->priority == 0x07)
-            waveset.AddTag(tel->channel_id);
+        tel = *(MovazTeLambda*)(*it);
+        ntoh_telambda(tel);
+        if (tel.priority == 0x07)
+            waveset.AddTag(tel.channel_id);
     }
 
     if (waveset.IsEmpty())

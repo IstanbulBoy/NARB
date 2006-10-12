@@ -371,19 +371,19 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
         for (l = 0; l < sizeof(wavegrid->out_channels); l++)
         {
             if ((wavegrid->out_channels[l] & 0xf0) == 0x70) // f == channel unavailable; 0~7 == priority level
-                next_waveset.AddTag(wavegrid->base+l*200);
+                next_waveset.AddTag(wavegrid->base+l*2*wavegrid->interval);
             if ((wavegrid->out_channels[l] & 0x0f) == 0x07)
-                next_waveset.AddTag(wavegrid->base+l*200+100);
+                next_waveset.AddTag(wavegrid->base+(l*2+1)*wavegrid->interval);
         }
     }
 
     //$$$$ Movaz specific TE info
     // Retieve available wavelength information based on TE Lambda list (present in LSAs originated from REs)
     list<void*> *p_list = (list<void*>*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
+    MovazTeLambda tel;
     if (p_list != NULL)
     {
         list<void*>::iterator it;
-        MovazTeLambda tel;
         for (it = p_list->begin(); it!= p_list->end(); it++)
         {
             tel = *(MovazTeLambda*)(*it);
