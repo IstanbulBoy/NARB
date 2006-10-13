@@ -407,6 +407,41 @@ void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
      }
 }
 
+void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
+{
+    if (ero_track.size() < 1)
+        return;
+    list<ero_subobj>::iterator iter = ero_track.begin();
+    list<ero_subobj>::iterator last_iter = iter;
+    bool in_l2sc = ((*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC);
+    for (; iter != ero_track.end(); iter++) 
+    {
+        //@@@@VLSR<--->TDM/LSC-SW Numbered Link special handling
+        //Leaving L2SC (VLSR via numbered link)
+        if (in_l2sc && (*iter).sw_type != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        {
+            (*last_iter).l2sc_vlantag = 0;
+            (*last_iter).if_id = 0;
+            in_l2sc = false;
+        }
+        //@@@@VLSR<--->TDM/LSC-SW Numbered Link special handling
+        //Enterig L2SC (VLSR via numbered link)
+        else if (!in_l2sc && ((*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            || (*iter).if_id == 0 && (*iter).l2sc_vlantag ==0))
+        {
+            ++iter;
+            if (iter != ero_track.end())
+            {
+                (*iter).l2sc_vlantag = vtag;
+                (*iter).sw_type = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+            }
+            in_l2sc = true;
+        }
+        last_iter = iter;
+    }
+    
+}
+
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);
@@ -646,6 +681,8 @@ int PCEN_MRN::PerformComputation()
             vtag  = destNode->vtagset.TagSet().front();
             SetVTagToEROTrack(ero, vtag);
         }
+        if (is_via_movaz)
+            HandleMovazEROTrack(ero, vtag);
     }
 
     if (ero.size() == 0)
