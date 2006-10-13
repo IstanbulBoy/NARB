@@ -364,11 +364,11 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     //$$$$ Movaz specific TE info
     // Retieve available wavelength information based on TE Wavelength Grid (present in LSAs originated from ROADMs)
     MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
-    u_int32_t base = ntohl(wavegrid->base);
-    u_int16_t interval = ntohl(wavegrid->interval);
     if (wavegrid != NULL)
     {
         int l;
+        u_int32_t base = ntohl(wavegrid->base);
+        u_int16_t interval = ntohl(wavegrid->interval);
         for (l = 0; l < sizeof(wavegrid->out_channels); l++)
         {
             if ((wavegrid->out_channels[l] & 0xf0) == 0x70) // f == channel unavailable; 0~7 == priority level
