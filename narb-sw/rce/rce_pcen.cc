@@ -403,7 +403,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     {
         u_int32_t* p_freq = (u_int32_t*)(reverse_link->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
         if (has_wave && p_freq)
-            next_waveset.AddTag(*p_freq);
+            next_waveset.AddTag(ntohl(*p_freq));
     }
     
     if (!any_wave_ok)
