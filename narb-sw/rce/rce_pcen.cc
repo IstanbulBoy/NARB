@@ -368,7 +368,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     {
         int l;
         u_int32_t base = ntohl(wavegrid->base);
-        u_int16_t interval = ntohl(wavegrid->interval);
+        u_int16_t interval = ntohs(wavegrid->interval);
         for (l = 0; l < sizeof(wavegrid->out_channels); l++)
         {
             if ((wavegrid->out_channels[l] & 0xf0) == 0x70) // f == channel unavailable; 0~7 == priority level
