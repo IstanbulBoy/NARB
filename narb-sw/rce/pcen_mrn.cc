@@ -402,7 +402,8 @@ void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
 
     for (iter = ero_track.begin(); iter != ero_track.end(); iter++) 
     {
-          (*iter).l2sc_vlantag = vtag;
+          if ((*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (*iter).if_id == 0)
+              (*iter).l2sc_vlantag = vtag;
      }
 }
 
