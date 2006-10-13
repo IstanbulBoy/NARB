@@ -330,13 +330,24 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
   
     waveset.TagSet().clear();
     list<void*>::iterator it;
+    bool has_wave = false;
     for (it = p_list->begin(); it!= p_list->end(); it++)
     {
         tel = *(MovazTeLambda*)(*it);
         ntoh_telambda(tel);
         if (tel.priority == 0x07)
-            waveset.AddTag(tel.channel_id);
+        {
+            if (valid_wavegrid(tel.channel_id))
+                waveset.AddTag(tel.channel_id);
+            else
+                has_wave = true;
+        }
     }
+
+    //$$$$ --->Movaz_RE speical handling
+    u_int32_t* p_freq = (u_int32_t*)(nextLink->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
+    if (has_wave && p_freq)
+        waveset.AddTag(*p_freq);
 
     if (waveset.IsEmpty())
         return -1;
@@ -349,11 +360,19 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     memset(&subobj1, 0, sizeof(ero_subobj));
     subobj1.prefix_len = 32;
     subobj1.addr.s_addr = pcen_link->link->lclIfAddr;
-    subobj1.if_id = pcen_link->link->lclRmtId[0];
+    if (subobj1.addr.s_addr == 0)
+    {
+        subobj1.addr.s_addr = pcen_link->link->advRtId;
+        subobj1.if_id = pcen_link->link->lclRmtId[0];
+    }
     memset(&subobj2, 0, sizeof(ero_subobj));
     subobj2.prefix_len = 32;
     subobj2.addr.s_addr = pcen_link->link->rmtIfAddr;
-    subobj1.if_id = pcen_link->link->lclRmtId[1];
+    if (subobj2.addr.s_addr == 0)
+    {
+        subobj2.addr.s_addr = pcen_link->link->id;
+        subobj2.if_id = pcen_link->link->lclRmtId[1];
+    }
 
     if (pcen_link->link->type == RTYPE_LOC_PHY_LNK)
         subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
@@ -373,9 +392,6 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
     } 
 
-    //@@@@
-    //$$$$ Movaz special handling ==> Unnumbered ERO subobject
-
     ero_track.push_back(subobj1);
     ero_track.push_back(subobj2);
 }
@@ -390,7 +406,7 @@ void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
      }
 }
 
-void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
+void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);
     WaveSetStack.push_front(node.waveset);
@@ -400,7 +416,7 @@ void PCEN_MRN::PreserveScenceToStacks(PCENNode& node)
     EROTrackStack.push_front(node.ero_track);
 }
 
-void PCEN_MRN::RestoreScenceFromStacks(PCENNode& node)
+void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
 {
     node.tspec = TSpecStack.front();
     TSpecStack.pop_front();
@@ -438,7 +454,7 @@ int PCEN_MRN::PerformComputation()
         }
     }
     PStack.push_front(srcNode);
-    PreserveScenceToStacks(*srcNode);
+    PreserveSceneToStacks(*srcNode);
 
     // Searching...
     while (PStack.size() > 0)
@@ -446,7 +462,7 @@ int PCEN_MRN::PerformComputation()
         PCENNode *headNode = PStack.front();
         PStack.pop_front();
         assert(headNode);
-        RestoreScenceFromStacks(*headNode);
+        RestoreSceneFromStacks(*headNode);
 
         // checking excluded swcap layers
         if (IsInExcludedLayer(headNode))
@@ -615,7 +631,7 @@ int PCEN_MRN::PerformComputation()
             cout << endl;
 #endif
             PStack.push_front(nextNode);
-            PreserveScenceToStacks(*nextNode);
+            PreserveSceneToStacks(*nextNode);
         }
     }
 

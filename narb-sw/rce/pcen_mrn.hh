@@ -62,8 +62,8 @@ public:
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
     void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
-    void PreserveScenceToStacks(PCENNode& node);
-    void RestoreScenceFromStacks(PCENNode& node);
+    void PreserveSceneToStacks(PCENNode& node);
+    void RestoreSceneFromStacks(PCENNode& node);
 
     virtual int PerformComputation();
     void PostBuildTopology();

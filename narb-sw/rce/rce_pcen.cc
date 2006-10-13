@@ -381,6 +381,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     // Retieve available wavelength information based on TE Lambda list (present in LSAs originated from REs)
     list<void*> *p_list = (list<void*>*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
     MovazTeLambda tel;
+    bool has_wave = false;
     if (p_list != NULL)
     {
         list<void*>::iterator it;
@@ -389,10 +390,22 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
             tel = *(MovazTeLambda*)(*it);
             ntoh_telambda(tel);
             if (tel.priority == 0x07)
-                next_waveset.AddTag(tel.channel_id);
+            {
+                if (valid_wavegrid(tel.channel_id))
+                    next_waveset.AddTag(tel.channel_id);
+                else
+                    has_wave = true;
+            }
         }
     }
 
+    if (this->reverse_link) //$$$$ Movaz-RE--->VLSR speical handling
+    {
+        u_int32_t* p_freq = (u_int32_t*)(reverse_link->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
+        if (has_wave && p_freq)
+            next_waveset.AddTag(*p_freq);
+    }
+    
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);
 }

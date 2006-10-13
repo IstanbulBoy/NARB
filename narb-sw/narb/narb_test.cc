@@ -445,7 +445,7 @@ int main(int argc, char* argv[])
                 if (subobj_unum)
                 {
                     inet_ntop(AF_INET, &subobj_unum->addr, addr, 20);
-                    LOGF("HOP-TYPE [%s]: %s [UnumIfId: (%d,%d)]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, ntohl(subobj_unum->ifid)>>16, (u_int16_t)ntohl(subobj_unum->ifid));
+                    LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d)]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, subobj_unum->ifid, ntohl(subobj_unum->ifid)>>16, (u_int16_t)ntohl(subobj_unum->ifid));
                     len -= sizeof(unum_if_subobj);
                     offset += sizeof(unum_if_subobj);
                 }
