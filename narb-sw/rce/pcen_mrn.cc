@@ -337,7 +337,7 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
         ntoh_telambda(tel);
         if (tel.priority == 0x07)
         {
-            if (valid_wavegrid(tel.channel_id))
+            if (valid_channel(tel.channel_id))
                 waveset.AddTag(tel.channel_id);
             else
                 has_wave = true;

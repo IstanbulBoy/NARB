@@ -75,7 +75,7 @@ inline void ntoh_telambda(MovazTeLambda& tel)
     //? tel.data_rate
 }
 
-inline bool valid_wavegrid(u_int32_t freq)
+inline bool valid_channel(u_int32_t freq)
 {
     return (freq >= 192100 && freq <= 196000 && freq%100 == 0);
 }
