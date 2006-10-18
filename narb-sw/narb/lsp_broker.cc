@@ -172,9 +172,10 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             memcpy(&new_subobj->addr, &subobj_unum->addr, 4);
             new_subobj->hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj->prefix_len = 32;
-            new_subobj->if_id = ntohl(subobj_unum->ifid);
-            if ((new_subobj->if_id>>16) == 0x0004 && (new_subobj->if_id & 0xffff) > 0  && (new_subobj->if_id & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
-	            new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
+            new_subobj->if_id = subobj_unum->ifid;
+            if ((ntohl(subobj_unum->ifid)>>16) == 0x0004 && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
+            && (ntohl(subobj_unum->ifid) & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
+                new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
             LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, new_subobj->if_id);
             len -= sizeof(unum_if_subobj);
             offset += sizeof(unum_if_subobj);
@@ -358,7 +359,8 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
 
-    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED |  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0), req_vtag, vtag_mask); 
+    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
+	|  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) | (app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0), req_vtag, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
