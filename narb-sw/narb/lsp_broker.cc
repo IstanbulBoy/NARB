@@ -160,6 +160,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
     while (len > 0)
     {
         ero_subobj * new_subobj = (ero_subobj*)malloc(sizeof(ero_subobj));
+        memset(new_subobj, 0, sizeof(ero_subobj));
         if ((subobj_ipv4->l_and_type & 0x7f) == 4)
             subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
         else
@@ -171,10 +172,10 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             memcpy(&new_subobj->addr, &subobj_unum->addr, 4);
             new_subobj->hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj->prefix_len = 32;
-            *(u_int16_t*)new_subobj->pad = 0; //(u_int16_t)ntohl(subobj_unum->ifid);
-            new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
-            LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, subobj_unum->ifid);
-
+            new_subobj->if_id = ntohl(subobj_unum->ifid);
+            if ((new_subobj->if_id>>16) == 0x0004 && (new_subobj->if_id & 0xffff) > 0  && (new_subobj->if_id & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
+	            new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
+            LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, new_subobj->if_id);
             len -= sizeof(unum_if_subobj);
             offset += sizeof(unum_if_subobj);
         }
@@ -184,10 +185,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             memcpy(&new_subobj->addr, subobj_ipv4->addr, 4);
             new_subobj->hop_type = (subobj_ipv4->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj->prefix_len = 32;
-            *(u_int16_t*)new_subobj->pad = 0;
-            new_subobj->l2sc_vlantag = 0;
             LOGF("HOP-TYPE [%s]: %s\n", (subobj_ipv4->l_and_type & (1<<7)) == 0?"strict":"loose", addr);
-
             len -= sizeof(ipv4_prefix_subobj);
             offset += sizeof(ipv4_prefix_subobj);
         }
