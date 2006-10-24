@@ -205,6 +205,7 @@ public:
     TSpec tspec;
     ConstraintTagSet waveset;
     ConstraintTagSet vtagset;
+    bool path_visited;
     
     ////////// Shujia's additions/////////
     union NodeFlag 
@@ -230,6 +231,7 @@ public:
 	    auxvar1=0;
 	    auxvar2=0;
 	    minCost=PCEN_INFINITE_COST;
+           path_visited = false;
 	    nflg.flag=0;
         }
 

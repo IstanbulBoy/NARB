@@ -450,6 +450,7 @@ void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
     MinCostStack.push_front(node.minCost);
     PathStack.push_front(node.path);
     EROTrackStack.push_front(node.ero_track);
+    PathVisitedStack.push_front(node.path_visited);
 }
 
 void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
@@ -466,6 +467,8 @@ void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
     PathStack.pop_front();
     node.ero_track = EROTrackStack.front();
     EROTrackStack.pop_front();
+    node.path_visited = PathVisitedStack.front();
+    PathVisitedStack.pop_front();
 }
     
 int PCEN_MRN::PerformComputation()
@@ -632,7 +635,7 @@ int PCEN_MRN::PerformComputation()
             if ((nextNode->nflg.nfg.visited == 1))
             {
                 double new_cost = headNode->minCost+(nextLink->PCENmetric());
-                if (nextNode->minCost > new_cost || !link_visited)
+                if (nextNode->minCost > new_cost || !link_visited || !headNode->path_visited)
                     nextNode->minCost = new_cost;
                 else 
                     continue;
@@ -642,6 +645,9 @@ int PCEN_MRN::PerformComputation()
                 nextNode->minCost = headNode->minCost + nextLink->PCENmetric();
                 nextNode->nflg.nfg.visited = 1;
             }
+
+            //keeping the trace to indicate whether the current path has any link unvisited
+            headNode->path_visited == (headNode->path_visited || link_visited);
 
             //proceed with new wavelengthSet
             nextNode->waveset = nextWaveSet;

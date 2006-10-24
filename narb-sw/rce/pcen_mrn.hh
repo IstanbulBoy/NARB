@@ -48,6 +48,7 @@ private:
     list<ConstraintTagSet> WaveSetStack;
     list<ConstraintTagSet> VtagSetStack;
     list<double> MinCostStack;
+    list<bool> PathVisitedStack;
     list< list<PCENLink*> > PathStack;
     list< list<ero_subobj> > EROTrackStack;
 
