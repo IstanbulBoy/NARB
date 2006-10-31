@@ -635,7 +635,9 @@ int PCEN_MRN::PerformComputation()
             if ((nextNode->nflg.nfg.visited == 1))
             {
                 double new_cost = headNode->minCost+(nextLink->PCENmetric());
-                if (nextNode->minCost > new_cost || !link_visited || !headNode->path_visited)
+                if (nextNode->minCost <= new_cost && nextNode == destNode)
+		   continue; 
+                else if (nextNode->minCost > new_cost || !link_visited || !headNode->path_visited)
                     nextNode->minCost = new_cost;
                 else 
                     continue;
