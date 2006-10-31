@@ -124,7 +124,7 @@ public:
     void AddTags(u_char* bitmask, int max_num)
         {
             assert(bitmask);
-            for (int i = 1; i <= max_num; i++)
+            for (int i = 1; i < max_num; i++)
                 if (HAS_VLAN(bitmask, i))
                     AddTag(u_int32_t(i));
         }
