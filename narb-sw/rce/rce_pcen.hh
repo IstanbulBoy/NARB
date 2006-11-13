@@ -183,7 +183,7 @@ public:
         }
     void DisplayTags()
         {
-            if (tag_list.size()) return;
+            if (tag_list.size() == 0) return;
             cout << "Tags:";
             list<u_int32_t>::iterator it;
             for (it = tag_list.begin(); it != tag_list.end(); it++)
