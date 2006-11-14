@@ -199,6 +199,7 @@ bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
         layer_excluded = LSP_OPT_EXCLUD_TDM;
         break;
     case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
+    case MOVAZ_LSC:
     case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
         layer_excluded = LSP_OPT_EXCLUD_L1;
         break;
