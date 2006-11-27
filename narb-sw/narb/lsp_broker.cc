@@ -214,7 +214,7 @@ int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
     for (node_inter = ero_inter.begin(); node_inter != ero_inter.end(); node_inter++)
     {
         router_id2 = &((*node_inter)->addr);
-        if (router_id1->s_addr == router_id2->s_addr)
+        if (router_id1->s_addr == router_id2->s_addr || NarbDomainInfo.FromSameRouter(*router_id1, *router_id2))
             break;
     }
   
@@ -229,7 +229,7 @@ int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
     while (node_inter != ero_inter.end())
     {
         router_id2 = &((*node_inter)->addr);
-        if (router_id1->s_addr == router_id2->s_addr)
+        if (router_id1->s_addr == router_id2->s_addr || NarbDomainInfo.ToSameRouter(*router_id1, *router_id2))
             break;
         node_inter++;
     }
