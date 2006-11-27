@@ -1121,7 +1121,7 @@ void PCEN::ReplyERO ()
     {
         tlv = (te_tlv_header*)(body + bodylen);
         memcpy(tlv, vtag_mask, sizeof(narb_lsp_vtagmask_tlv));
-        bodylen += TLV_HDR_SIZE + sizeof(narb_lsp_vtagmask_tlv);
+        bodylen += sizeof(narb_lsp_vtagmask_tlv);
     }
 
     // placeholder for wave_mask ...

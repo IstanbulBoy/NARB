@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
         case TLV_TYPE_NARB_ERO:
             assert (rce_reply->hdr.action = ACT_ACKDATA);
             LOGF("Request successful! ERO returned...\n");
-             len = ntohs(tlv->length);
+            len = ntohs(tlv->length);
             assert( len > 0 && len% sizeof(ero_subobj) == 0);
 
             subobj  = (ero_subobj *)((char *)tlv + sizeof(struct te_tlv_header));
