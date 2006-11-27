@@ -39,6 +39,8 @@
 // TLV's wrapped in the LSP querry message.
 // The types of wrapped TLV's are indicated in msgtag[0].
 #define LSP_TLV_NARB_REQ    0x0001
+#define LSP_OPT_REQ_ALL_VTAGS  0x0002 //Ask RCE to return a list of available vlan tags instead of just one.
+#define LSP_OPT_REQ_ALL_WAVES  0x0004  //Ask RCE to return a list of available wavelengths instead of just one.
 
 // Indicating layers excluded from path computation
 #define LSP_OPT_EXCLUD_L1      0x0010

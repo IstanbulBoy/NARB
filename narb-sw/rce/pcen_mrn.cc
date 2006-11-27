@@ -199,7 +199,6 @@ bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
         layer_excluded = LSP_OPT_EXCLUD_TDM;
         break;
     case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-    case MOVAZ_LSC:
     case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
         layer_excluded = LSP_OPT_EXCLUD_L1;
         break;
@@ -397,6 +396,21 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     ero_track.push_back(subobj2);
 }
 
+void PCEN_MRN::SetVTagMask(ConstraintTagSet& vtagset)
+{
+    if (!vtag_mask)
+        vtag_mask = new (narb_lsp_vtagmask_tlv);
+    memset(vtag_mask, 0, sizeof(narb_lsp_vtagmask_tlv));
+    vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
+    vtag_mask->length= htons(sizeof(narb_lsp_vtagmask_tlv) - 4);
+ 
+    list<u_int32_t>::iterator it = vtagset.TagSet().begin();
+    for (; it != vtagset.TagSet().end(); it++)
+    {
+        SET_VLAN(vtag_mask->bitmask, *it);
+    }
+}
+
 void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
 {
     list<ero_subobj>::iterator iter;
@@ -456,28 +470,19 @@ void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 
 void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
 {
-    PCENNode * destNode = GetNodeByIp(routers, &destination);
-
-    if (&node != destNode)
-      node.tspec = TSpecStack.front();
+    node.tspec = TSpecStack.front();
     TSpecStack.pop_front();
-    if (&node != destNode)
-      node.waveset = WaveSetStack.front();
+    node.waveset = WaveSetStack.front();
     WaveSetStack.pop_front();
-    if (&node != destNode)
-      node.vtagset = VtagSetStack.front();
+    node.vtagset = VtagSetStack.front();
     VtagSetStack.pop_front();    
-    if (&node != destNode)
-      node.minCost = MinCostStack.front();
+    node.minCost = MinCostStack.front();
     MinCostStack.pop_front();
-    if (&node != destNode)
-      node.path = PathStack.front();
+    node.path = PathStack.front();
     PathStack.pop_front();
-    if (&node != destNode)
-      node.ero_track = EROTrackStack.front();
+    node.ero_track = EROTrackStack.front();
     EROTrackStack.pop_front();
-    if (&node != destNode)
-      node.path_visited = PathVisitedStack.front();
+    node.path_visited = PathVisitedStack.front();
     PathVisitedStack.pop_front();
 }
     
@@ -517,6 +522,12 @@ int PCEN_MRN::PerformComputation()
         if (IsInExcludedLayer(headNode))
             continue;
 
+#ifdef DISPLAY_ROUTING_DETAILS
+        cout<<"Head Node ";
+        headNode->DisplayInfo();
+        cout<<endl;
+#endif
+
         PCENLink *nextLink;
         PCENNode *nextNode;
         bool link_visited;
@@ -534,7 +545,7 @@ int PCEN_MRN::PerformComputation()
             nextNode = nextLink->rmt_end;
             if (!nextNode)
                 continue;
-#ifdef DISPLAY_ROUTING_DETAILS_
+#ifdef DISPLAY_ROUTING_DETAILS
             cout<<"Trying next: ";
             nextLink->DisplayInfo();
             nextNode->DisplayInfo();
@@ -550,8 +561,16 @@ int PCEN_MRN::PerformComputation()
             nextWaveSet.TagSet().clear();
             if (is_via_movaz &&  headNode->tspec.SWtype == MOVAZ_LSC)
             {
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "HeadNode->waveset: ";
+                headNode->waveset.DisplayTags();
+#endif
                 nextLink->ProceedByUpdatingWaves(headNode->waveset, nextWaveSet); 
                 //nextNode->waveset to be updaed later
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "NextLink ";
+                nextWaveSet.DisplayTags();
+#endif
                 if (nextWaveSet.IsEmpty())
                     continue;
             }
@@ -561,12 +580,16 @@ int PCEN_MRN::PerformComputation()
             if (is_e2e_tagged_vlan)
             {
                 // @@@@ bidirectional constraints (TODO)
-#ifdef DISPLAY_ROUTING_DETAILS_
+#ifdef DISPLAY_ROUTING_DETAILS
                 cout << "HeadNode->vtagset: ";
                 headNode->vtagset.DisplayTags();
 #endif
                 nextLink->ProceedByUpdatingVtags(headNode->vtagset, nextVtagSet);
                 //nextNode->vtagset to be updaed later
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "NextLink ";
+                nextVtagSet.DisplayTags();
+#endif
                 //$$$$Note that nextVtagSet should be equal to headNodeTagSet if next link is not a VLAN tagged link
                 if (nextVtagSet.IsEmpty())
                     continue;
@@ -641,21 +664,13 @@ int PCEN_MRN::PerformComputation()
             }
 
             //keeping the trace to indicate whether the current path has any link unvisited
-            headNode->path_visited == (headNode->path_visited && link_visited);
-
-            if (nextNode == destNode && final_cost <= nextNode->minCost)
-		continue;
+            headNode->path_visited == (headNode->path_visited || link_visited);
 
             //proceed with new wavelengthSet
             nextNode->waveset = nextWaveSet;
 
             //proceed with new vlanTagSet
             nextNode->vtagset = nextVtagSet;
-#ifdef DISPLAY_ROUTING_DETAILS
-            cout << "nextNode->vtagset = nextVtagSet: ";
-	    nextNode->DisplayInfo();
-            nextNode->vtagset.DisplayTags();
-#endif
 
             (nextNode->path).assign(headNode->path.begin(), headNode->path.end());
             nextNode->path.push_back(nextLink);
@@ -669,7 +684,7 @@ int PCEN_MRN::PerformComputation()
                 final_cost = destNode->minCost;
                 ero.assign(destNode->ero_track.begin(), destNode->ero_track.end());
             }
-#ifdef DISPLAY_ROUTING_DETAILS_
+#ifdef DISPLAY_ROUTING_DETAILS
             nextNode->DisplayInfo();
             nextNode->ShowPath();
             cout << endl;
@@ -686,9 +701,10 @@ int PCEN_MRN::PerformComputation()
         if (destNode->vtagset.IsEmpty())
             return ERR_PCEN_NO_ROUTE;
         if (vtag == ANY_VTAG) {
-            destNode->vtagset.DisplayTags();
             vtag  = destNode->vtagset.TagSet().front();
             SetVTagToEROTrack(ero, vtag);
+            if (destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
+                SetVTagMask(destNode->vtagset);
         }
         if (is_via_movaz)
             HandleMovazEROTrack(ero, vtag);

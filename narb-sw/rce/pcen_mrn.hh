@@ -62,6 +62,7 @@ public:
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
+    void SetVTagMask(ConstraintTagSet& vtagset);
     void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
     void PreserveSceneToStacks(PCENNode& node);

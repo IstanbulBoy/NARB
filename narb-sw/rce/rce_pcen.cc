@@ -1103,11 +1103,11 @@ void PCEN::ReplyErrorCode (u_int32_t code)
 
 void PCEN::ReplyERO ()
 {
+    char body[1024];
     assert (api_writer);
-    int len = sizeof(ero_subobj)*ero.size();
-    assert (len);
-    te_tlv_header * tlv = (te_tlv_header *)(new char[TLV_HDR_SIZE + len]);
-    tlv->length = htons(len);
+    int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
+    te_tlv_header * tlv = (te_tlv_header*)body;
+    tlv->length = htons(sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
     ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
     int i;
@@ -1116,8 +1116,18 @@ void PCEN::ReplyERO ()
     {
         *(ero_hop+i) = (*iter);
     }
-    api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, tlv, lspq_id, seqnum, TLV_HDR_SIZE + len, vtag);
-    delete [] (char*)tlv;
+
+    if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
+    {
+        tlv = (te_tlv_header*)(body + bodylen);
+        memcpy(tlv, vtag_mask, sizeof(narb_lsp_vtagmask_tlv));
+        bodylen += TLV_HDR_SIZE + sizeof(narb_lsp_vtagmask_tlv);
+    }
+
+    // placeholder for wave_mask ...
+
+    api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, lspq_id, seqnum, bodylen, vtag);
+
     api_writer->PostMessage(msg);    
 }
     

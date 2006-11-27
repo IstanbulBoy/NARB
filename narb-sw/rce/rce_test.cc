@@ -59,6 +59,7 @@ u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
 u_int32_t opt_e2e_vlan = 0;
+u_int32_t opt_req_all_vtags = 0;
 
 struct option longopts[] = 
 {
@@ -297,7 +298,8 @@ api_msg* rceapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqnu
   struct api_msg *rce_msg;
 
   rce_msg = api_msg_new(MSG_LSP, ACT_QUERY,  (void*)&(cspf_req->app_req_data), lspq_id, seqnum, sizeof(cspf_req->app_req_data), vtag);
-  rce_msg->hdr.msgtag[0] = htonl(options | LSP_TLV_NARB_REQ |  opt_bidirectional | opt_strict | opt_preferred | opt_mrn | opt_e2e_vlan);
+  rce_msg->hdr.msgtag[0] = htonl(options | LSP_TLV_NARB_REQ |  opt_bidirectional | opt_strict | opt_preferred | opt_mrn | opt_e2e_vlan
+    |opt_req_all_vtags);
   
   if (rceapi_send(sock, rce_msg) < 0)
   {
@@ -368,7 +370,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMV", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMVa", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -414,6 +416,9 @@ int main(int argc, char* argv[])
         case 'V':
             opt_e2e_vlan|= LSP_OPT_E2E_VTAG;
             break;
+        case 'a':
+            opt_req_all_vtags |= LSP_OPT_REQ_ALL_VTAGS;
+            break;
         default:
             usage();
             exit(1);
@@ -457,6 +462,17 @@ int main(int argc, char* argv[])
             }
             if (opt_e2e_vlan)
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(rce_reply->hdr.tag));
+            if (vtag == ANY_VTAG && opt_req_all_vtags != 0)
+            {
+                LOGF("ALL E2E VLAN TAGS:");
+                narb_lsp_vtagmask_tlv* vtagmask = (narb_lsp_vtagmask_tlv*) ((char*)tlv + sizeof(struct te_tlv_header) + ntohs(tlv->length));
+                for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
+                {
+                    if (HAS_VLAN(vtagmask->bitmask, vtag))
+                        LOGF(" %d", vtag);
+                }
+                LOGF("\n");
+            }
             break;
         case TLV_TYPE_NARB_ERROR_CODE:
             assert (rce_reply->hdr.action = ACT_ERROR);
