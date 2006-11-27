@@ -188,6 +188,7 @@ void DomainInfo::SearchAndProcessInterdomainLink(list<ero_subobj*>&ero)
      }
 }
 
+//Useless for Links not locally originated 
 bool DomainInfo::FromSameRouter(in_addr& id1, in_addr& id2)
 {
     if (id1.s_addr == id2.s_addr)
@@ -203,6 +204,7 @@ bool DomainInfo::FromSameRouter(in_addr& id1, in_addr& id2)
     return false;
 }
 
+//Useless for Links not locally originated 
 bool DomainInfo::ToSameRouter(in_addr& id1, in_addr& id2)
 {
     if (id1.s_addr == id2.s_addr)

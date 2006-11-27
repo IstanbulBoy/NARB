@@ -214,7 +214,7 @@ int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
     for (node_inter = ero_inter.begin(); node_inter != ero_inter.end(); node_inter++)
     {
         router_id2 = &((*node_inter)->addr);
-        if (router_id1->s_addr == router_id2->s_addr || NarbDomainInfo.FromSameRouter(*router_id1, *router_id2))
+        if (router_id1->s_addr == router_id2->s_addr)
             break;
     }
   
@@ -229,7 +229,7 @@ int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
     while (node_inter != ero_inter.end())
     {
         router_id2 = &((*node_inter)->addr);
-        if (router_id1->s_addr == router_id2->s_addr || NarbDomainInfo.ToSameRouter(*router_id1, *router_id2))
+        if (router_id1->s_addr == router_id2->s_addr)
             break;
         node_inter++;
     }
@@ -272,6 +272,56 @@ int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
         node_inter++;
       } 
 
+    for (node_inter = ero_inter.begin(); node_inter != ero_inter.end(); node_inter++)
+    {
+        if (*node_inter)
+            delete (ero_subobj*)(*node_inter);
+    }
+    ero_inter.clear();
+
+    for (node_intra = ero_intra.begin(); node_intra != ero_intra.end(); node_intra++)
+    {
+        if (*node_intra)
+            delete (ero_subobj*)(*node_intra);
+    }
+    ero_intra.clear();
+
+    ero_inter = merged_ero;
+    return 0;
+}
+
+int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
+{
+    list<ero_subobj*>::iterator node_inter, node_intra;
+    ero_subobj* nodedata;
+    list<ero_subobj*> merged_ero;
+    
+    assert (ero_inter.size() > 0);
+    assert (ero_intra.size() > 0);
+  
+    ero_subobj* merge_point = first_loose_hop(ero_inter);
+    if (merge_point == NULL)
+        return -1;
+     
+    // add nodes in ero_inter before merge_point
+    do
+    {
+        assert(*node_inter != NULL);
+        nodedata = new ero_subobj(*(*node_inter));
+        merged_ero.push_back(nodedata);
+        node_inter++;
+    } while (*node_inter != merge_point);
+    
+    // add nodes in ero_intra
+    node_intra = ero_intra.begin();
+    while (node_intra != ero_intra.end())
+    {
+        assert(*node_intra != NULL);
+        nodedata = new ero_subobj(*(*node_intra));
+        merged_ero.push_back(nodedata);
+        node_intra++;
+    }
+  
     for (node_inter = ero_inter.begin(); node_inter != ero_inter.end(); node_inter++)
     {
         if (*node_inter)
@@ -510,7 +560,12 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     if (ero.size() == 0 || rec_ero.size() == 0)
         return HandleErrorCode(NARB_ERROR_INTERNAL);
 
-    if (MergeERO(ero, rec_ero) == 0) // merged succssfully
+    if (is_all_strict_hops(rec_ero))
+    {
+        if (ForceMergeERO(ero, rec_ero) == 0) // force-merged succssfully
+            return HandleCompleteERO();
+    }
+    else if (MergeERO(ero, rec_ero) == 0) // merged succssfully
         return HandleCompleteERO();
 
     //Unsucessful recursive routing

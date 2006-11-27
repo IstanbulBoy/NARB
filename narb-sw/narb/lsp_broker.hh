@@ -134,6 +134,7 @@ public:
     static void GetERO(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
     static void GetERO_RFCStandard(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
     static int MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
+    static int ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
 
     // FSM state handlers ...
     
