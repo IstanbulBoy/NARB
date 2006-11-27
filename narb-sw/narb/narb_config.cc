@@ -38,6 +38,7 @@ string SystemConfig::config_file = NARB_DEFAULT_CONFIG_FILE;
 narb_routing_mode SystemConfig::routing_mode  =RT_MODE_MIXED_ALLOWED;
 narb_working_mode SystemConfig::working_mode  =WORKING_MODE_MULTI_DOMAIN;
 u_int32_t SystemConfig::rce_options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT;
+bool SystemConfig::forced_merge = true;
 
 string SystemConfig::rce_pri_host("localhost");
 int SystemConfig::rce_pri_port = 2678;

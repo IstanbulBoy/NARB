@@ -90,6 +90,7 @@ public:
     static narb_routing_mode routing_mode;
     static narb_working_mode working_mode;
     static u_int32_t rce_options;
+    static bool forced_merge;
 
     static string rce_pri_host;
     static int rce_pri_port;

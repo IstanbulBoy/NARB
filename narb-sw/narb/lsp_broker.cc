@@ -564,7 +564,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     if (ero.size() == 0 || rec_ero.size() == 0)
         return HandleErrorCode(NARB_ERROR_INTERNAL);
 
-    if (is_all_strict_hops(rec_ero))
+    if (SystemConfig::forced_merge && is_all_strict_hops(rec_ero))
     {
         if (ForceMergeERO(ero, rec_ero) == 0) // force-merged succssfully
             return HandleCompleteERO();

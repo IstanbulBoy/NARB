@@ -1568,6 +1568,16 @@ COMMAND (cmd_set_working_mode, "set working-mode {single-domain-mode|multi-domai
     cli_node->ShowPrompt();
 }
 
+COMMAND (cmd_set_forced_merge, "set forced-merge {on|off}",
+       "Set/Reset configurartion\nforced merging inter- and intra-domain ERO in recursive path computation\nOn or Off\n")
+{
+    if(argv[0] == "on")
+        SystemConfig::forced_merge = true;
+    else 
+        SystemConfig::forced_merge = false;
+    cli_node->ShowPrompt();
+}
+
 COMMAND(cmd_configure_exit, "exit", "Exit the current command level\n")
 {
     cli_node->Reader()->GoUp();
@@ -1957,6 +1967,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_peer_narb_instance);
     node->AddCommand(&cmd_set_routing_mode_instance);
     node->AddCommand(&cmd_set_working_mode_instance);
+    node->AddCommand(&cmd_set_forced_merge_instance);
     node->AddCommand(&cmd_set_rce_instance);
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
