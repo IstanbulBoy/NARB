@@ -298,12 +298,16 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
     
     assert (ero_inter.size() > 0);
     assert (ero_intra.size() > 0);
-  
+
+    if (is_all_strict_hops(ero_inter))
+        return -1;
+
     ero_subobj* merge_point = first_loose_hop(ero_inter);
     if (merge_point == NULL)
         return -1;
      
     // add nodes in ero_inter before merge_point
+    node_inter = ero_inter.begin();
     do
     {
         assert(*node_inter != NULL);
