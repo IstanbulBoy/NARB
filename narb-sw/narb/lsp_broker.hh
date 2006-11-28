@@ -128,7 +128,8 @@ public:
     void SetReqMrnMsg(msg_app2narb_request& mr) { mrn_spec = mr; }
     u_char State() {  return state;  }
     void SetState(u_char s) {  state = s;  }
-    void SetOptionalConstraints (api_msg* msg);
+    void HandleOptionalRequestTLVs (api_msg* msg);
+    void HandleOptionalResponseTLVs (api_msg* msg);
     void DescribeLSP(string& desc);
     u_int32_t SeqNum() {  return app_seqnum;  }
     static void GetERO(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);

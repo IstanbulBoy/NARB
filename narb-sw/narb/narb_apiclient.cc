@@ -100,10 +100,20 @@ void NARB_APIClient::AssociateTEAddr(in_addr ip)
     associated_addrs.push_back(ip);
 }
 
-void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t options, u_int32_t vtag)
+void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_mask)
 {
+    char msgbody[1024];
     api_msg *narb_msg;
-    narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(rec_cspf_req) - 12, ((char*)&rec_cspf_req) + 12, rec_cspf_req.lspb_id, rec_cspf_req.app_seqnum, vtag);
+    int msglen = sizeof(rec_cspf_req) - 12;
+    memcpy(msgbody, ((char*)&rec_cspf_req) + 12, msglen);
+    if (vtag_mask) {
+        memcpy(msgbody+msglen, vtag_mask, sizeof(msg_app2narb_vtag_mask));
+        msglen += sizeof(msg_app2narb_vtag_mask);
+        options |= LSP_OPT_REQ_ALL_VTAGS;
+        vtag = ANY_VTAG;
+    }
+    
+    narb_msg = api_msg_new(NARB_MSG_LSPQ, msglen, (void*)msgbody, rec_cspf_req.lspb_id, rec_cspf_req.app_seqnum, vtag);
     narb_msg->header.options = htonl(options);
     SendMessage(narb_msg); 
 }

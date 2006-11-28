@@ -413,6 +413,8 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
 
+    if (req_vtag == ANY_VTAG || vtag_mask)
+        app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	|  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) | (app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0), req_vtag, vtag_mask); 
 }
@@ -424,6 +426,8 @@ int LSPQ::HandleRCEReply(api_msg *msg)
 
     assert(msg && msg->header.type_8 == MSG_LSP);
 
+    HandleOptionalResponseTLVs(msg);
+
     if (msg->header.action == ACT_ERROR)
     {
         u_int32_t err_code = ntohl(*(u_int32_t *)((char *)msg->body + sizeof(struct te_tlv_header)));
@@ -434,7 +438,7 @@ int LSPQ::HandleRCEReply(api_msg *msg)
     else if (msg->header.action == ACT_ACKDATA)
     {
         GetERO((te_tlv_header*)msg->body, ero);
-        if ((app_options | LSP_OPT_E2E_VTAG) && req_vtag == ANY_VTAG)
+        if ((app_options & LSP_OPT_E2E_VTAG) && req_vtag == ANY_VTAG)
             req_vtag = ntohl(msg->header.tag);
     }
 
@@ -540,13 +544,15 @@ int LSPQ::HandlePartialERO()
         //LSP_OPT_MRN_RELAY//@@@@
     }
 
-    peer_narb->QueryLspRecursive(rec_cspf_req, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag);
+    peer_narb->QueryLspRecursive(rec_cspf_req, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
 int LSPQ::HandleNextHopNARBReply(api_msg *msg)
 {
     state = STATE_NEXT_HOP_NARB_REPLY;
+
+    HandleOptionalResponseTLVs(msg);
 
     list<ero_subobj*> rec_ero;
     te_tlv_header *tlv = (te_tlv_header*)msg->body;
@@ -575,7 +581,6 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     //Unsucessful recursive routing
 _CANNOT_EXPAND_ROUTE:
     if (SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED)
-        //@@@@ && ( !(app_options & ~LSP_OPT_STRICT) || (app_options & ~LSP_OPT_PREFERRED) ) )
         return HandleCompleteERO();
     else 
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
@@ -988,7 +993,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq_list.push_back(lspq);
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
-                lspq->SetOptionalConstraints(msg);
+                lspq->HandleOptionalRequestTLVs(msg);
                 lspq->HandleLSPQRequest();
             }
             else // retransmission of lsp query
@@ -998,7 +1003,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
-                lspq->SetOptionalConstraints(msg);
+                lspq->HandleOptionalRequestTLVs(msg);
                 if (lspq->State() == STATE_ERROR)
                 {
                     if (lspq->req_retran_counter-- > 0)
@@ -1028,7 +1033,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
-                //lspq->SetOptionalConstraints(msg);
+                lspq->HandleOptionalRequestTLVs(msg);
                 lspq_list.push_back(lspq);
                 lspq->HandleRecursiveRequest();
             }
@@ -1039,7 +1044,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
                 lspq->SetReqOptions(ntohl(msg->header.options));
-                // lspq->SetOptionalConstraints(msg);
+                lspq->HandleOptionalRequestTLVs(msg);
 
                 //@@@@ Always retry / recompute
                 //if (lspq->State() == STATE_ERROR)
@@ -1088,19 +1093,75 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     return 0;
 }
 
-void LSPQ::SetOptionalConstraints(api_msg* msg)
+void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
 {
-    msg_app2narb_vtag_mask* vtagMask = (msg_app2narb_vtag_mask*)(msg->body + sizeof(msg_app2narb_request));
-    if ( (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
-        && ntohs(msg->header.length) >= sizeof(msg_app2narb_request) + sizeof(msg_app2narb_vtag_mask)
-        && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
+    int msg_len = ntohs(msg->header.length);
+    te_tlv_header* tlv = (te_tlv_header*)(msg->body);
+    int tlv_len;
+    msg_app2narb_vtag_mask* vtagMask;
+
+    while (msg_len > 0)
     {
-        if (!vtag_mask)
-            vtag_mask = new (struct msg_app2narb_vtag_mask);
-        memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+        switch (ntohs(tlv->type)) 
+        {
+        case TLV_TYPE_NARB_REQUEST:
+            tlv_len = sizeof(msg_app2narb_request);
+            ; //do nothing
+            break;
+        case TLV_TYPE_NARB_VTAG_MASK:
+            tlv_len = sizeof(msg_app2narb_vtag_mask);
+            vtagMask = (msg_app2narb_vtag_mask*)tlv;
+            if (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
+            {
+                if (!vtag_mask)
+                    vtag_mask = new (struct msg_app2narb_vtag_mask);
+                memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+            }
+            break;
+        default:
+            break;
+        }
+        tlv = (te_tlv_header*)((char*)tlv + tlv_len);
+        msg_len -= tlv_len;
     }
 }
 
+void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
+{
+    int msg_len = ntohs(msg->header.length);
+    te_tlv_header* tlv = (te_tlv_header*)(msg->body);
+    int tlv_len;
+    msg_app2narb_vtag_mask* vtagMask;
+
+    while (msg_len > 0)
+    {
+        switch (ntohs(tlv->type)) 
+        {
+        case TLV_TYPE_NARB_ERO:
+            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            ; //do nothing
+            break;
+        case TLV_TYPE_NARB_ERROR_CODE:
+            tlv_len = TLV_HDR_SIZE + 4;
+            ; //do nothing
+            break;
+        case TLV_TYPE_NARB_VTAG_MASK:
+            tlv_len = sizeof(msg_app2narb_vtag_mask);
+            vtagMask = (msg_app2narb_vtag_mask*)tlv;
+            if (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
+            {
+                if (!vtag_mask)
+                    vtag_mask = new (struct msg_app2narb_vtag_mask);
+                memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+            }
+            break;
+        default:
+            break;
+        }
+        tlv = (te_tlv_header*)((char*)tlv + tlv_len);
+        msg_len -= tlv_len;
+    }
+}
 
 // searching for a request data record on lspq_list using msg sequence number
 LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
