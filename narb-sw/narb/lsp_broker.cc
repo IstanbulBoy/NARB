@@ -379,6 +379,9 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
+
+    if (req_vtag == ANY_VTAG || vtag_mask)
+        app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, vtag_mask);
     return 0;
 }
