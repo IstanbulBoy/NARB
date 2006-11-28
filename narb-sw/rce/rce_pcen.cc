@@ -1116,7 +1116,6 @@ void PCEN::ReplyERO ()
     {
         *(ero_hop+i) = (*iter);
     }
-
     if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
     {
         tlv = (te_tlv_header*)(body + bodylen);
