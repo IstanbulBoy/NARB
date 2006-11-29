@@ -517,7 +517,7 @@ int LSPQ::HandlePartialERO()
     rec_cspf_req.app_seqnum = app_seqnum;
     rec_cspf_req.lspb_id = broker->lspb_id;
     rec_cspf_req.app_req_data = req_spec;
-    rec_cspf_req.app_req_data.type = htons(TLV_TYPE_NARB_PEER_REQUEST);
+    rec_cspf_req.app_req_data.type = htons(MSG_PEER_REQUEST);
     rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data;
     rec_cspf_req.rec_req_data.src.s_addr = link->Id();
 
@@ -1108,7 +1108,8 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
         switch (ntohs(tlv->type)) 
         {
         case TLV_TYPE_NARB_REQUEST:
-        case TLV_TYPE_NARB_PEER_REQUEST:
+        case MSG_APP_REQUEST:
+        case MSG_PEER_REQUEST:
             tlv_len = sizeof(msg_app2narb_request);
             ; //do nothing
             break;
