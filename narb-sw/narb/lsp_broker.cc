@@ -617,7 +617,7 @@ int LSPQ::HandleCompleteERO()
 
     assert(broker);
 
-    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero);
+    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_NO_ROUTE);
     rmsg->header.tag = htonl(req_vtag);
@@ -1153,12 +1153,9 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(msg_app2narb_vtag_mask);
             vtagMask = (msg_app2narb_vtag_mask*)tlv;
-            if (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
-            {
-                if (!vtag_mask)
-                    vtag_mask = new (struct msg_app2narb_vtag_mask);
-                memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
-            }
+            if (!vtag_mask)
+                vtag_mask = new (struct msg_app2narb_vtag_mask);
+            memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
             break;
         default:
             break;

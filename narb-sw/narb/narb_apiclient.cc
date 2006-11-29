@@ -106,10 +106,10 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     api_msg *narb_msg;
     int msglen = sizeof(rec_cspf_req) - 12;
     memcpy(msgbody, ((char*)&rec_cspf_req) + 12, msglen);
-    if (vtag_mask) {
+    if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS)) 
+   {
         memcpy(msgbody+msglen, vtag_mask, sizeof(msg_app2narb_vtag_mask));
         msglen += sizeof(msg_app2narb_vtag_mask);
-        options |= LSP_OPT_REQ_ALL_VTAGS;
         vtag = ANY_VTAG;
     }
     
@@ -125,7 +125,7 @@ void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_s
     u_int16_t length = sizeof(msg_app2narb_request);
     memcpy(buf, msg->body, length);
     ((msg_app2narb_request*)buf)->type = htons(type);
-    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_confirm);
+    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_confirm, NULL);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
     narb_msg = api_msg_new(NARB_MSG_LSPQ, length, buf, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));

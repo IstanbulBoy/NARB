@@ -53,9 +53,11 @@ public:
    static LSP_Broker * LspBrokerLookupBySocket(int sock);
 };
 
+struct msg_app2narb_vtag_mask;
+
 extern "C" {
     api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t errorcode);
-    api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero);
+    api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_app2narb_vtag_mask* vtagmask);
     api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr);
     void narb_extract_ero_tlv (te_tlv_header& ero_tlv, list<ero_subobj*>& ero);
 }

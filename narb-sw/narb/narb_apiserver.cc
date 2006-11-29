@@ -126,7 +126,7 @@ api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr)
     return msg;
 }
 
-api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero)
+api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_app2narb_vtag_mask* vtagmask)
 {
     api_msg *msg;
     int offset;
@@ -183,7 +183,12 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
 
     tlv->length = htons(offset - sizeof(te_tlv_header));
     tlv->type = htons(TLV_TYPE_NARB_ERO);
-    
+
+    if (vtagmask)
+    {
+        memcpy(buf+offset, vtagmask, sizeof(msg_app2narb_vtag_mask));
+        offset += sizeof(msg_app2narb_vtag_mask);
+    }
     msg = api_msg_new (MSG_REPLY_ERO, offset, buf, ucid, seqnr);
     
     return msg;
