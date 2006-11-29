@@ -67,6 +67,10 @@ u_int32_t opt_mrn = 0;
 u_int32_t opt_e2e_vlan = 0;
 u_int32_t opt_via_movaz = 0;
 u_int32_t opt_excluded_layers = 0;
+u_int32_t opt_req_all_vtags = 0;
+
+#define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
+
 struct option longopts[] = 
 {
     { "host",        no_argument,       NULL, 'H'},
@@ -80,6 +84,7 @@ void usage()
     cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-B] [-b bandwidth] [-x switching type] [-e encoding type] ";
     cout<<"  ( [-S source] and [-D dest] are mandatory [-B]: directional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
     cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE" <<endl;
+    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags" <<endl;
 }
 
 // SIGINT handler.
@@ -286,7 +291,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(msg_app2narb_request), (void*)app_req, lspq_id, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
-        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers);
+        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -320,7 +325,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:E:BLOmMV", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:E:BLOmMVa", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -376,6 +381,9 @@ int main(int argc, char* argv[])
             sscanf(optarg, "%d", &opt_excluded_layers);
             //1: excluding layer-1; 2: layer-tdm; 4: layer-2; 8: layer-3 ; 3: both layer 1 (optical) and tdm
             opt_excluded_layers <<= 4;
+            break;
+        case 'a':
+            opt_req_all_vtags |= LSP_OPT_REQ_ALL_VTAGS;
             break;
         default:
             usage();
@@ -460,6 +468,17 @@ int main(int argc, char* argv[])
             }
             if (opt_e2e_vlan)
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
+            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > TLV_HDR_SIZE + ntohs(tlv->length))
+            {
+                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + sizeof(struct te_tlv_header) + ntohs(tlv->length));
+                LOGF("ALL E2E VLAN TAGS:");
+                for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
+                {
+                    if (HAS_VLAN(vtagmask->bitmask, vtag))
+                        cout<<" " << vtag;
+                }
+                cout<<endl;
+            }
             break;
         case MSG_REPLY_ERROR:
             LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
