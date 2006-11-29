@@ -299,8 +299,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_REQUEST = 0x02,
     TLV_TYPE_NARB_ERO = 0x03,
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
-    TLV_TYPE_NARB_PEER_REQUEST = 0x05,
-    TLV_TYPE_NARB_VTAG_MASK = 0x06,
+    TLV_TYPE_NARB_VTAG_MASK = 0x05,
 };
 
 // definitions of NARB error code as proccessing a request fails

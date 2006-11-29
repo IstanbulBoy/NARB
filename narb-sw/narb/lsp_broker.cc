@@ -1107,7 +1107,6 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
     {
         switch (ntohs(tlv->type)) 
         {
-        case TLV_TYPE_NARB_REQUEST:
         case MSG_APP_REQUEST:
         case MSG_PEER_REQUEST:
             tlv_len = sizeof(msg_app2narb_request);
