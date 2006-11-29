@@ -287,7 +287,6 @@ enum  narb_msg_type
     MSG_REPLY_ERO = 0x21,
     MSG_REPLY_ERROR = 0x22,
     MSG_REPLY_REMOVE_CONFIRM = 0x23,
-
     MSG_PEER_REQUEST = 0x41,
 //    MSG_PEER_REPLY = 0x42,
 //    MSG_PEER_CONFIRM = 0x43,
@@ -300,7 +299,8 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_REQUEST = 0x02,
     TLV_TYPE_NARB_ERO = 0x03,
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
-    TLV_TYPE_NARB_VTAG_MASK = 0x05,
+    TLV_TYPE_NARB_PEER_REQUEST = 0x05,
+    TLV_TYPE_NARB_VTAG_MASK = 0x06,
 };
 
 // definitions of NARB error code as proccessing a request fails
