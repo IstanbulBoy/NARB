@@ -470,19 +470,28 @@ void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 
 void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
 {
-    node.tspec = TSpecStack.front();
+    PCENNode * destNode = GetNodeByIp(routers, &destination);
+
+    if (&node != destNode)
+      node.tspec = TSpecStack.front();
     TSpecStack.pop_front();
-    node.waveset = WaveSetStack.front();
+    if (&node != destNode)
+      node.waveset = WaveSetStack.front();
     WaveSetStack.pop_front();
-    node.vtagset = VtagSetStack.front();
-    VtagSetStack.pop_front();    
-    node.minCost = MinCostStack.front();
+    if (&node != destNode)
+      node.vtagset = VtagSetStack.front();
+    VtagSetStack.pop_front();
+    if (&node != destNode)
+      node.minCost = MinCostStack.front();
     MinCostStack.pop_front();
-    node.path = PathStack.front();
+    if (&node != destNode)
+      node.path = PathStack.front();
     PathStack.pop_front();
-    node.ero_track = EROTrackStack.front();
+    if (&node != destNode)
+      node.ero_track = EROTrackStack.front();
     EROTrackStack.pop_front();
-    node.path_visited = PathVisitedStack.front();
+    if (&node != destNode)
+      node.path_visited = PathVisitedStack.front();
     PathVisitedStack.pop_front();
 }
     
@@ -557,7 +566,7 @@ int PCEN_MRN::PerformComputation()
 
             // @@@@ handling Wavelength Continuity constraints
             // A wavelength set has existed in headNode, now match it with the set of available waves on the link.
-            //$$$$ Movaz special handling for wavelength constraints
+            //$$$$ Special handling for Movaz/ADVA private wavelength constraints
             nextWaveSet.TagSet().clear();
             if (is_via_movaz &&  headNode->tspec.SWtype == MOVAZ_LSC)
             {
@@ -590,7 +599,7 @@ int PCEN_MRN::PerformComputation()
                 cout << "NextLink ";
                 nextVtagSet.DisplayTags();
 #endif
-                //$$$$Note that nextVtagSet should be equal to headNodeTagSet if next link is not a VLAN tagged link
+                //$$$$Note that nextVtagSet should be equal to headNodeTagSet if next link is not a tagged VLAN link
                 if (nextVtagSet.IsEmpty())
                     continue;
             }
@@ -663,8 +672,8 @@ int PCEN_MRN::PerformComputation()
                 nextNode->nflg.nfg.visited = 1;
             }
 
-            //keeping the trace to indicate whether the current path has any link unvisited
-            headNode->path_visited == (headNode->path_visited || link_visited);
+            //keeping the trace to indicate whether any link in the current path has been visited
+            headNode->path_visited = (headNode->path_visited || link_visited);
 
             //proceed with new wavelengthSet
             nextNode->waveset = nextWaveSet;
