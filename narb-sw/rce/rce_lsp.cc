@@ -71,9 +71,9 @@ void LSPHandler::Load(api_msg *msg)
             switching_type_egress = narb_req_tlv->switching_type;
             bandwidth_ingress = mrn_spec_tlv->bandwidth;
             bandwidth_egress = narb_req_tlv->bandwidth;            
+            SetOptionalConstraints(msg);
             break;
         }
-        SetOptionalConstraints(msg);
     }
     // continue to get second tlv if applicable ...
     api_msg_delete(msg);
@@ -81,7 +81,7 @@ void LSPHandler::Load(api_msg *msg)
 
 void LSPHandler::SetOptionalConstraints(api_msg* msg)
 {
-    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(narb_lsp_request_tlv));
+    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(narb_lsp_request_tlv)*2);
     if ( (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
         && ntohs(msg->hdr.msglen) >= sizeof(narb_lsp_request_tlv) + sizeof(narb_lsp_vtagmask_tlv)
         && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
