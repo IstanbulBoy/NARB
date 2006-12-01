@@ -110,6 +110,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
    {
         memcpy(msgbody+msglen, vtag_mask, sizeof(msg_app2narb_vtag_mask));
         msglen += sizeof(msg_app2narb_vtag_mask);
+        options |= LSP_OPT_VTAG_MASK;
         vtag = ANY_VTAG;
     }
     

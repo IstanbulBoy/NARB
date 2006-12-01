@@ -1137,6 +1137,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
     int tlv_len;
     msg_app2narb_vtag_mask* vtagMask;
+    bool hasVtagMask = false;
 
     while (msg_len > 0)
     {
@@ -1151,6 +1152,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             ; //do nothing
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
+            hasVtagMask = true;
             tlv_len = sizeof(msg_app2narb_vtag_mask);
             vtagMask = (msg_app2narb_vtag_mask*)tlv;
             if (!vtag_mask)
@@ -1162,6 +1164,12 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
         msg_len -= tlv_len;
+    }
+
+    if (!hasVtagMask && vtag_mask && ((app_options & LSP_OPT_VTAG_MASK) || (app_options & LSP_OPT_REQ_ALL_VTAGS)))
+    {
+        delete vtag_mask;
+        vtag_mask = NULL;
     }
 }
 
