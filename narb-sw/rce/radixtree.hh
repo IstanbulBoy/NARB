@@ -310,12 +310,12 @@ void RadixTree<T>::ClearTree()
 	    node->l_left = NULL;
 	  else
 	    node->l_right = NULL;
-
 	  delete tmp_node;
 	}
       else
 	{
 	  delete tmp_node;
+         tmp_node = NULL; //?
 	  break;
 	}
     }
@@ -543,6 +543,7 @@ T* RadixTree<T>::DeleteNode (RadixNode<T>* node)
 
   data = node->data;
   delete node;
+  node = NULL;
   /* If parent node is stub then delete it also. */
   if (parent && parent->lock == 0)
     return DeleteNode(parent);
