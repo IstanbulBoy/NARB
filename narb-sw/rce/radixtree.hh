@@ -207,6 +207,7 @@ public:
         data = node->getData();
         }
     ~RadixNode() {
+        //Leave deletion of data to caller
         //FreeData(); //?$$? Dec 1 2006
         }
 
@@ -310,12 +311,13 @@ void RadixTree<T>::ClearTree()
 	    node->l_left = NULL;
 	  else
 	    node->l_right = NULL;
+	  tmp_node->FreeData();
 	  delete tmp_node;
 	}
       else
 	{
+	  tmp_node->FreeData();
 	  delete tmp_node;
-         tmp_node = NULL; //?
 	  break;
 	}
     }
