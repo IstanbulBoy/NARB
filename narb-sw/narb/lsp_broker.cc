@@ -416,6 +416,8 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id;
 
+    if (vtag_mask)
+        app_options |= LSP_OPT_VTAG_MASK;
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
