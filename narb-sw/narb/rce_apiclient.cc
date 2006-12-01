@@ -114,11 +114,14 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     char buf[1024];
     memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
     memcpy(buf+sizeof(cspf_req.app_req_data), &mrn_spec, sizeof(mrn_spec));
-    if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
-        memcpy(buf+sizeof(cspf_req.app_req_data)*2, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
-    
-    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, 
-        sizeof(cspf_req.app_req_data)+sizeof(mrn_spec), buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
+    u_int16_t mlen = sizeof(msg_app2narb_request)*2;
+    if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL) 
+    {
+        memcpy(buf+mlen, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
+        mlen += sizeof(msg_app2narb_vtag_mask);
+    }
+
+    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, mlen, buf, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
 
     SendMessage(rce_msg); 
