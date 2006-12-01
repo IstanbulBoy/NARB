@@ -59,7 +59,7 @@ void Resource::SetAttribute(int attrIndex, TLP *tlp)
         return;
 
     if (attrTable.capacity() == 0)
-        attrTable.reserve(16);
+        attrTable.resize(16);
 
     if (attrTable.size() < attrIndex+1)
     {
