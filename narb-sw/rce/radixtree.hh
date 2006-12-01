@@ -514,9 +514,9 @@ T* RadixTree<T>::DeleteNode (RadixNode<T>* node)
   RadixNode<T> *child, *parent;
   T* data = NULL;
 
-  assert (node->lock == 0);  //@@@should throw out an exception here!!
+  //assert (node->lock == 0); //Forced node deletion without checking lock status.
   //assert (node->data == NULL); //Data are not autonatically freed. Caller NUST free them before deleting the node.
-  //@@@should throw out an exception here!!
+
 
   if (node->l_left && node->l_right)
     return data;
@@ -567,7 +567,6 @@ void RadixTree<T>::UnlockNode (RadixNode<T>* node)
   if (node->lock == 0)
   {
       //assert(!node->data);
-      //@@@ throw an exception if node->data is non-null.
       DeleteNode(node);
   }
 #endif
