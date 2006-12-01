@@ -207,7 +207,7 @@ public:
         data = node->getData();
         }
     ~RadixNode() {
-        FreeData();
+        //FreeData(); //?$$? Dec 1 2006
         }
 
     T* Data() {return data;}
