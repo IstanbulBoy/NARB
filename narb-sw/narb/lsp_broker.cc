@@ -421,7 +421,9 @@ int LSPQ::HandleRecursiveRequest()
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
-	|  (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) | (app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0), req_vtag, vtag_mask); 
+	| (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) |(app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0)
+	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0) 
+	, req_vtag, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
