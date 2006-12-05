@@ -571,6 +571,8 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     else if (ntohs(tlv->type) == TLV_TYPE_NARB_ERO)
     {
         GetERO_RFCStandard((te_tlv_header*)msg->body, rec_ero);
+        if (msg->header.tag != 0 && ntohl(msg->header.tag) != ANY_VTAG)
+            req_vtag = ntohl(msg->header.tag);
     }
 
     api_msg_delete(msg);
