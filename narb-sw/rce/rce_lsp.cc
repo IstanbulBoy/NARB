@@ -91,6 +91,7 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
         switch (ntohs(tlv->type))
         {
         case TLV_TYPE_NARB_REQUEST:
+        case TLV_TYPE_NARB_PEER_REQUEST:
             tlv_len = sizeof(narb_lsp_request_tlv);
             ; //do nothing
             break;

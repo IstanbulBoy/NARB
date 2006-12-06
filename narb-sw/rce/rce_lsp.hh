@@ -67,6 +67,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ERO = 0x03,
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
     TLV_TYPE_NARB_VTAG_MASK = 0x05,
+    TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
 struct narb_lsp_request_tlv
