@@ -71,24 +71,43 @@ void LSPHandler::Load(api_msg *msg)
             switching_type_egress = narb_req_tlv->switching_type;
             bandwidth_ingress = mrn_spec_tlv->bandwidth;
             bandwidth_egress = narb_req_tlv->bandwidth;            
-            SetOptionalConstraints(msg);
             break;
         }
     }
-    // continue to get second tlv if applicable ...
+    // continue to get optional TLVs if applicable ...
+    SetOptionalConstraints(msg);
     api_msg_delete(msg);
 }
 
 void LSPHandler::SetOptionalConstraints(api_msg* msg)
 {
-    narb_lsp_vtagmask_tlv* vtagMask = (narb_lsp_vtagmask_tlv*)(msg->body + sizeof(narb_lsp_request_tlv)*2);
-    if ( (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
-        && ntohs(msg->hdr.msglen) >= sizeof(narb_lsp_request_tlv) + sizeof(narb_lsp_vtagmask_tlv)
-        && ntohs(vtagMask->type) == TLV_TYPE_NARB_VTAG_MASK )
+    int msg_len = ntohs(msg->hdr.msglen);
+    te_tlv_header* tlv = (te_tlv_header*)(msg->body);
+    int tlv_len;
+    narb_lsp_vtagmask_tlv* vtagMask;
+
+    while (msg_len > 0)
     {
-        if (!vtag_mask)
-            vtag_mask = new (struct narb_lsp_vtagmask_tlv);
-        memcpy(vtag_mask, vtagMask, sizeof(narb_lsp_vtagmask_tlv));
+        switch (ntohs(tlv->type))
+        {
+        case TLV_TYPE_NARB_REQUEST:
+            tlv_len = sizeof(narb_lsp_request_tlv);
+            ; //do nothing
+            break;
+        case TLV_TYPE_NARB_VTAG_MASK:
+            if (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
+            {
+                if (!vtag_mask)
+                    vtag_mask = new (struct narb_lsp_vtagmask_tlv);
+                memcpy(vtag_mask, vtagMask, sizeof(narb_lsp_vtagmask_tlv));
+            }        
+            break;
+        default:
+            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            break;
+        }
+        tlv = (te_tlv_header*)((char*)tlv + tlv_len);
+        msg_len -= tlv_len;
     }
 }
 
