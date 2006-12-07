@@ -84,7 +84,6 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
     int tlv_len;
-    narb_lsp_vtagmask_tlv* vtagMask;
 
     while (msg_len > 0)
     {
@@ -100,7 +99,7 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             {
                 if (!vtag_mask)
                     vtag_mask = new (struct narb_lsp_vtagmask_tlv);
-                memcpy(vtag_mask, vtagMask, sizeof(narb_lsp_vtagmask_tlv));
+                memcpy(vtag_mask, tlv, sizeof(narb_lsp_vtagmask_tlv));
             }        
             break;
         default:
