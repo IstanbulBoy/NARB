@@ -257,8 +257,6 @@ public:
         }
 };
 
-#define MAX_VLAN_NUM 4096
-
 class Link: public Resource
 {
 protected:

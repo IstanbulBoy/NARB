@@ -245,7 +245,7 @@ Resource* LSAHandler::Parse()
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC))
                             {
                                 //memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 4);
-                                if (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && swcap->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION) //@? no 1st cond?
+                                if (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
                                     memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
                             }                        
                             else

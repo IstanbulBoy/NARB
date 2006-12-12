@@ -258,17 +258,17 @@ struct link_ifswcap_specific_tdm {
 	u_char		padding[3];
 };
 
-// Maximum number of available vlan's that a port/IP is assigned to
-#define MAX_VLAN_NUM 4096
-#define MAX_WAVE_NUM 40
 // Link Sub-TLV / Switching Capability-specific information: VLAN/Ethernet
-#define IFSWCAP_SPECIFIC_VLAN_VERSION 0x2
+#define IFSWCAP_SPECIFIC_VLAN_BASIC 0x0002
+#define IFSWCAP_SPECIFIC_VLAN_ALLOC 0x0004
+#define IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z 0x8000
 struct link_ifswcap_specific_vlan {
 	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
-	u_char	 	version;       //fixed to be 0x2, other vaule is reserved for compression versions
+	u_int16_t	 	version;       //version id and options mask
 	u_char           bitmask[MAX_VLAN_NUM/8];
-	u_char		padding[1];
+	u_char           bitmask_alloc[MAX_VLAN_NUM/8];
 };
+
 #define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
 #define SET_VLAN(P, VID) P[VID/8] = (P[VID/8] | (0x80 >> (VID-1)%8))
 #define RESET_VLAN(P, VID) P[VID/8] = (P[VID/8] & ~(0x80 >> (VID-1)%8))

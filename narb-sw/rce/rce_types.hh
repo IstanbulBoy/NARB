@@ -50,4 +50,14 @@
 #define NULL 0
 #endif
 
+// Maximum number of available vlan's that a port/IP is assigned to
+#ifndef MAX_VLAN_NUM
+#define MAX_VLAN_NUM 4096
+#endif 
+
+// Maximum number of available wavelenth's that a port/IP is assigned to
+#ifndef MAX_WAVE_NUM
+#define MAX_WAVE_NUM 40
+#endif
+
 #endif

@@ -427,7 +427,7 @@ void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, Constraint
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
             || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC)
         {
-            if (iscd->vlan_info.version == IFSWCAP_SPECIFIC_VLAN_VERSION)
+            if (ntohs(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             {
                 non_vlan_link = false;
                 next_vtagset.AddTags(iscd->vlan_info.bitmask, MAX_VLAN_NUM);
@@ -1116,6 +1116,7 @@ void PCEN::ReplyERO ()
     {
         *(ero_hop+i) = (*iter);
     }
+
     if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
     {
         tlv = (te_tlv_header*)(body + bodylen);
