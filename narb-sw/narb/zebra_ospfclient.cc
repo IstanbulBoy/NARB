@@ -1043,7 +1043,7 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
     int tlv_size = sizeof(te_tlv_header) + ntohs(tlv_header->length);
     int sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
     te_link_subtlv_link_ifswcap * ifswcap_tlv;
-    int vlan_data_len = sizeof(link_ifswcap_specific_vlan) - sizeof (link_ifswcap_specific_psc);
+    int vlan_data_len = sizeof(link_ifswcap_specific_vlan_full) - sizeof (link_ifswcap_specific_vlan);
 
     tlv_header_appended = (te_tlv_header*)malloc(tlv_size + vlan_data_len);
     memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
@@ -1052,11 +1052,12 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
 
     ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
     ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + vlan_data_len);
-    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.version = htons(IFSWCAP_SPECIFIC_VLAN_BASIC | IFSWCAP_SPECIFIC_VLAN_ALLOC);
-    ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.length= htons(sizeof(link_ifswcap_specific_vlan));
-    memcpy(ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.bitmask, vtagMask, MAX_VLAN_NUM/8);
-    memset(ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan.bitmask_alloc, 0, MAX_VLAN_NUM/8);
-    
+    link_ifswcap_specific_vlan_full* vlan_info = (link_ifswcap_specific_vlan_full*)&ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan;
+    vlan_info->version = htons(IFSWCAP_SPECIFIC_VLAN_BASIC | IFSWCAP_SPECIFIC_VLAN_ALLOC);
+    vlan_info->length= htons(sizeof(link_ifswcap_specific_vlan_full));
+    memcpy(vlan_info->bitmask, vtagMask, MAX_VLAN_NUM/8);
+    memset(vlan_info->bitmask_alloc, 0, MAX_VLAN_NUM/8);
+
     return tlv_header_appended;
 }
 

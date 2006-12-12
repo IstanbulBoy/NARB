@@ -267,6 +267,11 @@ struct link_ifswcap_specific_tdm {
 struct link_ifswcap_specific_vlan {
 	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
 	u_int16_t	 	version;       //version id and options mask
+	u_char           bitmask[4];
+};
+struct link_ifswcap_specific_vlan_full {
+	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
+	u_int16_t	 	version;       //version id and options mask
 	u_char           bitmask[MAX_VLAN_NUM/8];
 	u_char           bitmask_alloc[MAX_VLAN_NUM/8];
 };
