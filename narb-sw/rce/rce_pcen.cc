@@ -410,7 +410,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);
 }
-
+  
 void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset)
 {
     next_vtagset.TagSet().clear();
@@ -419,13 +419,14 @@ void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, Constraint
     bool any_vlan_ok = (head_vtagset.TagSet().size() > 0 && head_vtagset.TagSet().front() == ANY_VTAG);
     bool non_vlan_link = true;
 
+    // Add VLAN tags available for this link.
     for (it = link->iscds.begin(); it != link->iscds.end(); it++)
     {
         iscd = *it;
         if (!iscd)
             continue;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
-            || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC)
+            || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC) // The non-L2SC layers are temoperaty here and yet to remove.
         {
             if (ntohs(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             {
@@ -435,11 +436,59 @@ void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, Constraint
         }
     }
 
+    // Add VLAN tags used by any links on the local- or remote-end nodes of the link.
+    list<PCENLink*>::iterator it_link;
+    if (lcl_end)
+    {
+        for (it_link = lcl_end->in_links.begin(); it_link != lcl_end->in_links.end(); it_link++)
+        {
+            (*it_link)->ExcludeAllocatedVtags(next_vtagset);
+        }
+        for (it_link = lcl_end->out_links.begin(); it_link != lcl_end->out_links.end(); it_link++)
+        {
+            if (*it_link != this)
+                (*it_link)->ExcludeAllocatedVtags(next_vtagset);
+        }
+    }
+    if (rmt_end)
+    {
+        for (it_link = rmt_end->in_links.begin(); it_link != rmt_end->in_links.end(); it_link++)
+        {
+            if (*it_link != this)
+                (*it_link)->ExcludeAllocatedVtags(next_vtagset);
+        }
+        for (it_link = rmt_end->out_links.begin(); it_link != rmt_end->out_links.end(); it_link++)
+        {
+            (*it_link)->ExcludeAllocatedVtags(next_vtagset);
+        }
+    }
+        
     if (non_vlan_link)
         next_vtagset = head_vtagset;
     else if (!any_vlan_ok)
         next_vtagset.Intersect(head_vtagset);
 }
+
+void PCENLink::ExcludeAllocatedVtags(ConstraintTagSet &vtagset)
+{
+    list<ISCD*>::iterator it;
+    ISCD * iscd;
+
+    for (it = link->iscds.begin(); it != link->iscds.end(); it++)
+    {
+        iscd = *it;
+        if (!iscd)
+            continue;
+        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        {
+            if (ntohs(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC)
+            {
+                vtagset.DeleteTags(iscd->vlan_info.bitmask_alloc, MAX_VLAN_NUM);
+            }
+        }
+    }
+}
+
 
 PCENNode* PCENLink::search_PCENNode(vector<PCENNode*>& routers, int NodeId) 
 {

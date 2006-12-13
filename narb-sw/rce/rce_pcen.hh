@@ -150,6 +150,13 @@ public:
             for (int i = 0; i < num; i++)
                 DeleteTag((u_int32_t)tags[i]);
         }
+    void DeleteTags(u_char* bitmask, int max_num)
+        {
+            assert(bitmask);
+            for (int i = 1; i < max_num; i++)
+                if (HAS_VLAN(bitmask, i))
+                    DeleteTag(u_int32_t(i));
+        }
     bool HasTag(u_int32_t tag)
         {
             if (tag == ANY_VTAG)
@@ -183,7 +190,7 @@ public:
         }
     void DisplayTags()
         {
-            if (tag_list.size() == 0) return;
+            if (tag_list.size()) return;
             cout << "Tags:";
             list<u_int32_t>::iterator it;
             for (it = tag_list.begin(); it != tag_list.end(); it++)
@@ -312,6 +319,7 @@ public:
     bool CanBeEgressLink(TSpec& tspec);
     void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
+    void ExcludeAllocatedVtags(ConstraintTagSet &vtagset);
 
     PCENNode* search_PCENNode(vector<PCENNode*>& routers, int NodeId);
 
