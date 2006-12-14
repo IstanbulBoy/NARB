@@ -247,6 +247,6 @@ public:
 te_tlv_header * ospf_te_router_addr_tlv_alloc(in_addr addr);
 te_tlv_header *ospf_te_link_tlv_alloc(u_char type, in_addr addr);
 te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t type, void *value);
-te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask);
+te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask, u_char* vtagMaskAlloc=NULL);
 
 #endif

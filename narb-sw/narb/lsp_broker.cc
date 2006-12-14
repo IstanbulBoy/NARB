@@ -732,8 +732,11 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                     link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
                     link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
                 }
-                if (vtag != 0)
+                if (vtag != 0) 
+                {
                     link1->ResetVtag(vtag);
+                    link1->AllocateVtag(vtag);
+                }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }
         }
@@ -752,7 +755,10 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                         reverse_link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
                     }
                     if (vtag != 0)
+                    {
                         reverse_link1->ResetVtag(vtag);
+                        reverse_link1->AllocateVtag(vtag);
+                    }
                     NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), reverse_link1);
                 }
             }
@@ -866,7 +872,10 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                     link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
                 }
                 if (vtag != 0)
+                {
                     link1->SetVtag(vtag);
+                    link1->DeallocateVtag(vtag);
+                }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }
         }
@@ -885,7 +894,10 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                         reverse_link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
                     }
                     if (vtag != 0)
+                    {
                         reverse_link1->SetVtag(vtag);
+                        reverse_link1->DeallocateVtag(vtag);
+                    }
                     NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), reverse_link1);
                 }
             }

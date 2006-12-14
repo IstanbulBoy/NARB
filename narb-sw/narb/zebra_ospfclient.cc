@@ -1036,7 +1036,7 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
     return tlv_header_appended;
 }
 
-te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask)
+te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask, u_char* vtagMaskAlloc)
 {
     te_tlv_header *tlv_header_appended = tlv_header;
 
@@ -1057,6 +1057,8 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
     vlan_info->length= htons(sizeof(link_ifswcap_specific_vlan_full));
     memcpy(vlan_info->bitmask, vtagMask, MAX_VLAN_NUM/8);
     memset(vlan_info->bitmask_alloc, 0, MAX_VLAN_NUM/8);
+    if (vtagMaskAlloc)
+        memcpy(vlan_info->bitmask_alloc, vtagMaskAlloc, MAX_VLAN_NUM/8);
 
     return tlv_header_appended;
 }
