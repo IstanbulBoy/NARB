@@ -1090,7 +1090,7 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
 //  }
     vlan_data_len -= 4; // the extra bytes after 8 bytes of layer specific info
     tlv_header_appended = (te_tlv_header*)malloc(tlv_size + vlan_data_len); 
-    memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
+    memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size + vlan_data_len);
     tlv_header_appended->length = htons(ntohs(tlv_header->length) + vlan_data_len);
     free(tlv_header);
     ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
