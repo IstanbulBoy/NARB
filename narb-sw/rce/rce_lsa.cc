@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include <zlib.h>
 #include "rce_lsa.hh"
 #include "rce_log.hh"
 #include "rce_config.hh"
@@ -73,6 +74,10 @@ void LSAHandler::Load(api_msg* msg)
     action = (api_action)msg->hdr.action;
     api_msg_delete(msg);
 }
+
+#define ZBUFSIZE 1024
+u_char zbuffer[ZBUFSIZE];
+
 Resource* LSAHandler::Parse()
 {
     if (lsa == NULL)
@@ -250,9 +255,10 @@ Resource* LSAHandler::Parse()
                                     memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
                                     if (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z)
                                     {
-                                        u_int32_t bitmask_len = ntohs(swcap->vlan_info.length) - 4;
-                                        z_uncompress(swcap->vlan_info.bitmask, bitmask_len);
+                                        u_int32_t bitmask_len = ZBUFSIZE;
+                                        uncompress(zbuffer, (uLongf*)&bitmask_len, swcap->vlan_info.bitmask, ntohs(swcap->vlan_info.length) - 4);
                                         assert (bitmask_len = 1024); //debug...
+                                        memcpy(swcap->vlan_info.bitmask, zbuffer, bitmask_len);
                                         swcap->vlan_info.length = htons(bitmask_len + 4);
                                     }
                                 }
