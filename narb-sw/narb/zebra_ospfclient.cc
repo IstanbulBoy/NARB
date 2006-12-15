@@ -1036,6 +1036,7 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
     return tlv_header_appended;
 }
 
+/*
 te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMask, u_char* vtagMaskAlloc)
 {
     te_tlv_header *tlv_header_appended = tlv_header;
@@ -1062,4 +1063,40 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
 
     return tlv_header_appended;
 }
+*/
+
+te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u_char* vtagMaskAvail, u_char* vtagMaskAlloc)
+{
+    te_tlv_header *tlv_header_appended = tlv_header;
+
+    int tlv_size = sizeof(te_tlv_header) + ntohs(tlv_header->length);
+    int sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
+    te_link_subtlv_link_ifswcap * ifswcap_tlv;
+
+    link_ifswcap_specific_vlan_full vlan_info;
+    vlan_info.version = htons(IFSWCAP_SPECIFIC_VLAN_BASIC | IFSWCAP_SPECIFIC_VLAN_ALLOC);
+    u_int32_t vlan_data_len = MAX_VLAN_NUM/8*2;
+    memcpy(vlan_info.bitmask, vtagMaskAvail, MAX_VLAN_NUM/8);
+    memcpy(vlan_info.bitmask_alloc, vtagMaskAlloc, MAX_VLAN_NUM/8);
+//  if (SystemConfig::zcompress)
+//  {
+        z_compress(vlan_info.bitmask, vlan_data_len);
+        vlan_info.version |= htons(IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z);
+        vlan_info.length = htons(vlan_data_len + 4); // add length and version = 4 bytes
+//  }
+//  else
+//  {
+//      vlan_info.length = htons(sizeof(link_ifswcap_specific_vlan_full));
+//  }
+    vlan_data_len -= 4; // the extra bytes after 8 bytes of layer specific info
+    tlv_header_appended = (te_tlv_header*)malloc(tlv_size + vlan_data_len); 
+    memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
+    tlv_header_appended->length = htons(ntohs(tlv_header->length) + vlan_data_len);
+    free(tlv_header);
+    ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
+    ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + vlan_data_len);
+
+    return tlv_header_appended;
+}
+
 

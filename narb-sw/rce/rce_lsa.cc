@@ -245,8 +245,17 @@ Resource* LSAHandler::Parse()
                                 || swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC))
                             {
                                 //memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE+ISCD_MADATORY_SIZE, 4);
-                                if (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+                                if (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)) 
+                                {
                                     memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->vlan_info.length));
+                                    if (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z)
+                                    {
+                                        u_int32_t bitmask_len = ntohs(swcap->vlan_info.length) - 4;
+                                        z_uncompress(swcap->vlan_info.bitmask, bitmask_len);
+                                        assert (bitmask_len = 1024); //debug...
+                                        swcap->vlan_info.length = htons(bitmask_len + 4);
+                                    }
+                                }
                             }                        
                             else
                                 swcap->min_lsp_bw = 0; //ntohf_mbps(swcap->min_lsp_bw);  //min_lsp_bw (for TDM) will be handled in future

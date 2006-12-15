@@ -21,8 +21,8 @@ rce_test_SOURCES = \
 
 ## $(libxxx_a_SOURCES)
 
-rce_LDADD = -lc -lstdc++
-rce_test_LDADD = -lc -lstdc++
+rce_LDADD = -lc -lstdc++ -lz
+rce_test_LDADD = -lc -lstdc++ -lz
 
 install-sysconfDATA: $(sysconf_DATA)
 	@$(NORMAL_INSTALL)

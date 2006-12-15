@@ -9,12 +9,14 @@
 #endif 
 
 void ntohf_mbps(u_int32_t &x);
-
 void ntohf_mbps(float &x);
-
 void htonf_mbps(u_int32_t &x);
-
 void htonf_mbps(float &x);
+
+
+#define ZBUFSIZE 1024
+void z_compress(u_char* buf, u_int32_t& len);
+void z_uncompress(u_char* buf, u_int32_t& len);
 
 
 /* Structure for string<-->value conversion */

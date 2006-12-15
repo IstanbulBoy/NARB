@@ -315,7 +315,7 @@ struct te_link_subtlv_link_ifswcap
        union {
 		struct link_ifswcap_specific_psc  ifswcap_specific_psc;
 		struct link_ifswcap_specific_tdm ifswcap_specific_tdm; 
-       	struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
+		struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
        } ifswcap_specific_info;
   } link_ifswcap_data;
 };
