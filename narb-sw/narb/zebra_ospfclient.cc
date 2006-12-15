@@ -1080,9 +1080,10 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
     memcpy(vlan_info.bitmask_alloc, vtagMaskAlloc, MAX_VLAN_NUM/8);
 //  if (SystemConfig::zcompress)
 //  {
-        z_compress(vlan_info.bitmask, vlan_data_len);
-        vlan_info.version |= htons(IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z);
-        vlan_info.length = htons(vlan_data_len + 4); // add length and version = 4 bytes
+      z_compress(vlan_info.bitmask, vlan_data_len);
+      vlan_info.version |= htons(IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z);
+      vlan_info.length = htons(vlan_data_len + 4); // add length and version = 4 bytes
+      u_int32_t atual_len = vlan_data_len%4 == 0 ? vlan_data_len : (vlan_data_len/4 + 1)*4;
 //  }
 //  else
 //  {
