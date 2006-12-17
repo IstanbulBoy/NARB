@@ -308,19 +308,13 @@ const char* error_code_to_cstr(u_int32_t errcode)
         return err_cstrs[0];
 }
 
-u_char z_buffer[ZBUFSIZE+1];
+u_char z_buffer[ZBUFSIZE];
 void z_compress(u_char* buf, u_int32_t& len)
 {
     assert (len <= ZBUFSIZE);
-    compress(z_buffer, (uLongf*)&len, buf, len);
+    uLongf src_len = len;
+    len = ZBUFSIZE;
+    compress(z_buffer, (uLongf*)&len, buf, src_len);
     memcpy(buf, z_buffer, len);
 }
-
-void z_uncompress(u_char* buf, u_int32_t& len)
-{
-    assert (len <= ZBUFSIZE);
-    uncompress(z_buffer, (uLongf*)&len, buf, len);
-    memcpy(buf, z_buffer, len);
-}
-
 

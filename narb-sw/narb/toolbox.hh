@@ -16,7 +16,6 @@ void htonf_mbps(float &x);
 
 #define ZBUFSIZE 1024
 void z_compress(u_char* buf, u_int32_t& len);
-void z_uncompress(u_char* buf, u_int32_t& len);
 
 
 /* Structure for string<-->value conversion */

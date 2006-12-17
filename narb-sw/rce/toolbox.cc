@@ -300,23 +300,5 @@ void htonf_mbps(u_int32_t &x)
     htonf_mbps(*p);
 }
 
-
-/*
-u_char z_buffer[ZBUFSIZE+1];
-void z_compress(u_char* buf, u_int32_t& len)
-{
-    assert (len <= ZBUFSIZE);
-    compress(z_buffer, (uLongf*)&len, buf, len);
-    memcpy(buf, z_buffer, len);
-}
-
-void z_uncompress(u_char* buf, u_int32_t& len)
-{
-    assert (len <= ZBUFSIZE);
-    uncompress(z_buffer, (uLongf*)&len, buf, len);
-    memcpy(buf, z_buffer, len);
-}
-*/
-
 //function to round requested bandwidth into standard values...
 
