@@ -506,7 +506,7 @@ int DomainInfo::UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
   int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                     + sizeof (struct te_tlv_header);
 
-  ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
+  ret = oc_writer->UpdateLsa(NarbDomainInfo.ospfd_inter.ori_if,
                 *(in_addr*)&link->advRtId, //$$$$ DRAGON
                 NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
                 link->opaque_id, opaquedata, opaquelen);
