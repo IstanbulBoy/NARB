@@ -408,16 +408,9 @@ int DomainInfo::OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* r
   return ret;
 }
 
-// Function originating Link TE LSA
-int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
+void* DomainInfo::BuildTeLinkOpaqueData(link_info* link)
 {
-  int ret = 0;
-  void *opaquedata;
-  int opaquelen;
-  u_char lsa_type = 10;
-  u_char opaque_type = 1;
-  
-  opaquedata = (void *)ospf_te_link_tlv_alloc(link->linkType, *(in_addr*)&link->id); 
+  void* opaquedata = (void *)ospf_te_link_tlv_alloc(link->linkType, *(in_addr*)&link->id); 
   if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF))
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
@@ -467,12 +460,24 @@ int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 
   opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_DOMAIN_ID, (void*)&NarbDomainInfo.domain_id);
+
+  return opaquedata;
+}
+
+// Function originating Link TE LSA
+int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
+{
+  int ret = 0;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
   
-  opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+  void *opaquedata = BuildTeLinkOpaqueData(link);
+  int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                     + sizeof (struct te_tlv_header);
+
   link->opaque_id = narb_ospf_opaque_id();
   ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
-                *(in_addr*)&link->advRtId, /*$$$$ hacked*/
+                *(in_addr*)&link->advRtId, //$$$$ DRAGON
                 NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
                 link->opaque_id, opaquedata, opaquelen);
   
@@ -488,9 +493,31 @@ int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 // Function updating Link TE LSA
 int DomainInfo::UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 {
-    oc_writer->DeleteLsa(*(in_addr*)&link->advRtId, /* $$$$ hacked */
+   /*
+    oc_writer->DeleteLsa(*(in_addr*)&link->advRtId, //$$$$ DRAGON
                     NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);    
     return OriginateTeLink(oc_writer, link);
+    */
+  int ret = 0;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
+  
+  void *opaquedata = BuildTeLinkOpaqueData(link);
+  int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                    + sizeof (struct te_tlv_header);
+
+  ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
+                *(in_addr*)&link->advRtId, //$$$$ DRAGON
+                NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
+                link->opaque_id, opaquedata, opaquelen);
+  
+  free(opaquedata);
+  
+  LOGF("TE_LINK (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) updated through OSPFd at %s.\n", 
+     lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.ospfd_inter.addr);
+  LOGF("\t ID = %X, TYPE = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->type, link->advRtId, ret);
+
+  return ret;
 }
 
 // Implementation of LSA origination using router_ids and te_links 

@@ -50,7 +50,7 @@
 #define MSG_ZEBRA_ORIGINATE_REQUEST     5
 #define MSG_ZEBRA_DELETE_REQUEST        6
 #define MSG_ZEBRA_NEIGHBOR_COUNT_REQUEST     7
-
+#define MSG_ZEBRA_UPDATE_REQUEST     8
 // Message types from OSPF daemon.
 #define MSG_ZEBRA_REPLY                10
 #define MSG_ZEBRA_READY_NOTIFY         11
@@ -239,6 +239,8 @@ public:
     int OriginateLsa(in_addr ori_if, in_addr adv_id, in_addr area, u_char lsa_type, 
         u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
     int DeleteLsa(in_addr adv_id, in_addr area, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id);
+    int UpdateLsa(in_addr ori_if, in_addr adv_id, in_addr area, u_char lsa_type, 
+        u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
     int RegisterOpqaueType(u_char ltype, u_char otype);
 };
 

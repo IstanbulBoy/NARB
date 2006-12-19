@@ -743,6 +743,72 @@ int ZebraOspfWriter::DeleteLsa(in_addr adv_id, in_addr area, u_char lsa_type, u_
     return ret;
 }
 
+static zebra_msg * new_zebra_update_request (u_int32_t seqnum, in_addr ifaddr, in_addr area_id,  lsa_header *data)
+{
+    zebra_lsa_originate_request*omsg;
+    int omsglen;
+    char buf[API_MAX_MSG_SIZE];
+  
+    omsglen = sizeof (zebra_lsa_originate_request) - sizeof (lsa_header) + ntohs (data->length);
+    omsg = (zebra_lsa_originate_request *) buf;
+    omsg->ifaddr = ifaddr;
+    omsg->area_id = area_id;
+    memcpy (&omsg->data, data, ntohs (data->length));
+  
+    return zebra_msg_new (MSG_ZEBRA_UPDATE_REQUEST, omsg, seqnum, omsglen);
+}
+
+int ZebraOspfWriter::UpdateLsa(in_addr ori_if, in_addr adv_id, in_addr area, u_char lsa_type, 
+        u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen)
+{
+    u_char buf[OSPF_MAX_LSA_SIZE];
+    struct lsa_header *lsah;
+    u_int32_t tmp;
+
+    // Make a new LSA from parameters 
+    lsah = (lsa_header *) buf;
+    lsah->ls_age = 0;
+    lsah->options = 0;
+    lsah->type = lsa_type;
+  
+    tmp = SET_OPAQUE_LSID (opaque_type, opaque_id);
+    lsah->id.s_addr = htonl (tmp);
+    lsah->adv_router = adv_id;
+    lsah->ls_age = 0;
+    lsah->ls_seqnum = 0;
+    lsah->checksum = 0;
+    lsah->length = htons (sizeof (lsa_header) + opaquelen);
+  
+    memcpy (((u_char *) lsah) + sizeof (lsa_header), opaquedata, opaquelen);
+
+    zebra_msg * msg = new_zebra_update_request(get_narb_seqnum(), ori_if, area, lsah);
+
+    if (!msg)
+    {
+        LOG("new_zebra_update_request failed"<<endl);
+        return -1;
+    }
+  
+    if (WriteMessage(msg) < 0)
+    {
+        LOG ("UpdateLsa / WriteMessage failed\n" << endl);
+        return -1;
+    }
+
+    assert (server && server->GetReader());
+    msg = server->GetReader()->ReadSyncMessage();
+    if (!msg)
+    {
+        LOG ("UpdateLsa / ReadMessage failed\n" << endl);
+        return -1;
+    }
+
+    zebra_reply * reply = (zebra_reply*)msg->body;
+    int ret = reply->errcode;
+    zebra_msg_delete(msg);
+    return ret;
+}
+
 static zebra_msg* new_zebra_register_opaque_type (u_int32_t seqnum, u_char ltype, u_char otype)
 {
     struct zebra_register_opaque_type rmsg;

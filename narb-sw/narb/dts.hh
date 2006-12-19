@@ -215,6 +215,7 @@ public:
     void ClearRouterIds();
     void ClearLinks();
 
+    inline void* BuildTeLinkOpaqueData(link_info* link);
     int OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router);
     int OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
     int UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
