@@ -157,9 +157,9 @@ CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
 DATA = $(sysconf_DATA)
 
-DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
-	Makefile.in NEWS aclocal.m4 config.guess config.h.in config.sub \
-	configure configure.ac depcomp install-sh missing mkinstalldirs
+DIST_COMMON = README ChangeLog Makefile.am Makefile.in aclocal.m4 \
+	config.guess config.h.in config.sub configure configure.ac \
+	depcomp install-sh mkinstalldirs
 SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
 
 all: config.h

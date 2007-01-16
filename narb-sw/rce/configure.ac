@@ -135,6 +135,13 @@ AC_CHECK_LIB(crypt, crypt)
 AC_CHECK_LIB(resolv, res_init)
 AC_CHECK_LIB(m, main)
 
+AC_CHECK_LIB(z, compress, HAVE_ZLIB=yes)
+if test $HAVE_ZLIB = ""; then
+  AC_MSG_ERROR([zlib is required by DRAGON. Please install zlib....])
+  exit 1
+fi
+
+
 dnl ---------------------------------------------------
 dnl BSD/OS 4.1 define inet_XtoY function as __inet_XtoY
 dnl ---------------------------------------------------
