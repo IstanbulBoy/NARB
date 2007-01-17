@@ -379,7 +379,14 @@ int LSPQ::HandleLSPQRequest()
     if (SystemConfig::use_manual_ero && SystemConfig::manual_ero.size() > 0)
     {
         ero.clear();
-        ero.assign(SystemConfig::manual_ero.begin(), SystemConfig::manual_ero.end());
+        ero_subobj* subobj;
+        list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
+        for ( ; it != SystemConfig::manual_ero.end(); it++)
+        {
+            subobj = new (struct ero_subobj);
+            memcpy(subobj, *it, sizeof(struct ero_subobj));
+            ero.push_back( subobj);
+        }
         return HandleCompleteERO();
     }
 
