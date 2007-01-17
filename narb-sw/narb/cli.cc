@@ -1962,7 +1962,7 @@ COMMAND(cmd_delete_manual_ero, "delete manual_ero",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_add_manual_ero, "add manual_ero IP interface_id NUM {strict|loose}}",
+COMMAND(cmd_add_manual_ero, "add manual_ero IP interface_id NUM {strict|loose}",
        "Add subobject to manual ERO \n cont ... \nIP address\ninterface_id\nInterface ID number\nstrict hop\nloose hop")
 {
     ero_subobj *subobj = new (struct ero_subobj);
