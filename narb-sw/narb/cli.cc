@@ -1928,7 +1928,7 @@ COMMAND(cmd_set_manual_ero, "set manual_ero {on|off}",
 COMMAND(cmd_show_manual_ero, "show manual_ero",
        "Show manual ERO configuration\n cont...")
 {
-    CLI_OUT("NARB currently has manual/static ERO configuration: *%s*%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT("NARB currently has manual/static ERO configuration: *%s*%s%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline, cli_cstr_newline);
 
     char ip_addr[20], if_id[20];
     list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
@@ -1943,9 +1943,9 @@ COMMAND(cmd_show_manual_ero, "show manual_ero",
             }
             else
             {
-                sprintf(if_id, "Unum ifID=0x%x", (*it)->if_id);
+                sprintf(if_id, "Unum ifID=0x%x", ntohl((*it)->if_id));
             }
-            CLI_OUT("       :ERO-SubObj(%2d) %s %s (%s-hop)%s", num, ip_addr, if_id, (*it)->hop_type == 0 ? "strict" : "loose", cli_cstr_newline);
+            CLI_OUT("       ERO-SubObj(%d): %s %s (%s-hop)%s", num, ip_addr, if_id, (*it)->hop_type == 0 ? "strict" : "loose", cli_cstr_newline);
         }
     }
     cli_node->ShowPrompt();
@@ -1969,6 +1969,7 @@ COMMAND(cmd_add_manual_ero, "add manual_ero IP interface_id NUM {strict|loose}",
     memset(subobj, 0, sizeof(ero_subobj));
     inet_aton(argv[0].c_str(), &subobj->addr);
     sscanf(argv[1].c_str(), "%d", &subobj->if_id);
+    subobj->if_id = htonl(subobj->if_id);
     subobj->hop_type = (argv[2] == "strict"  ? 0 : 1);
     SystemConfig::manual_ero.push_back(subobj);
     cli_node->ShowPrompt();
