@@ -59,6 +59,9 @@ string SystemConfig::cli_password("dragon");
 string SystemConfig::cli_address("localhost");
 int SystemConfig::cli_timeout = 900; //CLI time out = 15 minutes
 
+bool SystemConfig::use_manual_ero = false;
+list<ero_subobj*> SystemConfig::manual_ero;
+
 /////////////////// Config File Processing //////////////////////
 
 string ConfigFile::fileName(NARB_DEFAULT_CONFIG_FILE);

@@ -111,6 +111,9 @@ public:
     static string cli_password;
     static string cli_address;
     static int cli_timeout;
+
+    static bool use_manual_ero;
+    static list<ero_subobj*> manual_ero;
 };
 
 #define NarbDomainInfo (SystemConfig::narb_domain_info)

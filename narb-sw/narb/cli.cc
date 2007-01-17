@@ -1912,6 +1912,68 @@ COMMAND(cmd_delete_intradomain_topology, "delete intradomain topology",
 }
 
 
+COMMAND(cmd_set_manual_ero, "set manual_ero {on|off}",
+       "Set manual ERO\n cont...\nEnable \nDisable")
+{
+    if (argv[0] == "on") {
+	    SystemConfig::use_manual_ero = true;
+    }
+    else {
+	    SystemConfig::use_manual_ero = false;
+    }
+    CLI_OUT("Manual/Static ERO configuration: *%s*%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_show_manual_ero, "show manual_ero",
+       "Show manual ERO configuration\n cont...")
+{
+    CLI_OUT("NARB currently has manual/static ERO configuration: *%s*%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline);
+
+    char ip_addr[20], if_id[20];
+    list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
+    if (SystemConfig::use_manual_ero)
+    {
+        for (int num=1; it != SystemConfig::manual_ero.end(); num++, it++)
+        {
+            strcpy(ip_addr, inet_ntoa((*it)->addr));
+            if ((*it)->if_id == 0)
+            {
+                strcpy(if_id, "IPv4");
+            }
+            else
+            {
+                sprintf(if_id, "Unum ifID=0x%x", (*it)->if_id);
+            }
+            CLI_OUT("       :ERO-SubObj(%2d) %s %s (%s-hop)%s", num, ip_addr, if_id, (*it)->hop_type == 0 ? "strict" : "loose", cli_cstr_newline);
+        }
+    }
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_delete_manual_ero, "delete manual_ero",
+       "Delete manual ERO configuration\n cont...")
+{
+    list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
+    if (SystemConfig::use_manual_ero)
+        delete (*it);
+    SystemConfig::manual_ero.clear();
+    CLI_OUT("Manual/static ERO configuration is deleted (empty ERO list now).%s", cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_add_manual_ero, "add manual_ero IP interface_id NUM {strict|loose}}",
+       "Add subobject to manual ERO \n cont ... \nIP address\ninterface_id\nInterface ID number\nstrict hop\nloose hop")
+{
+    ero_subobj *subobj = new (struct ero_subobj);
+    memset(subobj, 0, sizeof(ero_subobj));
+    inet_aton(argv[0].c_str(), &subobj->addr);
+    sscanf(argv[1].c_str(), "%d", &subobj->if_id);
+    subobj->hop_type = (argv[2] == "strict"  ? 0 : 1);
+    SystemConfig::manual_ero.push_back(subobj);
+    cli_node->ShowPrompt();
+}
+
 /////////////////////////////////////////////////////////////
 void CLIReader::InitSession()
 {
@@ -1975,6 +2037,10 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_update_link_instance);
     node->AddCommand(&cmd_add_link_instance);
     node->AddCommand(&cmd_configure_exit_instance);
+    node->AddCommand(&cmd_set_manual_ero_instance);
+    node->AddCommand(&cmd_show_manual_ero_instance);
+    node->AddCommand(&cmd_delete_manual_ero_instance);
+    node->AddCommand(&cmd_add_manual_ero_instance);
     node = node->MakeChild("update-link-node");
     //Update-link level under the cofigure level
     node->SetPrompt("narb:cli#");
