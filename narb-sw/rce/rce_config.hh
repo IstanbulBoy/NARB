@@ -72,6 +72,9 @@ public:
     static u_int32_t domainMask;
     static u_int32_t domainId;
     static string sysDescription;
+
+    static string subnet_file;
+    static bool  should_incorporate_subnet;
 };
 
 #endif

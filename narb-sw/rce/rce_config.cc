@@ -62,3 +62,7 @@ u_int32_t SystemConfig::domainMask = 0;
 u_int32_t SystemConfig::domainId = 0;
 string SystemConfig::sysDescription = "";
 
+string SystemConfig::subnet_file("subnet_ciena.conf");
+bool  SystemConfig::should_incorporate_subnet = false;
+
+

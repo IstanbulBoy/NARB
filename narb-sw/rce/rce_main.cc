@@ -38,6 +38,7 @@
 #include "rce_apiserver.hh"
 #include "zebra_ospfclient.hh"
 #include "rce_schema.hh"
+#include "rce_subnet.hh"
 #include "rce_cli.hh"
 #include "rce_clicmd.hh"
 #include "toolbox.hh"
@@ -53,16 +54,18 @@ struct option longopts[] =
 {
     { "daemon",      no_argument,       NULL, 'd'},
     { "config_file", required_argument, NULL, 'f'},
-    { "port",        no_argument,       NULL, 'p'},
+    { "schema_file", required_argument, NULL, 's'},
+    { "subnet_file", required_argument, NULL, 'c'},
+    { "cli_port",        required_argument,       NULL, 'p'},
+    { "api_port",        required_argument,       NULL, 'P'},
     { "help",        no_argument,       NULL, 'h'},
-    { "version",     no_argument,       NULL, 'v'},
     { 0 }
 };
 
 void usage()
 {
     cout<<"RCE  Usage:"<<endl;
-    cout<<"\t rce [-d] (daemon)  [-f config_file] [-s schema_file] [-p CLI port] [-P API port] [-h] (help)" <<endl;
+    cout<<"\t rce [-d] (daemon)  [-f config_file] [-s schema_file] [-c subnet_topology_file]  [-p CLI port] [-P API port] [-h] (help)" <<endl;
 }
 
 ZebraOspfSync *zebra_client_inter = NULL;
@@ -76,7 +79,7 @@ int main( int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "ds:f:p:P:h", longopts, 0);
+        opt = getopt_long (argc, argv, "ds:f:c:p:P:h", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -87,6 +90,9 @@ int main( int argc, char* argv[])
             break;
         case 's':
             SystemConfig::schema_file = optarg;
+            break;
+        case 'c':
+            SystemConfig::subnet_file = optarg;
             break;
         case 'd':
             is_daemon = true;
@@ -116,6 +122,9 @@ int main( int argc, char* argv[])
 
     ResourceSchema rsd(0);
     rsd.Init((char*)SystemConfig::schema_file.c_str());
+
+    Subnet_ConfigFile subnetTopoIntra(SystemConfig::subnet_file);
+    subnetTopoIntra.Init();
 
     ZebraOspfSync ospfSyncIntra((char*)SystemConfig::ospfd_intra_host.c_str(), SystemConfig::ospfd_intra_port, 
             DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);

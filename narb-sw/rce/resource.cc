@@ -243,6 +243,14 @@ void ResourceDB::Delete(Resource* rc)
         delete data;
 }
 
+void ResourceDB::Remove(Resource* rc)
+{
+    RadixNode<Resource> *node;
+    assert(rc);
+    Prefix index = rc->Index();
+    Resource * data = r_trees[rc->Type()].DeleteNode(&index);
+}
+
 void ResourceDB::DeleteByPrefix(ResourceType type, Prefix* prefix)
 {
     RadixNode<Resource> *node;

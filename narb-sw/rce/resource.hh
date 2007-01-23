@@ -116,6 +116,10 @@ public:
     friend class PCENLink;
     friend class PCEN_KSP;
     friend class PCEN_MRN;
+    friend class router_info;
+    friend class link_info;
+    friend class Subnet;
+    friend class Subnet_ConfigFile;
 };
 
 class RouterId: public Resource
@@ -139,6 +143,10 @@ public:
     friend class PCENLink;
     friend class PCEN_KSP;
     friend class PCEN_MRN;
+    friend class router_info;
+    friend class link_info;
+    friend class Subnet;
+    friend class Subnet_ConfigFile;
 };
 
 #ifndef MAX_VLAN_NUM
@@ -343,6 +351,10 @@ public:
     friend class PCEN_KSP;
     friend class PathT;
     friend class PCEN_MRN;
+    friend class router_info;
+    friend class link_info;
+    friend class Subnet;
+    friend class Subnet_ConfigFile;
 };
 
 //defining domain mask
@@ -380,7 +392,8 @@ public:
     static RadixNode<Resource>* Update(Resource* rc);
     static RadixNode<Resource>* Lookup(Resource* rc);
     static RadixNode<Resource>* LookupByPrefix(ResourceType type, Prefix* prefix);
-    static void Delete(Resource* rc);
+    static void Remove(Resource* rc); //do not free memory
+    static void Delete(Resource* rc); //free rc memory
     static void DeleteByPrefix(ResourceType type, Prefix* prefix);
     //testing code
     static void WalkTree(ResourceType type);

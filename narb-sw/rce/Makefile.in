@@ -93,11 +93,11 @@ sysconf_DATA = schema_combo.rsd.sample
 sbin_PROGRAMS = rce rce_test
 
 rce_SOURCES = \
-	rce_main.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc
+	rce_main.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc rce_subnet.cc
 
 
 rce_test_SOURCES = \
-	rce_test.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc
+	rce_test.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc rce_subnet.cc
 
 
 rce_LDADD = -lc -lstdc++ -lz
@@ -116,7 +116,8 @@ am_rce_OBJECTS = rce_main.$(OBJEXT) event.$(OBJEXT) rce_log.$(OBJEXT) \
 	rce_pcen.$(OBJEXT) rce_lsp.$(OBJEXT) rce_filter.$(OBJEXT) \
 	zebra_ospfclient.$(OBJEXT) rce_schema.$(OBJEXT) \
 	rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) cmdtree.$(OBJEXT) \
-	pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) pcen_mrn_cg.$(OBJEXT)
+	pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) pcen_mrn_cg.$(OBJEXT) \
+	rce_subnet.$(OBJEXT)
 rce_OBJECTS = $(am_rce_OBJECTS)
 rce_DEPENDENCIES =
 rce_LDFLAGS =
@@ -127,7 +128,7 @@ am_rce_test_OBJECTS = rce_test.$(OBJEXT) event.$(OBJEXT) \
 	rce_filter.$(OBJEXT) zebra_ospfclient.$(OBJEXT) \
 	rce_schema.$(OBJEXT) rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) \
 	cmdtree.$(OBJEXT) pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) \
-	pcen_mrn_cg.$(OBJEXT)
+	pcen_mrn_cg.$(OBJEXT) rce_subnet.$(OBJEXT)
 rce_test_OBJECTS = $(am_rce_test_OBJECTS)
 rce_test_DEPENDENCIES =
 rce_test_LDFLAGS =
@@ -145,8 +146,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/rce_filter.Po ./$(DEPDIR)/rce_log.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_lsa.Po ./$(DEPDIR)/rce_lsp.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_main.Po ./$(DEPDIR)/rce_pcen.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rce_schema.Po ./$(DEPDIR)/rce_test.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/resource.Po ./$(DEPDIR)/toolbox.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/rce_schema.Po ./$(DEPDIR)/rce_subnet.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/rce_test.Po ./$(DEPDIR)/resource.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/toolbox.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/zebra_ospfclient.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -157,9 +159,9 @@ CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
 DATA = $(sysconf_DATA)
 
-DIST_COMMON = README ChangeLog Makefile.am Makefile.in aclocal.m4 \
-	config.guess config.h.in config.sub configure configure.ac \
-	depcomp install-sh mkinstalldirs
+DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
+	Makefile.in NEWS aclocal.m4 config.guess config.h.in config.sub \
+	configure configure.ac depcomp install-sh missing mkinstalldirs
 SOURCES = $(rce_SOURCES) $(rce_test_SOURCES)
 
 all: config.h
@@ -254,6 +256,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_pcen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_schema.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_subnet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toolbox.Po@am__quote@
