@@ -129,7 +129,7 @@ void Subnet_ConfigFile::Init(const char* fileName)
 }
 
 // Read up configuration file from subnet_file. 
-int Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, char *config_default_dir)
+void Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, char *config_default_dir)
 {
     char *cwd;
     ifstream inFile;
@@ -152,7 +152,7 @@ int Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, 
         if (!inFile  || inFile.bad()) 
         {
             LOG_CERR << "Failed to open the config file: " << fullpath << endl;
-            return -1;
+            return;
         }
     }
     else // config_file not specified in comand line
@@ -170,7 +170,7 @@ int Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, 
             if (!inFile  || inFile.bad()) 
             {
                 LOG_CERR << "Failed to open the config file: " << config_default_dir << endl;
-                return -1;
+                return;
             }
             else
             {
@@ -190,7 +190,7 @@ int Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, 
     ConfigFromFile(inFile);
  
     inFile.close();
-    return 0;
+    return;
 }
 
 // Subnet topology is created from here.
@@ -223,6 +223,24 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
         // each block is identified by the config_code
         switch(config_code) 
         {
+        case CONFIG_DOMAIN_ID:
+          {
+              char domain_id[MAXADDRLEN];
+              if (ReadConfigParameter(blk_body, "ip", "%s", domain_id))
+              {
+                  inet_aton(domain_id, (struct in_addr*)(&domainId));
+              }
+              else if  (ReadConfigParameter(blk_body, "id", "%s", domain_id))
+              {
+                  domainId = strtoul(domain_id, NULL, 10);
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on domain-id"<<endl);
+              }
+          }
+          break;
+
         case  CONFIG_ROUTER:
           {
               char link_header[SUBNET_LINESIZ], link_body[SUBNET_BLKSIZ];
@@ -360,6 +378,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                 }
           }
           break;
+
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s}\n", blk_header, blk_body);
