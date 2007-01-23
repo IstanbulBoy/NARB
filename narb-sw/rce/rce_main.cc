@@ -74,6 +74,7 @@ ZebraOspfSync *zebra_client_intra = NULL;
 int main( int argc, char* argv[])
 {
     bool is_daemon = false;
+    bool enable_subnet = false;
 
     while (1)
     {
@@ -93,6 +94,7 @@ int main( int argc, char* argv[])
             break;
         case 'c':
             SystemConfig::subnet_file = optarg;
+            enable_subnet = true;
             break;
         case 'd':
             is_daemon = true;
@@ -123,8 +125,11 @@ int main( int argc, char* argv[])
     ResourceSchema rsd(0);
     rsd.Init((char*)SystemConfig::schema_file.c_str());
 
-    Subnet_ConfigFile subnetTopoIntra(SystemConfig::subnet_file);
-    subnetTopoIntra.Init();
+    if (enable_subnet)
+    {
+        Subnet_ConfigFile subnetTopoIntra(SystemConfig::subnet_file);
+        subnetTopoIntra.Init();
+    }
 
     ZebraOspfSync ospfSyncIntra((char*)SystemConfig::ospfd_intra_host.c_str(), SystemConfig::ospfd_intra_port, 
             DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);
