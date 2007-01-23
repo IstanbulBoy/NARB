@@ -394,6 +394,8 @@ static int blk_code (char *buf)
         return CONFIG_ROUTER;
     else if (strstr(buf, "link"))
         return CONFIG_LINK;
+    else if (strstr(buf, "domain-id"))
+        return CONFIG_DOMAIN_ID;
     else
         return CONFIG_UNKNOWN;
 }

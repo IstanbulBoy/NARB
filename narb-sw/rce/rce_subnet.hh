@@ -137,6 +137,7 @@ enum config_code {
   CONFIG_END = 0,
   CONFIG_ROUTER,
   CONFIG_LINK,
+  CONFIG_DOMAIN_ID,
   CONFIG_UNKNOWN
 };
 
@@ -148,7 +149,7 @@ public:
     virtual ~Subnet_ConfigFile() { }
 
     void Init(const char* fileName= NULL);
-    int ReadConfig(char *config_file, char *config_current_dir,	char *config_default_dir);
+    void ReadConfig(char *config_file, char *config_current_dir,	char *config_default_dir);
     void ConfigFromFile(ifstream &ifs);
     int ReadConfigBlock(char *buf, char * header, char * body, char ** next);
     int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
