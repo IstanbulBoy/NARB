@@ -124,12 +124,16 @@ void PCEN_MRN::PostBuildTopology()
                                 if ( link_iter != pcen_node->out_links.end() )
                                     break;
 
+                                // remove the links from RDB.
+                                RDB.Remove(pcen_link->link);
+                                RDB.Remove(pcen_link->reverse_link->link);
+
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
-                                pcen_link->link->advRtId = pcen_node->router->advRtId;  
+                                pcen_link->link->advRtId = pcen_node->router->advRtId;
                                 //link->id unchanged
                                 //reverse_link->advRtId unchanged
-                                pcen_link->reverse_link->link->id = pcen_node->router->id;  
+                                pcen_link->reverse_link->link->id = pcen_node->router->id;
 
                                 //link and rlink data interface addresses unchanged
 
@@ -148,7 +152,10 @@ void PCEN_MRN::PostBuildTopology()
                                 pcen_node->out_links.push_front(pcen_link);
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
-                                // @@@@ Note: The link (both RDB and PCEN links) will be restored by OSPF refresh
+                                // re-plant the links into RDB.
+                                // @@@@ Note: The original links will be restored by OSPF refresh
+                                RDB.Update(pcen_link->link);
+                                RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
                     }
