@@ -464,8 +464,11 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     {
         if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
-        if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->reverse_link->link->iscds.front()
-            && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+    } 
+
+    if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
+    {
+        if (pcen_link->reverse_link->link->iscds.front() && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
             subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
     } 
 
