@@ -54,11 +54,13 @@ PCEN_MRN::~PCEN_MRN()
 
 void PCEN_MRN::PostBuildTopology()
 {
-    int i;
+    int i, j;
     PCENLink *pcen_link;
     PCENNode *pcen_node;
+    list<ISCD*>::iterator iscd_iter;
+    ISCD* iscd;
 
-    //Init Tspec
+    //Init Tspec on nodes/routers 
     for (i = 0; i < routers.size(); i++)
     {
         pcen_node = routers[i];
@@ -88,6 +90,58 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
     }
+
+    // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
+    if (SystemConfig::should_incorporate_subnet)
+    {
+        for (i = 0; i < links.size(); i++)
+        {
+            pcen_link = links[i];
+            if (pcen_link && pcen_link->link) 
+            {
+                iscd_iter = pcen_link->link->Iscds().begin();
+                for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
+                {
+                    iscd = *iscd_iter;
+                    assert(iscd);
+
+                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) 
+                        && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                    {
+                        for (j = 0; j < routers.size(); j++)
+                        {
+                            pcen_node = routers[j];
+                            if ( pcen_node->router && pcen_node->router->id != pcen_link->link->advRtId 
+                                && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 )
+                            {
+                                // change IDs of current RDB link and its reverse link as 'jump' links
+                                assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
+                                pcen_link->link->advRtId = pcen_node->router->advRtId;  //link->id unchanged
+                                pcen_link->reverse_link->link->id = pcen_node->router->id;  //reverse_link->advRtId unchanged
+
+                                //link and rlink data interface addresses unchanged
+
+                                //link and rlink switching capability unchanged
+                                
+                                // remove current pcen_link and its reverse link from the original VLSR pce_node
+                                assert(pcen_link->lcl_end);
+                                pcen_link->lcl_end->out_links.remove(pcen_link);
+                                pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
+
+                                // connect current pcen_link and its reverse link to current pce_node
+                                pcen_link->lcl_end = pcen_node;
+                                pcen_link->reverse_link->rmt_end = pcen_node;
+                                pcen_node->out_links.push_front(pcen_link);
+                                pcen_node->in_links.push_front(pcen_link->reverse_link);                                
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
 }
     
 void PCEN_MRN::Run()

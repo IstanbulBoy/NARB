@@ -269,6 +269,21 @@ struct link_ifswcap_specific_vlan {
 	u_char           bitmask_alloc[MAX_VLAN_NUM/8];
 };
 
+#define IFSWCAP_SPECIFIC_SUBNET_UNI 0x4000
+struct link_ifswcap_specific_subnet_uni {
+	u_int16_t		length;
+	u_int16_t	 	version;       //version id and options mask | IFSWCAP_SPECIFIC_VLAN_SUBNET_UNI
+	u_int16_t		subnet_uni_id;
+	u_char		reserved[2];
+	u_int32_t		tna_ipv4;
+	u_int32_t		nid_ipv4;
+	u_int32_t		data_ipv4;
+	u_int32_t		logical_port_number;
+	u_int32_t		egress_label_downstream; //egress label on the UNI interface
+	u_int32_t		egress_label_upstream; //egress label on the UNI interface for bidirectional traffic
+	char			control_channel[12];
+};
+
 #define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
 #define SET_VLAN(P, VID) P[VID/8] = (P[VID/8] | (0x80 >> (VID-1)%8))
 #define RESET_VLAN(P, VID) P[VID/8] = (P[VID/8] & ~(0x80 >> (VID-1)%8))
@@ -313,6 +328,7 @@ struct te_link_subtlv_link_ifswcap
 		struct link_ifswcap_specific_psc  ifswcap_specific_psc;
 		struct link_ifswcap_specific_tdm ifswcap_specific_tdm; 
        	struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
+       	struct link_ifswcap_specific_subnet_uni ifswcap_specific_subnet_uni;
        } ifswcap_specific_info;
   } link_ifswcap_data;
 };

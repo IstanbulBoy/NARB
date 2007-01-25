@@ -116,7 +116,7 @@ public:
     friend class PCENLink;
     friend class PCEN_KSP;
     friend class PCEN_MRN;
-    friend class router_info;
+    friend class router_id_info;
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
@@ -143,7 +143,7 @@ public:
     friend class PCENLink;
     friend class PCEN_KSP;
     friend class PCEN_MRN;
-    friend class router_info;
+    friend class router_id_info;
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
@@ -168,6 +168,19 @@ struct IfSwCapDesc
             u_char      bitmask[MAX_VLAN_NUM/8];
             u_char      bitmask_alloc[MAX_VLAN_NUM/8];
         }vlan_info;
+        struct {
+        	u_int16_t		length;
+        	u_int16_t	 	version;
+        	u_int16_t		subnet_uni_id;
+        	u_char		reserved[2];
+        	u_int32_t		tna_ipv4;
+        	u_int32_t		nid_ipv4;
+        	u_int32_t		data_ipv4;
+        	u_int32_t		logical_port_number;
+        	u_int32_t		egress_label_downstream;
+        	u_int32_t		egress_label_upstream;
+        	char			control_channel[12];
+        } subnet_uni_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
 #define ISCD_MADATORY_SIZE 36
