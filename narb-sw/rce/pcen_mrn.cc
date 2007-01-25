@@ -105,8 +105,7 @@ void PCEN_MRN::PostBuildTopology()
                     iscd = *iscd_iter;
                     assert(iscd);
 
-                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) 
-                        && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
                     {
                         for (j = 0; j < routers.size(); j++)
                         {
@@ -121,8 +120,10 @@ void PCEN_MRN::PostBuildTopology()
 
                                 //link and rlink data interface addresses unchanged
 
-                                //link and rlink switching capability unchanged
-                                
+                                //change link and rlink switching capability
+                                iscd->swtype = iscd->subnet_uni_info.swtype_ext;
+                                iscd->encoding = iscd->subnet_uni_info.encoding_ext;
+
                                 // remove current pcen_link and its reverse link from the original VLSR pce_node
                                 assert(pcen_link->lcl_end);
                                 pcen_link->lcl_end->out_links.remove(pcen_link);
