@@ -59,6 +59,7 @@ void PCEN_MRN::PostBuildTopology()
     PCENNode *pcen_node;
     list<ISCD*>::iterator iscd_iter;
     ISCD* iscd;
+    list<PCENLink*>::iterator link_iter;
 
     //Init Tspec on nodes/routers 
     for (i = 0; i < routers.size(); i++)
@@ -110,13 +111,25 @@ void PCEN_MRN::PostBuildTopology()
                         for (j = 0; j < routers.size(); j++)
                         {
                             pcen_node = routers[j];
-                            if ( pcen_node->router && pcen_node->router->id != pcen_link->link->advRtId 
-                                && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 )
+                            if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
+                                // check existing 'jump' link
+                                link_iter = pcen_node->out_links.begin();
+                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
+                                {
+                                    // the jump link has already existed
+                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id )
+                                        break;
+                                }
+                                if ( link_iter != pcen_node->out_links.end() )
+                                    break;
+
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
-                                pcen_link->link->advRtId = pcen_node->router->advRtId;  //link->id unchanged
-                                pcen_link->reverse_link->link->id = pcen_node->router->id;  //reverse_link->advRtId unchanged
+                                pcen_link->link->advRtId = pcen_node->router->advRtId;  
+                                //link->id unchanged
+                                //reverse_link->advRtId unchanged
+                                pcen_link->reverse_link->link->id = pcen_node->router->id;  
 
                                 //link and rlink data interface addresses unchanged
 
@@ -133,7 +146,9 @@ void PCEN_MRN::PostBuildTopology()
                                 pcen_link->lcl_end = pcen_node;
                                 pcen_link->reverse_link->rmt_end = pcen_node;
                                 pcen_node->out_links.push_front(pcen_link);
-                                pcen_node->in_links.push_front(pcen_link->reverse_link);                                
+                                pcen_node->in_links.push_front(pcen_link->reverse_link);
+
+                                // @@@@ Note: The link (both RDB and PCEN links) will be restored by OSPF refresh
                             }
                         }
                     }
