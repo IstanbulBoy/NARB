@@ -143,7 +143,9 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
         memcpy(new_subobj, subobj, sizeof(ero_subobj));
         ero.push_back(new_subobj);
     }
-    LOG_FILE << flush;
+
+    if (Log::log_file)
+    	Log::log_file->flush();
 }
 
 void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
@@ -194,7 +196,9 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
         ero.push_back(new_subobj);
         subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
     }
-    LOG_FILE << flush;
+
+    if (Log::log_file)
+    	Log::log_file->flush();
 }
 
 int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
