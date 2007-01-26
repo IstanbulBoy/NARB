@@ -173,7 +173,10 @@ void PCEN_MRN::PostBuildTopology()
                             pcen_link->rmt_end->in_links.remove(pcen_link);
                         RDB.Delete(pcen_link->link);
                         links.erase(links.begin() + i);
-                        --i;
+                        if (i == links.size())
+                            break;
+                        else
+                            --i;
                     }
                 }
             }
