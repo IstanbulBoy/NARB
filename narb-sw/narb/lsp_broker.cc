@@ -138,11 +138,12 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
     for (; len > 0 ;subobj++, len -= sizeof(ero_subobj))
     {
         inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
-        LOGF("HOP-TYPE [%s]: %s\n", subobj->hop_type?"loose":"strict", addr); //debug
+        LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d)]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id)); //debug
         ero_subobj * new_subobj = (ero_subobj*)malloc(sizeof(ero_subobj));
         memcpy(new_subobj, subobj, sizeof(ero_subobj));
         ero.push_back(new_subobj);
     }
+    LOG_FILE << flush;
 }
 
 void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
@@ -176,7 +177,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
             if ((ntohl(subobj_unum->ifid)>>16) == 0x0004 && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
             && (ntohl(subobj_unum->ifid) & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
                 new_subobj->l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
-            LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, new_subobj->if_id);
+            LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d (%d,%d)]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, ntohl(new_subobj->if_id), ntohl(new_subobj->if_id)>>16, (u_int16_t)ntohl(new_subobj->if_id)); //debug
             len -= sizeof(unum_if_subobj);
             offset += sizeof(unum_if_subobj);
         }
@@ -193,6 +194,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
         ero.push_back(new_subobj);
         subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
     }
+    LOG_FILE << flush;
 }
 
 int LSPQ::MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra)
