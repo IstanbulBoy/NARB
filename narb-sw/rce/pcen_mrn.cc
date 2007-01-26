@@ -163,6 +163,10 @@ void PCEN_MRN::PostBuildTopology()
                                 pcen_node->out_links.push_front(pcen_link);
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
+                                // change 'jump link' metric 
+                                pcen_link->link->metric = 0;
+                                pcen_link->reverse_link->link->metric = 0;
+
                                 // re-plant the links into RDB.
                                 // @@@@ Note: The original links will be restored by OSPF refresh
                                 RDB.Update(pcen_link->link);
