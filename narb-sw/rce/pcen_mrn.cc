@@ -495,29 +495,33 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     subobj2.encoding = pcen_link->rmt_end->tspec.ENCtype;
     subobj2.bandwidth = pcen_link->rmt_end->tspec.Bandwidth;
     
+    //E2E VLAN related
     if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->link)
     {
         if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
         {
             subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
         }
-        else if ( SystemConfig::should_incorporate_subnet && ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
-        {
-            subobj1.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
-            subobj1.l2sc_vlantag = 0;
-        }
     } 
-
     if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
         if (pcen_link->reverse_link->link->iscds.front() && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
             subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
-        else if ( SystemConfig::should_incorporate_subnet && ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI )
-        {
-            subobj2.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
-            subobj2.l2sc_vlantag = 0;
-        }
     } 
+
+    //Subnet UNI related
+    if (SystemConfig::should_incorporate_subnet && pcen_link->link 
+        && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) )
+    {
+        subobj1.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
+        subobj1.l2sc_vlantag = 0;
+    }
+    if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
+        && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) )
+    {
+        subobj2.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
+        subobj2.l2sc_vlantag = 0;
+    }
 
     ero_track.push_back(subobj1);
     ero_track.push_back(subobj2);
