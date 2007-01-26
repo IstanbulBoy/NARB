@@ -138,7 +138,7 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
     for (; len > 0 ;subobj++, len -= sizeof(ero_subobj))
     {
         inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
-        LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%x]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohl(subobj->l2sc_vlantag)); //debug
+        LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag)); //debug
         ero_subobj * new_subobj = (ero_subobj*)malloc(sizeof(ero_subobj));
         memcpy(new_subobj, subobj, sizeof(ero_subobj));
         ero.push_back(new_subobj);
