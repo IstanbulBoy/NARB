@@ -39,6 +39,10 @@
 using namespace std;
 
 #undef DISPLAY_ROUTING_DETAILS
+
+
+#define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
+#define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
     
 class PCEN_MRN: public PCEN
 {
@@ -56,17 +60,21 @@ public:
     PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL);
     virtual ~PCEN_MRN();
+
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec);
     bool IsInExcludedLayer(PCENNode* node);
     int GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec);
-    int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
     void SetVTagMask(ConstraintTagSet& vtagset);
-    void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
-    void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
     void PreserveSceneToStacks(PCENNode& node);
     void RestoreSceneFromStacks(PCENNode& node);
+
+    void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
+    void HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track);
+
+    int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
+    void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
     virtual int PerformComputation();
     void PostBuildTopology();

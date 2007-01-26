@@ -494,17 +494,29 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     subobj2.sw_type = pcen_link->rmt_end->tspec.SWtype;
     subobj2.encoding = pcen_link->rmt_end->tspec.ENCtype;
     subobj2.bandwidth = pcen_link->rmt_end->tspec.Bandwidth;
-
+    
     if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->link)
     {
         if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
+        {
             subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+        }
+        else if ( SystemConfig::should_incorporate_subnet && ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
+        {
+            subobj1.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
+            subobj1.l2sc_vlantag = 0;
+        }
     } 
 
     if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
         if (pcen_link->reverse_link->link->iscds.front() && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
             subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+        else if ( SystemConfig::should_incorporate_subnet && ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI )
+        {
+            subobj2.if_id = (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id;
+            subobj2.l2sc_vlantag = 0;
+        }
     } 
 
     ero_track.push_back(subobj1);
@@ -539,8 +551,9 @@ void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
 
 void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
 {
-    if (ero_track.size() < 1)
+    if (ero_track.size() == 0)
         return;
+
     list<ero_subobj>::iterator iter = ero_track.begin();
     list<ero_subobj>::iterator last_iter = iter;
     bool in_l2sc = ((*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC);
@@ -572,6 +585,30 @@ void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
         last_iter = iter;
     }
     
+}
+
+void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
+{
+    if (ero_track.size() == 0)
+        return;
+
+    list<ero_subobj>::iterator iter = ero_track.begin();
+    list<ero_subobj>::iterator uni_src = ero_track.end();
+    list<ero_subobj>::iterator uni_dest = ero_track.end();
+
+    for (; iter != ero_track.end(); iter++) 
+    {
+        if ( ((*iter).if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC && uni_src == ero_track.end())
+            uni_src = iter;
+        if ( ((*iter).if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST )
+            uni_dest = iter;
+    }
+
+    if (uni_src != ero_track.end() && uni_dest != ero_track.end())
+    {
+        if ((++uni_src) != uni_dest)
+            ero_track.erase(uni_src, uni_dest);
+    }
 }
 
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
@@ -826,14 +863,19 @@ int PCEN_MRN::PerformComputation()
     {
         if (destNode->vtagset.IsEmpty())
             return ERR_PCEN_NO_ROUTE;
+
         if (vtag == ANY_VTAG) {
             vtag  = destNode->vtagset.TagSet().front();
             SetVTagToEROTrack(ero, vtag);
             if (destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
                 SetVTagMask(destNode->vtagset);
         }
+
         if (is_via_movaz)
             HandleMovazEROTrack(ero, vtag);
+
+        if (SystemConfig::should_incorporate_subnet)
+            HandleSubnetUNIEROTrack(ero);
     }
 
     if (ero.size() == 0)
