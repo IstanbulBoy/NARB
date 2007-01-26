@@ -138,15 +138,16 @@ void PCEN_MRN::PostBuildTopology()
                                 //$$$$ reverse_link->advRtId unchanged
                                 pcen_link->reverse_link->link->id = pcen_node->router->id;
                                 
+                                // link and reverse_link data interface addresses unchanged
+
                                 // using iscd->subnet_uni_info.data_ipv4 and it's peer
-                                if ( is_slash30_ipv4(iscd->subnet_uni_info.data_ipv4) )
-                                {
-                                    pcen_link->link->lclIfAddr = iscd->subnet_uni_info.data_ipv4;
-                                    pcen_link->link->rmtIfAddr = get_slash30_peer(iscd->subnet_uni_info.data_ipv4);
-                                    pcen_link->reverse_link->link->lclIfAddr = pcen_link->link->rmtIfAddr;
-                                    pcen_link->reverse_link->link->rmtIfAddr = pcen_link->link->lclIfAddr;
-                                }
-                                // else: link and reverse_link data interface addresses unchanged
+                                //if ( is_slash30_ipv4(iscd->subnet_uni_info.data_ipv4) )
+                                //{
+                                //    pcen_link->link->lclIfAddr = iscd->subnet_uni_info.data_ipv4;
+                                //    pcen_link->link->rmtIfAddr = get_slash30_peer(iscd->subnet_uni_info.data_ipv4);
+                                //    pcen_link->reverse_link->link->lclIfAddr = pcen_link->link->rmtIfAddr;
+                                //    pcen_link->reverse_link->link->rmtIfAddr = pcen_link->link->lclIfAddr;
+                                //}
 
                                 //change link and rlink switching capability
                                 iscd->swtype = iscd->subnet_uni_info.swtype_ext;
