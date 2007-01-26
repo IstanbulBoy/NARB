@@ -565,6 +565,8 @@ void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
                 (*iter).l2sc_vlantag = vtag;
                 (*iter).sw_type = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
             }
+            else
+                break;
             in_l2sc = true;
         }
         last_iter = iter;
