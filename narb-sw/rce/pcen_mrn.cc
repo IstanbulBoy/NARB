@@ -490,6 +490,11 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     subobj1.encoding = subobj2.encoding = pcen_link->lcl_end->tspec.ENCtype;
     subobj1.bandwidth= subobj2.bandwidth = pcen_link->lcl_end->tspec.Bandwidth;
 
+    //@@@@ ?
+    subobj2.sw_type = pcen_link->rmt_end->tspec.SWtype;
+    subobj2.encoding = pcen_link->rmt_end->tspec.ENCtype;
+    subobj2.bandwidth = pcen_link->rmt_end->tspec.Bandwidth;
+
     if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->link)
     {
         if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
