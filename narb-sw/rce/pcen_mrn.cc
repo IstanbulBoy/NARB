@@ -513,13 +513,13 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if (SystemConfig::should_incorporate_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) )
     {
-        subobj1.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id);
+        subobj1.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |ntohs(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id));
         subobj1.l2sc_vlantag = 0;
     }
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) )
     {
-        subobj2.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id);
+        subobj2.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id));
         subobj2.l2sc_vlantag = 0;
     }
 
@@ -602,9 +602,9 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 
     for (; iter != ero_track.end(); iter++) 
     {
-        if ( ((*iter).if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC && uni_src == ero_track.end())
+        if ( (ntohl((*iter).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC && uni_src == ero_track.end())
             uni_src = iter;
-        if ( ((*iter).if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST )
+        if ( (ntohl((*iter).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST )
             uni_dest = iter;
     }
 
