@@ -98,6 +98,7 @@ void PCEN_MRN::PostBuildTopology()
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
+            bool shouldDeleteLink = false;
             if (pcen_link && pcen_link->link) 
             {
                 iscd_iter = pcen_link->link->Iscds().begin();
@@ -118,10 +119,12 @@ void PCEN_MRN::PostBuildTopology()
                                 for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
                                 {
                                     // the jump link has already existed
-                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id )
+                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id ) {
+                                        shouldDeleteLink = true;
                                         break;
+                                    }
                                 }
-                                if ( link_iter != pcen_node->out_links.end() )
+                                if ( shouldDeleteLink )
                                     break;
 
                                 // remove the links from RDB.
@@ -158,8 +161,20 @@ void PCEN_MRN::PostBuildTopology()
                                 RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
+
+                        if (shouldDeleteLink)
+                            break;
                     }
-                    break;
+
+                    if (shouldDeleteLink) {
+                        if (pcen_link->lcl_end)
+                            pcen_link->lcl_end->out_links.remove(pcen_link);
+                        if (pcen_link->rmt_end)
+                            pcen_link->rmt_end->in_links.remove(pcen_link);
+                        RDB.Delete(pcen_link->link);
+                        links.erase(links.begin() + i);
+                        --i;
+                    }
                 }
             }
         }
