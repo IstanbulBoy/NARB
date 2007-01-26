@@ -134,11 +134,19 @@ void PCEN_MRN::PostBuildTopology()
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
-                                //link->id unchanged
-                                //reverse_link->advRtId unchanged
+                                //$$$$ link->id unchanged
+                                //$$$$ reverse_link->advRtId unchanged
                                 pcen_link->reverse_link->link->id = pcen_node->router->id;
-
-                                //link and rlink data interface addresses unchanged
+                                
+                                // using iscd->subnet_uni_info.data_ipv4 and it's peer
+                                if ( is_slash30_ipv4(iscd->subnet_uni_info.data_ipv4) )
+                                {
+                                    pcen_link->link->lclIfAddr = iscd->subnet_uni_info.data_ipv4;
+                                    pcen_link->link->rmtIfAddr = get_slash30_peer(iscd->subnet_uni_info.data_ipv4);
+                                    pcen_link->reverse_link->link->lclIfAddr = pcen_link->link->rmtIfAddr;
+                                    pcen_link->reverse_link->link->rmtIfAddr = pcen_link->link->lclIfAddr;
+                                }
+                                // else: link and reverse_link data interface addresses unchanged
 
                                 //change link and rlink switching capability
                                 iscd->swtype = iscd->subnet_uni_info.swtype_ext;

@@ -50,5 +50,9 @@ void htonf_mbps(u_int32_t &x);
 
 void htonf_mbps(float &x);
 
+bool is_slash30_ipv4 (u_int32_t ip);
+
+u_int32_t get_slash30_peer(u_int32_t ip);
+
 #endif
 

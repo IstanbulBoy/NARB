@@ -300,5 +300,34 @@ void htonf_mbps(u_int32_t &x)
     htonf_mbps(*p);
 }
 
+bool is_slash30_ipv4 (u_int32_t ip)
+{
+    switch ((ip >> 24) & 0x03) 
+    {
+    case 0x01:
+        return true;
+        break;
+    case 0x02:
+        return true;
+        break;
+    }
+    return false;
+}
+
+u_int32_t get_slash30_peer (u_int32_t ip)
+{
+    switch ((ip >> 24) & 0x03) 
+    {
+    case 0x01:
+        return ((ip & (~0x01000000)) | 0x02000000);
+        break;
+    case 0x02:
+        return ((ip & (~0x02000000)) | 0x01000000);
+        break;
+    }
+
+    return ip;
+}
+
 //function to round requested bandwidth into standard values...
 
