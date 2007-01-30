@@ -98,9 +98,9 @@ void PCEN_MRN::PostBuildTopology()
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
-            bool shouldDeleteLink = false;
             if (pcen_link && pcen_link->link) 
             {
+                bool isOldJumpLink = false;
                 iscd_iter = pcen_link->link->Iscds().begin();
                 for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
                 {
@@ -112,21 +112,21 @@ void PCEN_MRN::PostBuildTopology()
                         for (j = 0; j < routers.size(); j++)
                         {
                             pcen_node = routers[j];
+                            // an existing "jump link"
+                            if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id == pcen_link->link->advRtId )
+                            {
+                                isOldJumpLink = true;
+                                break;
+                            }
+                        }
+                        if (isOldJumpLink) //this link has been erased
+                            break;
+
+                        for (j = 0; j < routers.size(); j++)
+                        {
+                            pcen_node = routers[j];
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
-                                // check existing 'jump' link
-                                link_iter = pcen_node->out_links.begin();
-                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
-                                {
-                                    // the jump link has already existed
-                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id ) {
-                                        shouldDeleteLink = true;
-                                        break;
-                                    }
-                                }
-                                if ( shouldDeleteLink )
-                                    break;
-
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
                                 RDB.Remove(pcen_link->reverse_link->link);
@@ -174,23 +174,20 @@ void PCEN_MRN::PostBuildTopology()
                                 RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
-
-                        if (shouldDeleteLink)
-                            break;
                     }
-
-                    if (shouldDeleteLink) {
-                        if (pcen_link->lcl_end)
-                            pcen_link->lcl_end->out_links.remove(pcen_link);
-                        if (pcen_link->rmt_end)
-                            pcen_link->rmt_end->in_links.remove(pcen_link);
-                        RDB.Delete(pcen_link->link);
-                        links.erase(links.begin() + i);
-                        if (i == links.size())
-                            break;
-                        else
-                            --i;
-                    }
+                }
+                if (isOldJumpLink)
+                {
+                    // removing the old 'jump link' ...
+                    if (pcen_link->lcl_end)
+                        pcen_link->lcl_end->out_links.remove(pcen_link);
+                    if (pcen_link->rmt_end)
+                        pcen_link->rmt_end->in_links.remove(pcen_link);
+                    RDB.Delete(pcen_link->link);
+                    links.erase(links.begin() + i);
+                    if (i == links.size())
+                        break;
+                    i--; //continues the loop
                 }
             }
         }
