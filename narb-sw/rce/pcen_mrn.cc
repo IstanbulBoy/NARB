@@ -117,16 +117,6 @@ void PCEN_MRN::PostBuildTopology()
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
-
-                                // check existing 'jump' link
-                                link_iter = pcen_node->out_links.begin();
-                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
-                                {
-                                    // the jump link has already existed
-                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id ) {
-                                        break;
-                                    }
-                                }
                                 
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
@@ -155,10 +145,18 @@ void PCEN_MRN::PostBuildTopology()
 
                                 // remove current pcen_link and its reverse link from the original VLSR pce_node
                                 assert(pcen_link->lcl_end);
-                                if (pcen_link->lcl_end->out_links.size() > 0)
-                                    pcen_link->lcl_end->out_links.remove(pcen_link);
-                                if (pcen_link->lcl_end->in_links.size() > 0)
-                                    pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
+                                link_iter = pcen_link->lcl_end->out_links.begin();
+                                for ( ; link_iter != pcen_link->lcl_end->out_links.end(); link_iter++ )
+                                {
+                                    if((*link_iter) == pcen_link)
+                                        pcen_link->lcl_end->in_links.remove(pcen_link);
+                                }
+                                link_iter = pcen_link->lcl_end->in_links.begin();
+                                for ( ; link_iter != pcen_link->lcl_end->in_links.end(); link_iter++ )
+                                {
+                                    if((*link_iter) == pcen_link->reverse_link)
+                                        pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
+                                }
 
                                 // connect current pcen_link and its reverse link to current pce_node
                                 pcen_link->lcl_end = pcen_node;
