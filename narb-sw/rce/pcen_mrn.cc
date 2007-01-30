@@ -113,12 +113,13 @@ void PCEN_MRN::PostBuildTopology()
                             pcen_node = routers[j];
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
+                                assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
+
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
                                 RDB.Remove(pcen_link->reverse_link->link);
 
                                 // change IDs of current RDB link and its reverse link as 'jump' links
-                                assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
                                 //$$$$ link->id unchanged
                                 //$$$$ reverse_link->advRtId unchanged
