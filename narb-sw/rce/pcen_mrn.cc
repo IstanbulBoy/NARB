@@ -61,8 +61,11 @@ void PCEN_MRN::PostBuildTopology()
     ISCD* iscd;
     list<PCENLink*>::iterator link_iter;
 
+    int rNum = routers.size(); 
+    int lNum =  links.size();
+
     //Init Tspec on nodes/routers 
-    for (i = 0; i < routers.size(); i++)
+    for (i = 0; i < rNum; i++)
     {
         pcen_node = routers[i];
         pcen_node->tspec.SWtype = switching_type_ingress; //$$$$
@@ -71,7 +74,7 @@ void PCEN_MRN::PostBuildTopology()
     }
 
     //Init reverseLink
-    for (i = 0; i < links.size(); i++)
+    for (i = 0; i < lNum; i++)
     {
         pcen_link = links[i];
         assert(pcen_link);
@@ -95,7 +98,7 @@ void PCEN_MRN::PostBuildTopology()
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
     if (SystemConfig::should_incorporate_subnet)
     {
-        for (i = 0; i < links.size(); i++)
+        for (i = 0; i < lNum; i++)
         {
             pcen_link = links[i];
             if (pcen_link && pcen_link->link) 
@@ -108,13 +111,23 @@ void PCEN_MRN::PostBuildTopology()
 
                     if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
                     {
-                        for (j = 0; j < routers.size(); j++)
+                        for (j = 0; j < rNum; j++)
                         {
                             pcen_node = routers[j];
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
 
+                                // check existing 'jump' link
+                                link_iter = pcen_node->out_links.begin();
+                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
+                                {
+                                    // the jump link has already existed
+                                    if ( (*link_iter) && (*link_iter)->link && (*link_iter)->link->id == pcen_link->link->id ) {
+                                        break;
+                                    }
+                                }
+                                
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
                                 RDB.Remove(pcen_link->reverse_link->link);
