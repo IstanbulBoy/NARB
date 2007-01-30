@@ -96,6 +96,7 @@ void PCEN_MRN::PostBuildTopology()
     if (SystemConfig::should_incorporate_subnet)
     {
         // removing old 'jump links' 
+        /*
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
@@ -126,6 +127,7 @@ void PCEN_MRN::PostBuildTopology()
                 }
             }
         }
+        */
 
         // creating new 'jump links' 
         for (i = 0; i < links.size(); i++)
