@@ -147,8 +147,8 @@ void PCEN_MRN::PostBuildTopology()
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
                                 // remove the links from RDB.
-                                RDB.Remove(pcen_link->link);
-                                RDB.Remove(pcen_link->reverse_link->link);
+                                //RDB.Remove(pcen_link->link);
+                                //RDB.Remove(pcen_link->reverse_link->link);
 
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
@@ -180,6 +180,7 @@ void PCEN_MRN::PostBuildTopology()
                                 // connect current pcen_link and its reverse link to current pce_node
                                 pcen_link->lcl_end = pcen_node;
                                 pcen_link->reverse_link->rmt_end = pcen_node;
+                                
                                 pcen_node->out_links.push_front(pcen_link);
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
@@ -189,8 +190,8 @@ void PCEN_MRN::PostBuildTopology()
 
                                 // re-plant the links into RDB.
                                 // @@@@ Note: The original links will be restored by OSPF refresh
-                                RDB.Update(pcen_link->link);
-                                RDB.Update(pcen_link->reverse_link->link);
+                                //RDB.Update(pcen_link->link);
+                                //RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
                     }
