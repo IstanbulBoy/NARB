@@ -182,30 +182,30 @@ void PCEN_MRN::PostBuildTopology()
                                 pcen_link->lcl_end = pcen_node;
                                 pcen_link->reverse_link->rmt_end = pcen_node;
 
-                                //
-                                list<PCENLink*>::iterator link_iter = pcen_node->out_links.begin();
-                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
-                                {
-                                    if ((*link_iter)->rmt_end == pcen_link->rmt_end) {
-                                        RDB.Delete((*link_iter)->link);
-                                        (*link_iter)->link = NULL;
-                                        pcen_node->out_links.erase(link_iter);
-                                        break;                                        
-                                    }
-                                }
+                                // memory leak?
+                                // list<PCENLink*>::iterator link_iter = pcen_node->out_links.begin();
+                                // for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
+                                // {
+                                //     if ((*link_iter)->rmt_end == pcen_link->rmt_end) {
+                                //         RDB.Delete((*link_iter)->link);
+                                //         (*link_iter)->link = NULL;
+                                //         pcen_node->out_links.erase(link_iter);
+                                //         break;                                        
+                                //     }
+                                // }
                                 pcen_node->out_links.push_front(pcen_link);
 
-                                //
-                                link_iter = pcen_node->in_links.begin();
-                                for ( ; link_iter != pcen_node->in_links.end(); link_iter++ )
-                                {
-                                    if ((*link_iter)->lcl_end == pcen_link->reverse_link->lcl_end) {
-                                        RDB.Delete((*link_iter)->link);
-                                        (*link_iter)->link = NULL;
-                                        pcen_node->in_links.erase(link_iter);
-                                        break;
-                                    }
-                                }
+                                // memory leak?
+                                // link_iter = pcen_node->in_links.begin();
+                                // for ( ; link_iter != pcen_node->in_links.end(); link_iter++ )
+                                // {
+                                //     if ((*link_iter)->lcl_end == pcen_link->reverse_link->lcl_end) {
+                                //         RDB.Delete((*link_iter)->link);
+                                //         (*link_iter)->link = NULL;
+                                //         pcen_node->in_links.erase(link_iter);
+                                //         break;
+                                //     }
+                                // }
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
                                 // change 'jump link' metric 
@@ -222,20 +222,6 @@ void PCEN_MRN::PostBuildTopology()
                 }
             }
         }
-
-        //clean up the link vector
-        for (i = 0; i < links.size(); i++)
-        {
-            pcen_link = links[i];
-            if (pcen_link->link == NULL)
-            {
-                links.erase(links.begin() + i);
-                if (i < links.size())
-                    i--;
-                break;
-            }
-        }
-
     }
 
 }
