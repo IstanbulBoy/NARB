@@ -95,12 +95,12 @@ void PCEN_MRN::PostBuildTopology()
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
     if (SystemConfig::should_incorporate_subnet)
     {
+        // removing old 'jump links' 
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
             if (pcen_link && pcen_link->link) 
             {
-                bool isOldJumpLink = false;
                 iscd_iter = pcen_link->link->Iscds().begin();
                 for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
                 {
@@ -109,19 +109,38 @@ void PCEN_MRN::PostBuildTopology()
 
                     if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
                     {
-                        for (j = 0; j < routers.size(); j++)
+                        // an existing "jump link"
+                        if ( pcen_node->router &&  iscd->subnet_uni_info.nid_ipv4 == pcen_link->link->advRtId )
                         {
-                            pcen_node = routers[j];
-                            // an existing "jump link"
-                            if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id == pcen_link->link->advRtId )
-                            {
-                                isOldJumpLink = true;
-                                break;
-                            }
-                        }
-                        if (isOldJumpLink) //this link has been erased
+                            if (pcen_link->lcl_end)
+                                pcen_link->lcl_end->out_links.remove(pcen_link);
+                            if (pcen_link->rmt_end)
+                                pcen_link->rmt_end->in_links.remove(pcen_link);
+                            RDB.Delete(pcen_link->link);
+                            links.erase(links.begin() + i);
+                            if (i < links.size())
+                                i--;
                             break;
+                        }
+                    }
+                }
+            }
+        }
 
+        // creating new 'jump links' 
+        for (i = 0; i < links.size(); i++)
+        {
+            pcen_link = links[i];
+            if (pcen_link && pcen_link->link) 
+            {
+                iscd_iter = pcen_link->link->Iscds().begin();
+                for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
+                {
+                    iscd = *iscd_iter;
+                    assert(iscd);
+
+                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                    {
                         for (j = 0; j < routers.size(); j++)
                         {
                             pcen_node = routers[j];
@@ -175,19 +194,6 @@ void PCEN_MRN::PostBuildTopology()
                             }
                         }
                     }
-                }
-                if (isOldJumpLink)
-                {
-                    // removing the old 'jump link' ...
-                    if (pcen_link->lcl_end)
-                        pcen_link->lcl_end->out_links.remove(pcen_link);
-                    if (pcen_link->rmt_end)
-                        pcen_link->rmt_end->in_links.remove(pcen_link);
-                    RDB.Delete(pcen_link->link);
-                    links.erase(links.begin() + i);
-                    if (i == links.size())
-                        break;
-                    i--; //continues the loop
                 }
             }
         }
