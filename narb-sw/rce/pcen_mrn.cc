@@ -128,7 +128,6 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
         */
-
         // creating new 'jump links' 
         for (i = 0; i < links.size(); i++)
         {
@@ -149,8 +148,8 @@ void PCEN_MRN::PostBuildTopology()
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
                                 // remove the links from RDB.
-                                //RDB.Remove(pcen_link->link);
-                                //RDB.Remove(pcen_link->reverse_link->link);
+                                RDB.Remove(pcen_link->link);
+                                RDB.Remove(pcen_link->reverse_link->link);
 
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
@@ -161,7 +160,7 @@ void PCEN_MRN::PostBuildTopology()
                                 
                                 // link and reverse_link data interface addresses unchanged
 
-                                // using iscd->subnet_uni_info.data_ipv4 and it's peer
+                                // XXX using iscd->subnet_uni_info.data_ipv4 and it's peer XXX
                                 //if ( is_slash30_ipv4(iscd->subnet_uni_info.data_ipv4) )
                                 //{
                                 //    pcen_link->link->lclIfAddr = iscd->subnet_uni_info.data_ipv4;
@@ -182,8 +181,31 @@ void PCEN_MRN::PostBuildTopology()
                                 // connect current pcen_link and its reverse link to current pce_node
                                 pcen_link->lcl_end = pcen_node;
                                 pcen_link->reverse_link->rmt_end = pcen_node;
-                                
+
+                                //
+                                list<PCENLink*>::iterator link_iter = pcen_node->out_links.begin();
+                                for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
+                                {
+                                    if ((*link_iter)->rmt_end == pcen_link->rmt_end) {
+                                        RDB.Delete((*link_iter)->link);
+                                        (*link_iter)->link = NULL;
+                                        pcen_node->out_links.erase(link_iter);
+                                        break;                                        
+                                    }
+                                }
                                 pcen_node->out_links.push_front(pcen_link);
+
+                                //
+                                link_iter = pcen_node->in_links.begin();
+                                for ( ; link_iter != pcen_node->in_links.end(); link_iter++ )
+                                {
+                                    if ((*link_iter)->lcl_end == pcen_link->reverse_link->lcl_end) {
+                                        RDB.Delete((*link_iter)->link);
+                                        (*link_iter)->link = NULL;
+                                        pcen_node->in_links.erase(link_iter);
+                                        break;
+                                    }
+                                }
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
                                 // change 'jump link' metric 
@@ -192,14 +214,28 @@ void PCEN_MRN::PostBuildTopology()
 
                                 // re-plant the links into RDB.
                                 // @@@@ Note: The original links will be restored by OSPF refresh
-                                //RDB.Update(pcen_link->link);
-                                //RDB.Update(pcen_link->reverse_link->link);
+                                RDB.Update(pcen_link->link);
+                                RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
                     }
                 }
             }
         }
+
+        //clean up the link vector
+        for (i = 0; i < links.size(); i++)
+        {
+            pcen_link = links[i];
+            if (pcen_link->link == NULL)
+            {
+                links.erase(links.begin() + i);
+                if (i < links.size())
+                    i--;
+                break;
+            }
+        }
+
     }
 
 }
