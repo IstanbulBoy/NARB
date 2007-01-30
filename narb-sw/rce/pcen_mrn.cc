@@ -95,40 +95,6 @@ void PCEN_MRN::PostBuildTopology()
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
     if (SystemConfig::should_incorporate_subnet)
     {
-        // removing old 'jump links' 
-        /*
-        for (i = 0; i < links.size(); i++)
-        {
-            pcen_link = links[i];
-            if (pcen_link && pcen_link->link) 
-            {
-                iscd_iter = pcen_link->link->Iscds().begin();
-                for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
-                {
-                    iscd = *iscd_iter;
-                    assert(iscd);
-
-                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
-                    {
-                        // an existing "jump link"
-                        if ( pcen_node->router &&  iscd->subnet_uni_info.nid_ipv4 == pcen_link->link->advRtId )
-                        {
-                            if (pcen_link->lcl_end)
-                                pcen_link->lcl_end->out_links.remove(pcen_link);
-                            if (pcen_link->rmt_end)
-                                pcen_link->rmt_end->in_links.remove(pcen_link);
-                            RDB.Delete(pcen_link->link);
-                            links.erase(links.begin() + i);
-                            if (i < links.size())
-                                i--;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        */
-        // creating new 'jump links' 
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
@@ -175,37 +141,16 @@ void PCEN_MRN::PostBuildTopology()
 
                                 // remove current pcen_link and its reverse link from the original VLSR pce_node
                                 assert(pcen_link->lcl_end);
-                                pcen_link->lcl_end->out_links.remove(pcen_link);
-                                pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
+                                if (pcen_link->lcl_end->out_links.size() > 0)
+                                    pcen_link->lcl_end->out_links.remove(pcen_link);
+                                if (pcen_link->lcl_end->in_links.size() > 0)
+                                    pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
 
                                 // connect current pcen_link and its reverse link to current pce_node
                                 pcen_link->lcl_end = pcen_node;
                                 pcen_link->reverse_link->rmt_end = pcen_node;
 
-                                // memory leak?
-                                // list<PCENLink*>::iterator link_iter = pcen_node->out_links.begin();
-                                // for ( ; link_iter != pcen_node->out_links.end(); link_iter++ )
-                                // {
-                                //     if ((*link_iter)->rmt_end == pcen_link->rmt_end) {
-                                //         RDB.Delete((*link_iter)->link);
-                                //         (*link_iter)->link = NULL;
-                                //         pcen_node->out_links.erase(link_iter);
-                                //         break;                                        
-                                //     }
-                                // }
                                 pcen_node->out_links.push_front(pcen_link);
-
-                                // memory leak?
-                                // link_iter = pcen_node->in_links.begin();
-                                // for ( ; link_iter != pcen_node->in_links.end(); link_iter++ )
-                                // {
-                                //     if ((*link_iter)->lcl_end == pcen_link->reverse_link->lcl_end) {
-                                //         RDB.Delete((*link_iter)->link);
-                                //         (*link_iter)->link = NULL;
-                                //         pcen_node->in_links.erase(link_iter);
-                                //         break;
-                                //     }
-                                // }
                                 pcen_node->in_links.push_front(pcen_link->reverse_link);
 
                                 // change 'jump link' metric 
