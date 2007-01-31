@@ -60,6 +60,7 @@ void PCEN_MRN::PostBuildTopology()
     list<ISCD*>::iterator iscd_iter;
     ISCD* iscd;
     list<PCENLink*>::iterator link_iter;
+    RadixNode<Resource> *node;
 
     int rNum = routers.size(); 
     int lNum =  links.size();
@@ -122,6 +123,13 @@ void PCEN_MRN::PostBuildTopology()
                                 RDB.Remove(pcen_link->link);
                                 RDB.Remove(pcen_link->reverse_link->link);
 
+                                node = RDB.Lookup(pcen_link->link);
+				if (node && node->Data())
+				LOG_FILE<< ((Resource*)node->Data())->advRtId << ((Resource*)node->Data())->id << " ->reverse:  " <<  flush;
+                                node = RDB.Lookup(pcen_link->reverse_link->link);
+				if (node && node->Data())
+				LOG_FILE<< ((Resource*)node->Data())->advRtId << ((Resource*)node->Data())->id << endl << flush;
+
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
                                 //$$$$ link->id unchanged
@@ -149,13 +157,13 @@ void PCEN_MRN::PostBuildTopology()
                                 for ( ; link_iter != pcen_link->lcl_end->out_links.end(); link_iter++ )
                                 {
                                     if((*link_iter) == pcen_link)
-                                        pcen_link->lcl_end->in_links.remove(pcen_link);
+                                        link_iter = pcen_link->lcl_end->out_links.erase(link_iter);
                                 }
                                 link_iter = pcen_link->lcl_end->in_links.begin();
                                 for ( ; link_iter != pcen_link->lcl_end->in_links.end(); link_iter++ )
                                 {
                                     if((*link_iter) == pcen_link->reverse_link)
-                                        pcen_link->lcl_end->in_links.remove(pcen_link->reverse_link);
+                                        link_iter = pcen_link->lcl_end->in_links.erase(link_iter);
                                 }
 
                                 // connect current pcen_link and its reverse link to current pce_node
