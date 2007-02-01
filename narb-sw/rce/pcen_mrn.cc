@@ -54,8 +54,8 @@ PCEN_MRN::~PCEN_MRN()
 
 void PCEN_MRN::PostBuildTopology()
 {
-    int i, j;
-    PCENLink *pcen_link;
+    int i, j, k;
+    PCENLink *pcen_link, *pcen_link2;
     PCENNode *pcen_node;
     list<ISCD*>::iterator iscd_iter;
     ISCD* iscd;
@@ -63,7 +63,7 @@ void PCEN_MRN::PostBuildTopology()
     RadixNode<Resource> *node;
 
     int rNum = routers.size(); 
-    int lNum =  links.size();
+    int lNum = links.size();
 
     //Init Tspec on nodes/routers 
     for (i = 0; i < rNum; i++)
@@ -102,13 +102,14 @@ void PCEN_MRN::PostBuildTopology()
         for (i = 0; i < lNum; i++)
         {
             pcen_link = links[i];
-            if (pcen_link && pcen_link->link) 
+            if (pcen_link && pcen_link->link && pcen_link->linkID != -1) 
             {
                 iscd_iter = pcen_link->link->Iscds().begin();
                 for ( ; iscd_iter != pcen_link->link->Iscds().end(); iscd_iter++)
                 {
                     iscd = *iscd_iter;
-                    assert(iscd);
+                    if(!iscd)	
+                        continue;
 
                     if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
                     {
@@ -177,6 +178,20 @@ void PCEN_MRN::PostBuildTopology()
                                 pcen_link->link->metric = 0;
                                 pcen_link->reverse_link->link->metric = 0;
 
+                                // Update link pointers in the links vector ...
+                                for (k = 0; k < lNum; k++)
+                                {
+				    pcen_link2 = links[k];
+				    if ( k == i || !pcen_link2 || !pcen_link2->link || pcen_link2->linkID == -1 )
+					continue;
+                                    if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->link->Index()) {
+                                        pcen_link2->linkID = -1;
+                                        pcen_link2->reverse_link->linkID = -1;
+                                    }
+                                    //if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->reverse_link->link->Index()) 
+                                    //   pcen_link2->linkID = -1;
+                                }
+
                                 // re-plant the links into RDB.
                                 // @@@@ Note: The original links will be restored by OSPF refresh
                                 RDB.Update(pcen_link->link);
@@ -187,6 +202,20 @@ void PCEN_MRN::PostBuildTopology()
                 }
             }
         }
+        for (i = 0; i < links.size(); i++)
+        {
+            pcen_link = links[i];
+            if ( pcen_link->linkID == -1 )
+            {
+		pcen_link->lcl_end->out_links.remove(pcen_link);
+		pcen_link->rmt_end->in_links.remove(pcen_link);
+		links.erase(links.begin()+i);
+		if (i == links.size())
+		    break;
+		else
+		    i--;
+            }
+	}
     }
 
 }
