@@ -125,12 +125,7 @@ void PCEN_MRN::PostBuildTopology()
                                 RDB.Remove(pcen_link->reverse_link->link);
 
                                 node = RDB.Lookup(pcen_link->link);
-				if (node && node->Data())
-				LOG_FILE<< ((Resource*)node->Data())->advRtId << ((Resource*)node->Data())->id << " ->reverse:  " <<  flush;
                                 node = RDB.Lookup(pcen_link->reverse_link->link);
-				if (node && node->Data())
-				LOG_FILE<< ((Resource*)node->Data())->advRtId << ((Resource*)node->Data())->id << endl << flush;
-
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
                                 //$$$$ link->id unchanged
