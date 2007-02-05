@@ -131,6 +131,9 @@ void PCEN_MRN::PostBuildTopology()
                                 //$$$$ link->id unchanged
                                 //$$$$ reverse_link->advRtId unchanged
                                 pcen_link->reverse_link->link->id = pcen_node->router->id;
+
+                                // setting homeVLSRId ... for multi-home-vlsr only
+                                pcen_node->home_vlsr = pcen_link->lcl_end;
                                 
                                 // link and reverse_link data interface addresses unchanged
 
@@ -176,10 +179,11 @@ void PCEN_MRN::PostBuildTopology()
                                 // Update link pointers in the links vector ...
                                 for (k = 0; k < lNum; k++)
                                 {
-				    pcen_link2 = links[k];
-				    if ( k == i || !pcen_link2 || !pcen_link2->link || pcen_link2->linkID == -1 )
-					continue;
-                                    if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->link->Index()) {
+                                    pcen_link2 = links[k];
+                                    if ( k == i || !pcen_link2 || !pcen_link2->link || pcen_link2->linkID == -1 )
+                                        continue;
+                                    if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->link->Index()) 
+                                    {
                                         pcen_link2->linkID = -1;
                                         pcen_link2->reverse_link->linkID = -1;
                                     }
@@ -533,6 +537,24 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     {
         subobj1.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |ntohs(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id));
         subobj1.l2sc_vlantag = 0;
+
+        if (pcen_link->lcl_end && pcen_link->lcl_end->home_vlsr && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+        {
+            list<PCENLink*>::iterator it1 = pcen_link->lcl_end->path.begin();
+            list<PCENLink*>::iterator it2 = pcen_link->lcl_end->home_vlsr->in_links.begin();
+            for ( ; it1 != pcen_link->lcl_end->path.end(); it1++ )
+            {
+                for ( ; it2 != pcen_link->lcl_end->home_vlsr->in_links.begin(); it2++ )
+                {
+                    if ((*it1)->lcl_end && (*it1)->lcl_end->home_vlsr == (*it2)->lcl_end)
+                    {
+                        
+                        AddLinkToEROTrack(ero_track, *it2);
+                        break;
+                    }
+                }
+            }
+        }
     }
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )

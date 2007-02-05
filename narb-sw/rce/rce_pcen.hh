@@ -208,6 +208,8 @@ public:
     list<PCENLink*> in_links;
     RouterId * router;
 
+    PCENNode* home_vlsr;
+
     //////Variables (sets) Indicating Search Progress//////
     TSpec tspec;
     ConstraintTagSet waveset;
@@ -235,6 +237,7 @@ public:
 
     void Init()
         {
+	    home_vlsr = NULL;
 	    auxvar1=0;
 	    auxvar2=0;
 	    minCost=PCEN_INFINITE_COST;
@@ -288,6 +291,7 @@ public:
     } lflg;
     unsigned long auxvar1;	// this variable can be used as ID in WG or CG
     unsigned long auxvar2;	// this variable can be used as ID in WG or CG
+
     double PCENmetric ();        // return the metric of this link assigned by PCEN
     void SetPCENmetric (u_int32_t x);
     void SetPCENmetric (double d);
