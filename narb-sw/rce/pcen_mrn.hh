@@ -38,7 +38,7 @@
 #include <list>
 using namespace std;
 
-#undef DISPLAY_ROUTING_DETAILS
+#define DISPLAY_ROUTING_DETAILS
 
 
 #define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
