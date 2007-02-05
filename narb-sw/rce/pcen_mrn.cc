@@ -648,6 +648,13 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
             uni_dest = iter;
     }
 
+    //for multi-vlsr-home only
+    iter = uni_dest;
+    if ( (--iter) != uni_src && (--iter) != uni_src && (*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC )
+    {
+        uni_dest = iter;
+    }
+
     if (uni_src != ero_track.end() && uni_dest != ero_track.end())
     {
         if ((++uni_src) != uni_dest)
