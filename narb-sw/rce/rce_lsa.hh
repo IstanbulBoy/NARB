@@ -288,9 +288,9 @@ struct link_ifswcap_specific_subnet_uni {
 	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8]; //time slots available == 1
 };
 
-#define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
-#define SET_VLAN(P, VID) P[VID/8] = (P[VID/8] | (0x80 >> (VID-1)%8))
-#define RESET_VLAN(P, VID) P[VID/8] = (P[VID/8] & ~(0x80 >> (VID-1)%8))
+#define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
+#define SET_VLAN(P, VID) P[(VID-1)/8] = (P[(VID-1)/8] | (0x80 >> (VID-1)%8))
+#define RESET_VLAN(P, VID) P[(VID-1)/8] = (P[(VID-1)/8] & ~(0x80 >> (VID-1)%8))
 
 #define HAS_TIMESLOT HAS_VLAN
 #define SET_TIMESLOT SET_VLAN
