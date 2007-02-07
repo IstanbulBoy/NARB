@@ -153,6 +153,10 @@ public:
 #define MAX_VLAN_NUM 4096
 #endif
 
+#ifndef MAX_TIMESLOTS_NUM
+#define MAX_TIMESLOTS_NUM 192
+#endif
+
 struct IfSwCapDesc
 {
     u_char	swtype;
@@ -171,7 +175,8 @@ struct IfSwCapDesc
         struct {
         	u_int16_t		length;
         	u_int16_t	 	version;
-        	u_int16_t		subnet_uni_id;
+        	u_int8_t		subnet_uni_id;
+        	u_int8_t		first_timeslot;
         	u_char		swtype_ext;
         	u_char		encoding_ext;
         	u_int32_t		tna_ipv4;
@@ -181,6 +186,7 @@ struct IfSwCapDesc
         	u_int32_t		egress_label_downstream;
         	u_int32_t		egress_label_upstream;
         	char			control_channel[12];
+        	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8];
         } subnet_uni_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };

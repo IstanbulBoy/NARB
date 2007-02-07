@@ -270,24 +270,31 @@ struct link_ifswcap_specific_vlan {
 };
 
 #define IFSWCAP_SPECIFIC_SUBNET_UNI 0x4000
+#define MAX_TIMESLOTS_NUM 192 // 192 STS-1 = 10Gbps 
 struct link_ifswcap_specific_subnet_uni {
 	u_int16_t		length;
 	u_int16_t	 	version;       //version id and options mask | IFSWCAP_SPECIFIC_VLAN_SUBNET_UNI
-	u_int16_t		subnet_uni_id;
+	u_int8_t		subnet_uni_id;
+	u_int8_t		first_timeslot; //not used in ospfd
 	u_char		swcap_ext;
 	u_char		encoding_ext;
 	u_int32_t		tna_ipv4;
 	u_int32_t		nid_ipv4;
 	u_int32_t		data_ipv4;
 	u_int32_t		logical_port_number;
-	u_int32_t		egress_label_downstream; //egress label on the UNI interface
-	u_int32_t		egress_label_upstream; //egress label on the UNI interface for bidirectional traffic
+	u_int32_t		egress_label_downstream; //egress label on the UNI interface  //to be removed
+	u_int32_t		egress_label_upstream; //egress label on the UNI interface for bidirectional traffic //to be removed
 	char			control_channel[12];
+	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8]; //time slots available == 1
 };
 
 #define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
 #define SET_VLAN(P, VID) P[VID/8] = (P[VID/8] | (0x80 >> (VID-1)%8))
 #define RESET_VLAN(P, VID) P[VID/8] = (P[VID/8] & ~(0x80 >> (VID-1)%8))
+
+#define HAS_TIMESLOT HAS_VLAN
+#define SET_TIMESLOT SET_VLAN
+#define RESET_TIMESLOT RESET_VLAN
 
 //
 //  Switching Capability-specific information for L2SC, LSC and FSC will be added later on
