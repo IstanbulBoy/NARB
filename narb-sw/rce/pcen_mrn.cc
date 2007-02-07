@@ -541,7 +541,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
                 break;
         }
-        subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |ntohs((((u_int16_t)pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id) << 8) | ts) );
+        subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
         subobj1.l2sc_vlantag = 0;
 
         if (pcen_link->lcl_end && pcen_link->lcl_end->home_vlsr && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
@@ -570,7 +570,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             if (HAS_TIMESLOT(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
                 break;
         }
-        subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | ntohs((((u_int16_t)pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id) <<8) | ts) );
+        subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) |(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id <<8) | ts );
         subobj2.l2sc_vlantag = 0;
     }
 
