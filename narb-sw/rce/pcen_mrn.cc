@@ -118,7 +118,9 @@ void PCEN_MRN::PostBuildTopology()
                             pcen_node = routers[j];
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
-                                assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
+                                //assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
+                                if (!pcen_link->reverse_link || !pcen_link->reverse_link->link)
+                                    continue;;
                                 
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
