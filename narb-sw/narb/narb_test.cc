@@ -69,7 +69,7 @@ u_int32_t opt_via_movaz = 0;
 u_int32_t opt_excluded_layers = 0;
 u_int32_t opt_req_all_vtags = 0;
 
-#define HAS_VLAN(P, VID) ((P[VID/8] & (0x80 >> (VID-1)%8)) != 0)
+#define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 
 struct option longopts[] = 
 {
