@@ -186,6 +186,7 @@ struct IfSwCapDesc
         	u_int32_t		egress_label_downstream;
         	u_int32_t		egress_label_upstream;
         	char			control_channel[12];
+        	char			node_name[16];
         	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8];
         } subnet_uni_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...

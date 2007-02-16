@@ -285,6 +285,7 @@ struct link_ifswcap_specific_subnet_uni {
 	u_int32_t		egress_label_downstream; //egress label on the UNI interface  //to be removed
 	u_int32_t		egress_label_upstream; //egress label on the UNI interface for bidirectional traffic //to be removed
 	char			control_channel[12];
+	char			node_name[16];
 	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8]; //time slots available == 1
 };
 
