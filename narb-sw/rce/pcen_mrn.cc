@@ -120,7 +120,7 @@ void PCEN_MRN::PostBuildTopology()
                             {
                                 //assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
                                 if (!pcen_link->reverse_link || !pcen_link->reverse_link->link)
-                                    continue;;
+                                    continue;
                                 
                                 // remove the links from RDB.
                                 RDB.Remove(pcen_link->link);
@@ -549,10 +549,10 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         if (pcen_link->lcl_end && pcen_link->lcl_end->home_vlsr && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
         {
             list<PCENLink*>::iterator it1 = pcen_link->lcl_end->path.begin();
-            list<PCENLink*>::iterator it2 = pcen_link->lcl_end->home_vlsr->in_links.begin();
             for ( ; it1 != pcen_link->lcl_end->path.end(); it1++ )
             {
-                for ( ; it2 != pcen_link->lcl_end->home_vlsr->in_links.begin(); it2++ )
+                list<PCENLink*>::iterator it2 = pcen_link->lcl_end->home_vlsr->in_links.begin();
+                for ( ; it2 != pcen_link->lcl_end->home_vlsr->in_links.end(); it2++ )
                 {
                     if ((*it1)->lcl_end && (*it1)->lcl_end->home_vlsr == (*it2)->lcl_end)
                     {
@@ -561,6 +561,8 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
                         break;
                     }
                 }
+                if (it2 != pcen_link->lcl_end->home_vlsr->in_links.end())
+                    break;
             }
         }
     }
