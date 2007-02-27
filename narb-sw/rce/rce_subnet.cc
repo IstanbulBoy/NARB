@@ -267,12 +267,13 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   LOG("ReadConfigParameter failed on router : id" << endl);
                   continue;
               }
-              AddRouter(router);
 
               if (ReadConfigParameter(blk_body, "home_vlsr", "%s", home_vlsr))
               {
                   inet_aton(home_vlsr, (in_addr*)&router->home_vlsr);
               }
+
+              AddRouter(router);
 
               link_blk = strstr(blk_body, "link");
               while (link_blk && strstr(link_blk, "link"))
