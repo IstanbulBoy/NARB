@@ -545,42 +545,8 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         }
         subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
         subobj1.l2sc_vlantag = 0;
-
-        if (pcen_link->lcl_end && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
-        {          
-            list<PCENLink*>::iterator it1 = pcen_link->lcl_end->path.begin();
-            for ( ; it1 != pcen_link->lcl_end->path.end(); it1++ )
-            {
-                u_int32_t vlsr_id = SystemConfig::FindHomeVlsrByRouterId(pcen_link->lcl_end->router->id);
-                if (vlsr_id == 0)
-                    break;
-
-                int ri;
-                for (ri = 0; ri < routers.size(); ri++)
-                    if (routers[ri]->router->id == vlsr_id)
-                        break;
-                if (ri == routers.size())
-                    break;
-                PCENNode* home_vlsr = routers[ri];
-                list<PCENLink*>::iterator it2 = home_vlsr->in_links.begin();
-                for ( ; it2 != home_vlsr->in_links.end(); it2++ )
-                {
-                    vlsr_id = SystemConfig::FindHomeVlsrByRouterId(pcen_link->lcl_end->router->id);
-                    if (vlsr_id == 0)
-                        break;
-
-                    if ((*it1)->lcl_end && vlsr_id == (*it2)->lcl_end->router->id)
-                    {
-                        
-                        AddLinkToEROTrack(ero_track, *it2);
-                        break;
-                    }
-                }
-                if (it2 != home_vlsr->in_links.end())
-                    break;
-            }
-        }
     }
+
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
@@ -661,8 +627,11 @@ void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
     
 }
 
+
 void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 {
+    list<ero_subobj> ero_transit;
+
     if (ero_track.size() == 0)
         return;
 
@@ -680,7 +649,7 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 
     //for multi-vlsr-home only
     iter = uni_dest;
-    if ( (--iter) != uni_src && (--iter) != uni_src && (*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC )
+    if ( (--iter) != uni_src && (*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC )
     {
         uni_dest = iter;
     }
@@ -688,8 +657,66 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
     if (uni_src != ero_track.end() && uni_dest != ero_track.end())
     {
         if ((++uni_src) != uni_dest)
+        {
+            ero_transit.assign(uni_src, uni_dest);
             ero_track.erase(uni_src, uni_dest);
+        }
     }
+
+    // to be placed into a separate function ... $$$$
+
+    PCENLink* vlsr_link = NULL;
+    if (ero_transit.size() >= 2)
+    {
+        int i;
+        //looking for routerId using the ero_transit.front() and ero_transit.back();
+        u_int32_t addr_lcl = 0, addr_rmt = 0;
+        for (i = 0; i < links.size(); i++)
+        {
+            if (links[i]->link->lclIfAddr == ero_transit.front().addr.s_addr)
+                addr_lcl = links[i]->lcl_end->router->id;
+            if (links[i]->link->rmtIfAddr == ero_transit.back().addr.s_addr)
+                addr_rmt = links[i]->rmt_end->router->id;
+        }
+
+        //looking for home VLSR using the routerId.
+        if (addr_lcl == 0 || addr_rmt == 0)
+            return;
+        u_int32_t vlsr_lcl = SystemConfig::FindHomeVlsrByRouterId(addr_lcl);
+        if (vlsr_lcl == 0)
+            return;
+        u_int32_t vlsr_rmt = SystemConfig::FindHomeVlsrByRouterId(addr_rmt);
+        if (vlsr_rmt == 0)
+            return;
+
+        // looking for the link between two home VLSRs.
+        for (i = 0; i < links.size(); i++)
+        {
+            if (links[i]->link->advRtId == vlsr_lcl && links[i]->link->id == vlsr_rmt)
+            {
+                vlsr_link = links[i];
+                break;
+            }
+        }
+
+        // $$$$ to support more than two hops in future....
+    }
+
+    if (vlsr_link == NULL)
+        return;
+
+    ero_subobj subobj1, subobj2;
+    memset(&subobj1, 0, sizeof(ero_subobj));
+    subobj1.hop_type = ERO_TYPE_STRICT_HOP;
+    subobj1.prefix_len = 32;
+    subobj1.addr.s_addr = vlsr_link->link->lclIfAddr;
+    ero_track.insert(uni_dest, subobj1);
+
+    memset(&subobj2, 0, sizeof(ero_subobj));
+    subobj2.hop_type = ERO_TYPE_STRICT_HOP;
+    subobj2.prefix_len = 32;
+    subobj2.addr.s_addr = vlsr_link->link->rmtIfAddr;
+    ero_track.insert(uni_dest, subobj2);    
 }
 
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
