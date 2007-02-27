@@ -663,8 +663,7 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         }
     }
 
-    // to be placed into a separate function ... $$$$
-
+    // inserting subnet vlsr_route subobjects ...
     PCENLink* vlsr_link = NULL;
     if (ero_transit.size() >= 2)
     {
@@ -675,6 +674,9 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         {
             if (links[i]->link->lclIfAddr == ero_transit.front().addr.s_addr)
                 addr_lcl = links[i]->lcl_end->router->id;
+
+            // $$$$ to handle more than one hop (front--back) in future....
+
             if (links[i]->link->rmtIfAddr == ero_transit.back().addr.s_addr)
                 addr_rmt = links[i]->rmt_end->router->id;
         }
@@ -699,12 +701,9 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
             }
         }
 
-        // $$$$ to support more than two hops in future....
     }
-
     if (vlsr_link == NULL)
         return;
-
     ero_subobj subobj1, subobj2;
     memset(&subobj1, 0, sizeof(ero_subobj));
     subobj1.hop_type = ERO_TYPE_STRICT_HOP;
