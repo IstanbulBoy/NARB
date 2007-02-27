@@ -134,8 +134,8 @@ void PCEN_MRN::PostBuildTopology()
                                 //$$$$ reverse_link->advRtId unchanged
                                 pcen_link->reverse_link->link->id = pcen_node->router->id;
 
-                                // setting homeVLSRId ... for multi-home-vlsr only
-                                pcen_node->home_vlsr = pcen_link->lcl_end;
+                                // setting homeVLSR ... for multi-home-vlsr only
+                                // pcen_node->home_vlsr = pcen_link->lcl_end;
                                 
                                 // link and reverse_link data interface addresses unchanged
 
@@ -546,22 +546,37 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
         subobj1.l2sc_vlantag = 0;
 
-        if (pcen_link->lcl_end && pcen_link->lcl_end->home_vlsr && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
-        {
+        if (pcen_link->lcl_end && ero_track.size() > 0 && (ero_track.back().if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+        {          
             list<PCENLink*>::iterator it1 = pcen_link->lcl_end->path.begin();
             for ( ; it1 != pcen_link->lcl_end->path.end(); it1++ )
             {
-                list<PCENLink*>::iterator it2 = pcen_link->lcl_end->home_vlsr->in_links.begin();
-                for ( ; it2 != pcen_link->lcl_end->home_vlsr->in_links.end(); it2++ )
+                u_int32_t vlsr_id = SystemConfig::FindHomeVlsrByRouterId(pcen_link->lcl_end->router->id);
+                if (vlsr_id == 0)
+                    break;
+
+                int ri;
+                for (ri = 0; ri < routers.size(); ri++)
+                    if (routers[ri]->router->id == vlsr_id)
+                        break;
+                if (ri == routers.size())
+                    break;
+                PCENNode* home_vlsr = routers[ri];
+                list<PCENLink*>::iterator it2 = home_vlsr->in_links.begin();
+                for ( ; it2 != home_vlsr->in_links.end(); it2++ )
                 {
-                    if ((*it1)->lcl_end && (*it1)->lcl_end->home_vlsr == (*it2)->lcl_end)
+                    vlsr_id = SystemConfig::FindHomeVlsrByRouterId(pcen_link->lcl_end->router->id);
+                    if (vlsr_id == 0)
+                        break;
+
+                    if ((*it1)->lcl_end && vlsr_id == (*it2)->lcl_end->router->id)
                     {
                         
                         AddLinkToEROTrack(ero_track, *it2);
                         break;
                     }
                 }
-                if (it2 != pcen_link->lcl_end->home_vlsr->in_links.end())
+                if (it2 != home_vlsr->in_links.end())
                     break;
             }
         }

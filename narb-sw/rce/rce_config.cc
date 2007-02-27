@@ -65,4 +65,32 @@ string SystemConfig::sysDescription = "";
 string SystemConfig::subnet_file("subnet_ciena.conf");
 bool  SystemConfig::should_incorporate_subnet = false;
 
+HomeVlsrRouterPairList SystemConfig::home_vlsr_search_list;
 
+void SystemConfig::AddHomeVlsrRouterIdPair(u_int32_t home_vlsr, u_int32_t router_id)
+{
+    HomeVlsrRouterPair pair;
+    pair.home_vlsr = home_vlsr; pair.router_id = router_id;
+
+    HomeVlsrRouterPairList::iterator it = SystemConfig::home_vlsr_search_list.begin();
+    for ( ; it != SystemConfig::home_vlsr_search_list.end(); it++ )
+    {
+        if ( (*it).home_vlsr == home_vlsr && (*it).router_id == router_id)
+            break;
+    }
+
+    if (it == SystemConfig::home_vlsr_search_list.end())
+        SystemConfig::home_vlsr_search_list.push_back(pair);
+}
+
+u_int32_t SystemConfig::FindHomeVlsrByRouterId(u_int32_t router_id)
+{
+    HomeVlsrRouterPairList::iterator it = SystemConfig::home_vlsr_search_list.begin();
+    for ( ; it != SystemConfig::home_vlsr_search_list.end(); it++ )
+    {
+        if ( (*it).router_id == router_id )
+            return (*it).home_vlsr;
+    }
+
+    return 0;
+}

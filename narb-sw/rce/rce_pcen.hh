@@ -208,8 +208,6 @@ public:
     list<PCENLink*> in_links;
     RouterId * router;
 
-    PCENNode* home_vlsr;
-
     //////Variables (sets) Indicating Search Progress//////
     TSpec tspec;
     ConstraintTagSet waveset;
@@ -237,7 +235,6 @@ public:
 
     void Init()
         {
-	    home_vlsr = NULL;
 	    auxvar1=0;
 	    auxvar2=0;
 	    minCost=PCEN_INFINITE_COST;

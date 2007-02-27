@@ -36,10 +36,19 @@
 
 using namespace std;
 #include <string>
+#include <list>
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 256
 #endif
+
+typedef struct HomeVlsrRouterPair_type
+{
+    u_int32_t home_vlsr;
+    u_int32_t router_id;
+} HomeVlsrRouterPair;
+
+typedef list<HomeVlsrRouterPair> HomeVlsrRouterPairList;
 
 class SystemConfig
 {
@@ -75,6 +84,11 @@ public:
 
     static string subnet_file;
     static bool  should_incorporate_subnet;
+
+    static HomeVlsrRouterPairList home_vlsr_search_list;
+
+    static void AddHomeVlsrRouterIdPair(u_int32_t home_vlsr, u_int32_t router_id);
+    static u_int32_t FindHomeVlsrByRouterId(u_int32_t router_id);
 };
 
 #endif

@@ -46,6 +46,7 @@ using namespace std;
 class router_id_info: public RouterId
 {
 public:
+    u_int32_t home_vlsr;
     bool hide;
     int rt_type; 
     router_id_info(ResourceType router_type, u_int32_t domain_id, in_addr ip);

@@ -37,6 +37,7 @@ router_id_info::router_id_info(ResourceType router_type, u_int32_t domain_id, in
 {
     hide = false;
     rt_type = RT_TYPE_DEFAULT;
+    home_vlsr = 0;
 }
 
 link_info::link_info(ResourceType link_type, u_int32_t domain_id, in_addr advId, in_addr linkId):
@@ -56,6 +57,9 @@ void Subnet::AddRouter(router_id_info * router)
     //local search for duplicate
     routerVector.push_back(router);
     RDB.Update(router);
+
+    if (router->home_vlsr != 0)
+        SystemConfig::AddHomeVlsrRouterIdPair(router->home_vlsr, router->id);
 }
 
 void Subnet::AddLink(link_info* link)
@@ -247,6 +251,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
               char * link_blk, *p_str;
               int ret;
               char router_id[MAXADDRLEN];
+              char home_vlsr[MAXADDRLEN];
               int service_id;
               in_addr ip; ip.s_addr = 0;
               router_id_info * router = new router_id_info(routerType, domainId, ip);
@@ -263,6 +268,11 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   continue;
               }
               AddRouter(router);
+
+              if (ReadConfigParameter(blk_body, "home_vlsr", "%s", home_vlsr))
+              {
+                  inet_aton(home_vlsr, (in_addr*)&router->home_vlsr);
+              }
 
               link_blk = strstr(blk_body, "link");
               while (link_blk && strstr(link_blk, "link"))
