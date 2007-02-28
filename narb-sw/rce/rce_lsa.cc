@@ -239,7 +239,7 @@ Resource* LSAHandler::Parse()
                             #endif
         			break;
         		case TE_LINK_SUBTLV_LINK_IFSWCAP:
-                            swcap = new ISCD;
+                            swcap = (ISCD*)new char[sizeof(ISCD)];
                             //memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ISCD_MADATORY_SIZE); // only the madatory part
                             memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
                             for (i = 0; i < 8; i++)
@@ -282,7 +282,7 @@ Resource* LSAHandler::Parse()
                             #endif
         			break;
                     case TE_LINK_SUBTLV_LINK_IFADCAP:
-                            adcap = new IACD;
+                            adcap = (IACD*)new char[sizeof(IACD)];
                             memcpy(adcap, (char*)sub_tlvh+TLV_HDR_SIZE, sizeof(IACD));
                             for (i = 0; i < 8; i++)
                                 ntohf_mbps(swcap->max_lsp_bw[i]); 
