@@ -139,7 +139,7 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
     {
         inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
         LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag)); //debug
-        ero_subobj * new_subobj = (ero_subobj*)malloc(sizeof(ero_subobj));
+        ero_subobj * new_subobj = (ero_subobj*)new(struct ero_subobj);
         memcpy(new_subobj, subobj, sizeof(ero_subobj));
         ero.push_back(new_subobj);
     }
@@ -162,7 +162,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
     unum_if_subobj* subobj_unum;
     while (len > 0)
     {
-        ero_subobj * new_subobj = (ero_subobj*)malloc(sizeof(ero_subobj));
+        ero_subobj * new_subobj = (ero_subobj*)new(struct ero_subobj);
         memset(new_subobj, 0, sizeof(ero_subobj));
         if ((subobj_ipv4->l_and_type & 0x7f) == 4)
             subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
