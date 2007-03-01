@@ -239,7 +239,7 @@ Resource* LSAHandler::Parse()
                             #endif
         			break;
         		case TE_LINK_SUBTLV_LINK_IFSWCAP:
-                            swcap = (ISCD*)new char[sizeof(ISCD)];
+                            swcap = new ISCD;
                             //memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ISCD_MADATORY_SIZE); // only the madatory part
                             memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
                             for (i = 0; i < 8; i++)
