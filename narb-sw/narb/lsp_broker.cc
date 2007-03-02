@@ -811,6 +811,14 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
 /////// STATE_RESV_RELEASE ////////
 int LSPQ::HandleResvRelease(api_msg* msg)
 {
+    int ret = 0;
+    NARB_APIClient * peer_narb = NULL;
+    list<ero_subobj*>::iterator it;
+    ero_subobj* subobj, *reverse_subobj;
+    link_info *link1, *link2;
+    link_info *reverse_link1, *reverse_link2;
+    list<ero_subobj*> ero_confirm;
+
     if (state != STATE_RESV_CONFIRM)
     {
         LOG("Trying to release an unconfirmed LSP: seqnum=" << this->app_seqnum << endl);
@@ -821,21 +829,17 @@ int LSPQ::HandleResvRelease(api_msg* msg)
 
     msg_app2narb_confirm* app_msg = (msg_app2narb_confirm*)msg->body;
 
-    list<ero_subobj*> ero_confirm;
     GetERO_RFCStandard(&app_msg->ero, ero_confirm);
-    if(ero.size() <= 0)
-    {
-        LOG("LSPQ::HandleResvRelease cannot handle empty ERO" << endl);
-        return -1;
-    }
 
     //get peer NARB address from ero_confirm list before it is reduced
     in_addr narb_ip = LookupPeerNarbByERO(ero_confirm);
 
-    list<ero_subobj*>::iterator it;
-    ero_subobj* subobj, *reverse_subobj;
-    link_info *link1, *link2;
-    link_info *reverse_link1, *reverse_link2;
+    if(ero.size() <= 0)
+    {
+        LOG("LSPQ::HandleResvRelease cannot handle empty ERO" << endl);
+        ret = -1;
+        goto _out;
+    }
 
     for (it = ero_confirm.begin(); it != ero_confirm.end(); it++)
     {
@@ -874,7 +878,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
             if (zebra_client->RunWithoutSyncLsdb() < 0)
                 LOG("RunWithoutSyncLsdb failed"<<endl);
             // Register type (10, 1) Opaque-TE LSA.
-            int ret = zebra_client->GetWriter()->RegisterOpqaueType(10, 1);
+            ret = zebra_client->GetWriter()->RegisterOpqaueType(10, 1);
             if (ret < 0)
             {
                 LOG("RegisterOpqaueType[10, 1] failed !"<<endl);
@@ -926,29 +930,39 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     }
 
     //proceed to the next domain if any
-    if(narb_ip.s_addr == 0)
-        return 0;
-    NARB_APIClient * peer_narb = NarbFactory.GetClient(narb_ip);
+    if(narb_ip.s_addr != 0)
+    {
+        peer_narb = NarbFactory.GetClient(narb_ip);
+    }
+    else
+        goto _out;
+
     if(!peer_narb)
-        return -1;
+    {
+        ret = -1;
+        goto _out;
+    }
 
     if (!peer_narb->IsAlive())
     {
-        int ret = peer_narb->Connect();
+        ret = peer_narb->Connect();
         if (ret < 0)
         {
             NarbFactory.RemoveClient(peer_narb);
-            return HandleErrorCode(NARB_ERROR_INTERNAL);
+            HandleErrorCode(NARB_ERROR_INTERNAL);
+            goto _out;
         }
     }
 
     //peer_narb->SendMessage(msg);
     peer_narb->RelayMessageToPeer(MSG_APP_REMOVE, msg, ero_confirm);
 
-    if (NarbDomainInfo.LookupRouterById(app_msg->req.src))
+_out:
+
+    if (NarbDomainInfo.LookupRouterById(app_msg->req.src) && ret == 0)
         return HandleResvReleaseConfirm();
     else
-        return 0;
+        return ret;
 }
 
 int LSPQ::HandleResvReleaseConfirm()
