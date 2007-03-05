@@ -172,6 +172,7 @@ void RCE_APIClient_Factory::RemoveClient(RCE_APIClient * client)
     for (it = clients.begin(); it != clients.end(); it++)
         if ((*it) == client)
         {
+            eventMaster.Remove(client);
             clients.erase(it);
             break;
         }
