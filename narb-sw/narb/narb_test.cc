@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
  
 #ifndef HAVE_DECL_GETOPT
@@ -426,7 +427,8 @@ int main(int argc, char* argv[])
     }
 
     msg_app2narb_request * app_req = new_app_request();
-    api_msg * narb_reply =  narbapi_query_lsp(0, 0, 0, app_req);
+    u_int32_t seqnum = time(NULL);
+    api_msg * narb_reply =  narbapi_query_lsp(0, 0, seqnum, app_req);
 
     int len, offset;
     ipv4_prefix_subobj* subobj_ipv4;

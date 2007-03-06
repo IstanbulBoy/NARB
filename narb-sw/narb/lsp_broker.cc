@@ -1156,6 +1156,12 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
     int tlv_len;
     msg_app2narb_vtag_mask* vtagMask;
 
+    if ((app_options & LSP_OPT_VTAG_MASK) == 0 && vtag_mask)
+    {
+        delete vtag_mask;
+        vtag_mask = NULL;
+    }
+
     while (msg_len > 0)
     {
         switch (ntohs(tlv->type)) 
