@@ -673,14 +673,14 @@ int ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
 	 n = sscanf(str, "%d:%d", &vlan, &range);
 
         if (n == 1) {
-		vtagMask[vlan/8] = vtagMask[vlan/8] | (0x80 >> ((vlan-1)%8));
+		vtagMask[(vlan-1)/8] = vtagMask[(vlan-1)/8] | (0x80 >> ((vlan-1)%8));
         } 
         else if (n == 2) {
 		range += vlan;
 		if (range > MAX_VLAN_NUM)
 			return 0;
 		for (; vlan < range; vlan++) {
-			vtagMask[vlan/8] = vtagMask[vlan/8] |(0x80 >> ((vlan-1)%8));
+			vtagMask[(vlan-1)/8] = vtagMask[(vlan-1)/8] |(0x80 >> ((vlan-1)%8));
 		}
 	 }
         else
