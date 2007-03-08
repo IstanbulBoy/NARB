@@ -302,12 +302,12 @@ public:
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
     float* UnreservedBandwidth() { return unreservedBandwidth; }
     u_char* VtagBitMask() { return vtagBitMask; }
-    bool IsVtagSet(u_int32_t vlanID) { return (vtagBitMask[vlanID/8] & (0x80 >> (vlanID-1)%8)) != 0; }
-    bool IsVtagAllocated(u_int32_t vlanID) { return (vtagBitMaskAlloc[vlanID/8] & (0x80 >> (vlanID-1)%8)) != 0; }
-    void SetVtag(u_int32_t vlanID) { vtagBitMask[vlanID/8] = vtagBitMask[vlanID/8] | (0x80 >> (vlanID-1)%8); }
-    void ResetVtag(u_int32_t vlanID) { vtagBitMask[vlanID/8] = vtagBitMask[vlanID/8] & ~(0x80 >> (vlanID-1)%8); }
-    void AllocateVtag(u_int32_t vlanID) { vtagBitMaskAlloc[vlanID/8] = vtagBitMaskAlloc[vlanID/8] | (0x80 >> (vlanID-1)%8); }
-    void DeallocateVtag(u_int32_t vlanID) { vtagBitMaskAlloc[vlanID/8] = vtagBitMaskAlloc[vlanID/8] & ~(0x80 >> (vlanID-1)%8); }
+    bool IsVtagSet(u_int32_t vlanID) { return (vtagBitMask[(vlanID-1)/8] & (0x80 >> (vlanID-1)%8)) != 0; }
+    bool IsVtagAllocated(u_int32_t vlanID) { return (vtagBitMaskAlloc[(vlanID-1)/8] & (0x80 >> (vlanID-1)%8)) != 0; }
+    void SetVtag(u_int32_t vlanID) { vtagBitMask[(vlanID-1)/8] = vtagBitMask[(vlanID-1)/8] | (0x80 >> (vlanID-1)%8); }
+    void ResetVtag(u_int32_t vlanID) { vtagBitMask[(vlanID-1)/8] = vtagBitMask[(vlanID-1)/8] & ~(0x80 >> (vlanID-1)%8); }
+    void AllocateVtag(u_int32_t vlanID) { vtagBitMaskAlloc[(vlanID-1)/8] = vtagBitMaskAlloc[(vlanID-1)/8] | (0x80 >> (vlanID-1)%8); }
+    void DeallocateVtag(u_int32_t vlanID) { vtagBitMaskAlloc[(vlanID-1)/8] = vtagBitMaskAlloc[(vlanID-1)/8] & ~(0x80 >> (vlanID-1)%8); }
 
     void Init()  
         { 
