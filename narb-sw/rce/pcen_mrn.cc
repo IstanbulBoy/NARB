@@ -883,6 +883,23 @@ int PCEN_MRN::PerformComputation()
                     if (!nextNode->vtagset.HasTag(vtag))
                         continue;
                 */
+
+                //Excluding allocated VLAN tags on the destination node (last hop).
+                if (is_e2e_tagged_vlan)
+                {
+                    list<PCENLink*>::iterator it_link;
+                    for (it_link = destNode->in_links.begin(); it_link != destNode->in_links.end(); it_link++)
+                    {
+                        (*it_link)->ExcludeAllocatedVtags(headNode->vtagset);
+                    }
+                    for (it_link = destNode->out_links.begin(); it_link != destNode->out_links.end(); it_link++)
+                    {
+                        if (*it_link != nextLink)
+                            (*it_link)->ExcludeAllocatedVtags(headNode->vtagset);
+                    }
+                    if (headNode->vtagset.IsEmpty())
+                        continue;
+                }
             }
 
             // check if headNode->path + nextNode makes a loop
