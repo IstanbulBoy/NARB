@@ -818,21 +818,23 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     link_info *link1, *link2;
     link_info *reverse_link1, *reverse_link2;
     list<ero_subobj*> ero_confirm;
+    msg_app2narb_confirm* app_msg;
+    in_addr narb_ip;
 
     if (state != STATE_RESV_CONFIRM)
     {
-        LOG("Trying to release an unconfirmed LSP: seqnum=" << this->app_seqnum << endl);
-        return -1; //HandleResvReleaseConfirm();
+        LOG("Trying to release an unconfirmed (unestablished) LSP: seqnum=" << this->app_seqnum << endl);
+        goto _out; //HandleResvReleaseConfirm(); --> send back a confirmation anyway
     }
     
     state = STATE_RESV_RELEASE;
 
-    msg_app2narb_confirm* app_msg = (msg_app2narb_confirm*)msg->body;
+    app_msg = (msg_app2narb_confirm*)msg->body;
 
     GetERO_RFCStandard(&app_msg->ero, ero_confirm);
 
     //get peer NARB address from ero_confirm list before it is reduced
-    in_addr narb_ip = LookupPeerNarbByERO(ero_confirm);
+    narb_ip = LookupPeerNarbByERO(ero_confirm);
 
     if(ero.size() <= 0)
     {
