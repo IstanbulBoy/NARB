@@ -824,7 +824,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     if (state != STATE_RESV_CONFIRM)
     {
         LOG("Trying to release an unconfirmed (unestablished) LSP: seqnum=" << this->app_seqnum << endl);
-        goto _out; //HandleResvReleaseConfirm(); --> send back a confirmation anyway
+        // sending back relesae confirmation anyway
+        return HandleResvReleaseConfirm();
     }
     
     state = STATE_RESV_RELEASE;
@@ -978,6 +979,8 @@ int LSPQ::HandleResvReleaseConfirm()
     rmsg = narb_new_msg_reply_release_confirm(req_ucid, app_seqnum);
 
     assert(rmsg);
+
+    LOG("Sending release confirmmation for LSP: seqnum=" << app_seqnum << endl);
 
     broker->HandleReplyMessage(rmsg);
     return 0;
