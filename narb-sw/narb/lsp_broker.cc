@@ -969,7 +969,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
 
 _out:
 
-    if (NarbDomainInfo.LookupRouterById(app_msg->req.src) && ret == 0)
+    //if (NarbDomainInfo.LookupRouterById(app_msg->req.src) && ret == 0)
+    if (ret == 0)
         return HandleResvReleaseConfirm();
     else
         return ret;
