@@ -507,11 +507,16 @@ int LSPQ::HandleRCEReply(api_msg *msg)
         break;
     case RT_MODE_MIXED_PREFERRED:
         if(!is_all_loose_hops(ero))
+        {
+            NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
             return HandleCompleteERO();
+        }
         else
             return HandleErrorCode(NARB_ERROR_NO_ROUTE);
         break;            
     case RT_MODE_ALL_LOOSE_ALLOWED:
+        if(!is_all_loose_hops(ero))
+            NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
         return HandleCompleteERO();
         break;
     }
