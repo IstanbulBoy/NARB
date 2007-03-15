@@ -605,10 +605,10 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
             list<ero_subobj*>::iterator it = ero.begin();
             for ( ; it != ero.end(); it++)
             {
-                if ( ((*it)->if_id>>16) == LOCAL_ID_TYPE_TAGGED_GROUP 
-                    || ((*it)->if_id>>16) == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL)
+                if ( (ntohl((*it)->if_id)>>16) == LOCAL_ID_TYPE_TAGGED_GROUP 
+                    || (ntohl((*it)->if_id)>>16) == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL)
                 {
-                    (*it)->if_id = ((*it)->if_id & 0xffff0000) | (req_vtag & 0xffff);
+                    (*it)->if_id = htonl((ntohl((*it)->if_id) & 0xffff0000) | (req_vtag & 0xffff));
                 }
             }
         }
