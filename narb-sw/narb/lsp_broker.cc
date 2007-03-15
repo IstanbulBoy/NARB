@@ -599,8 +599,19 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     else if (ntohs(tlv->type) == TLV_TYPE_NARB_ERO)
     {
         GetERO_RFCStandard((te_tlv_header*)msg->body, rec_ero);
-        if (msg->header.tag != 0 && ntohl(msg->header.tag) != ANY_VTAG)
+        if (msg->header.tag != 0 && ntohl(msg->header.tag) != ANY_VTAG) {
             req_vtag = ntohl(msg->header.tag);
+            //The embeded vtag in ero LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL subojects must be equal to req_tag.
+            list<ero_subobj*>::iterator it = ero.begin();
+            for ( ; it != ero.end(); it++)
+            {
+                if ( ((*it)->if_id>>16) == LOCAL_ID_TYPE_TAGGED_GROUP 
+                    || ((*it)->if_id>>16) == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL)
+                {
+                    (*it)->if_id = ((*it)->if_id & 0xffff0000) | (req_vtag & 0xffff);
+                }
+            }
+        }
     }
 
     api_msg_delete(msg);
