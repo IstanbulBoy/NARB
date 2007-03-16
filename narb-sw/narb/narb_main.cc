@@ -185,7 +185,7 @@ int main( int argc, char* argv[])
         // Polling for OSPF ajdacency (waiting for the origination interface up on-line)
         while (!NarbDomainInfo.IsOriginateInterfaceReady(ospf_apiwriter))
         {
-            LOGF("The inter-domain ospf interface %x is not ready... wait 3 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
+            LOGF("The inter-domain ospf interface 0x%x is not ready... wait 3 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
             sleep(3);
         }
         //Start abstract domain topology origination    

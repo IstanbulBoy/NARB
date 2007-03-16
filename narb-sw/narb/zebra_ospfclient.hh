@@ -51,6 +51,8 @@
 #define MSG_ZEBRA_DELETE_REQUEST        6
 #define MSG_ZEBRA_NEIGHBOR_COUNT_REQUEST     7
 #define MSG_ZEBRA_UPDATE_REQUEST     8
+#define MSG_ZEBRA_ORIGINATE_READY_QUERY   9
+
 // Message types from OSPF daemon.
 #define MSG_ZEBRA_REPLY                10
 #define MSG_ZEBRA_READY_NOTIFY         11
@@ -61,7 +63,7 @@
 #define MSG_ZEBRA_ISM_CHANGE           16
 #define MSG_ZEBRA_NSM_CHANGE           17
 #define MSG_ZEBRA_NEIGHBOR_COUNT   18
-#define MSG_ZEBRA_ORIGINATE_READY_QUERY   19
+#define MSG_ZEBRA_ORIGINATE_READY   19
 
 #define NARB_ZEBRA_LOCAL_PORT    4100
 
@@ -159,7 +161,7 @@ struct zebra_neighbor_count
 
 struct zebra_originate_ready
 {
-  u_int32_t status;		// originate interface status code --> 0: not ready; >0: ready
+  int status;		// originate interface status code --> 0: not ready; >0: ready
 };
 
 class ZebraOspfReader;

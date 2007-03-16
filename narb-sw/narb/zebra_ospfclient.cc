@@ -761,7 +761,7 @@ int ZebraOspfWriter::GetOrigianteInterfaceStatus(in_addr ifaddr)
 
     assert (server && server->GetReader());
     msg = server->GetReader()->ReadSyncMessage();
-    if (!msg)
+    if (!msg || msg->hdr.msgtype != MSG_ZEBRA_ORIGINATE_READY)
     {
         LOG ("GetOrigianteInterfaceStatus / ReadMessage failed\n" << endl);
         return -1;
