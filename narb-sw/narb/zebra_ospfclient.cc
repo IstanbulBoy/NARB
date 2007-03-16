@@ -870,7 +870,7 @@ int ZebraOspfWriter::RegisterOpqaueType(u_char ltype, u_char otype)
     }
 
     assert (server && server->GetReader());
-    msg = server->GetReader()->ReadMessage();
+    msg = server->GetReader()->ReadSyncMessage();
     if (!msg || msg->hdr.msgtype != MSG_ZEBRA_REPLY)
     {
         LOG ("RegisterOpqaueType / ReadMessage failed\n" << endl);
