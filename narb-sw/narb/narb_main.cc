@@ -182,11 +182,11 @@ int main( int argc, char* argv[])
             LOG("RegisterOpqaueType[10, 1] failed !"<<endl);
         }
 
-        // Polling for OSPF ajdacency (waiting for the origination interface up on-line)
+        // Polling for OSPF ajdacency (waiting for the origination interface up and in full adjacency with a neighbor)
         while (!NarbDomainInfo.IsOriginateInterfaceReady(ospf_apiwriter))
         {
-            LOGF("The inter-domain ospf interface 0x%x is not ready... wait 3 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
-            sleep(3);
+            LOGF("Inter-domain OSPF interface 0x%x is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
+            sleep(10);
         }
         //Start abstract domain topology origination    
         NarbDomainInfo.OriginateTopology(ospf_apiwriter);
