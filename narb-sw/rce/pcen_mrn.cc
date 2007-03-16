@@ -865,7 +865,7 @@ int PCEN_MRN::PerformComputation()
                     continue;
             }
             
-            if (nextNode == destNode && headNode != srcNode)
+            if (nextNode == destNode && headNode != srcNode) //signle link path does not need these checkings
             {
                 assert(headNode->path.front() && headNode->path.front()->link);
                 if(!headNode->path.front()->lcl_end)
@@ -990,6 +990,8 @@ int PCEN_MRN::PerformComputation()
 
         if (vtag == ANY_VTAG) {
             vtag  = destNode->vtagset.TagSet().front();
+            if (vtag > MAX_VLAN_NUM)
+                vtag = 0;
             SetVTagToEROTrack(ero, vtag);
             if (destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
                 SetVTagMask(destNode->vtagset);
