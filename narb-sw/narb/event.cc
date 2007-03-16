@@ -105,7 +105,8 @@ void EventMaster::Schedule(Event* event)
 void
 EventMaster::Remove(Event *event)
 {
-    assert (event && event->type < 5 && event->type >= 0);
+    if (event == NULL || event->type > 4 || event->type < 0)
+        return;
     
     list<Event*> *eList = &eventLists[event->type];
     event->SetObsolete(true);
@@ -215,8 +216,8 @@ EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
             break;
         if (FD_ISSET (event->fd, pReadfd))
         {
-            assert (FD_ISSET (event->fd, &readfd));
-            FD_CLR(event->fd, &readfd);
+            if (FD_ISSET (event->fd, &readfd))
+                FD_CLR(event->fd, &readfd);
             reads.remove (event);
             iter--;
             ready.push_back (event);
@@ -232,8 +233,8 @@ EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
             break;
         if (FD_ISSET (event->fd, pWritefd))
   	 {
-            assert (FD_ISSET (event->fd, &writefd));
-            FD_CLR(event->fd, &writefd);
+            if (FD_ISSET (event->fd, &writefd))
+                FD_CLR(event->fd, &writefd);
             writes.remove (event);
             iter--;
             ready.push_back (event);
