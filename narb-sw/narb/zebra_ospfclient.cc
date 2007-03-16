@@ -869,20 +869,16 @@ int ZebraOspfWriter::RegisterOpqaueType(u_char ltype, u_char otype)
         return -1;
     }
 
-    return ret;
-    /*
     assert (server && server->GetReader());
-    msg = server->GetReader()->ReadMessage();  // Read aysnc message? @@@@
-    if (!msg)
+    msg = server->GetReader()->ReadMessage();
+    if (!msg || msg->hdr.msgtype != MSG_ZEBRA_REPLY)
     {
         LOG ("RegisterOpqaueType / ReadMessage failed\n" << endl);
         return -1;
     }
-
     zebra_reply * reply = (zebra_reply*)msg->body;
     zebra_msg_delete(msg);
     return reply->errcode;
-    */
 }
 
 ////////////////////////////////////////////////////////////////////////
