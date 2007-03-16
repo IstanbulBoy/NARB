@@ -181,6 +181,13 @@ int main( int argc, char* argv[])
         {
             LOG("RegisterOpqaueType[10, 1] failed !"<<endl);
         }
+
+        // Polling for OSPF ajdacency (waiting for the origination interface up on-line)
+        while (!NarbDomainInfo.IsOriginateInterfaceReady(ospf_apiwriter))
+        {
+            LOGF("The inter-domain ospf interface %x is not ready... wait 3 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
+            sleep(3);
+        }
         //Start abstract domain topology origination    
         NarbDomainInfo.OriginateTopology(ospf_apiwriter);
         dts_originator= new DomainTopologyOriginator(SystemConfig::topology_refresh_interval);

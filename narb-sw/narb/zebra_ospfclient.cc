@@ -743,6 +743,35 @@ int ZebraOspfWriter::DeleteLsa(in_addr adv_id, in_addr area, u_char lsa_type, u_
     return ret;
 }
 
+int ZebraOspfWriter::GetOrigianteInterfaceStatus(in_addr ifaddr)
+{
+    zebra_msg* msg = zebra_msg_new (MSG_ZEBRA_ORIGINATE_READY_QUERY, &ifaddr, 0, sizeof (in_addr));
+
+    if (!msg)
+    {
+        LOG("zebra_msg_new(MSG_ZEBRA_ORIGINATE_READY_QUERY...) failed"<<endl);
+        return -1;
+    }
+  
+    if (WriteMessage(msg) < 0)
+    {
+        LOG ("GetOrigianteInterfaceStatus / WriteMessage failed\n" << endl);
+        return -1;
+    }
+
+    assert (server && server->GetReader());
+    msg = server->GetReader()->ReadSyncMessage();
+    if (!msg)
+    {
+        LOG ("GetOrigianteInterfaceStatus / ReadMessage failed\n" << endl);
+        return -1;
+    }
+
+    zebra_originate_ready* originate_ready = (zebra_originate_ready*)msg->body;
+    return originate_ready->status;
+}
+
+    
 static zebra_msg * new_zebra_update_request (u_int32_t seqnum, in_addr ifaddr, in_addr area_id,  lsa_header *data)
 {
     zebra_lsa_originate_request*omsg;

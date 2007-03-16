@@ -61,6 +61,7 @@
 #define MSG_ZEBRA_ISM_CHANGE           16
 #define MSG_ZEBRA_NSM_CHANGE           17
 #define MSG_ZEBRA_NEIGHBOR_COUNT   18
+#define MSG_ZEBRA_ORIGINATE_READY_QUERY   19
 
 #define NARB_ZEBRA_LOCAL_PORT    4100
 
@@ -156,6 +157,10 @@ struct zebra_neighbor_count
   u_int32_t status;		// neighbor status code
 };
 
+struct zebra_originate_ready
+{
+  u_int32_t status;		// originate interface status code --> 0: not ready; >0: ready
+};
 
 class ZebraOspfReader;
 class ZebraOspfWriter;
@@ -241,6 +246,7 @@ public:
     int DeleteLsa(in_addr adv_id, in_addr area, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id);
     int UpdateLsa(in_addr ori_if, in_addr adv_id, in_addr area, u_char lsa_type, 
         u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
+    int GetOrigianteInterfaceStatus(in_addr ifaddr);
     int RegisterOpqaueType(u_char ltype, u_char otype);
 };
 

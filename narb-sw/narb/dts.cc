@@ -520,6 +520,16 @@ int DomainInfo::UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
   return ret;
 }
 
+// Checking if the configured inter-domain OSPF interface is ready for LSA origination
+bool DomainInfo::IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer)
+{
+    if (NarbDomainInfo.ospfd_inter.ori_if.s_addr == 0)
+        return false;
+
+    int status = oc_writer->GetOrigianteInterfaceStatus(NarbDomainInfo.ospfd_inter.ori_if);
+    return (status > 0); 
+}
+
 // Implementation of LSA origination using router_ids and te_links 
 // in narb_domain_info. LSA's are originated to OSPFd. Note that 
 // the function ospf_apiclient_lsa_originate has been hacked to use 

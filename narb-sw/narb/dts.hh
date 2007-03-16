@@ -219,6 +219,7 @@ public:
     int OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router);
     int OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
     int UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
+    bool IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer);
     int OriginateTopology (ZebraOspfWriter* oc_writer);
     int DeleteTopology (ZebraOspfWriter* oc_writer);
     void HideTopology ();
