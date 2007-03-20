@@ -64,8 +64,12 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
             return 0;
         }
         break;
+    case MSG_REPLY_REMOVE_CONFIRM:
+        LOGF("Peer NARB release confirmation (ucid = %d, seqnp = %d)  %d \n", ntohl(msg->header.ucid), htonl(msg->header.seqnum));
+        api_msg_delete(msg);
+        break;
     default:
-        LOGF("Peer NARB returned unkonwn msg type %d \n", msg->header.type);
+        LOGF("Peer NARB returned unkonwn msg type %d \n", ntohs(msg->header.type));
          api_msg_delete(msg);
         return -1;
         break;

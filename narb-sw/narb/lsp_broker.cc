@@ -697,7 +697,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
 {
     if (state != STATE_ERO_COMPLETE)
     {
-        LOG("Trying to confirm an uncomputed LSP: seqnum=" << this->app_seqnum << endl);
+        LOGF("Trying to confirm an uncomputed LSP: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         return -1;
     }
 
@@ -713,9 +713,10 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         return -1;
     }
 
+    LOGF("HandleResvConfirm upating LSP link states: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+
     //get peer NARB address from ero_confirm list before it is reduced
     in_addr narb_ip = LookupPeerNarbByERO(ero_confirm);
-
     list<ero_subobj*>::iterator it;
     ero_subobj* subobj, *reverse_subobj;
     link_info *link1, *link2;
@@ -874,13 +875,15 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     in_addr narb_ip;
     bool is_forward_link = false;
 
+    LOGF("HandleResvRelease upating LSP link states: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+
     if (state != STATE_RESV_CONFIRM)
     {
-        LOG("Trying to release an unconfirmed (unestablished) LSP: seqnum=" << this->app_seqnum << endl);
+        LOGF("Trying on an unconfirmed (unestablished) LSP (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
         return HandleResvReleaseConfirm();
     }
-    
+
     state = STATE_RESV_RELEASE;
 
     app_msg = (msg_app2narb_confirm*)msg->body;
@@ -1060,7 +1063,7 @@ int LSPQ::HandleResvReleaseConfirm()
 
     assert(rmsg);
 
-    LOG("Sending release confirmmation for LSP: seqnum=" << app_seqnum << endl);
+    LOGF("Sending release confirmmation for LSP (seqno=%d).\n", ntohl(req_ucid), ntohl(app_seqnum));
 
     broker->HandleReplyMessage(rmsg);
     return 0;
@@ -1128,6 +1131,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     {
     case MSG_APP_REQUEST:
        {
+            LOGF("LSP_Broker::MSG_APP_REQUEST: The LSPQ (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             if (!lspq)
             {
                 lspq = new LSPQ(this, *app_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
@@ -1168,6 +1172,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         break;
     case MSG_PEER_REQUEST:
        {
+            LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
@@ -1209,7 +1214,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         {
             if (!lspq)
             {
-                LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (seqnum = %d) no longer exists.", ntohl(msg->header.seqnum));
+                LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (ucid=%d, seqno=%d) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 return -1;
             }
 
@@ -1220,7 +1225,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         {
             if (!lspq)
             {
-                LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (seqnum = %d) no longer exists.", ntohl(msg->header.seqnum));
+                LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (ucid=%d, seqno=%d) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 return -1;
             }
 
@@ -1228,7 +1233,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         }
         break;
     default:
-        LOGF("Unknow APP->NARB message type (%d)\n", app_req->type);
+        LOGF("Unknow APP->NARB message type (%d)\n", ntohs(app_req->type));
     }
 
     return 0;
@@ -1364,6 +1369,6 @@ void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
 
 u_int32_t LSP_Broker::get_unique_lspb_id()
 {
-    static u_int32_t id = 1;
+    static u_int32_t id = htonl(NarbDomainInfo.domain_id);
     return id++;
 }
