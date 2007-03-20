@@ -732,7 +732,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
 
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        if (!link1)
+        if (link1 != NULL)
         {
             is_forward_link = (!is_forward_link);
             if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
@@ -907,7 +907,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
 
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        if (!link1)
+        if (link1 != NULL)
         {
             is_forward_link = (!is_forward_link);
             if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
