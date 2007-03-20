@@ -735,7 +735,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         if (link1 != NULL)
         {
             is_forward_link = (!is_forward_link);
-            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
+            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
             {
                 continue;
             }
@@ -753,8 +753,8 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 }
                 if (vtag != 0)
                 {
-                    link1->SetVtag(vtag);
-                    link1->DeallocateVtag(vtag);
+                    link1->ResetVtag(vtag);
+                    link1->AllocateVtag(vtag);
                 }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }
@@ -910,7 +910,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         if (link1 != NULL)
         {
             is_forward_link = (!is_forward_link);
-            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
+            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
             {
                 continue;
             }
