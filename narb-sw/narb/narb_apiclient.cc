@@ -65,7 +65,7 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
         }
         break;
     case MSG_REPLY_REMOVE_CONFIRM:
-        LOGF("Peer NARB release confirmation (ucid = %d, seqnp = %d)  %d \n", ntohl(msg->header.ucid), htonl(msg->header.seqnum));
+        LOGF("Peer NARB release confirmation (ucid = 0x%x, seqnp = 0x%x)  %d \n", ntohl(msg->header.ucid), htonl(msg->header.seqnum));
         api_msg_delete(msg);
         break;
     default:

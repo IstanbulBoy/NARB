@@ -155,7 +155,9 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
     ero.clear();
 
     int len = ntohs(tlv->length) ;
-    assert( len > 0);
+    if (len <= 0)
+        return;
+    
     int offset = sizeof(struct te_tlv_header);
 
     ipv4_prefix_subobj* subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
@@ -715,7 +717,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
 
     list<ero_subobj*> ero_confirm;
     GetERO_RFCStandard(&app_msg->ero, ero_confirm);
-    if(ero.size() <= 0)
+    if(ero_confirm.size() <= 0)
     {
         LOG("LSPQ::HandleResvConfirm cannot handle empty ERO" << endl);
         return -1;
@@ -860,7 +862,9 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         if (ret < 0)
         {
             NarbFactory.RemoveClient(peer_narb);
-            return HandleErrorCode(NARB_ERROR_INTERNAL);
+            HandleErrorCode(NARB_ERROR_INTERNAL);
+            state = STATE_RESV_CONFIRM;
+            return -1;
         }
     }
 
@@ -891,7 +895,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     {
         LOGF("Trying on an unconfirmed (unestablished) LSP (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
-        return HandleResvReleaseConfirm();
+        //@@@@ TEMP COMMENT OUT
+        //return HandleResvReleaseConfirm();
     }
 
     state = STATE_RESV_RELEASE;
@@ -903,7 +908,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     //get peer NARB address from ero_confirm list before it is reduced
     narb_ip = LookupPeerNarbByERO(ero_confirm);
 
-    if(ero.size() <= 0)
+    if(ero_confirm.size() <= 0)
     {
         LOG("LSPQ::HandleResvRelease cannot handle empty ERO" << endl);
         ret = -1;
