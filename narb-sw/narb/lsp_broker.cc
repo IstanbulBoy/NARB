@@ -1322,7 +1322,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
     }
 }
 
-// searching for a request data record on lspq_list using msg sequence number
+// searching for a request data record on lspq_list using msg ucid and sequence number
 LSPQ * LSP_Broker::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
 {
     list<LSPQ*>::iterator it;
@@ -1333,6 +1333,23 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
             continue;
 
         if (ucid == (*it)->req_ucid && seqnum == (*it)->app_seqnum)
+            return *it;
+    }
+
+    return NULL;
+}
+
+// searching for a request data record on lspq_list using msg sequence number only
+LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
+{
+    list<LSPQ*>::iterator it;
+
+    for (it = lspq_list.begin(); it != lspq_list.end(); it++)
+    {
+        if (!(*it))
+            continue;
+
+        if (seqnum == (*it)->app_seqnum)
             return *it;
     }
 
