@@ -198,7 +198,7 @@ public:
     virtual int HandleMessage(api_msg * msg);
     virtual int HandleReplyMessage (api_msg* msg);
     u_int32_t LspbId() { return lspb_id; }
-    LSPQ * LspqLookup (u_int32_t seqnum);
+    LSPQ * LspqLookup (u_int32_t ucid, u_int32_t seqnum);
     void DescribeLSPbyState(u_char state, vector<string>& desc_v);
 
     static u_int32_t get_unique_lspb_id();

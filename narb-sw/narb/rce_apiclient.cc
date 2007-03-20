@@ -58,7 +58,7 @@ int RCE_APIClient::HandleMessage(api_msg * rce_msg)
         else if (rce_msg->header.action == ACT_ACKDATA)
         {
             LOGF("RCE_APIClient::ReadMessage return ERO with %d hops\n", 
-                (ntohs(rce_msg->header.length) - sizeof(te_tlv_header))/sizeof(ero_subobj));
+                (ntohs(((te_tlv_header*)rce_msg->body)->length) - sizeof(te_tlv_header))/sizeof(ero_subobj));
         }
 
         lspq = FindOwnerLSPQ(rce_msg);

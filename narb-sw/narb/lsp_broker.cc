@@ -697,7 +697,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
 {
     if (state != STATE_ERO_COMPLETE)
     {
-        LOGF("Trying to confirm an uncomputed LSP: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        LOGF("Trying to confirm an uncomputed LSP: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         return -1;
     }
 
@@ -713,7 +713,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         return -1;
     }
 
-    LOGF("HandleResvConfirm upating LSP link states: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    LOGF("HandleResvConfirm upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     //get peer NARB address from ero_confirm list before it is reduced
     in_addr narb_ip = LookupPeerNarbByERO(ero_confirm);
@@ -875,11 +875,11 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     in_addr narb_ip;
     bool is_forward_link = false;
 
-    LOGF("HandleResvRelease upating LSP link states: (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     if (state != STATE_RESV_CONFIRM)
     {
-        LOGF("Trying on an unconfirmed (unestablished) LSP (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        LOGF("Trying on an unconfirmed (unestablished) LSP (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
         return HandleResvReleaseConfirm();
     }
@@ -1124,14 +1124,14 @@ int LSP_Broker::HandleMessage(api_msg * msg)
 {
     assert (ntohs(msg->header.type) == NARB_MSG_LSPQ);
 
-    LSPQ* lspq = LspqLookup(ntohl(msg->header.seqnum));
+    LSPQ* lspq = LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
     msg_app2narb_request * app_req = (msg_app2narb_request*)msg->body;
 
     switch (ntohs(app_req->type))
     {
     case MSG_APP_REQUEST:
        {
-            LOGF("LSP_Broker::MSG_APP_REQUEST: The LSPQ (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            LOGF("LSP_Broker::MSG_APP_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             if (!lspq)
             {
                 lspq = new LSPQ(this, *app_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
@@ -1172,7 +1172,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         break;
     case MSG_PEER_REQUEST:
        {
-            LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=%d, seqno=%d).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
@@ -1214,7 +1214,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         {
             if (!lspq)
             {
-                LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (ucid=%d, seqno=%d) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+                LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (ucid=0x%x, seqno=0x%x) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 return -1;
             }
 
@@ -1225,7 +1225,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         {
             if (!lspq)
             {
-                LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (ucid=%d, seqno=%d) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+                LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (ucid=0x%x, seqno=0x%x) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 return -1;
             }
 
@@ -1323,7 +1323,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
 }
 
 // searching for a request data record on lspq_list using msg sequence number
-LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
+LSPQ * LSP_Broker::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
 {
     list<LSPQ*>::iterator it;
 
@@ -1332,7 +1332,7 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
         if (!(*it))
             continue;
 
-        if (seqnum == (*it)->app_seqnum)
+        if (ucid == (*it)->req_ucid && seqnum == (*it)->app_seqnum)
             return *it;
     }
 
