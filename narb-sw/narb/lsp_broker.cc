@@ -682,11 +682,19 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
     ret_ip.s_addr = 0;
     if_narb_info * narb_info; 
     list<ero_subobj*>::iterator it;
+    link_info *link1, *link2;
     for (it = ero.begin(); it != ero.end(); it++)
     {
         narb_info = NarbDomainInfo.LookupNarbByRmtIf((*it)->addr);
-        if (narb_info)
-            return (*it)->addr;
+        if (narb_info && it != ero.begin()) 
+        {
+            --it;
+            link1 = NarbDomainInfo.LookupLinkByLclIf((*it)->addr);
+            ++it;
+            link2 = NarbDomainInfo.LookupLinkByRmtIf((*it)->addr);
+            if (link1 == link2 ) // this subojct must pair up with its previsous (not next) suboject to form a link from this domain.
+                return (*it)->addr;
+        }
     }
     return ret_ip;
 }
