@@ -727,11 +727,38 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         subobj = *it;
         if (subobj->addr.s_addr == app_msg->req.src.s_addr ||subobj->addr.s_addr == app_msg->req.dest.s_addr)
         {
-            //remove loopback-address subobj from the ero list.
-            //subobj->hop_type = 0xff; 
             continue;
         }
- 
+
+        link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
+        if (!link1)
+        {
+            is_forward_link = (!is_forward_link);
+            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
+            {
+                continue;
+            }
+            vtag = subobj->l2sc_vlantag;
+            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
+                    if ( link1->UnreservedBandwidth()[i] < 0)
+                         link1->UnreservedBandwidth()[i] = 0;
+                    link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
+                    if (link1->GetISCD()->max_lsp_bw[i] < 0)
+                        link1->GetISCD()->max_lsp_bw[i] = 0;
+                }
+                if (vtag != 0)
+                {
+                    link1->SetVtag(vtag);
+                    link1->DeallocateVtag(vtag);
+                }
+                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+            }
+        }
+        /* 
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
         reverse_link1 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr);
         if (!link1 && !reverse_link1)
@@ -807,6 +834,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 }
             }
         }
+        */
     }
 
     //proceed to the next domain if any
@@ -867,17 +895,45 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         goto _out;
     }
 
+    bool is_forward_link = false;
     for (it = ero_confirm.begin(); it != ero_confirm.end(); it++)
     {
         u_int32_t vtag = 0;
         subobj = *it;
         if (subobj->addr.s_addr == app_msg->req.src.s_addr ||subobj->addr.s_addr == app_msg->req.dest.s_addr)
         {
-            //remove loopback-address subobj from the ero list.
-            //subobj->hop_type = 0xff; 
             continue;
         }
- 
+
+        link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
+        if (!link1)
+        {
+            is_forward_link = (!is_forward_link);
+            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL)  != 0) //ignore reverse link for unidirectional request
+            {
+                continue;
+            }
+            vtag = subobj->l2sc_vlantag;
+            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
+                    if (link1->UnreservedBandwidth()[i] > link1->MaxBandwidth();
+                        link1->UnreservedBandwidth()[i] = link1->MaxBandwidth();
+                    link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
+                    if (link1->GetISCD()->max_lsp_bw[i] > link1->MaxBandwidth())
+                        link1->GetISCD()->max_lsp_bw[i] = link1->MaxBandwidth();
+                }
+                if (vtag != 0)
+                {
+                    link1->SetVtag(vtag);
+                    link1->DeallocateVtag(vtag);
+                }
+                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+            }
+        }
+         /*
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
         reverse_link1 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr);
         if (!link1 && !reverse_link1)
@@ -893,8 +949,6 @@ int LSPQ::HandleResvRelease(api_msg* msg)
             subobj = *it;
             link2 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr); 
             reverse_link2 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr); 
-            //reverse_subobj->hop_type = 0xff;
-            //subobj->hop_type = 0xff;
             if (link1 != link2 && reverse_link1 != reverse_link2)
                 continue;
         }
@@ -953,6 +1007,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 }
             }
         }
+        */
     }
 
     //proceed to the next domain if any
