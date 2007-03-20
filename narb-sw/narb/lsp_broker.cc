@@ -857,6 +857,8 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     }
 
     //peer_narb->SendMessage(msg);
+    msg->header.ucid = htonl(broker->LspbId());
+    msg->header.chksum = MSG_CHKSUM(msg->header);
     peer_narb->RelayMessageToPeer(MSG_APP_CONFIRM, msg, ero_confirm);
     return 0;
 }
@@ -1040,6 +1042,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     }
 
     //peer_narb->SendMessage(msg);
+    msg->header.ucid = htonl(broker->LspbId());
+    msg->header.chksum = MSG_CHKSUM(msg->header);
     peer_narb->RelayMessageToPeer(MSG_APP_REMOVE, msg, ero_confirm);
 
 _out:
