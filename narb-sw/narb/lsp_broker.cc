@@ -720,6 +720,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     ero_subobj* subobj, *reverse_subobj;
     link_info *link1, *link2;
     link_info *reverse_link1, *reverse_link2;
+    bool is_forward_link = false;
 
     for (it = ero_confirm.begin(); it != ero_confirm.end();  it++)
     {
@@ -871,6 +872,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     list<ero_subobj*> ero_confirm;
     msg_app2narb_confirm* app_msg;
     in_addr narb_ip;
+    bool is_forward_link = false;
 
     if (state != STATE_RESV_CONFIRM)
     {
@@ -895,7 +897,6 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         goto _out;
     }
 
-    bool is_forward_link = false;
     for (it = ero_confirm.begin(); it != ero_confirm.end(); it++)
     {
         u_int32_t vtag = 0;
@@ -919,7 +920,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 for (int i = 0; i < 8; i++)
                 {
                     link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
-                    if (link1->UnreservedBandwidth()[i] > link1->MaxBandwidth();
+                    if (link1->UnreservedBandwidth()[i] > link1->MaxBandwidth())
                         link1->UnreservedBandwidth()[i] = link1->MaxBandwidth();
                     link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
                     if (link1->GetISCD()->max_lsp_bw[i] > link1->MaxBandwidth())
