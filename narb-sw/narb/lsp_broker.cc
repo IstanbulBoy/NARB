@@ -125,6 +125,14 @@ void LSPQ::DescribeLSP(string& desc)
     desc = buf;
 }
 
+void LSPQ::SetState(u_char s)
+{
+   if (state == STATE_RESV_CONFIRM)
+   {
+       LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %s",  s);
+   }
+   state = s;
+}
 
 void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
 {
@@ -360,7 +368,7 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
 /////// STATE_APP_REQ ////////
 int LSPQ::HandleLSPQRequest()
 {
-    state = STATE_APP_REQ;
+    SetState(STATE_APP_REQ);
 
     int ret; 
 
@@ -412,7 +420,7 @@ int LSPQ::HandleLSPQRequest()
 /////// STATE_REQ_RECURSIVE ////////
 int LSPQ::HandleRecursiveRequest()
 {
-    state = STATE_REQ_RECURSIVE;
+    SetState(STATE_REQ_RECURSIVE);
 
     int ret; 
 
@@ -452,7 +460,7 @@ int LSPQ::HandleRecursiveRequest()
 /////// STATE_RCE_REPLY  ////////
 int LSPQ::HandleRCEReply(api_msg *msg)
 {
-    state = STATE_RCE_REPLY;
+    SetState(STATE_RCE_REPLY);
 
     assert(msg && msg->header.type_8 == MSG_LSP);
 
@@ -530,7 +538,7 @@ int LSPQ::HandleRCEReply(api_msg *msg)
 /////// STATE_ERO_PARTIAL  ////////
 int LSPQ::HandlePartialERO()
 {
-    state = STATE_ERO_PARTIAL;
+    SetState(STATE_ERO_PARTIAL);
 
     int ret; 
 
@@ -592,7 +600,7 @@ int LSPQ::HandlePartialERO()
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
 int LSPQ::HandleNextHopNARBReply(api_msg *msg)
 {
-    state = STATE_NEXT_HOP_NARB_REPLY;
+    SetState(STATE_NEXT_HOP_NARB_REPLY);
 
     HandleOptionalResponseTLVs(msg);
 
@@ -644,7 +652,7 @@ _CANNOT_EXPAND_ROUTE:
 /////// STATE_ERROR ////////
 int LSPQ::HandleErrorCode(u_int32_t errcode)
 {
-    state = STATE_ERROR;
+    SetState(STATE_ERROR);
 
     assert(broker);
 
@@ -661,7 +669,7 @@ int LSPQ::HandleErrorCode(u_int32_t errcode)
 /////// STATE_ERO_COMPLETE ////////
 int LSPQ::HandleCompleteERO()
 {
-    state = STATE_ERO_COMPLETE;
+    SetState(STATE_ERO_COMPLETE);
 
     int length;
     void * tlv_data;
@@ -711,7 +719,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         return -1;
     }
 
-    state = STATE_RESV_CONFIRM;
+    SetState(STATE_RESV_CONFIRM);
 
     msg_app2narb_confirm* app_msg = (msg_app2narb_confirm*)msg->body;
 
@@ -863,7 +871,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         {
             NarbFactory.RemoveClient(peer_narb);
             HandleErrorCode(NARB_ERROR_INTERNAL);
-            state = STATE_RESV_CONFIRM;
+            SetState(STATE_RESV_CONFIRM);
             return -1;
         }
     }
@@ -892,7 +900,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     //if (state != STATE_RESV_CONFIRM)
-    if (state < STATE_ERO_COMPLETE)
+    if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
     {
         LOGF("Trying on an unconfirmed (state = %d) LSP (ucid=0x%x, seqno=0x%x).\n", state, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
@@ -900,7 +908,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         return HandleResvReleaseConfirm();
     }
 
-    state = STATE_RESV_RELEASE;
+    SetState(STATE_RESV_RELEASE);
 
     app_msg = (msg_app2narb_confirm*)msg->body;
 

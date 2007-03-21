@@ -127,7 +127,7 @@ public:
     void SetReqAppMsg(msg_app2narb_request& r) { req_spec = r; }
     void SetReqMrnMsg(msg_app2narb_request& mr) { mrn_spec = mr; }
     u_char State() {  return state;  }
-    void SetState(u_char s) {  state = s;  }
+    void SetState(u_char s);
     void HandleOptionalRequestTLVs (api_msg* msg);
     void HandleOptionalResponseTLVs (api_msg* msg);
     void DescribeLSP(string& desc);
