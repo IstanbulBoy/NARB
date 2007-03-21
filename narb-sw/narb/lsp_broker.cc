@@ -466,7 +466,10 @@ int LSPQ::HandleRecursiveRequest()
 int LSPQ::HandleRCEReply(api_msg *msg)
 {
     if (state == STATE_RESV_CONFIRM || state == STATE_RESV_RELEASE || state == STATE_RESV_RELEASE_CONFIRM)
+    {
+        api_msg_delete(msg);
         return 0;
+    }
 
     SetState(STATE_RCE_REPLY);
 
