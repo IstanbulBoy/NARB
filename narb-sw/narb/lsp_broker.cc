@@ -129,7 +129,7 @@ void LSPQ::SetState(u_char s)
 {
    if (state == STATE_RESV_CONFIRM)
    {
-       LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %s",  s);
+       LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %d",  s);
    }
    state = s;
 }
