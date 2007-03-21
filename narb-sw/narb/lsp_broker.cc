@@ -905,7 +905,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     //if (state != STATE_RESV_CONFIRM)
-    if (state != STATE_ERO_COMPLETE || state != STATE_RESV_CONFIRM)
+    if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
     {
         LOGF("Trying on an unconfirmed (state = %d) LSP (ucid=0x%x, seqno=0x%x).\n", state, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
@@ -1084,7 +1084,7 @@ _out:
 
 int LSPQ::HandleResvReleaseConfirm()
 {
-   state = STATE_RESV_RELEASE_CONFIRM;
+   SetState(STATE_RESV_RELEASE_CONFIRM);
 
     assert(broker);
 
