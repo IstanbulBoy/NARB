@@ -418,7 +418,7 @@ int LSPQ::HandleLSPQRequest()
 
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
-    rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, vtag_mask);
+    rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_ucid, req_vtag, vtag_mask);
     return 0;
 }
 
@@ -456,7 +456,7 @@ int LSPQ::HandleRecursiveRequest()
         app_options |= LSP_OPT_VTAG_MASK;
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
-    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
+    rce_client->QueryLsp_MRN(cspf_req, mrn_spec, req_ucid, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	| (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) |(app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0)
 	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0) 
 	, req_vtag, vtag_mask); 
@@ -602,7 +602,7 @@ int LSPQ::HandlePartialERO()
         //LSP_OPT_MRN_RELAY//@@@@
     }
 
-    peer_narb->QueryLspRecursive(rec_cspf_req, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
+    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
@@ -884,9 +884,6 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
     }
 
-    //peer_narb->SendMessage(msg);
-    msg->header.ucid = htonl(broker->LspbId());
-    msg->header.chksum = MSG_CHKSUM(msg->header);
     peer_narb->RelayMessageToPeer(MSG_APP_CONFIRM, msg, ero_confirm);
     return 0;
 }
@@ -1071,9 +1068,6 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
     }
 
-    //peer_narb->SendMessage(msg);
-    msg->header.ucid = htonl(broker->LspbId());
-    msg->header.chksum = MSG_CHKSUM(msg->header);
     peer_narb->RelayMessageToPeer(MSG_APP_REMOVE, msg, ero_confirm);
 
 _out:
@@ -1367,23 +1361,6 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
             continue;
 
         if (ucid == (*it)->req_ucid && seqnum == (*it)->app_seqnum)
-            return *it;
-    }
-
-    return NULL;
-}
-
-// searching for a request data record on lspq_list using msg sequence number only
-LSPQ * LSP_Broker::LspqLookup (u_int32_t seqnum)
-{
-    list<LSPQ*>::iterator it;
-
-    for (it = lspq_list.begin(); it != lspq_list.end(); it++)
-    {
-        if (!(*it))
-            continue;
-
-        if (seqnum == (*it)->app_seqnum)
             return *it;
     }
 

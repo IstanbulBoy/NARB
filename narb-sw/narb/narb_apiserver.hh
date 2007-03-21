@@ -51,6 +51,8 @@ public:
 
    static LSP_Broker * LspBrokerLookup(u_int32_t id);
    static LSP_Broker * LspBrokerLookupBySocket(int sock);
+
+   static LSP_Broker* NARB_APIServer::LspqLookup (u_int32_t ucid, u_int32_t seqnum);
 };
 
 struct msg_app2narb_vtag_mask;

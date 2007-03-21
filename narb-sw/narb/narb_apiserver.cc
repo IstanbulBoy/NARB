@@ -85,6 +85,28 @@ LSP_Broker* NARB_APIServer::LspBrokerLookup (u_int32_t id)
     return NULL;
 }
 
+LSP_Broker* NARB_APIServer::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
+{
+    list<LSP_Broker*>::iterator it1;
+    LSP_Broker *broker;
+    list<LSPQ*>::iterator it2;
+    LSPQ* lspq;
+
+    for (it1 = lsp_brokers.begin(); it1 != lsp_brokers.end(); it1++)
+    {
+        broker = *it1;
+        if (!broker)
+            continue;
+        for (it2 = broker->lspq_list.begin(); it2 !=  broker->lspq_list.end(); it2++)
+        {
+        	if ((lspq = broker->LspqLookup(ucid, seqnum)) != NULL)
+                  return lspq;
+        }
+    }
+
+    return NULL;
+}
+
 LSP_Broker* NARB_APIServer::LspBrokerLookupBySocket (int sock)
 {
     list<LSP_Broker*>::iterator it;

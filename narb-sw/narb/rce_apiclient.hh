@@ -77,8 +77,8 @@ public:
     virtual ~RCE_APIClient();
     virtual int HandleMessage(api_msg * msg);
     bool IsMatched(char* host, int port);
-    void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t options, u_int32_t vtag = 0, msg_app2narb_vtag_mask* vtag_bitmask = NULL);
-    void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t options, u_int32_t vtag = 0, msg_app2narb_vtag_mask* vtag_bitmask = NULL);
+    void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, msg_app2narb_vtag_mask* vtag_bitmask = NULL);
+    void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, msg_app2narb_vtag_mask* vtag_bitmask = NULL);
 };
 
 
