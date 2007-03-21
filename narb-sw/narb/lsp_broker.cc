@@ -418,7 +418,7 @@ int LSPQ::HandleLSPQRequest()
 
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
-    rce_client->QueryLsp(cspf_req, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_ucid, req_vtag, vtag_mask);
+    rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, vtag_mask);
     return 0;
 }
 
