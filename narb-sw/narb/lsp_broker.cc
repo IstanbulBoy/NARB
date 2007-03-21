@@ -127,6 +127,7 @@ void LSPQ::DescribeLSP(string& desc)
 
 void LSPQ::SetState(u_char s)
 {
+/*
    if (state == STATE_RESV_CONFIRM)
    {
        LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %d\n",  s);
@@ -135,7 +136,7 @@ void LSPQ::SetState(u_char s)
    {
        LOGF("#### state == %d, to be changed into STATE_RESV_CONFIRM\n",  state);
    }
-
+*/
    state = s;
 }
 
@@ -465,11 +466,13 @@ int LSPQ::HandleRecursiveRequest()
 /////// STATE_RCE_REPLY  ////////
 int LSPQ::HandleRCEReply(api_msg *msg)
 {
+/*
     if (state == STATE_RESV_CONFIRM || state == STATE_RESV_RELEASE || state == STATE_RESV_RELEASE_CONFIRM)
     {
         api_msg_delete(msg);
         return 0;
     }
+*/
 
     SetState(STATE_RCE_REPLY);
 
@@ -904,8 +907,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
 
     LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
-    //if (state != STATE_RESV_CONFIRM)
-    if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
+    if (state != STATE_RESV_CONFIRM)
+    //if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
     {
         LOGF("Trying on an unconfirmed (state = %d) LSP (ucid=0x%x, seqno=0x%x).\n", state, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
