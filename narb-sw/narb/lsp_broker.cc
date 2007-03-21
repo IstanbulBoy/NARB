@@ -129,8 +129,13 @@ void LSPQ::SetState(u_char s)
 {
    if (state == STATE_RESV_CONFIRM)
    {
-       LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %d",  s);
+       LOGF("#### state == STATE_RESV_CONFIRM, to be changed into %d\n",  s);
    }
+   if (s == STATE_RESV_CONFIRM)
+   {
+       LOGF("#### state == %d, to be changed into STATE_RESV_CONFIRM\n",  state);
+   }
+
    state = s;
 }
 
@@ -460,6 +465,9 @@ int LSPQ::HandleRecursiveRequest()
 /////// STATE_RCE_REPLY  ////////
 int LSPQ::HandleRCEReply(api_msg *msg)
 {
+    if (state = STATE_RESV_CONFIRM || state == STATE_RESV_RELEASE || state == STATE_RESV_RELEASE_CONFIRM)
+        return 0;
+
     SetState(STATE_RCE_REPLY);
 
     assert(msg && msg->header.type_8 == MSG_LSP);
@@ -486,9 +494,6 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             }
 	}
     }
-
-    //@@@@ Additional info in msg->header.nsgtag[], indicating MRN status?
-
     api_msg_delete(msg);    
     
     if (ero.size() == 0)
@@ -900,7 +905,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     //if (state != STATE_RESV_CONFIRM)
-    if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
+    if (state != STATE_ERO_COMPLETE || state != STATE_RESV_CONFIRM)
     {
         LOGF("Trying on an unconfirmed (state = %d) LSP (ucid=0x%x, seqno=0x%x).\n", state, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
