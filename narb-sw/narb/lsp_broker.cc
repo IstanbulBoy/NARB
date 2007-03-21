@@ -414,7 +414,7 @@ int LSPQ::HandleLSPQRequest()
     msg_narb_cspf_request cspf_req;
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
-    cspf_req.lspb_id = broker->lspb_id;
+    cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
 
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
@@ -450,7 +450,7 @@ int LSPQ::HandleRecursiveRequest()
     msg_narb_cspf_request cspf_req;
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
-    cspf_req.lspb_id = broker->lspb_id;
+    cspf_req.lspb_id = broker->lspb_id; //not used, replaced by ucid
 
     if (vtag_mask)
         app_options |= LSP_OPT_VTAG_MASK;
@@ -570,7 +570,7 @@ int LSPQ::HandlePartialERO()
     msg_narb_recursive_cspf_request rec_cspf_req;
     memset(&rec_cspf_req, 0, sizeof(struct msg_narb_recursive_cspf_request));
     rec_cspf_req.app_seqnum = app_seqnum;
-    rec_cspf_req.lspb_id = broker->lspb_id;
+    rec_cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
     rec_cspf_req.app_req_data = req_spec;
     rec_cspf_req.app_req_data.type = htons(MSG_PEER_REQUEST);
     rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data;
