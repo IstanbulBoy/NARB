@@ -182,7 +182,7 @@ api_msg * APIReader::ReadMessage ()
 
     if (rlen < 0)
     {
-        LOG("APIReader failed to read from"<<fd<<endl);
+        LOG("APIReader failed to read from "<<fd<<endl);
         return NULL;
     }
     else if (rlen == 0)

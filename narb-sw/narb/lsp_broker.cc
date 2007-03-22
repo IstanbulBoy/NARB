@@ -1125,6 +1125,15 @@ LSP_Broker::~LSP_Broker()
 
 void LSP_Broker::Run()
 {
+    api_msg * msg = ReadMessage();
+    if (!msg)
+    {
+        Close();
+        if (api_writer != NULL)
+            api_writer->Close();
+        return;
+    }
+
     if (api_writer == NULL)
     {
         api_writer = new APIWriter(fd, server);
@@ -1134,15 +1143,6 @@ void LSP_Broker::Run()
         api_writer->SetRepeats(0);
         api_writer->SetReader(this);
         //eventMaster.Schedule(api_writer);
-    }
-
-    api_msg * msg = ReadMessage();
-
-    if (!msg)
-    {
-        Close();
-        api_writer->Close();
-        return;
     }
 
     int ret = HandleMessage(msg);

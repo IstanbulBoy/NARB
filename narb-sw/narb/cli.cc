@@ -1693,8 +1693,8 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP rmt_if_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_update_link, "update link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
-    "Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+    "Edit/Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
     link_info * link;
@@ -1712,9 +1712,10 @@ COMMAND (cmd_update_link, "update link local_if_addr LCL_IF_ADDR rmt_if_addr RMT
   
     if (link)
     {
-        link_to_update = new link_info(*link);
+        link_to_update = new link_info;
+        *link_to_update = *link;
         link_to_update->opaque_id = narb_ospf_opaque_id();
-        cli_node->Reader()->GoDown("update-link-node");
+        cli_node->Reader()->GoDown("edit-link-node");
         string prompt = cli_node->Prompt(); 
         prompt += '(';
         prompt += argv[0];
@@ -1762,26 +1763,97 @@ COMMAND (cmd_set_link, "set {link_id | adv_router |metric | lcl_if |rmt_if} VALU
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_sw_bw,"set sw_capability {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh} bandwidth FLOAT",
-       "Set configuration \n link interface switching capability\nPick a switching type\nEncoding \n Pick a type\nBandwidth\nFloat in mbps")
+COMMAND (cmd_set_link_swcap,"set sw_capability {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
+       "Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
 {
     assert (link_to_update);
   
     link_to_update->GetISCD()->swtype= string_to_value(&str_val_conv_switching, argv[0].c_str());
     link_to_update->GetISCD()->encoding = string_to_value(&str_val_conv_encoding, argv[1].c_str());
-    float bw;
-    sscanf(argv[2].c_str(), "%f", &bw);
-    htonf_mbps(bw);
-    for (int i = 0; i < 8; i++)
-        link_to_update->GetISCD()->max_lsp_bw[i] = bw;
     
     SET_LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_IFSW_CAP);
     cli_node->ShowPrompt();
 }
+
+COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
+       "Set configuration \nBandwidth\nFloat in mbps")
+{
+    assert (link_to_update);
+    float bw;
+    sscanf(argv[0].c_str(), "%f", &bw);
+    htonf_mbps(bw);
+    if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_IFSW_CAP) ==0 || link_to_update->GetISCD() == NULL)
+    {
+        CLI_OUT("Cannot update bandwidth: no switch_cap_if descriptor for this link!%s", cli_cstr_newline);
+    }
+    else 
+    {
+        for (int i = 0; i < 8; i++)
+            link_to_update->GetISCD()->max_lsp_bw[i] = bw;
+    }
+    cli_node->ShowPrompt();
+}
+
+COMMAND (cmd_set_link_vlan,"set vlan {add|delete} VLAN",
+       "Set configuration \nVLAN\nAdd\nDelete\nVLAN tag")
+{
+    assert (link_to_update);
+    int vlan;
+    sscanf(argv[1].c_str(), "%d", vlan);
+    if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) ==0 || link_to_update->GetISCD() == NULL) 
+    {
+        CLI_OUT("Cannot update VLAN for this link!%s", cli_cstr_newline);
+    }
+    else
+    {
+        if (strncmp(argv[0].c_str(), "add", 1) == 0)
+        {
+            link_to_update->SetVtag(vlan);
+            link_to_update->DeallocateVtag(vlan);
+        }
+        else
+        {
+            link_to_update->ResetVtag(vlan);
+        }
+    }
+    cli_node->ShowPrompt();
+}
+
+COMMAND (cmd_set_link_vlan_range,"set vlan {add|delete} VLAN1 to VLAN2",
+       "Set configuration \nVLAN\nAdd\nDelete\nVLAN tag - range begin\nVLAN tag range end")
+{
+    assert (link_to_update);
+    int vlan, vlan1, vlan2;
+    bool adding = (strncmp(argv[0].c_str(), "add", 1) == 0 ? true : false);
+
+    sscanf(argv[1].c_str(), "%d", vlan);
+    sscanf(argv[2].c_str(), "%d", vlan);
+    if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) ==0 || link_to_update->GetISCD() == NULL) 
+    {
+        CLI_OUT("Cannot update VLAN for this link!%s", cli_cstr_newline);
+    }
+    else
+    {
+        for (vlan = vlan1; vlan <= vlan1; vlan++)
+        {
+            if (adding)
+            {
+                link_to_update->SetVtag(vlan);
+                link_to_update->DeallocateVtag(vlan);
+            }
+            else
+            {
+                link_to_update->ResetVtag(vlan);
+            }
+        }
+    }
+    cli_node->ShowPrompt();
+}
       
-COMMAND(cmd_show_link, "show link {updated | original}",
+COMMAND(cmd_show_link, "show link {updated|original}",
        "Show \nTE link\nEdited link parameters | Original parameters")
 {
+    int i;
     assert (link_to_update);
     link_info * link = NULL;
     char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3];
@@ -1805,18 +1877,38 @@ COMMAND(cmd_show_link, "show link {updated | original}",
     strcpy (addr_buf3, inet_ntoa (ip));
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
-    CLI_OUT("TE-LINK (OpqID %d):  {adv_router (%s)->id (%s)} %s", link->opaque_id,
-                  addr_buf2, addr_buf1, cli_cstr_newline);
-    CLI_OUT("\t Interfaces: {lcl_if (%s)->rmt_if (%s)} %s",
-                  addr_buf3, addr_buf4, cli_cstr_newline);
-    CLI_OUT("\t \t {metric = %d, sw_cap = %s, encoding = %s} %s", 
-                  link->Metric(), value_to_string(&str_val_conv_switching, (u_int32_t)link->GetISCD()->swtype),
-                  value_to_string(&str_val_conv_encoding, (u_int32_t)link->GetISCD()->encoding), cli_cstr_newline);
+
+    CLI_OUT("##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", link->opaque_id,
+                  cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);
+    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
+                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
+    CLI_OUT("\t Traffic Engineering Metric: %d,  %s", link->Metric(), cli_cstr_newline);
+    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
+    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxResvervableBandwidth(), cli_cstr_newline);
+    CLI_OUT("\t Interface Switching Capability Descriptor: Switching %s Encoding %s%s", 
+            value_to_string(&str_val_conv_switching, (u_int32_t)link->GetISCD()->swtype),
+            value_to_string(&str_val_conv_encoding, (u_int32_t)link->GetISCD()->encoding), cli_cstr_newline);
+    for (i = 0; i < 8; i++)
+    {
+        CLI_OUT ("\t Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, link->GetISCD()->max_lsp_bw[i], cli_cstr_newline);
+    }
+    if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) !=0)
+    {
+	    CLI_OUT ("\t -- L2SC specific information--%s\t    --> Available VLAN tag set:", cli_cstr_newline);
+	    for (i = 1; i <= MAX_VLAN_NUM; i++)
+		if (link->IsVtagSet(i)) CLI_OUT (" %d", i);
+	    CLI_OUT("%s", cli_cstr_newline);
+	    CLI_OUT ("\t   --> Allocated VLAN tag set:");
+	    for (i = 1; i <= MAX_VLAN_NUM; i++)
+		if (link->IsVtagAllocated(i)) CLI_OUT (" %d", i);
+	    CLI_OUT("%s", cli_cstr_newline);
+    }
+
     cli_node->ShowPrompt();
 }
   
-COMMAND(cmd_update_link_cancel, "cancel",
-       "Cancel updating TE link parameters\n")
+COMMAND(cmd_edit_link_cancel, "cancel",
+       "Cancel edited TE link parameters\n")
 {
     if (link_to_update)
     {
@@ -1827,7 +1919,8 @@ COMMAND(cmd_update_link_cancel, "cancel",
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND(cmd_update_link_delete, "delete",
+/*
+COMMAND(cmd_edit_link_delete, "delete",
        "Delete the current TE link\n")
 {
     link_info * link;
@@ -1855,16 +1948,16 @@ COMMAND(cmd_update_link_delete, "delete",
     }
 
 _out:  
-    *link = *link_to_update;
     delete link_to_update;
     link_to_update = NULL;
 
     cli_node->Reader()->GoUp();  
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
+*/
 
-COMMAND(cmd_update_link_commit, "commit",
-       "Commit updating TE link parameters\n")
+COMMAND(cmd_edit_link_commit, "commit",
+       "Commit edited TE link parameters\n")
 {
     link_info * link;
 
@@ -1887,9 +1980,9 @@ COMMAND(cmd_update_link_commit, "commit",
     in_addr adv_id;
     adv_id.s_addr = link->AdvRtId();
     zebra_client->GetWriter()->DeleteLsa(adv_id, NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);
-  
-    *link = *link_to_update;
-    delete link_to_update;
+
+    delete link;
+    link = link_to_update;
     link_to_update = NULL;
     NarbDomainInfo.OriginateTeLink (zebra_client->GetWriter(), link);
 
@@ -2035,22 +2128,24 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
     node->AddCommand(&cmd_set_topology_refresh_interval_instance);
-    node->AddCommand(&cmd_update_link_instance);
+    node->AddCommand(&cmd_edit_link_instance);
     node->AddCommand(&cmd_add_link_instance);
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_manual_ero_instance);
     node->AddCommand(&cmd_show_manual_ero_instance);
     node->AddCommand(&cmd_delete_manual_ero_instance);
     node->AddCommand(&cmd_add_manual_ero_instance);
-    node = node->MakeChild("update-link-node");
+    node = node->MakeChild("edit-link-node");
     //Update-link level under the cofigure level
     node->SetPrompt("narb:cli#");
     node->AddCommand(&cmd_set_link_instance);
-    node->AddCommand(&cmd_set_link_sw_bw_instance);
+    node->AddCommand(&cmd_set_link_swcap_instance);
+    node->AddCommand(&cmd_set_link_bandwidth_instance);
+    node->AddCommand(&cmd_set_link_vlan_instance);
+    node->AddCommand(&cmd_set_link_vlan_range_instance);
     node->AddCommand(&cmd_show_link_instance);
-    node->AddCommand(&cmd_update_link_cancel_instance);
-    node->AddCommand(&cmd_update_link_delete_instance);
-    node->AddCommand(&cmd_update_link_commit_instance);
+    node->AddCommand(&cmd_edit_link_cancel_instance);
+    node->AddCommand(&cmd_edit_link_commit_instance);
     //////////////// End /////////////////
 
     current_node = cli_root;

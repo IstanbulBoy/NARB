@@ -87,12 +87,12 @@ LSP_Broker* NARB_APIServer::LspBrokerLookup (u_int32_t id)
 
 LSPQ* NARB_APIServer::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
 {
-    list<LSP_Broker*>::iterator it1;
+    list<LSP_Broker*>::reverse_iterator it1;
     LSP_Broker *broker;
     list<LSPQ*>::iterator it2;
     LSPQ* lspq;
 
-    for (it1 = lsp_brokers.begin(); it1 != lsp_brokers.end(); it1++)
+    for (it1 = lsp_brokers.rbegin(); it1 != lsp_brokers.rend(); it1++)
     {
         broker = *it1;
         if (!broker)

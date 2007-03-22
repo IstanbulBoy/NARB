@@ -118,6 +118,38 @@ link_info::link_info(u_int32_t domain_id, in_addr advId, in_addr linkId):
     iscds.push_back(iscd);
 }
 
+link_info& link_info::operator= (link_info& link)
+{
+    this->opaque_id = link.opaque_id;
+    this->hide =  link.hide;
+    this->info_flag = link.info_flag;
+
+    this->iscds.clear();
+    list<ISCD*>::iterator it1;
+    for (it1 = link.iscds.begin(); it1 != link.iscds.end(); it1++)
+    {
+        ISCD *iscd = new ISCD(*(*it1));
+        this->iscds.push_back(iscd);
+    }
+    this->iacds.clear();
+    list<IACD*>::iterator it2;
+    for (it2 = link.iacds.begin(); it2 != link.iacds.end(); it2++)
+    {
+        IACD *iacd = new IACD(*(*it2));
+        this->iacds.push_back(iacd);
+    }
+    this->wavelenths.clear();
+    list<Wavelength*>::iterator it3;
+    for (it3 = link.wavelenths.begin(); it3 != link.wavelenths.end(); it3++)
+    {
+        Wavelength*wave = new Wavelength(*(*it3));
+        this->wavelenths.push_back(wave);
+    }
+
+    return *this;
+}
+
+
 link_info* DomainInfo::LookupLinkByLclIf(in_addr id)
 {
     RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_GLO_ABS_LNK);

@@ -197,7 +197,17 @@ class ResvTable
 {
 public:
     list<Reservation*> reserves;
-
+    ResvTable::ResvTable() {}
+    ResvTable::ResvTable(const ResvTable& rt)
+    {
+        this->reserves.clear();
+        list<Reservation*>::const_iterator it;
+        for (it = rt.reserves.begin(); it != rt.reserves.end(); it++)
+        {
+            Reservation* resv = new Reservation(*(*it));
+            this->reserves.push_back(resv);
+        }
+    }
     Reservation* operator [](u_int32_t i)
         {
             list<Reservation*>::iterator iter;
@@ -285,6 +295,7 @@ protected:
     u_char vtagBitMaskAlloc[MAX_VLAN_NUM/8]; //up to 4096 vlan ids, one per bit
 
 public:
+    Link():Resource(RTYPE_LOC_PHY_LNK, LocalInfo::domainMask, 0, 0) { Init();}
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId) {Init();}
     Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, LocalInfo::domainMask, advRtId, lnkId) {Init();}
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf):
@@ -299,6 +310,7 @@ public:
     u_int32_t Metric() {return metric;}
     void SetMetric(u_int32_t x) { metric = x;}
     float MaxBandwidth() {return maxBandwidth;}
+    float MaxResvervableBandwidth() {return maxReservableBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
     float* UnreservedBandwidth() { return unreservedBandwidth; }
     u_char* VtagBitMask() { return vtagBitMask; }
