@@ -88,7 +88,7 @@ void Log::Init(u_int32_t options_val, const string &fileName)
     options = options_val;
     if (fileName.empty())
         return;
-    log_file = new ofstream(fileName.c_str());
+    log_file = new ofstream(fileName.c_str(), ios::out |((options_val & LOG_APPEND) ? ios::app : ios::trunc) );
     if (!log_file || log_file->bad()) 
     {
         LOG_FILE << "Failed to open the log file: " << fileName << endl;
@@ -106,9 +106,9 @@ int Log::Logf(const char *format, ...)
     va_start(ap, format);
     int ret=vsprintf(buf, format, ap);
     if (log_file && (options&LOG_LOGFILE))
-        *log_file<< Preamble(LOG_LOGFILE) << buf;
+        *log_file<< Preamble(LOG_LOGFILE) << buf<<flush;
     if (log_stdout && (options&LOG_STDOUT))
-        *log_stdout<<Preamble(LOG_LOGFILE) << buf;  
+        *log_stdout<<Preamble(LOG_LOGFILE) << buf<<flush;
     va_end(ap);
     return ret;
 }
