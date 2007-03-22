@@ -120,10 +120,30 @@ link_info::link_info(u_int32_t domain_id, in_addr advId, in_addr linkId):
 
 link_info& link_info::operator= (link_info& link)
 {
-    this->opaque_id = link.opaque_id;
-    this->hide =  link.hide;
-    this->info_flag = link.info_flag;
-
+    //Resource
+    this->type = link.type;
+    this->domainMask = link.domainMask;
+    this->domainId = link.domainId;
+    this->advRtId = link.advRtId;
+    this->id = link.id;
+    //Link
+    this->linkType = link.linkType;
+    this->lclIfAddr = link.lclIfAddr;
+    this->rmtIfAddr = link.rmtIfAddr;
+    this->metric = link.metric;
+    this->maxBandwidth = link.maxBandwidth;
+    this->maxReservableBandwidth = link.maxReservableBandwidth;
+    this->minReservableBandwidth = link.minReservableBandwidth;
+    for (int i = 0; i < 8; i++)
+        this->unreservedBandwidth[i] = link.unreservedBandwidth[i];
+    this->rcClass = link.rcClass;
+    this->lclId = link.lclId;
+    this->rmtId = link.rmtId;
+    this->resvTable = link.resvTable;
+    this->dependings = link.dependings;
+    this->dependents= link.dependents;
+    memcpy(this->vtagBitMask, link.vtagBitMask, MAX_VLAN_NUM/8);
+    memcpy(this->vtagBitMaskAlloc, link.vtagBitMaskAlloc, MAX_VLAN_NUM/8);
     this->iscds.clear();
     list<ISCD*>::iterator it1;
     for (it1 = link.iscds.begin(); it1 != link.iscds.end(); it1++)
@@ -144,7 +164,11 @@ link_info& link_info::operator= (link_info& link)
     {
         Wavelength*wave = new Wavelength(*(*it3));
         this->wavelenths.push_back(wave);
-    }
+    }  
+    //link_info
+    this->opaque_id = link.opaque_id;
+    this->hide =  link.hide;
+    this->info_flag = link.info_flag;
 
     return *this;
 }
