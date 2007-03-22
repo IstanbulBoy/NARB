@@ -1879,7 +1879,7 @@ COMMAND(cmd_show_link, "show link {updated|original}",
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
 
-    CLI_OUT("\s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", 
+    CLI_OUT("%s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", 
         cli_cstr_newline, link->opaque_id, cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
