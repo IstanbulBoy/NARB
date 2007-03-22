@@ -1763,7 +1763,7 @@ COMMAND (cmd_set_link, "set {link_id | adv_router |metric | lcl_if |rmt_if} VALU
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_swcap,"set sw_capability {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
+COMMAND (cmd_set_link_swcap,"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
        "Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
 {
     assert (link_to_update);
@@ -1781,7 +1781,7 @@ COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
     assert (link_to_update);
     float bw;
     sscanf(argv[0].c_str(), "%f", &bw);
-    htonf_mbps(bw);
+    //htonf_mbps(bw);
     if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_IFSW_CAP) ==0 || link_to_update->GetISCD() == NULL)
     {
         CLI_OUT("Cannot update bandwidth: no switch_cap_if descriptor for this link!%s", cli_cstr_newline);
@@ -1795,18 +1795,19 @@ COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
 }
 
 COMMAND (cmd_set_link_vlan,"set vlan {add|delete} VLAN",
-       "Set configuration \nVLAN\nAdd\nDelete\nVLAN tag")
+       "Set configuration \nVLAN\nAdd|Delete\nVLAN tag")
 {
     assert (link_to_update);
     int vlan;
-    sscanf(argv[1].c_str(), "%d", vlan);
+    bool adding = (strncmp(argv[0].c_str(), "add", 1) == 0 ? true : false);
+    sscanf(argv[1].c_str(), "%d", &vlan);
     if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) ==0 || link_to_update->GetISCD() == NULL) 
     {
         CLI_OUT("Cannot update VLAN for this link!%s", cli_cstr_newline);
     }
     else
     {
-        if (strncmp(argv[0].c_str(), "add", 1) == 0)
+        if (adding)
         {
             link_to_update->SetVtag(vlan);
             link_to_update->DeallocateVtag(vlan);
@@ -1819,15 +1820,15 @@ COMMAND (cmd_set_link_vlan,"set vlan {add|delete} VLAN",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_vlan_range,"set vlan {add|delete} VLAN1 to VLAN2",
-       "Set configuration \nVLAN\nAdd\nDelete\nVLAN tag - range begin\nVLAN tag range end")
+COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
+       "Set configuration \nVLAN\nAdd|Delete\nVLAN tag - range begin\nVLAN tag range end")
 {
     assert (link_to_update);
     int vlan, vlan1, vlan2;
     bool adding = (strncmp(argv[0].c_str(), "add", 1) == 0 ? true : false);
 
-    sscanf(argv[1].c_str(), "%d", vlan);
-    sscanf(argv[2].c_str(), "%d", vlan);
+    sscanf(argv[1].c_str(), "%d", &vlan1);
+    sscanf(argv[2].c_str(), "%d", &vlan2);
     if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) ==0 || link_to_update->GetISCD() == NULL) 
     {
         CLI_OUT("Cannot update VLAN for this link!%s", cli_cstr_newline);
@@ -1878,14 +1879,14 @@ COMMAND(cmd_show_link, "show link {updated|original}",
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
 
-    CLI_OUT("##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", link->opaque_id,
-                  cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);
+    CLI_OUT("\s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", 
+        cli_cstr_newline, link->opaque_id, cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
-    CLI_OUT("\t Traffic Engineering Metric: %d,  %s", link->Metric(), cli_cstr_newline);
+    CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
     CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
     CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxResvervableBandwidth(), cli_cstr_newline);
-    CLI_OUT("\t Interface Switching Capability Descriptor: Switching %s Encoding %s%s", 
+    CLI_OUT("\t Interface Switching Capability Descriptor: %s %s%s", 
             value_to_string(&str_val_conv_switching, (u_int32_t)link->GetISCD()->swtype),
             value_to_string(&str_val_conv_encoding, (u_int32_t)link->GetISCD()->encoding), cli_cstr_newline);
     for (i = 0; i < 8; i++)
