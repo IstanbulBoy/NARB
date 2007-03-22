@@ -1659,8 +1659,8 @@ static link_info* link_to_update = NULL;
     strcpy (addr_buf3, inet_ntoa (ip)); \
     ip.s_addr = L->RmtIfAddr();  \
     strcpy (addr_buf4, inet_ntoa (ip)); \
-    CLI_OUT("%s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", \
-        cli_cstr_newline, L->opaque_id, cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);   \
+    CLI_OUT("%s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s%s\t Link ID: %s %s", \
+        cli_cstr_newline, L->opaque_id, cli_cstr_newline, addr_buf2,cli_cstr_newline, addr_buf1, cli_cstr_newline);   \
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s", \
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);    \
     CLI_OUT("\t Traffic Engineering Metric: %d%s", L->Metric(), cli_cstr_newline);   \
@@ -1999,7 +1999,7 @@ COMMAND(cmd_edit_link_commit, "commit",
     ip.s_addr = link_to_update->LclIfAddr();
     link = NarbDomainInfo.LookupLinkByLclIf(ip);
     assert (link);
-    link->hide = false;
+    link_to_update->hide = false;
 
     in_addr adv_id;
     adv_id.s_addr = link->AdvRtId();
