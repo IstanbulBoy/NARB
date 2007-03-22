@@ -93,7 +93,7 @@ CLIReader::CLIReader(int fd, CLIServer *server_ptr):Reader(fd), server(server_pt
     iac = iac_sb = false;
     width = height = 0;
     cp = clen = 0; 
-    insert = false; 
+    insert = true; 
     hi =0;
     retry = 3;
 }
@@ -1835,7 +1835,7 @@ COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
     }
     else
     {
-        for (vlan = vlan1; vlan <= vlan1; vlan++)
+        for (vlan = vlan1; vlan <= vlan2; vlan++)
         {
             if (adding)
             {
@@ -1851,7 +1851,7 @@ COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
     cli_node->ShowPrompt();
 }
       
-COMMAND(cmd_show_link, "show link {updated|original}",
+COMMAND(cmd_show_link, "show {updated|original}",
        "Show \nTE link\nEdited link parameters | Original parameters")
 {
     int i;
@@ -1917,8 +1917,13 @@ COMMAND(cmd_edit_link_cancel, "cancel",
         link_to_update = NULL;
     }
     cli_node->Reader()->GoUp();
+    CLI_OUT("\t Cancelled the currently edited link... %s", cli_cstr_newline);
+
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
+
+//Alias of "cancel"
+cmd_edit_link_cancel cmd_edit_link_exit_instance("exit", "Exit the current command level (cancel)\n");
 
 /*
 COMMAND(cmd_edit_link_delete, "delete",
@@ -1971,7 +1976,7 @@ COMMAND(cmd_edit_link_commit, "commit",
       return;
     }
 
-    CLI_OUT("Sending update to intER-domain OSPFd.%s", cli_cstr_newline);
+    CLI_OUT("\t Sending update to intER-domain OSPFd...%s", cli_cstr_newline);
     in_addr ip;
     ip.s_addr = link_to_update->LclIfAddr();
     link = NarbDomainInfo.LookupLinkByLclIf(ip);
@@ -2146,6 +2151,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_link_vlan_range_instance);
     node->AddCommand(&cmd_show_link_instance);
     node->AddCommand(&cmd_edit_link_cancel_instance);
+    node->AddCommand(&cmd_edit_link_exit_instance);
     node->AddCommand(&cmd_edit_link_commit_instance);
     //////////////// End /////////////////
 

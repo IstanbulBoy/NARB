@@ -144,13 +144,7 @@ link_info& link_info::operator= (link_info& link)
     this->dependents= link.dependents;
     memcpy(this->vtagBitMask, link.vtagBitMask, MAX_VLAN_NUM/8);
     memcpy(this->vtagBitMaskAlloc, link.vtagBitMaskAlloc, MAX_VLAN_NUM/8);
-    this->iscds.clear();
-    list<ISCD*>::iterator it1;
-    for (it1 = link.iscds.begin(); it1 != link.iscds.end(); it1++)
-    {
-        ISCD *iscd = new ISCD(*(*it1));
-        this->iscds.push_back(iscd);
-    }
+    *this->ifswcap = *link.ifswcap; //$$$$
     this->iacds.clear();
     list<IACD*>::iterator it2;
     for (it2 = link.iacds.begin(); it2 != link.iacds.end(); it2++)
