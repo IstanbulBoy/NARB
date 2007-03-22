@@ -1649,6 +1649,65 @@ _out:
 
 static link_info* link_to_update = NULL;
 
+#define SHOW_LINK(L)   in_addr ip; int i; \
+    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3]; \
+    ip.s_addr = L->Id(); \
+    strcpy (addr_buf1, inet_ntoa (ip)); \
+    ip.s_addr = L->AdvRtId();    \
+    strcpy (addr_buf2, inet_ntoa (ip)); \
+    ip.s_addr = L->LclIfAddr();  \
+    strcpy (addr_buf3, inet_ntoa (ip)); \
+    ip.s_addr = L->RmtIfAddr();  \
+    strcpy (addr_buf4, inet_ntoa (ip)); \
+    CLI_OUT("%s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", \
+        cli_cstr_newline, L->opaque_id, cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);   \
+    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s", \
+                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);    \
+    CLI_OUT("\t Traffic Engineering Metric: %d%s", L->Metric(), cli_cstr_newline);   \
+    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", L->MaxBandwidth(), cli_cstr_newline);  \
+    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", L->MaxResvervableBandwidth(), cli_cstr_newline);    \
+    CLI_OUT("\t Interface Switching Capability Descriptor: %s %s%s",    \
+            value_to_string(&str_val_conv_switching, (u_int32_t)L->GetISCD()->swtype),   \
+            value_to_string(&str_val_conv_encoding, (u_int32_t)L->GetISCD()->encoding), cli_cstr_newline);   \
+    for (i = 0; i < 8; i++) \
+    {   \
+        CLI_OUT ("\t Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, L->GetISCD()->max_lsp_bw[i], cli_cstr_newline);    \
+    }   \
+    if (LINK_PARA_FLAG(L->info_flag, LINK_PARA_FLAG_VLAN) !=0) \
+    {   \
+	    CLI_OUT ("\t -- L2SC specific information--%s\t    --> Available VLAN tag set:", cli_cstr_newline); \
+	    for (i = 1; i <= MAX_VLAN_NUM; i++) \
+		if (L->IsVtagSet(i)) CLI_OUT (" %d", i); \
+	    CLI_OUT("%s", cli_cstr_newline);    \
+	    CLI_OUT ("\t   --> Allocated VLAN tag set:");   \
+	    for (i = 1; i <= MAX_VLAN_NUM; i++) \
+		if (L->IsVtagAllocated(i)) CLI_OUT (" %d", i);   \
+	    CLI_OUT("%s", cli_cstr_newline);    \
+    }   
+
+
+COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+    "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+{
+    in_addr lcl_if, rmt_if;
+    link_info * link;
+  
+    inet_aton(argv[0].c_str(), &lcl_if);
+    inet_aton(argv[1].c_str(), &rmt_if);
+  
+    link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
+    if (!link || link != NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    {
+        CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    SHOW_LINK(link);
+
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP rmt_if_addr IP",
     "Add \n TE link \nAdvertising rotuter\nIP\nLink ID\nIP\nLocal interface address\nIP\nRemote interface address\nIP")
 {
@@ -1690,6 +1749,36 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP rmt_if_
     prompt += argv[3];
     prompt +=')';
     cli_node->Reader()->CurrentNode()->SetPrompt(prompt);
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
+COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+    "Delete \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+{
+    in_addr lcl_if, rmt_if;
+    link_info * link;
+  
+    inet_aton(argv[0].c_str(), &lcl_if);
+    inet_aton(argv[1].c_str(), &rmt_if);
+  
+    link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
+    if (!link || link != NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    {
+        CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    in_addr adv_id;
+    adv_id.s_addr = link->AdvRtId();
+    if (!link->hide)
+    {
+        zebra_client->GetWriter()->DeleteLsa(adv_id, NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);
+        link->hide = true;
+    }
+
+    CLI_OUT("\t Sending TE link deleteion request to the intER-domain OSPFd!%s", cli_cstr_newline);
+
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
@@ -1850,60 +1939,26 @@ COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
     }
     cli_node->ShowPrompt();
 }
-      
-COMMAND(cmd_show_link, "show {updated|original}",
-       "Show \nTE link\nEdited link parameters | Original parameters")
+
+COMMAND(cmd_edit_link_show, "show {updated|original}",
+       "Show editing\n Updated | Original TE parameters")
 {
-    int i;
     assert (link_to_update);
     link_info * link = NULL;
-    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3];
-    in_addr ip;
+
     if (argv[0] == "updated")
     {
         link = link_to_update;
     }
     else
     {
-        ip.s_addr = link_to_update->LclIfAddr();
-        link = NarbDomainInfo.LookupLinkByLclIf(ip);
+        in_addr ip1;
+        ip1.s_addr = link_to_update->LclIfAddr();
+        link = NarbDomainInfo.LookupLinkByLclIf(ip1);
+        assert (link);
     }
 
-    assert (link);
-    ip.s_addr = link->Id();
-    strcpy (addr_buf1, inet_ntoa (ip));
-    ip.s_addr = link->AdvRtId();
-    strcpy (addr_buf2, inet_ntoa (ip));
-    ip.s_addr = link->LclIfAddr();
-    strcpy (addr_buf3, inet_ntoa (ip));
-    ip.s_addr = link->RmtIfAddr();
-    strcpy (addr_buf4, inet_ntoa (ip));
-
-    CLI_OUT("%s\t ##LINK Area-Local Opaque-Type/ID %d##%s\t Advertising Router: %s -- Link ID: %s %s", 
-        cli_cstr_newline, link->opaque_id, cli_cstr_newline, addr_buf2, addr_buf1, cli_cstr_newline);
-    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
-                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
-    CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
-    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
-    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxResvervableBandwidth(), cli_cstr_newline);
-    CLI_OUT("\t Interface Switching Capability Descriptor: %s %s%s", 
-            value_to_string(&str_val_conv_switching, (u_int32_t)link->GetISCD()->swtype),
-            value_to_string(&str_val_conv_encoding, (u_int32_t)link->GetISCD()->encoding), cli_cstr_newline);
-    for (i = 0; i < 8; i++)
-    {
-        CLI_OUT ("\t Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, link->GetISCD()->max_lsp_bw[i], cli_cstr_newline);
-    }
-    if (LINK_PARA_FLAG(link_to_update->info_flag, LINK_PARA_FLAG_VLAN) !=0)
-    {
-	    CLI_OUT ("\t -- L2SC specific information--%s\t    --> Available VLAN tag set:", cli_cstr_newline);
-	    for (i = 1; i <= MAX_VLAN_NUM; i++)
-		if (link->IsVtagSet(i)) CLI_OUT (" %d", i);
-	    CLI_OUT("%s", cli_cstr_newline);
-	    CLI_OUT ("\t   --> Allocated VLAN tag set:");
-	    for (i = 1; i <= MAX_VLAN_NUM; i++)
-		if (link->IsVtagAllocated(i)) CLI_OUT (" %d", i);
-	    CLI_OUT("%s", cli_cstr_newline);
-    }
+    SHOW_LINK(link);
 
     cli_node->ShowPrompt();
 }
@@ -1924,43 +1979,6 @@ COMMAND(cmd_edit_link_cancel, "cancel",
 
 //Alias of "cancel"
 cmd_edit_link_cancel cmd_edit_link_exit_instance("exit", "Exit the current command level (cancel)\n");
-
-/*
-COMMAND(cmd_edit_link_delete, "delete",
-       "Delete the current TE link\n")
-{
-    link_info * link;
-
-    assert (link_to_update);
-
-    if (!zebra_client || !zebra_client->GetWriter() || zebra_client->GetWriter()->Socket() <= 0)
-    {
-      CLI_OUT("IntER-domain OSPFd connection is dead now.%s", cli_cstr_newline);
-      goto _out;
-    }
-
-    CLI_OUT("Sending update to intER-domain OSPFd.%s", cli_cstr_newline);
-    in_addr ip;
-    ip.s_addr = link_to_update->LclIfAddr();
-    link = NarbDomainInfo.LookupLinkByLclIf(ip);
-    assert (link);
-
-    in_addr adv_id;
-    adv_id.s_addr = link->AdvRtId();
-    if (!link->hide)
-    {
-        zebra_client->GetWriter()->DeleteLsa(adv_id, NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);
-        link->hide = true;
-    }
-
-_out:  
-    delete link_to_update;
-    link_to_update = NULL;
-
-    cli_node->Reader()->GoUp();  
-    cli_node->Reader()->CurrentNode()->ShowPrompt();
-}
-*/
 
 COMMAND(cmd_edit_link_commit, "commit",
        "Commit edited TE link parameters\n")
@@ -1987,10 +2005,10 @@ COMMAND(cmd_edit_link_commit, "commit",
     adv_id.s_addr = link->AdvRtId();
     zebra_client->GetWriter()->DeleteLsa(adv_id, NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);
 
-    delete link;
-    link = link_to_update;
+    NarbDomainInfo.OriginateTeLink (zebra_client->GetWriter(), link_to_update);
+    *link = *link_to_update;
+    delete link_to_update;
     link_to_update = NULL;
-    NarbDomainInfo.OriginateTeLink (zebra_client->GetWriter(), link);
 
     cli_node->Reader()->GoUp();  
     cli_node->Reader()->CurrentNode()->ShowPrompt();
@@ -2134,8 +2152,10 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
     node->AddCommand(&cmd_set_topology_refresh_interval_instance);
-    node->AddCommand(&cmd_edit_link_instance);
+    node->AddCommand(&cmd_show_link_instance);
     node->AddCommand(&cmd_add_link_instance);
+    node->AddCommand(&cmd_delete_link_instance);
+    node->AddCommand(&cmd_edit_link_instance);
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_manual_ero_instance);
     node->AddCommand(&cmd_show_manual_ero_instance);
@@ -2149,7 +2169,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_link_bandwidth_instance);
     node->AddCommand(&cmd_set_link_vlan_instance);
     node->AddCommand(&cmd_set_link_vlan_range_instance);
-    node->AddCommand(&cmd_show_link_instance);
+    node->AddCommand(&cmd_edit_link_show_instance);
     node->AddCommand(&cmd_edit_link_cancel_instance);
     node->AddCommand(&cmd_edit_link_exit_instance);
     node->AddCommand(&cmd_edit_link_commit_instance);
