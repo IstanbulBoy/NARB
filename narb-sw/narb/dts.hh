@@ -87,7 +87,7 @@ public:
 
 #define ifswcap iscds.front()
     ISCD* GetISCD () { return iscds.front(); }
-    link_info(): opaque_id(0), hide(true), info_flag(0) {}
+    link_info();
     link_info(u_int32_t domain_id, in_addr advId, in_addr linkId);
     link_info& operator = (link_info& link);
     virtual ~link_info() {}

@@ -107,6 +107,13 @@ router_id_info* DomainInfo::LookupRouterById(in_addr id)
     return NULL;
 }
 
+link_info::link_info(): opaque_id(0), hide(true), info_flag(0)
+{
+    ISCD * iscd = new ISCD;
+    memset(iscd, 0, sizeof(ISCD));
+    iscds.push_back(iscd);
+}
+
 link_info::link_info(u_int32_t domain_id, in_addr advId, in_addr linkId):
     Link(RTYPE_GLO_ABS_LNK, domain_id, advId.s_addr, linkId.s_addr)
 {
