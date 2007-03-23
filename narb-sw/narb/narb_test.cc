@@ -91,8 +91,15 @@ void usage()
 // SIGINT handler.
 void sigint (int sig)
 {
-    LOG("Terminating on signal"<<endl);
+    LOG("Terminating on signal SIGINT"<<endl);
     exit(0);
+}
+
+// SIGINT handler.
+void sigsegv (int sig)
+{
+    LOG("Terminating on signal SIGSEGV"<<endl);
+    exit(-1);
 }
 
 
@@ -428,7 +435,7 @@ int main(int argc, char* argv[])
 
     msg_app2narb_request * app_req = new_app_request();
     u_int32_t seqnum = time(NULL);
-    api_msg * narb_reply =  narbapi_query_lsp(0, 0, seqnum, app_req);
+    api_msg * narb_reply =  narbapi_query_lsp(0, seqnum, seqnum, app_req);
 
     int len, offset;
     ipv4_prefix_subobj* subobj_ipv4;
