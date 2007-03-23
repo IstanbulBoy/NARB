@@ -141,7 +141,9 @@ int main( int argc, char* argv[])
     sprintf(log_file, "/var/log/narb.log");
     Log::Init(log_opt, log_file);
     Log::SetDebug(true);
-    LOG(endl<<endl<<"\t##############"<<endl<<"\tDRAGON NARB Started..."<<endl<<"\t##############"<<endl<<endl);
+    LOG(endl<<endl<<"#####################"<<endl
+        <<"DRAGON NARB Started..."<<endl
+        <<"#####################"<<endl<<endl);
 
     //Install signal handlers
     signal_init ();

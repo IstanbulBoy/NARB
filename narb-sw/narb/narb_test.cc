@@ -435,6 +435,9 @@ int main(int argc, char* argv[])
 
     msg_app2narb_request * app_req = new_app_request();
     u_int32_t seqnum = time(NULL);
+    srandom(seqnum);
+    u_int32_t ucid = random();
+
     api_msg * narb_reply =  narbapi_query_lsp(0, seqnum, seqnum, app_req);
 
     int len, offset;
