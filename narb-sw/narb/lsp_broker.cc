@@ -1158,7 +1158,7 @@ void LSP_Broker::Run()
 
 int LSP_Broker::HandleMessage(api_msg * msg)
 {
-    if (ntohs(msg->header.type) == NARB_MSG_LSPQ)
+    if (ntohs(msg->header.type) != NARB_MSG_LSPQ)
     {
         LOGF("LSP_Broker:: The impossible happened:  Received a non-NARB_MSG_LSPQ message type: %d (ucid=0x%x, seqno=0x%x).\n",
             ntohs(msg->header.type), ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
