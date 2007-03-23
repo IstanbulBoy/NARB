@@ -88,6 +88,8 @@ ero_subobj* last_strict_hop(list<ero_subobj*>&ero)
     ero_subobj *ret = NULL;
     for (it = ero.begin(); it != ero.end(); it++)
     {
+        if ((*it) && (*it)->hop_type == ERO_TYPE_LOOSE_HOP) // no loose hop allowed brfore strict hops
+            return NULL;
         if ((*it) && (*it)->hop_type == ERO_TYPE_STRICT_HOP)
             ret = *it;
         else
