@@ -125,8 +125,8 @@ void CLIReader::Run()
     if (status == CLI_STATUS_CLOSE)
     {
         LOGF("CLI connection on socket (%d) has already been closed\n", fd);
-        cli_writer->Close();
-        Close();
+        //cli_writer->Close();
+        //Close();
         return;
     }
 

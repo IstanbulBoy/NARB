@@ -146,9 +146,9 @@ static int blk_code (char *buf)
         return CONFIG_INTER_DOMAIN_TE_LINK;
     else if (strstr(buf, "link"))
         return CONFIG_LINK;
-    else if (strstr(buf, "service"))
+    else if (strstr(buf, "te_profile"))
         return CONFIG_SERVICE;
-    else if (strstr(buf, "svc_probe"))
+    else if (strstr(buf, "auto_link"))
         return CONFIG_SVC_PROBE;
     else if (strstr(buf, "cli"))
         return CONFIG_CLI;
@@ -328,8 +328,8 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               char * link_blk, *p_str;
               int ret;
               char router_id[MAX_ADDR_LEN];
-              int service_id;
-              svc_probe *p_svc_probe;
+              int te_profile_id;
+              auto_link *p_auto_link;
               in_addr ip; ip.s_addr = 0;
               router_id_info * router = new router_id_info(NarbDomainInfo.domain_id, ip);
   
@@ -350,7 +350,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               if (ReadConfigParameter(blk_body, "type", "%d", &router->type) 
                    && (router->type == RT_TYPE_BORDER||router->type ==  RT_TYPE_HOST))
               {
-                  link_blk = strstr(blk_body, "svc_probes");
+                  link_blk = strstr(blk_body, "auto_links");
                   if (link_blk)
                   {
                       ret = ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
@@ -359,20 +359,20 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       p_str = strtok(link_body, " \t,");
                       assert(p_str);
                       do {
-                          p_svc_probe = new svc_probe;
-                          p_svc_probe->router = router;
-                          service_id = atoi(p_str);
+                          p_auto_link = new auto_link;
+                          p_auto_link->router = router;
+                          te_profile_id = atoi(p_str);
 
-                          // search for the service block in the services list
-                          p_svc_probe->service = domain_info.ServiceLookupById(service_id);
-                          if (!p_svc_probe->service)
+                          // search for the te_profile block in the te_profiles list
+                          p_auto_link->te_profile = domain_info.TeProfileLookupById(te_profile_id);
+                          if (!p_auto_link->te_profile)
                           {
-                              LOGF("domain_info::ServiceLookupById failed on service_id (%d)", service_id);
-                              delete p_svc_probe;
+                              LOGF("domain_info::TeProfileLookupById failed on te_profile_id (%d)", te_profile_id);
+                              delete p_auto_link;
                           }
                           else
                           {
-                              domain_info.svc_probes.push_back( p_svc_probe);
+                              domain_info.auto_links.push_back( p_auto_link);
                           }
                         } while ((p_str = strtok(NULL, " \t,")) != NULL);
                   }
@@ -541,22 +541,22 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
         break;
       case  CONFIG_SERVICE:
         {
-            service_info *p_service = new service_info;
+            te_profile_info *p_te_profile = new te_profile_info;
                       
-            if (ReadConfigParameter(blk_body, "id", "%d", &p_service->service_id))
+            if (ReadConfigParameter(blk_body, "id", "%d", &p_te_profile->te_profile_id))
             {
-                if (!ReadConfigParameter(blk_body, "sw_type", "%d", &p_service->sw_type))
-                    LOG("ReadConfigParameter failed on service : sw_type"<<endl);
-                if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_service->encoding))
-                    LOG("ReadConfigParameter failed on service : encoding" <<endl);
-                if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_service->max_bw))
-                    LOG("ReadConfigParameter failed on service : max_bw"<<endl);
-                domain_info.services.push_back(p_service);
+                if (!ReadConfigParameter(blk_body, "sw_type", "%d", &p_te_profile->sw_type))
+                    LOG("ReadConfigParameter failed on te_profile : sw_type"<<endl);
+                if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_te_profile->encoding))
+                    LOG("ReadConfigParameter failed on te_profile : encoding" <<endl);
+                if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_te_profile->max_bw))
+                    LOG("ReadConfigParameter failed on te_profile : max_bw"<<endl);
+                domain_info.te_profiles.push_back(p_te_profile);
             }
             else
             {
-                delete p_service;
-                LOG("ReadConfigParameter failed on service : id" <<endl);
+                delete p_te_profile;
+                LOG("ReadConfigParameter failed on te_profile : id" <<endl);
             }
         }
         break;

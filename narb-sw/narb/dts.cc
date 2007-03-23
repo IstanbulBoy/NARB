@@ -47,28 +47,28 @@ DomainInfo::~DomainInfo()
             delete item;
     }
 
-    for (i = 0; i <  services.size(); i++)
+    for (i = 0; i <  te_profiles.size(); i++)
     {
-        service_info * item = services[i];
+        te_profile_info * item = te_profiles[i];
         if (item)
             delete item;
     }
 
-    for (i = 0; i <  svc_probes.size(); i++)
+    for (i = 0; i <  auto_links.size(); i++)
     {
-        svc_probe * item = svc_probes[i];
+        auto_link * item = auto_links[i];
         if (item)
             delete item;
     }
 }
     
-service_info * DomainInfo::ServiceLookupById(int id)
+te_profile_info * DomainInfo::TeProfileLookupById(int id)
 {
-    service_info *nodedata;
-    for (int i = 0; i < this->services.size(); i++)
+    te_profile_info *nodedata;
+    for (int i = 0; i < this->te_profiles.size(); i++)
     {
-        nodedata = services[i];
-        if (nodedata->service_id == id)
+        nodedata = te_profiles[i];
+        if (nodedata->te_profile_id == id)
             return nodedata;
     }
   
@@ -596,8 +596,8 @@ int DomainInfo::OriginateTopology (ZebraOspfWriter* oc_writer)
     int ret = 0;
     
     //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
-    NarbDomainInfo.CleanupProbedVirtualLinks();
-    NarbDomainInfo.AutoProbeVirtualLinks();
+    NarbDomainInfo.CleanupAutoLinks();
+    NarbDomainInfo.ProbeAutoLinks();
 
     // originate router-id LSA's
     router_id_info * router_id = NarbDomainInfo.FirstRouterId();
@@ -704,7 +704,7 @@ void DomainInfo::ExposeTopology ()
     }
  }
 
-link_info* DomainInfo::VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_probe, router_id_info *router)
+link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_link, router_id_info *router)
 {
     u_int32_t seqnum;
     te_tlv_header * tlv;
@@ -717,11 +717,11 @@ link_info* DomainInfo::VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_pro
     
     // messages to OSPFd_intra and OSPFd_inter use different area id
     cspf_req.area_id = NarbDomainInfo.ospfd_intra.area;
-    cspf_req.app_req_data.src.s_addr = svc_probe->router->id;
+    cspf_req.app_req_data.src.s_addr = auto_link->router->id;
     cspf_req.app_req_data.dest.s_addr = router->id;
-    cspf_req.app_req_data.switching_type = svc_probe->service->sw_type;
-    cspf_req.app_req_data.encoding_type = svc_probe->service->encoding;
-    cspf_req.app_req_data.bandwidth = svc_probe->service->max_bw;
+    cspf_req.app_req_data.switching_type = auto_link->te_profile->sw_type;
+    cspf_req.app_req_data.encoding_type = auto_link->te_profile->encoding;
+    cspf_req.app_req_data.bandwidth = auto_link->te_profile->max_bw;
     seqnum = 0xffffffff; //$$$$
   
     api_msg *rce_msg;
@@ -745,22 +745,22 @@ link_info* DomainInfo::VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_pro
             goto _out;
         in_addr ip; ip.s_addr = 0;
         link = new link_info(NarbDomainInfo.domain_id, ip, ip);
-        link->advRtId = svc_probe->router->id;
+        link->advRtId = auto_link->router->id;
         link->id = router->id;
         link->linkType = 1;
         link->lclIfAddr = ero.front()->addr.s_addr;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
         link->lclIfAddr = ero.back()->addr.s_addr;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
-        link->ifswcap->swtype = (u_char)svc_probe->service->sw_type;
-        link->ifswcap->encoding = (u_char)svc_probe->service->encoding;
+        link->ifswcap->swtype = (u_char)auto_link->te_profile->sw_type;
+        link->ifswcap->encoding = (u_char)auto_link->te_profile->encoding;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-        link->maxBandwidth = link->maxReservableBandwidth  = svc_probe->service->max_bw;
+        link->maxBandwidth = link->maxReservableBandwidth  = auto_link->te_profile->max_bw;
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW);
-        if (svc_probe->router->rt_type == RT_TYPE_HOST || router->rt_type == RT_TYPE_HOST)
+        if (auto_link->router->rt_type == RT_TYPE_HOST || router->rt_type == RT_TYPE_HOST)
             link->metric = HOST_BORDER_METRIC;
-        else if (svc_probe->router->type == RT_TYPE_BORDER && router->type == RT_TYPE_BORDER)
+        else if (auto_link->router->type == RT_TYPE_BORDER && router->type == RT_TYPE_BORDER)
             link->metric = BORDER_BORDER_METRIC;
         else
             link->metric = 1;
@@ -772,29 +772,29 @@ _out:
     return link;
 }
 
-void DomainInfo::AutoProbeVirtualLinks()
+void DomainInfo::ProbeAutoLinks()
 {
-    svc_probe *svc_probe;
+    auto_link *auto_link;
     router_id_info *router;
     link_info *link;
   
-    if(NarbDomainInfo.svc_probes.size() == 0)
+    if(NarbDomainInfo.auto_links.size() == 0)
         return;
   
     //Start RCE APIClient
     RCE_APIClient rce_client((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
     rce_client.Connect();
  
-    for (int i = 0; i < NarbDomainInfo.svc_probes.size(); i++)
+    for (int i = 0; i < NarbDomainInfo.auto_links.size(); i++)
     {
-        svc_probe = NarbDomainInfo.svc_probes[i];
+        auto_link = NarbDomainInfo.auto_links[i];
         router = FirstRouterId();
         while(router)
         {
-            if ( (svc_probe->router->type == RT_TYPE_HOST && router->type == RT_TYPE_BORDER)
-              || (svc_probe->router->type == RT_TYPE_BORDER && router != svc_probe->router) )
+            if ( (auto_link->router->type == RT_TYPE_HOST && router->type == RT_TYPE_BORDER)
+              || (auto_link->router->type == RT_TYPE_BORDER && router != auto_link->router) )
             {
-                link = VirtualTeLinkProbe(rce_client, svc_probe, router);
+                link = ProbeSingleAutoLink(rce_client, auto_link, router);
                 if (link)
                 {
                     AddLink( link);
@@ -809,7 +809,7 @@ void DomainInfo::AutoProbeVirtualLinks()
     rce_client.Close();
 }
 
-void DomainInfo::CleanupProbedVirtualLinks()
+void DomainInfo::CleanupAutoLinks()
 {
     link_info * link = NarbDomainInfo.FirstLink();
 

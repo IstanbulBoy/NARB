@@ -130,33 +130,33 @@ public:
 // Data structure to probe indicating that a CSPF virtual link exists between 
 // a source node and a bunch of destination nodes. Abstract Link TE LSAs will
 // be originated based on these data.
-class service_info
+class te_profile_info
 {
 public:
-    int service_id;
+    int te_profile_id;
     int sw_type;
     int encoding;
     float max_bw;
 
-    service_info()
+    te_profile_info()
         {
-            service_id = 0;
+            te_profile_id = 0;
             sw_type = 0;
             encoding = 0;
             max_bw = 0;
         }
 };
 
-class svc_probe
+class auto_link
 {
 public:
     router_id_info* router;
-    service_info* service;
+    te_profile_info* te_profile;
 
-    svc_probe()
+    auto_link()
         {
             memset(&router, 0, sizeof(router_id_info));
-            memset(&service, 0, sizeof(service_info));
+            memset(&te_profile, 0, sizeof(te_profile_info));
         }
 };
 
@@ -179,10 +179,10 @@ public:
     vector<link_info*> inter_domain_te_links;
     // a vector of (struct if_narb_info)
     vector<if_narb_info*> if_narb_table;
-    // vector storing services
-    vector<service_info*> services;
-    // a vector of svc_probe
-    vector<svc_probe*> svc_probes;
+    // a vector storing te_profiles
+    vector<te_profile_info*> te_profiles;
+    // a vector of auto_link
+    vector<auto_link*> auto_links;
 
     DomainInfo()
         {
@@ -193,7 +193,7 @@ public:
         }
     ~DomainInfo();
 
-    service_info * ServiceLookupById(int id);
+    te_profile_info * TeProfileLookupById(int id);
     void AddRouter(router_id_info * router);
     void AddLink(link_info* link);
     void AddPeerNarb (char *addr, int port, in_addr rmt_if);
@@ -226,9 +226,9 @@ public:
     int DeleteTopology (ZebraOspfWriter* oc_writer);
     void HideTopology ();
     void ExposeTopology ();
-    link_info* VirtualTeLinkProbe(RCE_APIClient& rce, svc_probe *svc_probe, router_id_info *router);
-    void AutoProbeVirtualLinks();
-    void CleanupProbedVirtualLinks();
+    link_info* ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_link, router_id_info *router);
+    void ProbeAutoLinks();
+    void CleanupAutoLinks();
 };
 
 class ZebraOspfSync;

@@ -877,8 +877,9 @@ int ZebraOspfWriter::RegisterOpqaueType(u_char ltype, u_char otype)
         return -1;
     }
     zebra_reply * reply = (zebra_reply*)msg->body;
+    int errcode = reply->errcode;
     zebra_msg_delete(msg);
-    return reply->errcode;
+    return errcode;
 }
 
 ////////////////////////////////////////////////////////////////////////
