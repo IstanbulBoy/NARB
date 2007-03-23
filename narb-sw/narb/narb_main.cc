@@ -44,6 +44,8 @@
 #include "cli.hh"
 #include "clicmd.hh"
 #include <string>
+#include <signal.h>
+
 #ifndef HAVE_DECL_GETOPT
   #define HAVE_DECL_GETOPT 1
 #endif
@@ -53,29 +55,12 @@ struct option longopts[] =
 {
     { "daemon",      no_argument,       NULL, 'd'},
     { "config_file", required_argument, NULL, 'f'},
+    { "truncate log file", required_argument, NULL, 't'},
     { "port",        no_argument,       NULL, 'p'},
     { "help",        no_argument,       NULL, 'h'},
     { "version",     no_argument,       NULL, 'v'},
     { 0 }
 };
-
-#if 0
-class Terminator: public Timer
-{
-public:
-    Terminator(): Timer(1, 0, 9) {}
-    virtual void Run()
-        {
-            cout<<" * "<<flush;
-            if (repeats == 0)
-            {
-                cout<< " bye ..." <<endl;
-                exit(0);
-            }
-        }
-};
-Terminator terminator;
-#endif 
 
 ZebraOspfSync * zebra_client = NULL;
 DomainTopologyOriginator* dts_originator = NULL;
@@ -83,19 +68,37 @@ DomainTopologyOriginator* dts_originator = NULL;
 // SIGINT handler.
 void sigint (int sig)
 {
-    LOG("Terminating on signal"<<endl);
+    LOG("Terminating on signal SIGINT"<<endl);
+
+    //cleanning up
     if (zebra_client)
-	delete zebra_client;
+    {
+        ZebraOspfWriter* ospf_apiwriter = zebra_client->GetWriter();
+        if (ospf_apiwriter)
+            NarbDomainInfo.DeleteTopology(ospf_apiwriter);
+	 delete zebra_client;
+    }
+
     exit(0);
-#if 0
-    LOG("NARB is cleaning up \n \t Pls. wait a few secnods ");
-    // server cleanup
-    // cli cleanup
-    eventMaster.Schedule(&terminator);
-    //close connection to Zebra;
+}
+
+// SIGSEGV handler.
+void sigsegv (int sig)
+{
+    LOG("Terminating on signal SIGSEGV"<<endl);
+
+    //cleanning up
     if (zebra_client)
-       zebra_client->Stop();
-#endif
+    {
+        ZebraOspfWriter* ospf_apiwriter = zebra_client->GetWriter();
+        if (ospf_apiwriter)
+            NarbDomainInfo.DeleteTopology(ospf_apiwriter);
+	 delete zebra_client;
+    }
+
+    //We still want to have core dump.
+    signal_set (SIGSEGV, SIG_DFL);
+    SIG_DFL(sig);
 }
 
 ConfigFile configMaster;
@@ -106,11 +109,12 @@ int main( int argc, char* argv[])
     int ret;
     //Command line processing
     bool is_daemon = false;
+    LogOption log_opt = LOG_ALL;
     while (1)
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "df:p:P:vhH:", longopts, 0);
+        opt = getopt_long (argc, argv, "df:p:P:vhH:t", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -122,6 +126,9 @@ int main( int argc, char* argv[])
         case 'd':
             is_daemon = true;
             break;
+        case 't':
+            log_opt = (LogOption)((int)log_opt & (~(int)LOG_APPEND)); //Truncate log file
+            break;
         default:
             break;
         }
@@ -132,9 +139,9 @@ int main( int argc, char* argv[])
     //u_int32_t pid = getpid();
     //sprintf(log_file, "narb-%d.log", pid);
     sprintf(log_file, "/var/log/narb.log");
-    Log::Init(LOG_ALL, log_file);
+    Log::Init(log_opt, log_file);
     Log::SetDebug(true);
-    LOG("DRAGON NARB Started..."<<endl);
+    LOG(endl<<endl<<"\t##############"<<endl<<"\tDRAGON NARB Started..."<<endl<<"\t##############"<<endl<<endl);
 
     //Install signal handlers
     signal_init ();
