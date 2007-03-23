@@ -157,9 +157,9 @@ void APIReader::Run()
     //something is wrong with socket read
     if (!msg)
     {
-        Close();
         assert(api_writer);
         api_writer->Close();
+        Close();
         return;
     }
 
@@ -265,9 +265,9 @@ void APIWriter::Run()
     //something is wrong with socket write
     if (ret < 0)
     {
-        Close();
         assert(api_reader);
         api_reader->Close();
+        Close();
         return;
     }
 

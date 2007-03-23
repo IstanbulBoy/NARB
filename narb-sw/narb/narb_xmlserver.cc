@@ -139,8 +139,8 @@ void XML_LSP_Broker::Run()
 
         if (xml_ibufsize == 0)
         {
-            Close();
             api_writer->Close();
+            Close();
             return;
         }
 
@@ -172,8 +172,8 @@ void XML_LSP_Broker::Run()
 
 void XML_LSP_Broker::Stop()
 {
-    Close();
     api_writer->Close();
+    Close();
 
     if (polling_timer && !polling_timer->Obsolete())
     {

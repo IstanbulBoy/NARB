@@ -541,8 +541,8 @@ void ZebraOspfReader::HandleMessage (zebra_msg *msg)
         }
         break;
     default:
-        zebra_msg_delete(msg);
         LOG("Unkonwn/Unprocessed zebra_msg type " << (int)msg->hdr.msgtype << endl);
+        zebra_msg_delete(msg);
     }    
 }
 

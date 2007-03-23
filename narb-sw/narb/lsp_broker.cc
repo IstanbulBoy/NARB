@@ -1128,9 +1128,9 @@ void LSP_Broker::Run()
     api_msg * msg = ReadMessage();
     if (!msg)
     {
-        Close();
         if (api_writer != NULL)
             api_writer->Close();
+        Close();
         return;
     }
 
@@ -1149,9 +1149,9 @@ void LSP_Broker::Run()
     if (ret < 0)
     {
         api_msg_delete(msg);
-        Close();
         if (api_writer != NULL)
             api_writer->Close();
+        Close();
         return;        
     }
 }
