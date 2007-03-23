@@ -1146,11 +1146,24 @@ void LSP_Broker::Run()
     }
 
     int ret = HandleMessage(msg);
+    if (ret < 0)
+    {
+        api_msg_delete(msg);
+        Close();
+        if (api_writer != NULL)
+            api_writer->Close();
+        return;        
+    }
 }
 
 int LSP_Broker::HandleMessage(api_msg * msg)
 {
-    assert (ntohs(msg->header.type) == NARB_MSG_LSPQ);
+    if (ntohs(msg->header.type) == NARB_MSG_LSPQ)
+    {
+        LOGF("LSP_Broker:: The impossible happened:  Received a non-NARB_MSG_LSPQ message type: %d (ucid=0x%x, seqno=0x%x).\n",
+            ntohs(msg->header.type), ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        return -1;
+    }
 
     LSPQ* lspq = LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
     msg_app2narb_request * app_req = (msg_app2narb_request*)msg->body;

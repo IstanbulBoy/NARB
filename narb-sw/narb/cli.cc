@@ -1686,7 +1686,7 @@ static link_info* link_to_update = NULL;
     }   
 
 
-COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
     "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
@@ -1708,7 +1708,7 @@ COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP rmt_if_addr IP",
+COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP remote_if_addr IP",
     "Add \n TE link \nAdvertising rotuter\nIP\nLink ID\nIP\nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr adv_id, link_id, lcl_if, rmt_if;
@@ -1752,7 +1752,7 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP rmt_if_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
     "Delete \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
@@ -1782,7 +1782,7 @@ COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR rmt_if_addr RMT
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR rmt_if_addr RMT_IF_ADDR",
+COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
     "Edit/Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
@@ -2128,6 +2128,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_lsp_instance);
     cli_root->AddCommand(&cmd_show_lsp_alias1);
+    node->AddCommand(&cmd_show_link_instance);
     node_test = cli_root->MakeChild("test-node");
     node = cli_root->MakeChild("configure-node");
     //Test level
@@ -2138,6 +2139,7 @@ void CLIReader::InitSession()
     node_test->AddCommand(&cmd_configure_exit_instance);
     //Configure level
     node->SetPrompt("narb:cli#");
+    cli_root->AddCommand(&cmd_show_topology_instance);
     node->AddCommand(&cmd_set_topology_instance);
     node->AddCommand(&cmd_delete_topology_instance);
     node->AddCommand(&cmd_undelete_topology_instance);

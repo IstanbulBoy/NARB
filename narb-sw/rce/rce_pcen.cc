@@ -654,7 +654,7 @@ int PCEN::VerifyRequest()
     }
     else if ((options & LSP_OPT_STRICT) && (options & LSP_OPT_PREFERRED))
     {
-        if (RDB.LookupByPrefix(RTYPE_LOC_RTID, &index1) == NULL && RDB.LookupByPrefix(RTYPE_GLO_RTID, &index1) == NULL)
+        if (RDB.LookupByPrefix(RTYPE_LOC_RTID, &index1) == NULL)
         {
             LOGF("Unknown Source RouterID [%X]\n", source.s_addr);
             return ERR_PCEN_NO_SRC;
