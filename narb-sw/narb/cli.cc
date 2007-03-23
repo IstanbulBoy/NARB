@@ -1006,8 +1006,8 @@ void CLIWriter::Run()
         //something is wrong with socket write
         if (ret < 0)
         {
-            assert(cli_reader);
-            cli_reader->Close();
+            if(cli_reader != NULL)
+                cli_reader->Close();
             Close();
             return;
         }   
@@ -2139,7 +2139,6 @@ void CLIReader::InitSession()
     node_test->AddCommand(&cmd_configure_exit_instance);
     //Configure level
     node->SetPrompt("narb:cli#");
-    cli_root->AddCommand(&cmd_show_topology_instance);
     node->AddCommand(&cmd_set_topology_instance);
     node->AddCommand(&cmd_delete_topology_instance);
     node->AddCommand(&cmd_undelete_topology_instance);
@@ -2154,7 +2153,6 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
     node->AddCommand(&cmd_set_topology_refresh_interval_instance);
-    node->AddCommand(&cmd_show_link_instance);
     node->AddCommand(&cmd_add_link_instance);
     node->AddCommand(&cmd_delete_link_instance);
     node->AddCommand(&cmd_edit_link_instance);
