@@ -2128,7 +2128,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_lsp_instance);
     cli_root->AddCommand(&cmd_show_lsp_alias1);
-    node->AddCommand(&cmd_show_link_instance);
+    cli_root->AddCommand(&cmd_show_link_instance);
     node_test = cli_root->MakeChild("test-node");
     node = cli_root->MakeChild("configure-node");
     //Test level
@@ -2139,6 +2139,7 @@ void CLIReader::InitSession()
     node_test->AddCommand(&cmd_configure_exit_instance);
     //Configure level
     node->SetPrompt("narb:cli#");
+    node->AddCommand(&cmd_show_topology_instance);
     node->AddCommand(&cmd_set_topology_instance);
     node->AddCommand(&cmd_delete_topology_instance);
     node->AddCommand(&cmd_undelete_topology_instance);
@@ -2153,6 +2154,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
     node->AddCommand(&cmd_set_topology_refresh_interval_instance);
+    node->AddCommand(&cmd_show_link_instance);
     node->AddCommand(&cmd_add_link_instance);
     node->AddCommand(&cmd_delete_link_instance);
     node->AddCommand(&cmd_edit_link_instance);
