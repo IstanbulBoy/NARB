@@ -328,6 +328,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               char * link_blk, *p_str;
               int ret;
               char router_id[MAX_ADDR_LEN];
+              char auto_link_type[10];
               int te_profile_id;
               auto_link *p_auto_link;
               in_addr ip; ip.s_addr = 0;
@@ -347,10 +348,21 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               domain_info.AddRouter(router);
   
               link_blk = blk_body;
-              if (ReadConfigParameter(blk_body, "type", "%d", &router->type) 
-                   && (router->type == RT_TYPE_BORDER||router->type ==  RT_TYPE_HOST))
+              
+              if (ReadConfigParameter(blk_body, "auto-link", "%s", auto_link_type) > 0)
               {
-                  link_blk = strstr(blk_body, "auto-link-with-te-profile");
+                  if (strcasecmp(auto_link_type, "border") == 0)
+                      router->type = (ResourceType)RT_TYPE_BORDER;
+                  else if (strcasecmp(auto_link_type, "stub") == 0 || strcasecmp(auto_link_type, "host") == 0)
+                      router->type = (ResourceType)RT_TYPE_HOST;
+                  else
+                  {
+                      delete router;
+                      LOG("ReadConfigParameter failed on router : wrong auto_link type " << auto_link_type << endl);
+                      continue;
+                  }
+                     
+                  link_blk = strstr(blk_body, "te-profile");
                   if (link_blk)
                   {
                       ret = ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
@@ -551,6 +563,9 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                     LOG("ReadConfigParameter failed on te_profile : encoding" <<endl);
                 if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_te_profile->max_bw))
                     LOG("ReadConfigParameter failed on te_profile : max_bw"<<endl);
+
+                // @@@@ VLAN ???
+
                 domain_info.te_profiles.push_back(p_te_profile);
             }
             else

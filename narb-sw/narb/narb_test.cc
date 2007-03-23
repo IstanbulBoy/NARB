@@ -438,7 +438,7 @@ int main(int argc, char* argv[])
     srandom(seqnum);
     u_int32_t ucid = random();
 
-    api_msg * narb_reply =  narbapi_query_lsp(0, seqnum, seqnum, app_req);
+    api_msg * narb_reply =  narbapi_query_lsp(0, ucid, seqnum, app_req);
 
     int len, offset;
     ipv4_prefix_subobj* subobj_ipv4;
