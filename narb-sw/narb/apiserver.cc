@@ -199,7 +199,7 @@ api_msg * APIReader::ReadMessage ()
 
     if (MSG_CHKSUM(header) != header.chksum)
     {
-        LOGF("APIReader(%d) packet corrupt (ucid=0x%x, seqno=0x%x).\n", fd, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        LOGF("APIReader(%d) packet corrupt (ucid=0x%x, seqno=0x%x).\n", fd, ntohl(header.ucid), ntohl(header.seqnum));
         return NULL;
     }
 

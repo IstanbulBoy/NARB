@@ -146,10 +146,10 @@ static int blk_code (char *buf)
         return CONFIG_INTER_DOMAIN_TE_LINK;
     else if (strstr(buf, "link"))
         return CONFIG_LINK;
-    else if (strstr(buf, "te_profile"))
-        return CONFIG_SERVICE;
-    else if (strstr(buf, "auto_link"))
-        return CONFIG_SVC_PROBE;
+    else if (strstr(buf, "te-profile"))
+        return CONFIG_TE_PROFILE;
+    else if (strstr(buf, "auto-link"))
+        return CONFIG_AUTO_LINK;
     else if (strstr(buf, "cli"))
         return CONFIG_CLI;
     else
@@ -350,11 +350,11 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               if (ReadConfigParameter(blk_body, "type", "%d", &router->type) 
                    && (router->type == RT_TYPE_BORDER||router->type ==  RT_TYPE_HOST))
               {
-                  link_blk = strstr(blk_body, "auto_links");
+                  link_blk = strstr(blk_body, "auto-link-with-te-profile");
                   if (link_blk)
                   {
                       ret = ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
-                      assert (ret == CONFIG_SVC_PROBE);
+                      assert (ret == CONFIG_AUTO_LINK);
   
                       p_str = strtok(link_body, " \t,");
                       assert(p_str);
@@ -539,7 +539,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               }
         }
         break;
-      case  CONFIG_SERVICE:
+      case  CONFIG_TE_PROFILE:
         {
             te_profile_info *p_te_profile = new te_profile_info;
                       

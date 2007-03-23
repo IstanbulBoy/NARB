@@ -715,15 +715,18 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     struct msg_narb_cspf_request cspf_req;
     memset(&cspf_req, 0, sizeof(msg_narb_cspf_request));
     
-    // messages to OSPFd_intra and OSPFd_inter use different area id
+    // OSPF area --> intra-domain
     cspf_req.area_id = NarbDomainInfo.ospfd_intra.area;
     cspf_req.app_req_data.src.s_addr = auto_link->router->id;
     cspf_req.app_req_data.dest.s_addr = router->id;
     cspf_req.app_req_data.switching_type = auto_link->te_profile->sw_type;
     cspf_req.app_req_data.encoding_type = auto_link->te_profile->encoding;
     cspf_req.app_req_data.bandwidth = auto_link->te_profile->max_bw;
-    seqnum = 0xffffffff; //$$$$
-  
+    //cspf_req.lspq_id = 0;
+    seqnum = time(NULL);
+
+    // @@@@ Checking RCE status?
+
     api_msg *rce_msg;
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum);
     rce_msg->header.options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT;
@@ -764,6 +767,9 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
             link->metric = BORDER_BORDER_METRIC;
         else
             link->metric = 1;
+        
+        // @@@@ VLAN ???
+
         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
     }
   
