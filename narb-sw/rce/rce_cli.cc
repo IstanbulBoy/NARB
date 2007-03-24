@@ -107,9 +107,11 @@ void CLIReader::Run()
     // check status before processing
     if (status == CLI_STATUS_CLOSE)
     {
-        LOGF("CLI connection on socket (%d) has already been closed\n", fd);
-        //Close();
-        //cli_writer->Close();
+        if (fd > 0)
+       	{
+            Close();
+            cli_writer->Close();
+       	}
         return;
     }
 
@@ -160,9 +162,12 @@ void CLIReader::Run()
     // check status after processing
     if (status == CLI_STATUS_CLOSE)
     {
-        LOGF("CLI connection on socket (%d) closed\n", fd);
-        Close();
-        cli_writer->Close();
+    	if (fd > 0)
+   		{
+            LOGF("CLI connection on socket (%d) closed\n", fd);
+            Close();
+            cli_writer->Close();
+   		}
     }
 }
 
@@ -341,6 +346,7 @@ int CLIReader::Authenticate()
     else if (retry-- == 0)
     {
         Exit();
+		return 0;
     }
     s = cli_cstr_newline;
     cli_writer->WriteBuffer(s);
@@ -993,9 +999,12 @@ void CLIWriter::Run()
         //something is wrong with socket write
         if (ret < 0)
         {
-            Close();
-            assert(cli_reader);
-            cli_reader->Close();
+        	if (fd > 0)
+       		{
+                Close();
+                assert(cli_reader);
+                cli_reader->Close();
+       		}
             return;
         }
     }
