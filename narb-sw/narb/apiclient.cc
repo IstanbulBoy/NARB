@@ -168,7 +168,7 @@ int APIClient::Connect()
 
 bool APIClient::IsAlive()
 {
-    return (fd > 0 && !Obsolete());
+    return (fd > 0);
 }
 
 void APIClient::SendMessage(api_msg *msg)
