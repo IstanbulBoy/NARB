@@ -1151,6 +1151,9 @@ void LSP_Broker::Run()
 
 int LSP_Broker::HandleMessage(api_msg * msg)
 {
+    LSPQ* lspq;
+	msg_app2narb_request * app_req;
+	
     if (ntohs(msg->header.type) != NARB_MSG_LSPQ)
     {
         LOGF("LSP_Broker:: The impossible happened:  Received a non-NARB_MSG_LSPQ message type: %d (ucid=0x%x, seqno=0x%x).\n",
@@ -1158,8 +1161,8 @@ int LSP_Broker::HandleMessage(api_msg * msg)
         goto _abnormal_out;
     }
 
-    LSPQ* lspq = LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-    msg_app2narb_request * app_req = (msg_app2narb_request*)msg->body;
+    lspq = LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    app_req = (msg_app2narb_request*)msg->body;
 
     switch (ntohs(app_req->type))
     {
