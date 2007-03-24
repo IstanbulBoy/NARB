@@ -116,11 +116,13 @@ EventMaster::Remove(Event *event)
     {
         FD_CLR(((Selector*)event)->fd, &readfd);
         close(((Selector*)event)->fd);
+        ((Selector*)event)->fd = -1;	
     }
     if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0 && (FD_ISSET (((Selector*)event)->fd, &writefd)))
     {
         FD_CLR(((Selector*)event)->fd, &writefd);
         close(((Selector*)event)->fd);
+        ((Selector*)event)->fd = -1;
     }
 
     eList->remove(event);
@@ -156,12 +158,14 @@ EventMaster::Run()
                 if (FD_ISSET (((Selector*)event)->fd, &readfd))
                     FD_CLR(((Selector*)event)->fd, &readfd);
                 close(((Selector*)event)->fd);
+                ((Selector*)event)->fd = -1;
             }
             if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0)
             {
                 if (FD_ISSET (((Selector*)event)->fd, &writefd))
                     FD_CLR(((Selector*)event)->fd, &writefd);
                 close(((Selector*)event)->fd);
+                ((Selector*)event)->fd = -1;
             }
             delete event;
         }
