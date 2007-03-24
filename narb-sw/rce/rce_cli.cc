@@ -90,9 +90,12 @@ CLIReader::~CLIReader()
 void CLIReader::Exit() 
 {
     status = CLI_STATUS_CLOSE;
-    LOGF("CLI connection on socket (%d) closed\n", fd);
-    Close();
-    cli_writer->Close();
+	if (fd > 0)
+	{
+	    LOGF("CLI connection on socket (%d) closed\n", fd);
+	    Close();
+	    cli_writer->Close();
+	}
 }
 
 void CLIReader::Run()
