@@ -38,15 +38,6 @@
 #include "dts.hh"
 
 
-NARB_APIClient::~NARB_APIClient()
-{
-    if (api_writer)
-    {
-        delete api_writer;
-        api_writer = NULL;
-    }
-}
-
 int NARB_APIClient::HandleMessage(api_msg* msg)
 {
     switch (ntohs(msg->header.type))

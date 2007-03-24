@@ -46,7 +46,6 @@ private:
 public:
     NARB_APIClient() {}
     NARB_APIClient(char* host, int port):APIClient(host, port) {}
-    virtual ~NARB_APIClient();
     virtual int HandleMessage(api_msg* msg);
     bool IsMatched(char* host, int port);
     bool IsAssociated(in_addr ip);
