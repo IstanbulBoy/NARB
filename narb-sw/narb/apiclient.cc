@@ -53,10 +53,13 @@ APIClient::APIClient(char * host, int port):APIReader(-1, NULL)
 APIClient::~APIClient()
 {
     if (fd > 0)
-        close(fd);
+        Close();
 
     if (api_writer);
+    {
+	api_writer->Close();
         delete api_writer;
+    }
 }
 
 void APIClient::SetHostPort(char *host, int port)
@@ -149,7 +152,11 @@ int APIClient::Connect()
         return -1;
 
     if (fd > 0)
-        close (fd);
+    {
+        if (api_writer)
+            api_writer->Close();
+        Close();
+    }
     if (Connect((char*)(_host.c_str()), _port) < 0)
     {
         return -1;
