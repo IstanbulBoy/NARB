@@ -323,6 +323,7 @@ EventMaster::Fetch()
 void Selector::Close()
 {
     close(fd);
+    fd = -1;
     eventMaster.Remove(this);
 }
 
