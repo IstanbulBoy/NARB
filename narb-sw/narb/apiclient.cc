@@ -59,6 +59,7 @@ APIClient::~APIClient()
     {
 	api_writer->Close();
         delete api_writer;
+	api_writer = NULL;
     }
 }
 
