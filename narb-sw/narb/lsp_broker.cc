@@ -701,8 +701,12 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
     if_narb_info * narb_info; 
     list<ero_subobj*>::iterator it;
     link_info *link1, *link2;
-    for (it = ero.begin(); it != ero.end(); it++)
+	int i;
+
+    for (it = ero.begin(), i = 1; it != ero.end(); it++, i++)
     {
+        if (i == ero.size()) //last subobject ineligible
+            break;
         narb_info = NarbDomainInfo.LookupNarbByRmtIf((*it)->addr);
         if (narb_info && it != ero.begin()) 
         {
