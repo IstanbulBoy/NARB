@@ -156,7 +156,7 @@ RCE_APIClient * RCE_APIClient_Factory::GetClient(char *host, int port)
     for (it = clients.begin(); it != clients.end(); it++)
         if ((*it) && (*it)->IsMatched(host, port))
         {
-            if (!(*it)->IsAlive())
+            if ((*it)->IsAlive())
                 return *it;                
             clients.erase(it);
             delete (*it);
