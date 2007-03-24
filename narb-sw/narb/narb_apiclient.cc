@@ -175,7 +175,7 @@ NARB_APIClient * NARB_APIClient_Factory::GetClient(in_addr ip)
     for (it = peers.begin(); it != peers.end(); it++)
         if ((*it) && (*it)->IsMatched(narb->addr, narb->port))
         {
-            if (!(*it)->Obsolete())
+            if ((*it)->Alive())
                 return *it;                
             peers.erase(it);
             delete (*it);
