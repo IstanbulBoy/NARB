@@ -1128,6 +1128,7 @@ void LSP_Broker::Run()
     api_msg * msg = ReadMessage();
     if (!msg)
     {
+        LOGF("LSP_Broker::ReadMessage failed. Closing the socket %d.\n", fd);
         if (api_writer != NULL)
             api_writer->Close();
         Close();
@@ -1146,14 +1147,6 @@ void LSP_Broker::Run()
     }
 
     int ret = HandleMessage(msg);
-    if (ret < 0)
-    {
-        api_msg_delete(msg);
-        if (api_writer != NULL)
-            api_writer->Close();
-        Close();
-        return;        
-    }
 }
 
 int LSP_Broker::HandleMessage(api_msg * msg)
@@ -1162,7 +1155,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     {
         LOGF("LSP_Broker:: The impossible happened:  Received a non-NARB_MSG_LSPQ message type: %d (ucid=0x%x, seqno=0x%x).\n",
             ntohs(msg->header.type), ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-        return -1;
+        goto _abnormal_out;
     }
 
     LSPQ* lspq = LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
@@ -1256,7 +1249,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             if (!lspq)
             {
                 LOGF("LSP_Broker::MSG_APP_CONFIRM_EVENT: The LSPQ (ucid=0x%x, seqno=0x%x) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-                return -1;
+		        goto _abnormal_out;
             }
 
             lspq->HandleResvConfirm(msg);
@@ -1267,7 +1260,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             if (!lspq)
             {
                 LOGF("LSP_Broker::MSG_APP_REMOVE_EVENT: The LSPQ (ucid=0x%x, seqno=0x%x) no longer exists.\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-                return -1;
+		        goto _abnormal_out;
             }
 
             lspq->HandleResvRelease(msg);
@@ -1278,6 +1271,10 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     }
 
     return 0;
+
+_abnormal_out:
+    api_msg_delete(msg);
+	return -1;
 }
 
 void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
