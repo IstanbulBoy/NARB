@@ -329,7 +329,6 @@ void Selector::Close()
         return;
 
     close(fd);
-    fd = -1;
     eventMaster.Remove(this);
 }
 
