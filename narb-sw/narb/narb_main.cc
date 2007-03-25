@@ -79,7 +79,8 @@ void sigint (int sig)
 	 delete zebra_client;
     }
 
-    exit(0);
+    signal_set (SIGINT, SIG_DFL);
+    SIG_DFL(sig);
 }
 
 // SIGSEGV handler.
