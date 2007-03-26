@@ -366,7 +366,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   if (link_blk)
                   {
                       ret = ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
-                      assert (ret == CONFIG_AUTO_LINK);
+                      assert (ret == CONFIG_TE_PROFILE);
   
                       p_str = strtok(link_body, " \t,");
                       assert(p_str);
