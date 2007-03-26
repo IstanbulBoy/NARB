@@ -78,6 +78,11 @@ void NARB_XMLServer::Run()
     memcpy(&(sa_in.sin_addr), &addr_u32, sizeof(struct in_addr));
     socklen_t len = sizeof(struct sockaddr_in);
     int new_sock = accept (fd, (struct sockaddr *)&sa_in, &len);
+    if (new_sock < 0)
+    {
+        LOGF("NARB_XMLServer::Run: cannot accept socket on %d\n", fd);
+        return;
+    }
 
     XML_LSP_Broker* broker = new XML_LSP_Broker(new_sock, this);
     broker->SetAutoDelete(true);

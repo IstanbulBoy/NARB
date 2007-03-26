@@ -124,7 +124,7 @@ int ZebraOspfSync::Connect (char *host, int syncport, int remote_port)
     }
 
     /* Wait for reverse channel connection establishment from server */
-    ret = listen (sock_accept, 5);
+    ret = listen (sock_accept, 4);
     if (ret < 0)
     {
       LOG_CERR<<"ZebraOspfSync::Connect: listen :" << strerror (errno);

@@ -66,6 +66,11 @@ Copyright 2003-2005 the Dragon Team.\r\n\
     memcpy(&(sa_in.sin_addr), &addr_u32, sizeof(struct in_addr));
     socklen_t len = sizeof(struct sockaddr_in);
     int new_sock = accept (fd, (struct sockaddr *)&sa_in, &len);
+    if (new_sock < 0)
+    {
+        LOGF("CLIServer::Run: cannot accept socket on %d\n", fd);
+        return;
+    }
 
     CLIWriter* cli_writer = new CLIWriter(new_sock, this);
     cli_writer->SetAutoDelete(false);

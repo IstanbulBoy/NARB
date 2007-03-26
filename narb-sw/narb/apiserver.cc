@@ -84,8 +84,8 @@ int APIServer::Start()
       return ret;
     }
 
-    // Listen under queue length 4
-    ret = listen (sock, 4);
+    // Listen under queue length 10
+    ret = listen (sock, 9);
     if (ret < 0)
     {
       LOGF ("APIServer::Init()::listen: %s",  strerror (errno));
@@ -126,6 +126,11 @@ void APIServer::Run()
     memcpy(&(sa_in.sin_addr), &addr_u32, sizeof(struct in_addr));
     socklen_t len = sizeof(struct sockaddr_in);
     int new_sock = accept (fd, (struct sockaddr *)&sa_in, &len);
+    if (new_sock < 0)
+    {
+        LOGF("APIServer::Run: cannot accept socket on %d\n", fd);
+        return;
+    }
 
     APIWriter* api_writer = CreateAPIWriter(new_sock);
     api_writer->SetAutoDelete(false);

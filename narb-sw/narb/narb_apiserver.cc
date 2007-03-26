@@ -56,6 +56,11 @@ void NARB_APIServer::Run()
     memcpy(&(sa_in.sin_addr), &addr_u32, sizeof(struct in_addr));
     socklen_t len = sizeof(struct sockaddr_in);
     int new_sock = accept (fd, (struct sockaddr *)&sa_in, &len);
+    if (new_sock < 0)
+    {
+        LOGF("NARB_APIServer::Run: cannot accept socket on %d\n", fd);
+        return;
+    }
 
     LSP_Broker* lspb = new LSP_Broker(new_sock, this);
     lspb->SetAutoDelete(true);
