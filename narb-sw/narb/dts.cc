@@ -831,24 +831,11 @@ void DomainInfo::ProbeAutoLinks()
         return;
   
     //Connecting to RCE APIClient
-    RCE_APIClient *rce_client = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
-    if (!rce_client)
+    RCE_APIClient rce_client((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    if (rce_client.Connect() < 0)
     {
-        rce_client = RceFactory.GetClient((char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
-        if (!rce_client) 
-        {
-            LOGF("DomainInfo::ProbeAutoLinks/GetClient: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
-            return;
-        }
-    }
-    if(!rce_client->IsAlive())
-    {
-        if (rce_client->Connect() < 0)
-        {
-            RceFactory.RemoveClient(rce_client);
-            LOGF("DomainInfo::ProbeAutoLink/Connect: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
-            return;
-        }
+        LOGF("DomainInfo::ProbeAutoLink: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
+        return;
     }
  
     for (int i = 0; i < NarbDomainInfo.auto_links.size(); i++)
@@ -860,7 +847,7 @@ void DomainInfo::ProbeAutoLinks()
             if ( (auto_link1->router->rt_type == RT_TYPE_HOST && auto_link2->router->rt_type == RT_TYPE_BORDER)
               || (auto_link1->router->rt_type == RT_TYPE_BORDER && auto_link2 != auto_link1) )
             {
-                link = ProbeSingleAutoLink(*rce_client, auto_link1, auto_link2->router);
+                link = ProbeSingleAutoLink(rce_client, auto_link1, auto_link2->router);
                 if (link)
                 {
                     AddLink( link);
@@ -869,10 +856,6 @@ void DomainInfo::ProbeAutoLinks()
             }
         }
     }
-    if (rce_client->GetWriter())
-        rce_client->GetWriter()->Close();
-    rce_client->Close();
-    RceFactory.RemoveClient(rce_client);
 }
 
 void DomainInfo::CleanupAutoLinks()
