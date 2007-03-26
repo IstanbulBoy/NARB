@@ -706,29 +706,24 @@ void DomainInfo::ExposeTopology ()
 
 link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_link, router_id_info *router)
 {
-    u_int32_t seqnum;
-    u_int32_t options;
     api_msg *rce_msg;
     te_tlv_header * tlv;
+    u_int32_t options;
     link_info *link = NULL;
-    int len;
-    in_addr *router_ip;
 
     if (!rce.IsAlive())
         return NULL;
 
     struct msg_narb_cspf_request cspf_req;
-    memset(&cspf_req, 0, sizeof(msg_narb_cspf_request));
-    
-    // OSPF area --> intra-domain
-    cspf_req.area_id = NarbDomainInfo.ospfd_intra.area;
+    memset(&cspf_req, 0, sizeof(msg_narb_cspf_request));   
+    cspf_req.area_id = NarbDomainInfo.ospfd_intra.area; // OSPF area --> intra-domain
     cspf_req.app_req_data.src.s_addr = auto_link->router->id;
     cspf_req.app_req_data.dest.s_addr = router->id;
     cspf_req.app_req_data.switching_type = auto_link->te_profile->sw_type;
     cspf_req.app_req_data.encoding_type = auto_link->te_profile->encoding;
     cspf_req.app_req_data.bandwidth = auto_link->te_profile->bandwidth;
     cspf_req.lspb_id = 0; //ispb_id --> ucid : the ID doesnot matter here.
-    seqnum = time(NULL);
+    cspf_req.app_seqnum = time(NULL);
     options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT | LSP_OPT_MRN | LSP_OPT_BIDIRECTIONAL;
     if (auto_link->te_profile->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && auto_link->te_profile->has_vtags)
     {
@@ -742,10 +737,10 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     if (!rce_msg)
         return NULL;
 
-    if (rce_msg->header.type_8 != MSG_LSP || ntohl(rce_msg->header.seqnum) != seqnum)
+    if (rce_msg->header.type_8 != MSG_LSP || ntohl(rce_msg->header.seqnum) != cspf_req.app_seqnum)
     {
-        LOGF("DomainInfo::ProbeSingleAutoLink: Get wrong reply message from RCE (type = %d, seqnum = 0x%x) instead of  (MSG_LSP, 0x%x)\n", 
-            rce_msg->header.type_8, ntohl(rce_msg->header.seqnum), seqnum);
+        LOGF("DomainInfo::ProbeSingleAutoLink: Get wrong reply message from RCE (type = %d, seqnum = 0x%x) instead of  (%d, 0x%x)\n", 
+            rce_msg->header.type_8, ntohl(rce_msg->header.seqnum), MSG_LSP, cspf_req.app_seqnum);
         goto _out;
     }
 
