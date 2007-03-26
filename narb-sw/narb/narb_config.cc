@@ -388,14 +388,12 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                           }
                         } while ((p_str = strtok(NULL, " \t,")) != NULL);
                   }
-
-                  break; // auto-link cannot coexist with link ...
               }
   
               // one or more te links advertised by the router 
               // are contained in the router block
               link_blk = strstr(blk_body, "link");
-              while (link_blk && strstr(link_blk, "link"))
+              while (link_blk && strstr(link_blk, "link") && *(link_blk-1) != '-') //excluding auto-link
               {
                   char link_id[MAX_ADDR_LEN];
                   char loc_if[MAX_ADDR_LEN];

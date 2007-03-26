@@ -772,7 +772,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
                     link->linkType = 1;
                     link->lclIfAddr = ero.front()->addr.s_addr;
                     SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
-                    link->lclIfAddr = ero.back()->addr.s_addr;
+                    link->rmtIfAddr = ero.back()->addr.s_addr;
                     SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
                     link->ifswcap->swtype = (u_char)auto_link->te_profile->sw_type;
                     link->ifswcap->encoding = (u_char)auto_link->te_profile->encoding;
