@@ -157,8 +157,8 @@ public:
 
     auto_link()
         {
-            memset(&router, 0, sizeof(router_id_info));
-            memset(&te_profile, 0, sizeof(te_profile_info));
+            router = NULL;
+            te_profile = NULL;
         }
 };
 

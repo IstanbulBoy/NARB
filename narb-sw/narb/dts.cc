@@ -737,8 +737,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     }
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = ntohl(options);
-    rce.GetWriter()->WriteMessage(rce_msg);
-    api_msg_delete(rce_msg);
+    rce.GetWriter()->WriteMessage(rce_msg); //rce_msg deleted inside
     rce_msg = rce.ReadMessage();   
     if (!rce_msg)
         return NULL;
