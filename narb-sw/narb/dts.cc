@@ -708,9 +708,14 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
 {
     api_msg *rce_msg;
     te_tlv_header * tlv;
-    u_int32_t options;
+    int msg_len, tlv_len;
+    in_addr ip; ip.s_addr = 0;
+    list<ero_subobj*> ero;
+    msg_app2narb_vtag_mask* vtagmask_tlv = NULL;
+    u_int32_t options = 0;
+    u_int32_t vtag = 0;
     link_info *link = NULL;
-
+    
     if (!rce.IsAlive())
         return NULL;
 
@@ -727,15 +732,17 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT | LSP_OPT_MRN | LSP_OPT_BIDIRECTIONAL;
     if (auto_link->te_profile->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && auto_link->te_profile->has_vtags)
     {
+        vtag = ANY_VTAG;
         options |= (LSP_OPT_E2E_VTAG | LSP_OPT_REQ_ALL_VTAGS);
     }
-    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum);
+    rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = ntohl(options);
     rce.GetWriter()->WriteMessage(rce_msg);
     api_msg_delete(rce_msg);
     rce_msg = rce.ReadMessage();   
     if (!rce_msg)
         return NULL;
+
 
     if (rce_msg->header.type_8 != MSG_LSP || ntohl(rce_msg->header.seqnum) != cspf_req.app_seqnum)
     {
@@ -744,15 +751,12 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
         goto _out;
     }
 
-    if (rce_msg->header.action== ACT_ACKDATA)
-    {
-        int msg_len = ntohs(rce_msg->header.length);
-        te_tlv_header* tlv = (te_tlv_header*)(rce_msg->body);
-        int tlv_len;
-        in_addr ip; ip.s_addr = 0;
-        list<ero_subobj*> ero;
-        msg_app2narb_vtag_mask* vtagmask_tlv = NULL;
+    msg_len = ntohs(rce_msg->header.length);
+    tlv = (te_tlv_header*)(rce_msg->body);
 
+    switch (rce_msg->header.action)
+    {
+    case ACT_ACKDATA:
         while (msg_len > 0)
         {
             switch (ntohs(tlv->type)) 
@@ -807,6 +811,10 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
             tlv = (te_tlv_header*)((char*)tlv + tlv_len);
             msg_len -= tlv_len;
         }
+        break;
+    case ACT_ERROR:
+        LOGF("DomainInfo::ProbeSingleAutoLink: RCE cannot find a link for 0x%x -- 0x%x\n", cspf_req.app_req_data.src.s_addr, cspf_req.app_req_data.dest.s_addr);
+        break;
     }
   
 _out:
