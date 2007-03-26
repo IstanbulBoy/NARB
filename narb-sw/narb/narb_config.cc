@@ -388,6 +388,8 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                           }
                         } while ((p_str = strtok(NULL, " \t,")) != NULL);
                   }
+
+                  break; // auto-link cannot coexist with link ...
               }
   
               // one or more te links advertised by the router 
