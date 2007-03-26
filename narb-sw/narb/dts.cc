@@ -707,11 +707,16 @@ void DomainInfo::ExposeTopology ()
 link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_link, router_id_info *router)
 {
     u_int32_t seqnum;
+    u_int32_t options;
+    api_msg *rce_msg;
     te_tlv_header * tlv;
     link_info *link = NULL;
     int len;
     in_addr *router_ip;
-  
+
+    if (!rce.IsAlive())
+        return NULL;
+
     struct msg_narb_cspf_request cspf_req;
     memset(&cspf_req, 0, sizeof(msg_narb_cspf_request));
     
@@ -721,56 +726,92 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     cspf_req.app_req_data.dest.s_addr = router->id;
     cspf_req.app_req_data.switching_type = auto_link->te_profile->sw_type;
     cspf_req.app_req_data.encoding_type = auto_link->te_profile->encoding;
-    cspf_req.app_req_data.bandwidth = auto_link->te_profile->max_bw;
-    //cspf_req.lspq_id = 0;
+    cspf_req.app_req_data.bandwidth = auto_link->te_profile->bandwidth;
+    cspf_req.lspb_id = 0; //ispb_id --> ucid : the ID doesnot matter here.
     seqnum = time(NULL);
-
-    // @@@@ Checking RCE status?
-
-    api_msg *rce_msg;
+    options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT | LSP_OPT_MRN | LSP_OPT_BIDIRECTIONAL;
+    if (auto_link->te_profile->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && auto_link->te_profile->has_vtags)
+    {
+        options |= (LSP_OPT_E2E_VTAG | LSP_OPT_REQ_ALL_VTAGS);
+    }
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, sizeof(cspf_req.app_req_data), &cspf_req.app_req_data, cspf_req.lspb_id, cspf_req.app_seqnum);
-    rce_msg->header.options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT;
-    
+    rce_msg->header.options = ntohl(options);
     rce.GetWriter()->WriteMessage(rce_msg);
     api_msg_delete(rce_msg);
-    rce_msg = rce.ReadMessage();
-    
+    rce_msg = rce.ReadMessage();   
     if (!rce_msg)
         return NULL;
-    
-    assert (rce_msg->header.type_8== MSG_LSP && ntohl(rce_msg->header.seqnum) == seqnum);
+
+    if (rce_msg->header.type_8 != MSG_LSP || ntohl(rce_msg->header.seqnum) != seqnum)
+    {
+        LOGF("DomainInfo::ProbeSingleAutoLink: Get wrong reply message from RCE (type = %d, seqnum = 0x%x) instead of  (MSG_LSP, 0x%x)\n", 
+            rce_msg->header.type_8, ntohl(rce_msg->header.seqnum), seqnum);
+        goto _out;
+    }
 
     if (rce_msg->header.action== ACT_ACKDATA)
     {
-        list<ero_subobj*> ero;
-        LSPQ::GetERO((te_tlv_header*)rce_msg->body, ero);
-        if (ero.size() <= 2)
-            goto _out;
+        int msg_len = ntohs(rce_msg->header.length);
+        te_tlv_header* tlv = (te_tlv_header*)(rce_msg->body);
+        int tlv_len;
         in_addr ip; ip.s_addr = 0;
-        link = new link_info(NarbDomainInfo.domain_id, ip, ip);
-        link->advRtId = auto_link->router->id;
-        link->id = router->id;
-        link->linkType = 1;
-        link->lclIfAddr = ero.front()->addr.s_addr;
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
-        link->lclIfAddr = ero.back()->addr.s_addr;
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
-        link->ifswcap->swtype = (u_char)auto_link->te_profile->sw_type;
-        link->ifswcap->encoding = (u_char)auto_link->te_profile->encoding;
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-        link->maxBandwidth = link->maxReservableBandwidth  = auto_link->te_profile->max_bw;
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW);
-        if (auto_link->router->rt_type == RT_TYPE_HOST || router->rt_type == RT_TYPE_HOST)
-            link->metric = HOST_BORDER_METRIC;
-        else if (auto_link->router->type == RT_TYPE_BORDER && router->type == RT_TYPE_BORDER)
-            link->metric = BORDER_BORDER_METRIC;
-        else
-            link->metric = 1;
-        
-        // @@@@ VLAN ???
+        list<ero_subobj*> ero;
+        msg_app2narb_vtag_mask* vtagmask_tlv = NULL;
 
-        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
+        while (msg_len > 0)
+        {
+            switch (ntohs(tlv->type)) 
+            {
+            case TLV_TYPE_NARB_ERO:
+                {
+                    tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+                    LSPQ::GetERO((te_tlv_header*)rce_msg->body, ero);
+                    if (ero.size() <= 2)
+                        goto _out;
+                    link = new link_info(NarbDomainInfo.domain_id, ip, ip);
+                    link->advRtId = auto_link->router->id;
+                    link->id = router->id;
+                    link->linkType = 1;
+                    link->lclIfAddr = ero.front()->addr.s_addr;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
+                    link->lclIfAddr = ero.back()->addr.s_addr;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
+                    link->ifswcap->swtype = (u_char)auto_link->te_profile->sw_type;
+                    link->ifswcap->encoding = (u_char)auto_link->te_profile->encoding;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
+                    link->maxBandwidth = link->maxReservableBandwidth  = auto_link->te_profile->bandwidth;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
+                    link->maxReservableBandwidth = link->maxReservableBandwidth  = auto_link->te_profile->bandwidth;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW);
+                    for (int i = 0; i < 8; i ++)
+                    {
+                        link->unreservedBandwidth[i] = auto_link->te_profile->bandwidth;
+                        link->ifswcap->max_lsp_bw[i] = auto_link->te_profile->bandwidth;
+                    }
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_UNRSV_BW);
+                    if (auto_link->router->rt_type == RT_TYPE_HOST || router->rt_type == RT_TYPE_HOST)
+                        link->metric = HOST_BORDER_METRIC;
+                    else if (auto_link->router->type == RT_TYPE_BORDER && router->type == RT_TYPE_BORDER)
+                        link->metric = BORDER_BORDER_METRIC;
+                    else
+                        link->metric = 1;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
+                }
+                break;
+            case TLV_TYPE_NARB_VTAG_MASK:
+                {
+                    tlv_len = sizeof(msg_app2narb_vtag_mask);
+                    vtagmask_tlv = (msg_app2narb_vtag_mask*)tlv;
+                    memcpy(link->vtagBitMask, vtagmask_tlv->bitmask, MAX_VLAN_NUM/8);
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
+                }
+                break;
+            default:
+                break;
+            }
+            tlv = (te_tlv_header*)((char*)tlv + tlv_len);
+            msg_len -= tlv_len;
+        }
     }
   
 _out:
@@ -787,9 +828,26 @@ void DomainInfo::ProbeAutoLinks()
     if(NarbDomainInfo.auto_links.size() == 0)
         return;
   
-    //Start RCE APIClient
-    RCE_APIClient rce_client((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
-    rce_client.Connect();
+    //Connecting to RCE APIClient
+    RCE_APIClient *rce_client = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    if (!rce_client)
+    {
+        rce_client = RceFactory.GetClient((char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
+        if (!rce_client) 
+        {
+            LOGF("DomainInfo::ProbeAutoLinks/GetClient: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
+            return;
+        }
+    }
+    if(!rce_client->IsAlive())
+    {
+        if (rce_client->Connect() < 0)
+        {
+            RceFactory.RemoveClient(rce_client);
+            LOGF("DomainInfo::ProbeAutoLink/Connect: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
+            return;
+        }
+    }
  
     for (int i = 0; i < NarbDomainInfo.auto_links.size(); i++)
     {
@@ -800,7 +858,7 @@ void DomainInfo::ProbeAutoLinks()
             if ( (auto_link->router->type == RT_TYPE_HOST && router->type == RT_TYPE_BORDER)
               || (auto_link->router->type == RT_TYPE_BORDER && router != auto_link->router) )
             {
-                link = ProbeSingleAutoLink(rce_client, auto_link, router);
+                link = ProbeSingleAutoLink(*rce_client, auto_link, router);
                 if (link)
                 {
                     AddLink( link);
@@ -810,9 +868,6 @@ void DomainInfo::ProbeAutoLinks()
             router = NextRouterId();
         }
     }
-
-    //Stop RCE APIClient
-    rce_client.Close();
 }
 
 void DomainInfo::CleanupAutoLinks()

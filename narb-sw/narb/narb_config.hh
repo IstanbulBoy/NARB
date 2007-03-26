@@ -48,8 +48,8 @@ using namespace std;
 #define NARB_XML_PORT 2627
 
 //Default auto-generated virtual link metrics, forcing through-traffic to use border routers
-#define HOST_BORDER_METRIC 5
-#define BORDER_BORDER_METRIC 3
+#define HOST_BORDER_METRIC 10
+#define BORDER_BORDER_METRIC 5
 
 // define the narb routing modes
 enum narb_routing_mode {

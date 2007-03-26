@@ -136,14 +136,16 @@ public:
     int te_profile_id;
     int sw_type;
     int encoding;
-    float max_bw;
+    float bandwidth;
+    bool has_vtags;
 
     te_profile_info()
         {
             te_profile_id = 0;
             sw_type = 0;
             encoding = 0;
-            max_bw = 0;
+            bandwidth = 0;
+            has_vtags = false;
         }
 };
 

@@ -561,10 +561,10 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                     LOG("ReadConfigParameter failed on te_profile : sw_type"<<endl);
                 if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_te_profile->encoding))
                     LOG("ReadConfigParameter failed on te_profile : encoding" <<endl);
-                if (!ReadConfigParameter(blk_body, "max_bw", "%f", &p_te_profile->max_bw))
-                    LOG("ReadConfigParameter failed on te_profile : max_bw"<<endl);
-
-                // @@@@ VLAN ???
+                if (!ReadConfigParameter(blk_body, "bandwidth", "%f", &p_te_profile->bandwidth))
+                    LOG("ReadConfigParameter failed on te_profile : bandwidth"<<endl);
+                if (strstr(blk_body, "has_vtags") ||strstr(blk_body, "HAS_VTAGS"))
+                    p_te_profile->has_vtags = true;
 
                 domain_info.te_profiles.push_back(p_te_profile);
             }

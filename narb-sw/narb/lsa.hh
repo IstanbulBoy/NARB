@@ -272,9 +272,9 @@ struct link_ifswcap_specific_vlan {
 struct link_ifswcap_specific_vlan_full {
 	u_int16_t		length;		//up to 512 byes in vlan_bitmask. So 515 will be the default length.
 	u_int16_t	 	version;       //version id and options mask
-	u_char           bitmask[MAX_VLAN_NUM/8];
-	u_char           bitmask_alloc[MAX_VLAN_NUM/8];
-};
+       u_char           bitmask[MAX_VLAN_NUM/8];
+       u_char           bitmask_alloc[MAX_VLAN_NUM/8];
+ };
 
 //
 //  Switching Capability-specific information for L2SC, LSC and FSC will be added later on
@@ -315,7 +315,7 @@ struct te_link_subtlv_link_ifswcap
        union {
 		struct link_ifswcap_specific_psc  ifswcap_specific_psc;
 		struct link_ifswcap_specific_tdm ifswcap_specific_tdm; 
-		struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
+       	struct link_ifswcap_specific_vlan ifswcap_specific_vlan; 
        } ifswcap_specific_info;
   } link_ifswcap_data;
 };

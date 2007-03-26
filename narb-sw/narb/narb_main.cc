@@ -81,6 +81,7 @@ void sigint (int sig)
 
     signal_set (SIGINT, SIG_DFL);
     SIG_DFL(sig);
+    exit(0);
 }
 
 // SIGSEGV handler.
@@ -100,6 +101,7 @@ void sigsegv (int sig)
     //We still want to have core dump.
     signal_set (SIGSEGV, SIG_DFL);
     SIG_DFL(sig);
+    exit(0);
 }
 
 ConfigFile configMaster;
