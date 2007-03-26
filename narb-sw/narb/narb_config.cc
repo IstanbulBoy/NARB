@@ -537,15 +537,14 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       narb_port = NARB_API_PORT;
                   }
   
-                  link = domain_info.LookupLinkByRmtIf(link_inter_rmt_if);
-                                    
-                  if (link)
+                  if (domain_info.auto_links.size() == 0 && domain_info.LookupLinkByRmtIf(link_inter_rmt_if == NULL)
                   {
-                      domain_info.inter_domain_te_links.push_back(link);
-                      domain_info.AddPeerNarb(narb_addr, narb_port, link_inter_rmt_if);
+                      LOGF("Warning: Unknown inter-domain-te-link ID: %s\n", te_link_id_inter);
                   }
-                  else
-                      LOGF("Wrong inter-domain-te-link ID: %s\n", te_link_id_inter);
+                  domain_info.inter_domain_te_links.push_back(link);
+                  domain_info.AddPeerNarb(narb_addr, narb_port, link_inter_rmt_if);
+
+                      
               }
               else
               {
