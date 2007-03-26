@@ -823,7 +823,7 @@ _out:
 
 void DomainInfo::ProbeAutoLinks()
 {
-    auto_link *auto_link;
+    auto_link *auto_link1, *auto_link2;
     router_id_info *router;
     link_info *link;
   
@@ -853,21 +853,20 @@ void DomainInfo::ProbeAutoLinks()
  
     for (int i = 0; i < NarbDomainInfo.auto_links.size(); i++)
     {
-        auto_link = NarbDomainInfo.auto_links[i];
-        router = FirstRouterId();
-        while(router)
+        auto_link1 = NarbDomainInfo.auto_links[i];
+        for (int j = 0; j < NarbDomainInfo.auto_links.size(); j++)
         {
-            if ( (auto_link->router->type == RT_TYPE_HOST && router->type == RT_TYPE_BORDER)
-              || (auto_link->router->type == RT_TYPE_BORDER && router != auto_link->router) )
+            auto_link2 = NarbDomainInfo.auto_links[j];
+            if ( (auto_link1->router->rt_type == RT_TYPE_HOST && auto_link2->router->rt_type == RT_TYPE_BORDER)
+              || (auto_link1->router->rt_type == RT_TYPE_BORDER && auto_link2 != auto_link1) )
             {
-                link = ProbeSingleAutoLink(*rce_client, auto_link, router);
+                link = ProbeSingleAutoLink(*rce_client, auto_link1, auto_link2->router);
                 if (link)
                 {
                     AddLink( link);
                     SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_AUTO_PROBED);
                 }
             }
-            router = NextRouterId();
         }
     }
 }

@@ -352,9 +352,9 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               if (ReadConfigParameter(blk_body, "auto-link", "%s", auto_link_type) > 0)
               {
                   if (strcasecmp(auto_link_type, "border") == 0)
-                      router->type = (ResourceType)RT_TYPE_BORDER;
+                      router->rt_type = RT_TYPE_BORDER;
                   else if (strcasecmp(auto_link_type, "stub") == 0 || strcasecmp(auto_link_type, "host") == 0)
-                      router->type = (ResourceType)RT_TYPE_HOST;
+                      router->rt_type = RT_TYPE_HOST;
                   else
                   {
                       delete router;
