@@ -764,7 +764,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
                 {
                     tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
                     LSPQ::GetERO((te_tlv_header*)rce_msg->body, ero);
-                    if (ero.size() <= 2)
+                    if (ero.size() == 0)
                         goto _out;
                     link = new link_info(NarbDomainInfo.domain_id, ip, ip);
                     link->advRtId = auto_link->router->id;
