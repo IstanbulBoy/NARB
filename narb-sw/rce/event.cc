@@ -40,7 +40,6 @@ EventMaster EventMaster::master;
 // Global variable - the only instance of EventMaster.
 EventMaster& eventMaster = EventMaster::Instance();
 
-
 EventMaster::~EventMaster()
 {
     for (int i = 0; i < 5; i++)
@@ -56,7 +55,7 @@ EventMaster::~EventMaster()
     }
 }
 
-void  EventMaster::Schedule(Event* event)
+void EventMaster::Schedule(Event* event)
 {
     list<Event*>::iterator iter;
 
@@ -117,11 +116,13 @@ EventMaster::Remove(Event *event)
     {
         FD_CLR(((Selector*)event)->fd, &readfd);
         close(((Selector*)event)->fd);
+        ((Selector*)event)->fd = -1;	
     }
     if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0 && (FD_ISSET (((Selector*)event)->fd, &writefd)))
     {
         FD_CLR(((Selector*)event)->fd, &writefd);
         close(((Selector*)event)->fd);
+        ((Selector*)event)->fd = -1;
     }
 
     eList->remove(event);
@@ -157,12 +158,14 @@ EventMaster::Run()
                 if (FD_ISSET (((Selector*)event)->fd, &readfd))
                     FD_CLR(((Selector*)event)->fd, &readfd);
                 close(((Selector*)event)->fd);
+                ((Selector*)event)->fd = -1;
             }
             if (event->type == EVENT_WRITE && ((Selector*)event)->fd > 0)
             {
                 if (FD_ISSET (((Selector*)event)->fd, &writefd))
                     FD_CLR(((Selector*)event)->fd, &writefd);
                 close(((Selector*)event)->fd);
+                ((Selector*)event)->fd = -1;
             }
             delete event;
         }
@@ -322,8 +325,8 @@ EventMaster::Fetch()
 
 void Selector::Close()
 {
-	if (fd < 0)
-		return;
+    if (fd < 0)
+        return;
 
     close(fd);
     eventMaster.Remove(this);

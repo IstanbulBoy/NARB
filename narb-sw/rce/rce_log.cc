@@ -106,9 +106,9 @@ int Log::Logf(const char *format, ...)
     va_start(ap, format);
     int ret=vsprintf(buf, format, ap);
     if (log_file && (options&LOG_LOGFILE))
-        *log_file<< Preamble(LOG_LOGFILE) << buf;
+        *log_file<< Preamble(LOG_LOGFILE) << buf << flush;
     if (log_stdout && (options&LOG_STDOUT))
-        *log_stdout<<Preamble(LOG_LOGFILE) << buf;  
+        *log_stdout<<Preamble(LOG_LOGFILE) << buf << flush;  
     va_end(ap);
     return ret;
 }

@@ -93,12 +93,12 @@ public:
 #define LOG_COUT   (*Log::log_stdout<<Log::Preamble(LOG_STDOUT))
 #define LOG_CERR   (*Log::log_stderr<<Log::Preamble(LOG_STDERR))
 #define LOG(X)    if (Log::options&LOG_LOGFILE && Log::options&LOG_STDOUT) \
-                              { LOG_FILE<<X; LOG_COUT<<X; }                                     \
+                              { LOG_FILE<<X<<flush; LOG_COUT<<X<<flush; }                                     \
                            else if (Log::options&LOG_LOGFILE && Log::options&LOG_STDERR) \
-                              { LOG_FILE<<X; LOG_CERR<<X; }                                       \
-                           else if (Log::options&LOG_LOGFILE) LOG_FILE<<X;          \
-                           else if (Log::options&LOG_STDOUT) LOG_COUT<<X;             \
-                           else if (Log::options&LOG_STDERR) LOG_CERR<<X
+                              { LOG_FILE<<X<<flush; LOG_CERR<<X<<flush; }                                       \
+                           else if (Log::options&LOG_LOGFILE) LOG_FILE<<X<<flush;          \
+                           else if (Log::options&LOG_STDOUT) LOG_COUT<<X<<flush;\
+                           else if (Log::options&LOG_STDERR) LOG_CERR<<X<<flush
 #define LOGF Log::Logf
 #define LOG_DEBUG(X) if(Log::Debug()) LOG(X)
 #define LOG_DEBUGF(X) if(Log::Debug()) LOGF(X)
