@@ -537,7 +537,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       narb_port = NARB_API_PORT;
                   }
   
-                  if (domain_info.auto_links.size() == 0 && domain_info.LookupLinkByRmtIf(link_inter_rmt_if == NULL)
+                  if (domain_info.auto_links.size() == 0 && domain_info.LookupLinkByRmtIf(link_inter_rmt_if) == NULL)
                   {
                       LOGF("Warning: Unknown inter-domain-te-link ID: %s\n", te_link_id_inter);
                   }

@@ -96,9 +96,6 @@ void sigsegv (int sig)
 	 delete zebra_client;
     }
 
-    //We still want to have core dump.
-    signal_set (SIGSEGV, SIG_DFL);
-    SIG_DFL(sig);
     abort();
 }
 
