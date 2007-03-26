@@ -393,8 +393,14 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               // one or more te links advertised by the router 
               // are contained in the router block
               link_blk = strstr(blk_body, "link");
-              while (link_blk && strstr(link_blk, "link") && *(link_blk-1) != '-') //excluding auto-link
+              while (link_blk && strstr(link_blk, "link")) 
               {
+                  if (*(link_blk-1) == '-') //excluding auto-links
+                  {
+                      ReadConfigBlock(link_blk, link_header, link_body, &link_blk);
+                      continue;
+                  }
+
                   char link_id[MAX_ADDR_LEN];
                   char loc_if[MAX_ADDR_LEN];
                   char rem_if[MAX_ADDR_LEN];
@@ -541,8 +547,6 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   }
                   domain_info.inter_domain_te_links.push_back(link);
                   domain_info.AddPeerNarb(narb_addr, narb_port, link_inter_rmt_if);
-
-                      
               }
               else
               {
