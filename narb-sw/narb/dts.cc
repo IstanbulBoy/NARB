@@ -869,6 +869,10 @@ void DomainInfo::ProbeAutoLinks()
             }
         }
     }
+    if (rce_client->GetWriter())
+        rce_client->GetWriter()->Close();
+    rce_client->Close();
+    RceFactory.RemoveClient(rce_client);
 }
 
 void DomainInfo::CleanupAutoLinks()
