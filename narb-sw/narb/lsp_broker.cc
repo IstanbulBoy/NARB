@@ -1213,6 +1213,18 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
+                //checking duplicates (the LSP has been handled by other LSPBroker or PingPong happened)
+                if (NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum)) != NULL)
+                {
+                    LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
+                        ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
+                    api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ);
+                    if (rmsg)
+                        HandleReplyMessage(rmsg);
+                    goto _abnormal_out;
+                }
+
+                //creating new LSPQ
                 lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
