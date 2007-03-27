@@ -599,10 +599,13 @@ int CLIReader::ExecuteCommand(bool immediate)
     }
 
     //queue the current command line
-    if (history.size() == MAX_HISTORY_DEPTH)
-        history.erase(history.begin());
-    history.push_back(buffer);
-    hi = history.size() - 1;
+    if (n_input > 0 && (history.size() == 0 || buffer != history.back()))
+    {
+        if (history.size() == MAX_HISTORY_DEPTH)
+            history.erase(history.begin());
+        history.push_back(buffer);
+        hi = history.size() - 1;
+    }
 
     int ret = current_node->CmdTree()->Search(cmd_v, node, arg_v);
     CLICommand *cmd = NULL;
