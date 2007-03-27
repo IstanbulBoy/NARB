@@ -540,7 +540,8 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   {
                       narb_port = NARB_API_PORT;
                   }
-  
+
+                  // DRAGON assumes the remote interface address is unique for inter-domain links
                   link = domain_info.LookupLinkByRmtIf(link_inter_rmt_if);                                  
                   if (link)
                   {

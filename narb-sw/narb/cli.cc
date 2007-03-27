@@ -1712,8 +1712,8 @@ COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_
     inet_aton(argv[0].c_str(), &lcl_if);
     inet_aton(argv[1].c_str(), &rmt_if);
   
-    link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
-    if (!link || link != NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    link = NarbDomainInfo.LookupLinkByLclRmtIf(lcl_if, rmt_if);
+    if (!link)
     {
         CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
@@ -1742,8 +1742,8 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP remote_
         return;
     }
 
-    link_info * link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
-    if(link && link == NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    link_info * link = NarbDomainInfo.LookupLinkByLclRmtIf(lcl_if, rmt_if);
+    if(link)
     {
         CLI_OUT("TE Link [%s-%s] already exists in the current domain!%s", argv[2].c_str(), argv[3].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
@@ -1778,8 +1778,8 @@ COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR remote_if_addr 
     inet_aton(argv[0].c_str(), &lcl_if);
     inet_aton(argv[1].c_str(), &rmt_if);
   
-    link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
-    if (!link || link != NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    link = NarbDomainInfo.LookupLinkByLclRmtIf(lcl_if, rmt_if);
+    if (!link)
     {
         CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
@@ -1808,8 +1808,8 @@ COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_
     inet_aton(argv[0].c_str(), &lcl_if);
     inet_aton(argv[1].c_str(), &rmt_if);
   
-    link = NarbDomainInfo.LookupLinkByLclIf(lcl_if);
-    if (!link || link != NarbDomainInfo.LookupLinkByRmtIf(rmt_if))
+    link = NarbDomainInfo.LookupLinkByLclRmtIf(lcl_if, rmt_if);
+    if (!link)
     {
         CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
@@ -1969,9 +1969,10 @@ COMMAND(cmd_edit_link_show, "show {updated|original}",
     }
     else
     {
-        in_addr ip1;
+        in_addr ip1, ip2;
         ip1.s_addr = link_to_update->LclIfAddr();
-        link = NarbDomainInfo.LookupLinkByLclIf(ip1);
+        ip2.s_addr = link_to_update->RmtIfAddr();
+        link = NarbDomainInfo.LookupLinkByLclRmtIf(ip1, ip2);
         assert (link);
     }
 
@@ -2012,9 +2013,10 @@ COMMAND(cmd_edit_link_commit, "commit",
     }
 
     CLI_OUT("\t Sending update to intER-domain OSPFd...%s", cli_cstr_newline);
-    in_addr ip;
-    ip.s_addr = link_to_update->LclIfAddr();
-    link = NarbDomainInfo.LookupLinkByLclIf(ip);
+    in_addr ip1, ip2;
+    ip1.s_addr = link_to_update->LclIfAddr();
+    ip2.s_addr = link_to_update->RmtIfAddr();
+    link = NarbDomainInfo.LookupLinkByLclRmtIf(ip1, ip2);
     assert (link);
     link_to_update->hide = false;
 

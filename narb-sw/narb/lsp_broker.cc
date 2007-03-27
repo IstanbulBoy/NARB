@@ -559,6 +559,7 @@ int LSPQ::HandlePartialERO()
     if (!new_src_subobj)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
 
+    //this should be the interdomain link; DRAGN assumes interface addresses are unique for interdomain links
     link_info * link = NarbDomainInfo.LookupLinkByRmtIf(new_src_subobj->addr);
     if (!link)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
@@ -715,6 +716,7 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
         }
     }
     return ret_ip;
+    //note: assuming both local and remote interface addresses are unique for inter-domain te links
 }
 
 
@@ -759,7 +761,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
 
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        if (link1 != NULL)
+        while (link1 != NULL) // updating all links with the same local interface address
         {
             is_forward_link = (!is_forward_link);
             if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
@@ -785,84 +787,8 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }
+            link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
         }
-        /* 
-        link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        reverse_link1 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr);
-        if (!link1 && !reverse_link1)
-        {
-            continue;
-        }
-        else
-        {
-            it++;
-            if (it == ero_confirm.end())
-                break;
-            reverse_subobj = subobj;
-            subobj = *it;
-            link2 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr); 
-            reverse_link2 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr); 
-            //reverse_subobj->hop_type = 0xff;
-            //subobj->hop_type = 0xff;
-            if (link1 != link2 && reverse_link1 != reverse_link2)
-                continue;
-        }
-
-        if (zebra_client && !zebra_client->GetWriter() && zebra_client->Alive())
-        {
-            if (zebra_client->RunWithoutSyncLsdb() < 0)
-                LOG("RunWithoutSyncLsdb failed"<<endl);
-            // Register type (10, 1) Opaque-TE LSA.
-            int ret = zebra_client->GetWriter()->RegisterOpqaueType(10, 1);
-            if (ret < 0)
-            {
-                LOG("RegisterOpqaueType[10, 1] failed !"<<endl);
-            }
-        }
-
-        //found a corresponding abstract link in the forward direction
-        if (link1 != NULL && link1 == link2)
-        {
-            vtag = subobj->l2sc_vlantag;
-            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
-                    link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
-                }
-                if (vtag != 0) 
-                {
-                    link1->ResetVtag(vtag);
-                    link1->AllocateVtag(vtag);
-                }
-                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
-            }
-        }
-
-        //handling the link state updates in the reverse direction
-        if (reverse_link1 != NULL && reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
-        {
-            vtag = reverse_subobj->l2sc_vlantag;
-            if (reverse_link1 != NULL)
-            {
-                if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
-                {
-                    for (int i = 0; i < 8; i++)
-                    {
-                        reverse_link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
-                        reverse_link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
-                    }
-                    if (vtag != 0)
-                    {
-                        reverse_link1->ResetVtag(vtag);
-                        reverse_link1->AllocateVtag(vtag);
-                    }
-                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), reverse_link1);
-                }
-            }
-        }
-        */
     }
 
     //proceed to the next domain if any
@@ -939,7 +865,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
 
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        if (link1 != NULL)
+        while (link1 != NULL)
         {
             is_forward_link = (!is_forward_link);
             if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
@@ -965,82 +891,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 }
                 NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
             }
+            link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
         }
-         /*
-        link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
-        reverse_link1 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr);
-        if (!link1 && !reverse_link1)
-        {
-            continue;
-        }
-        else
-        {
-            it++;
-            if (it == ero_confirm.end())
-                break;
-            reverse_subobj = subobj;
-            subobj = *it;
-            link2 = NarbDomainInfo.LookupLinkByRmtIf(subobj->addr); 
-            reverse_link2 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr); 
-            if (link1 != link2 && reverse_link1 != reverse_link2)
-                continue;
-        }
-
-        if (zebra_client && !zebra_client->GetWriter() && zebra_client->Alive())
-        {
-            if (zebra_client->RunWithoutSyncLsdb() < 0)
-                LOG("RunWithoutSyncLsdb failed"<<endl);
-            // Register type (10, 1) Opaque-TE LSA.
-            ret = zebra_client->GetWriter()->RegisterOpqaueType(10, 1);
-            if (ret < 0)
-            {
-                LOG("RegisterOpqaueType[10, 1] failed !"<<endl);
-            }
-        }
-
-        //found a corresponding abstract link in the forward direction
-        if (link1 != NULL && link1 == link2)
-        {
-            vtag = subobj->l2sc_vlantag;
-            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
-                    link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
-                }
-                if (vtag != 0)
-                {
-                    link1->SetVtag(vtag);
-                    link1->DeallocateVtag(vtag);
-                }
-                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
-            }
-        }
-
-        //handling the link state updates in the reverse direction
-        if (reverse_link1 != NULL && reverse_link1 == reverse_link2 && (app_options & LSP_OPT_BIDIRECTIONAL) != 0)
-        {
-            vtag = reverse_subobj->l2sc_vlantag;
-            if (reverse_link1 != NULL)
-            {
-                if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
-                {
-                    for (int i = 0; i < 8; i++)
-                    {
-                        reverse_link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
-                        reverse_link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
-                    }
-                    if (vtag != 0)
-                    {
-                        reverse_link1->SetVtag(vtag);
-                        reverse_link1->DeallocateVtag(vtag);
-                    }
-                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), reverse_link1);
-                }
-            }
-        }
-        */
     }
 
     //proceed to the next domain if any

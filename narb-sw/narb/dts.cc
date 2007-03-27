@@ -190,6 +190,27 @@ link_info* DomainInfo::LookupLinkByLclIf(in_addr id)
     return NULL;
 }
 
+link_info* DomainInfo::LookupNextLinkByLclIf(link_info* prev_link)
+{
+    RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    bool found_prev_link = false;
+
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+        {
+            if (link->lclIfAddr == prev_link->lclIfAddr && found_prev_link)
+                return (link_info*)link;
+            if (link == prev_link)
+                found_prev_link = true;
+        }
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
 link_info* DomainInfo::LookupLinkByRmtIf(in_addr id)
 {
     RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
@@ -199,6 +220,42 @@ link_info* DomainInfo::LookupLinkByRmtIf(in_addr id)
     {
         if (link = (Link*)node->Data())
             if (link->rmtIfAddr == id.s_addr)
+                return (link_info*)link;
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
+link_info* DomainInfo::LookupNextLinkByRmtIf(link_info* prev_link)
+{
+    RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    bool found_prev_link = false;
+
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+        {
+            if (link->rmtIfAddr == prev_link->rmtIfAddr && found_prev_link)
+                return (link_info*)link;
+            if (link == prev_link)
+                found_prev_link = true;
+        }
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
+link_info* DomainInfo::LookupLinkByLclRmtIf(in_addr lcl_if, in_addr rmt_if)
+{
+    RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+            if (link->lclIfAddr == lcl_if.s_addr && link->rmtIfAddr == rmt_if.s_addr)
                 return (link_info*)link;
         node = link_tree->NextNode(node);
     }
@@ -596,7 +653,7 @@ int DomainInfo::OriginateTopology (ZebraOspfWriter* oc_writer)
     int ret = 0;
     
     //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
-    //NarbDomainInfo.CleanupAutoLinks();
+    NarbDomainInfo.CleanupAutoLinks();
     NarbDomainInfo.ProbeAutoLinks();
 
     // originate router-id LSA's

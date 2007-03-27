@@ -201,8 +201,11 @@ public:
     void AddPeerNarb (char *addr, int port, in_addr rmt_if);
 
     router_id_info* LookupRouterById(in_addr id);
+    link_info* LookupLinkByLclRmtIf(in_addr lcl_if, in_addr rmt_if);
     link_info* LookupLinkByLclIf(in_addr id);
+    link_info* LookupNextLinkByLclIf(link_info* prev_link);
     link_info* LookupLinkByRmtIf(in_addr id);
+    link_info* LookupNextLinkByRmtIf(link_info* prev_link);
     link_info* LookupInterdomainLinkByLclIf(in_addr id);
     link_info* LookupInterdomainLinkByRmtIf(in_addr id);
     void SearchAndProcessInterdomainLink(list<ero_subobj*>&ero);
