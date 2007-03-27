@@ -653,7 +653,7 @@ int DomainInfo::OriginateTopology (ZebraOspfWriter* oc_writer)
     int ret = 0;
     
     //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
-    NarbDomainInfo.CleanupAutoLinks();
+    //NarbDomainInfo.CleanupAutoLinks();
     NarbDomainInfo.ProbeAutoLinks();
 
     // originate router-id LSA's
