@@ -3209,7 +3209,7 @@ if test "$ac_test_CXXFLAGS" = set; then
   CXXFLAGS=$ac_save_CXXFLAGS
 elif test $ac_cv_prog_cxx_g = yes; then
   if test "$GXX" = yes; then
-    CXXFLAGS="-g "
+    CXXFLAGS="-g"
   else
     CXXFLAGS="-g"
   fi
