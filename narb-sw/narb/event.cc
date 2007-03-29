@@ -268,7 +268,7 @@ EventMaster::Fetch()
   while (1)
   {
       // Handling events with priorities
-      if (event = priorities.front())
+      if ((!priorities.empty()) && (event = priorities.front()))
       {
           priorities.pop_front();
           return event;
@@ -287,7 +287,7 @@ EventMaster::Fetch()
           }
       }
       // Handling ready events
-      if (event = ready.front())
+      if ((!ready.empty()) && (event = ready.front()))
       {
           ready.pop_front();
           return event;
@@ -315,7 +315,7 @@ EventMaster::Fetch()
 
       ModifyFDSets (&s_readfd, &s_writefd);
 
-      if (event = ready.front())
+      if ((!ready.empty()) && (event = ready.front()))
       {
           ready.pop_front();
           return event;
