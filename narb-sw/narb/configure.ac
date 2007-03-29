@@ -150,6 +150,15 @@ AC_CHECK_FUNC(__inet_ntop, AC_DEFINE(HAVE_INET_NTOP))
 AC_CHECK_FUNC(__inet_pton, AC_DEFINE(HAVE_INET_PTON))
 AC_CHECK_FUNC(__inet_aton, AC_DEFINE(HAVE_INET_ATON))
 
+dnl ---------------------------------------------------
+dnl Checking zlib.h and libz
+dnl ---------------------------------------------------
+AC_CHECK_HEADER(zlib.h)
+AC_CHECK_LIB(z, compress, HAVE_ZLIB=yes)
+if test $ac_cv_header_zlib_h = no -o $HAVE_ZLIB = ""; then
+  AC_MSG_ERROR([zlib is required by DRAGON. Please install zlib and make sure your have /usr/include/zlib.h and /usr/lib/libz.so])
+fi
+
 dnl ----------------------------
 dnl check sa_len of sockaddr
 dnl ----------------------------
