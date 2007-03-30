@@ -101,25 +101,9 @@ void PCEN_MRN::PostBuildTopology()
     if (SystemConfig::should_incorporate_subnet)
     {
         //  special handling for hop back
-        //  fake hop-back intra-domain links will be added to replace the interdomain (border) links
+        PCENLink* hopBackInterdomainPcenLink = NULL;
         if (hop_back != 0)
         {
-            Link* hopBackLink = NULL;
-            PCENLink* hopBackInterdomainPcenLink = NULL;
-
-            RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
-            RadixNode<Resource>* node = tree->Root();
-            while (node)
-            {
-                Link* link = (Link*)node->Data();
-                if (link && link->lclIfAddr == hop_back && link->rmtIfAddr == 0)
-                {
-                    hopBackLink = link;
-                    break;
-                }
-                node = tree->NextNode(node);
-            }
-
             for (i = 0; i < lNum; i++)
             {
                 pcen_link = links[i];
@@ -128,36 +112,71 @@ void PCEN_MRN::PostBuildTopology()
                     hopBackInterdomainPcenLink = pcen_link;
                 }
             }
-            if (hopBackLink != NULL && hopBackInterdomainPcenLink != NULL) // patten recoginized
+            //Moving source one hop back!!
+            if (hopBackInterdomainPcenLink && hopBackInterdomainPcenLink->rmt_end && hopBackInterdomainPcenLink->rmt_end->router)
             {
-                //adding two new links into the PCEN topology
-                PCENLink* linkForward = NewTransitLink(links);
-                PCENLink* linkHopback = NewTransitLink(links);
-                PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
-                PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
-                assert(nodeHead && nodeTail);
-
-                // allocating link resource and updating link parameters for forward link
-                assert(hopBackInterdomainPcenLink->reverse_link->link);
-                linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
-                linkForward->link->type = RTYPE_LOC_PHY_LNK;
-                linkForward->lcl_end = nodeHead;
-                linkForward->rmt_end = nodeTail;
-                nodeHead->out_links.push_back(linkForward);
-                nodeTail->in_links.push_back(linkForward);
-
-                // allocating link resource and updating link parameters for backward (hop back) link
-                linkHopback->link = new Link(hopBackLink);
-                linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
-                linkHopback->lcl_end = nodeTail;
-                linkHopback->rmt_end = nodeHead;
-                nodeTail->out_links.push_back(linkHopback);
-                nodeHead->in_links.push_back(linkHopback);
-                
-                //removing these links from the PCEN topology
-                hopBackInterdomainPcenLink->linkID = -1;
-                hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                source.s_addr = hopBackInterdomainPcenLink->rmt_end->router->id;
             }
+            else
+            {
+                LOGF("Warning: PCEN_MRN::PostBuildTopology cannot change source address based on the hop_back interface 0x%x\n", hop_back);
+            }
+        }
+
+        //  fake hop-back intra-domain links will be added to replace the interdomain (border) links
+        RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+        RadixNode<Resource>* node = tree->Root();
+        while (node)
+        {
+            Link* link = (Link*)node->Data();
+            if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
+                && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
+                && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+            { // found an intra-domain hop back link!
+                hopBackInterdomainPcenLink = NULL;
+                for (i = 0; i < lNum; i++)
+                {
+                    pcen_link = links[i];
+                    if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    {
+                        hopBackInterdomainPcenLink = pcen_link;
+                    }
+                }
+                if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                {
+                    //adding two new links into the PCEN topology
+                    PCENLink* linkForward = NewTransitLink(links);
+                    PCENLink* linkHopback = NewTransitLink(links);
+                    lNum += 2;
+                    PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
+                    PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
+                    assert(nodeHead && nodeTail);
+
+                    // allocating link resource and updating link parameters for forward link
+                    assert(hopBackInterdomainPcenLink->reverse_link->link);
+                    linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
+                    linkForward->link_self_allocated = true;
+                    linkForward->link->type = RTYPE_LOC_PHY_LNK;
+                    linkForward->lcl_end = nodeHead;
+                    linkForward->rmt_end = nodeTail;
+                    nodeHead->out_links.push_back(linkForward);
+                    nodeTail->in_links.push_back(linkForward);
+
+                    // allocating link resource and updating link parameters for backward (hop back) link
+                    linkHopback->link = new Link(link);
+                    linkHopback->link_self_allocated = true;
+                    linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
+                    linkHopback->lcl_end = nodeTail;
+                    linkHopback->rmt_end = nodeHead;
+                    nodeTail->out_links.push_back(linkHopback);
+                    nodeHead->in_links.push_back(linkHopback);
+
+                    //removing the links from the PCEN topology
+                    hopBackInterdomainPcenLink->linkID = -1;
+                    hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                }
+            }
+            node = tree->NextNode(node);
         }
         
         for (i = 0; i < lNum; i++)
