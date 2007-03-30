@@ -123,7 +123,7 @@ void PCEN_MRN::PostBuildTopology()
             for (i = 0; i < lNum; i++)
             {
                 pcen_link = links[i];
-                else if (pcen_link->link->lclIfAddr == hop_back && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                if (pcen_link->link->lclIfAddr == hop_back && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
                 {
                     hopBackInterdomainPcenLink = pcen_link;
                 }
