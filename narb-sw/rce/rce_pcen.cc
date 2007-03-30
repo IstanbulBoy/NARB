@@ -519,6 +519,12 @@ PCENLink::PCENLink(int id, int localNodeId, int remoteNodeId, vector<PCENNode*>&
     Init();
 }
 
+PCENLink::~PCENLink()
+{
+    if (link_self_allocated)
+        delete link;
+}
+
 void PCENLink::FilterLink() 
 {
     this->lflg.lfg.filteroff=1;
@@ -1158,10 +1164,37 @@ void PCEN::ReplyERO ()
     te_tlv_header * tlv = (te_tlv_header*)body;
     tlv->length = htons(sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
-    ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
-    int i;
+
     list<ero_subobj>::iterator iter; 
-    for (i = 0, iter = ero.begin(); iter != ero.end(); iter++, i++)
+
+    //$$$$ Special handling for HOP BACK ...
+    if (hop_back != 0)
+    {
+        for (iter = ero.begin(); iter != ero.end(); iter++)
+        {
+            if ((*iter).addr.s_addr == hop_back && iter != ero.begin())
+            {
+                iter = ero.erase(ero.begin(), iter);
+                break;
+            }
+        }
+        if (iter == ero.end()) // add a back_hop to the beginning
+        {
+            ero_subobj subobj_hopback = *(ero.begin());
+            if (subobj_hopback.hop_type == ERO_TYPE_STRICT_HOP &&
+                (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC && 
+                (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_DEST )
+            {
+                subobj_hopback.addr.s_addr = hop_back;
+                ero.push_front(subobj_hopback);
+            }
+        }
+    }
+
+    // coping ero to message buffer
+    int i = 0;
+    ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
+    for (iter = ero.begin(); iter != ero.end(); iter++, i++)
     {
         *(ero_hop+i) = (*iter);
     }
@@ -1385,44 +1418,3 @@ bool PCEN::IsLinkInDomain(PCENLink* pcenLink, u_int32_t domainId)
     return false;
 }
 
-/*
-int PCEN::PruneDomain(vector<PCENNode*>& routers, vector<PCENLink*>& links, u_int32_t domainId)
-{
-    vector<PCENLink*>::iterator link_iter;
-    PCENLink * pcen_link;
-    vector<PCENNode*>::iterator node_iter;
-    PCENNode * pcen_node;
-
-    for (link_iter = links.begin(); link_iter != links.end(); link_iter++)
-    {
-        pcen_link = *link_iter;
-        if (!pcen_link)
-            continue;
-        if (IsLinkInDomain(pcen_link, domainId))
-        {
-            pcen_link->lcl_end->ref_num = -2;
-            pcen_link->rmt_end->ref_num = -2;
-
-            links.erase(link_iter);
-            if (links.size() == 0)
-                break;
-            link_iter--;
-        }
-    }
-
-    for (node_iter = routers.begin(); node_iter != routers.end(); node_iter++)
-    {
-        pcen_node = *node_iter;
-        if (!pcen_node)
-            continue;
-        if (pcen_node->DomainId() == domainId || pcen_node->ref_num == -2)
-        {
-            routers.erase(node_iter);
-            if (routers.size() == 0)
-                break;
-            node_iter--;
-        }
-    }
-    return 0;
-}
-*/

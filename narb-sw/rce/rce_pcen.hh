@@ -66,6 +66,10 @@ struct ero_subobj
 #define ERO_TYPE_LOOSE_HOP 1
 
 
+#define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
+#define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
+    
+
 #define PCEN_MAX_GRAPH_SIZE 200
 #define PCEN_INFINITE_COST PCEN_MAX_GRAPH_SIZE*PCEN_MAX_GRAPH_SIZE*1000
 
@@ -274,8 +278,9 @@ public:
     PCENNode* rmt_end;
     Link* link;
     PCENLink* reverse_link;
+    bool link_self_allocated; //Link* link is self-allocated instead of pointing to external resource in RDB
 
-    ////////// Shujia's additions //////////////
+    ////////// GMU additions //////////////--Begin
     union LinkFlag 
     {
         unsigned long flag;        // flag that whether this node has been visited
@@ -288,6 +293,7 @@ public:
     } lflg;
     unsigned long auxvar1;	// this variable can be used as ID in WG or CG
     unsigned long auxvar2;	// this variable can be used as ID in WG or CG
+    ////////// GMU additions //////////////--End
 
     double PCENmetric ();        // return the metric of this link assigned by PCEN
     void SetPCENmetric (u_int32_t x);
@@ -301,12 +307,14 @@ public:
             auxvar2=0;
             lflg.flag = 0;
             reverse_link = NULL;
+            link_self_allocated = false;
         }
 
     PCENLink(int id);
     PCENLink(): linkID(-1), link(NULL), lcl_end(NULL), rmt_end(NULL) { Init(); }
     PCENLink(int id, int localNodeId, int remoteNodeId, vector<PCENNode*>& routers);
     PCENLink(Link *link_ptr):  linkID(-1), link(link_ptr), lcl_end(NULL), rmt_end(NULL) { Init(); }
+    virtual ~PCENLink();
 
     u_int32_t HeadDomainId ();
     u_int32_t TailDomainId ();
@@ -358,6 +366,7 @@ protected:
     float bandwidth_egress;
 
     narb_lsp_vtagmask_tlv* vtag_mask;
+    u_int32_t hop_back;
 
     u_int32_t options;
     u_int32_t uptime;
@@ -368,14 +377,15 @@ protected:
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
     bool is_via_movaz;
-    
+
     float * gGraph;
     int gSize;
     int originalGraphSize;
     APIWriter* api_writer;
+
 public:
-    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
-            source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
+            source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type;
                 encoding_type_ingress = encoding_type_egress = encoding;
@@ -394,8 +404,8 @@ public:
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
-                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
-                source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
+                source(src), destination(dest), lspq_id(ucid), seqnum(msg_seqnum), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type_ingress;
                 encoding_type_ingress = encoding_type_egress = encoding_ingress;

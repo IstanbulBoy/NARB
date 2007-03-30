@@ -69,6 +69,7 @@ u_int32_t opt_e2e_vlan = 0;
 u_int32_t opt_via_movaz = 0;
 u_int32_t opt_excluded_layers = 0;
 u_int32_t opt_req_all_vtags = 0;
+in_addr hop_back;
 
 #define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 
@@ -296,8 +297,20 @@ msg_app2narb_request * new_app_request()
 api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqnum, msg_app2narb_request *app_req)
 {
   struct api_msg *narb_msg;
+  int bodylen = 0;
+  char msgbody[1024];
+  memcpy(msgbody, app_req, sizeof(msg_app2narb_request));
+  bodylen += sizeof(msg_app2narb_request);
+  if (hop_back.s_addr != 0)
+  {
+    msg_app2narb_hop_back* hopback_tlv = (msg_app2narb_hop_back*)(msgbody + bodylen);
+    hopback_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
+    hopback_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+    hopback_tlv->ipv4 = hop_back.s_addr;
+    bodylen += sizeof (msg_app2narb_hop_back);
+  }
 
-  narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(msg_app2narb_request), (void*)app_req, lspq_id, seqnum, vtag);
+  narb_msg = api_msg_new(NARB_MSG_LSPQ, sizeof(msg_app2narb_request), (void*)msgbody, lspq_id, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags);
 
@@ -328,12 +341,12 @@ int main(int argc, char* argv[])
     Log::SetDebug(true);
 
     strcpy(host, "localhost");
-    source.s_addr = destination.s_addr = 0;
+    source.s_addr = destination.s_addr = hop_back.s_addr = 0;
     while (1)
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:E:BLOmMVa", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:X:E:k:BLOmMVa", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -392,6 +405,9 @@ int main(int argc, char* argv[])
             break;
         case 'a':
             opt_req_all_vtags |= LSP_OPT_REQ_ALL_VTAGS;
+            break;
+        case 'k':
+            inet_aton(optarg, &hop_back);
             break;
         default:
             usage();

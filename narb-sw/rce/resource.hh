@@ -241,6 +241,17 @@ class ResvTable
 public:
     list<Reservation*> reserves;
 
+    ResvTable::ResvTable() {}
+    ResvTable::ResvTable(const ResvTable& rt)
+    {
+        this->reserves.clear();
+        list<Reservation*>::const_iterator it;
+        for (it = rt.reserves.begin(); it != rt.reserves.end(); it++)
+        {
+            Reservation* resv = new Reservation(*(*it));
+            this->reserves.push_back(resv);
+        }
+    }
     Reservation* operator [](u_int32_t i)
         {
             list<Reservation*>::iterator iter;
@@ -332,6 +343,7 @@ public:
         Resource(type_val, domain, advRt, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf) {Init();}
     Link(u_int32_t advRtId, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf): 
         Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf)  {Init();}
+    Link(Link* link);
     virtual ~Link();
     u_int32_t LclIfAddr() {return lclIfAddr;}
     void SetLclIfAddr(u_int32_t x) { lclIfAddr = x;}

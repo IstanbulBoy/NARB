@@ -69,6 +69,13 @@ struct msg_app2narb_vtag_mask
     u_char bitmask[MAX_VLAN_NUM/8];
 };
 
+struct msg_app2narb_hop_back
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t ipv4;
+};
+
 #define msg_app2narb_release msg_app2narb_confirm
 
 class LSP_Broker;
@@ -84,6 +91,7 @@ private:
     msg_app2narb_request req_spec;    // information extracted from the request message
     msg_app2narb_request mrn_spec;    // for multi-region networks
     msg_app2narb_vtag_mask* vtag_mask;
+    u_int32_t hop_back;
 
     //state of the current LSPQ request, values defined below
     u_char state;
@@ -302,6 +310,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ERO = 0x03,
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
     TLV_TYPE_NARB_VTAG_MASK = 0x05,
+    TLV_TYPE_NARB_HOP_BACK = 0x06,
 };
 
 // definitions of NARB error code as proccessing a request fails

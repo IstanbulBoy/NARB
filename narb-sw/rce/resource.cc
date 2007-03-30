@@ -98,6 +98,55 @@ Resource::~Resource()
 }
 
 
+Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
+{
+    //Resource
+    this->type = link->type;
+    this->domainMask = link->domainMask;
+    this->domainId = link->domainId;
+    this->advRtId = link->advRtId;
+    this->id = link->id;
+    //Link
+    this->linkType = link->linkType;
+    this->lclIfAddr = link->lclIfAddr;
+    this->rmtIfAddr = link->rmtIfAddr;
+    this->metric = link->metric;
+    this->maxBandwidth = link->maxBandwidth;
+    this->maxReservableBandwidth = link->maxReservableBandwidth;
+    this->minReservableBandwidth = link->minReservableBandwidth;
+    for (int i = 0; i < 8; i++)
+        this->unreservedBandwidth[i] = link->unreservedBandwidth[i];
+    this->rcClass = link->rcClass;
+    this->lclId = link->lclId;
+    this->rmtId = link->rmtId;
+    this->resvTable = link->resvTable;
+    this->dependings = link->dependings;
+    this->dependents= link->dependents;
+
+    this->iscds.clear();
+    list<ISCD*>::iterator it1;
+    for (it1 = link->iscds.begin(); it1 != link->iscds.end(); it1++)
+    {
+        ISCD *iscd = new ISCD;
+        *iscd = *(*it1);
+        this->iscds.push_back(iscd);
+    }
+    this->iacds.clear();
+    list<IACD*>::iterator it2;
+    for (it2 = link->iacds.begin(); it2 != link->iacds.end(); it2++)
+    {
+        IACD *iacd = new IACD(*(*it2));
+        this->iacds.push_back(iacd);
+    }
+    this->wavelenths.clear();
+    list<Wavelength*>::iterator it3;
+    for (it3 = link->wavelenths.begin(); it3 != link->wavelenths.end(); it3++)
+    {
+        Wavelength*wave = new Wavelength(*(*it3));
+        this->wavelenths.push_back(wave);
+    }
+}
+
 Link::~Link()
 {
     list<ISCD*>::iterator iter1;

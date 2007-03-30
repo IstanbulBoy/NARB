@@ -67,6 +67,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ERO = 0x03,
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
     TLV_TYPE_NARB_VTAG_MASK = 0x05,
+    TLV_TYPE_NARB_HOP_BACK = 0x06,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
@@ -89,6 +90,13 @@ struct narb_lsp_vtagmask_tlv
     u_char bitmask[MAX_VLAN_NUM/8];
 };
 
+struct narb_lsp_hopback_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t ipv4;
+};
+
 class LSPHandler: public Event
 {
 private:
@@ -101,14 +109,15 @@ private:
     u_int8_t  switching_type_egress;   
     float bandwidth_egress;
 
-    narb_lsp_vtagmask_tlv* vtag_mask;
-
     u_int32_t options;
     u_int32_t tag;
     u_int32_t lspq_id;
     u_int32_t seqnum;
     u_int32_t uptime;
     u_int32_t duration;
+
+    narb_lsp_vtagmask_tlv* vtag_mask;
+    u_int32_t hop_back;
 
     int caller_fd;
 
@@ -117,7 +126,7 @@ private:
         {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
             options = 0; tag = 0; lspq_id = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
-            api_writer = NULL;  vtag_mask = NULL;}
+            api_writer = NULL;  vtag_mask = NULL; hop_back = 0; }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}
     virtual ~LSPHandler() { if (vtag_mask) delete vtag_mask; }

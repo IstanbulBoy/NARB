@@ -41,9 +41,9 @@
 
 PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
         float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
-        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag, narb_lsp_vtagmask_tlv* vtm):
+        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag, u_int32_t hopback, narb_lsp_vtagmask_tlv* vtm):
         PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
-        bw_egress,opts, lspq_id, msg_seqnum, tag, vtm) 
+        bw_egress,opts, lspq_id, msg_seqnum, tag, hopback, vtm) 
 {
 }
 
@@ -69,9 +69,9 @@ void PCEN_MRN::PostBuildTopology()
     for (i = 0; i < rNum; i++)
     {
         pcen_node = routers[i];
-        pcen_node->tspec.SWtype = switching_type_ingress; //$$$$
-        pcen_node->tspec.ENCtype = encoding_type_ingress; //$$$$
-        pcen_node->tspec.Bandwidth = bandwidth_ingress; //$$$$
+        pcen_node->tspec.SWtype = switching_type_ingress;
+        pcen_node->tspec.ENCtype = encoding_type_ingress;
+        pcen_node->tspec.Bandwidth = bandwidth_ingress;
     }
 
     //Init reverseLink
@@ -96,9 +96,60 @@ void PCEN_MRN::PostBuildTopology()
         }
     }
 
+    
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
     if (SystemConfig::should_incorporate_subnet)
     {
+        //  special handling for hop back
+        //  fake hop-back intra-domain links will be added to replace the interdomain (border) links
+        if (hop_back != 0)
+        {
+            PCENLink* hopBackLinkIntra = NULL;
+            PCENLink* hopBackLinkInter = NULL;
+            for (i = 0; i < lNum; i++)
+            {
+                pcen_link = links[i];
+                if (pcen_link->link->lclIfAddr == hop_back && pcen_link->link->rmtIfAddr == 0 && pcen_link->link->type == RTYPE_LOC_PHY_LNK) 
+                {
+                    hopBackLinkIntra = pcen_link;
+                }
+                else if (pcen_link->link->lclIfAddr == hop_back && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                {
+                    hopBackLinkInter = pcen_link;
+                }
+            }
+            if (hopBackLinkIntra != NULL && hopBackLinkInter != NULL) // patten recoginized
+            {
+                //adding two new links into the PCEN topology
+                PCENLink* linkForward = NewTransitLink(links);
+                PCENLink* linkHopback = NewTransitLink(links);
+                PCENNode* nodeHead = hopBackLinkInter->rmt_end;
+                PCENNode* nodeTail = hopBackLinkInter->lcl_end;
+                assert(nodeHead && nodeTail);
+
+                // allocating link resource and updating link parameters for forward link
+                linkForward->link = new Link(hopBackLinkInter->reverse_link->link);
+                linkForward->link->type = RTYPE_LOC_PHY_LNK;
+                linkForward->lcl_end = nodeHead;
+                linkForward->rmt_end = nodeTail;
+                nodeHead->out_links.push_back(linkForward);
+                nodeTail->in_links.push_back(linkForward);
+
+                // allocating link resource and updating link parameters for backward (hop back) link
+                linkHopback->link = new Link(hopBackLinkIntra->link);
+                linkHopback->link->rmtIfAddr = hopBackLinkInter->link->rmtIfAddr;
+                linkHopback->lcl_end = nodeTail;
+                linkHopback->rmt_end = nodeHead;
+                nodeTail->out_links.push_back(linkHopback);
+                nodeHead->in_links.push_back(linkHopback);
+                
+                //removing these links from the PCEN topology
+                hopBackLinkIntra->linkID = -1;
+                hopBackLinkInter->linkID = -1;
+                hopBackLinkInter->reverse_link->linkID = -1;
+            }
+        }
+        
         for (i = 0; i < lNum; i++)
         {
             pcen_link = links[i];
@@ -118,7 +169,6 @@ void PCEN_MRN::PostBuildTopology()
                             pcen_node = routers[j];
                             if ( pcen_node->router && pcen_node->router->id == iscd->subnet_uni_info.nid_ipv4 &&  pcen_node->router->id != pcen_link->link->advRtId )
                             {
-                                //assert(pcen_link->reverse_link && pcen_link->reverse_link->link);
                                 if (!pcen_link->reverse_link || !pcen_link->reverse_link->link)
                                     continue;
                                 
@@ -130,23 +180,12 @@ void PCEN_MRN::PostBuildTopology()
                                 node = RDB.Lookup(pcen_link->reverse_link->link);
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
-                                //$$$$ link->id unchanged
-                                //$$$$ reverse_link->advRtId unchanged
+                                // link->id and reverse_link->advRtId unchanged
                                 pcen_link->reverse_link->link->id = pcen_node->router->id;
+                                // link and reverse_link data interface addresses unchanged
 
                                 // setting homeVLSR ... for multi-home-vlsr only
                                 // pcen_node->home_vlsr = pcen_link->lcl_end;
-                                
-                                // link and reverse_link data interface addresses unchanged
-
-                                // XXX using iscd->subnet_uni_info.data_ipv4 and it's peer XXX
-                                //if ( is_slash30_ipv4(iscd->subnet_uni_info.data_ipv4) )
-                                //{
-                                //    pcen_link->link->lclIfAddr = iscd->subnet_uni_info.data_ipv4;
-                                //    pcen_link->link->rmtIfAddr = get_slash30_peer(iscd->subnet_uni_info.data_ipv4);
-                                //    pcen_link->reverse_link->link->lclIfAddr = pcen_link->link->rmtIfAddr;
-                                //    pcen_link->reverse_link->link->rmtIfAddr = pcen_link->link->lclIfAddr;
-                                //}
 
                                 //change link and rlink switching capability
                                 iscd->swtype = iscd->subnet_uni_info.swtype_ext;
@@ -186,15 +225,13 @@ void PCEN_MRN::PostBuildTopology()
                                         continue;
                                     if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->link->Index()) 
                                     {
-                                        pcen_link2->linkID = -1;
+                                        pcen_link2->linkID = -1; //indicating removal after the loop
                                         pcen_link2->reverse_link->linkID = -1;
                                     }
-                                    //if ( pcen_link2->link && pcen_link2->link->Index() == pcen_link->reverse_link->link->Index()) 
-                                    //   pcen_link2->linkID = -1;
                                 }
 
                                 // re-plant the links into RDB.
-                                // @@@@ Note: The original links will be restored by OSPF refresh
+                                // !!!! Note: The original links will be restored by OSPF refresh
                                 RDB.Update(pcen_link->link);
                                 RDB.Update(pcen_link->reverse_link->link);
                             }
@@ -211,6 +248,7 @@ void PCEN_MRN::PostBuildTopology()
 		pcen_link->lcl_end->out_links.remove(pcen_link);
 		pcen_link->rmt_end->in_links.remove(pcen_link);
 		links.erase(links.begin()+i);
+		delete pcen_link; // ?
 		if (i == links.size())
 		    break;
 		else

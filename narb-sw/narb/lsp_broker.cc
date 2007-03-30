@@ -82,6 +82,7 @@ void LSPQ::Init()
     req_spec.length = htons(sizeof(req_spec) - 4);
     mrn_spec = req_spec;
     vtag_mask = NULL;
+    hop_back = 0;
 }
 
 LSPQ::~LSPQ()
@@ -414,7 +415,7 @@ int LSPQ::HandleLSPQRequest()
 
     if (req_vtag == ANY_VTAG || vtag_mask)
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
-    rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, vtag_mask);
+    rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, hop_back, vtag_mask);
     return 0;
 }
 
@@ -455,7 +456,7 @@ int LSPQ::HandleRecursiveRequest()
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, req_ucid, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	| (app_options & LSP_OPT_E2E_VTAG? LSP_OPT_E2E_VTAG : 0) |(app_options & LSP_OPT_VIA_MOVAZ? LSP_OPT_VIA_MOVAZ : 0)
 	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0) 
-	, req_vtag, vtag_mask); 
+	, req_vtag, hop_back, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
@@ -698,12 +699,9 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
     if_narb_info * narb_info; 
     list<ero_subobj*>::iterator it;
     link_info *link1, *link2;
-	int i;
 
-    for (it = ero.begin(), i = 1; it != ero.end(); it++, i++)
+    for (it = ero.begin(); it != ero.end(); it++)
     {
-        if (i == ero.size()) //last subobject ineligible
-            break;
         narb_info = NarbDomainInfo.LookupNarbByRmtIf((*it)->addr);
         if (narb_info && it != ero.begin()) 
         {
@@ -712,7 +710,17 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
             ++it;
             link2 = NarbDomainInfo.LookupLinkByRmtIf((*it)->addr);
             if (link1 == link2 ) // this subojct must pair up with its previsous (not next) suboject to form a link from this domain.
-                return (*it)->addr;
+            {
+                ret_ip.s_addr = (*it)->addr.s_addr;
+
+                ++it;
+                if (it == ero.end())//last subobject ineligible
+                    ret_ip.s_addr = 0;
+                else if ((*it)->hop_type == ERO_TYPE_LOOSE_HOP) // should still have strict hops after the inter-domain link.
+                    ret_ip.s_addr = 0;
+
+                break;
+            }
         }
     }
     return ret_ip;
@@ -1175,6 +1183,12 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
                     vtag_mask = new (struct msg_app2narb_vtag_mask);
                 memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
             }
+            break;
+        case TLV_TYPE_NARB_HOP_BACK:
+            tlv_len = sizeof(msg_app2narb_hop_back);
+            hop_back = ((msg_app2narb_hop_back*)tlv)->ipv4;
+            if (hop_back == 0)
+                LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: hop_back_tlv->ipv4 == 0\n");
             break;
         default:
             tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);

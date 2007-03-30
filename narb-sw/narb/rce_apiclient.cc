@@ -93,7 +93,7 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 }
 
 
-void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_bitmask)
+void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_app2narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -101,6 +101,14 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
         memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
     u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_app2narb_vtag_mask));
+    if (hop_back != 0)
+    {
+        msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
+        hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+        hop_back_tlv->ipv4 = hop_back;
+        mlen += sizeof(msg_app2narb_hop_back);
+    }
 
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, ucid, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
@@ -108,7 +116,7 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     SendMessage(rce_msg); 
 }
 
-void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_bitmask)
+void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_app2narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -119,6 +127,14 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     {
         memcpy(buf+mlen, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
         mlen += sizeof(msg_app2narb_vtag_mask);
+    }
+    if (hop_back != 0)
+    {
+        msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
+        hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+        hop_back_tlv->ipv4 = hop_back;
+        mlen += sizeof(msg_app2narb_hop_back);
     }
 
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, mlen, buf, ucid, cspf_req.app_seqnum, vtag);

@@ -102,6 +102,12 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
                 memcpy(vtag_mask, tlv, sizeof(narb_lsp_vtagmask_tlv));
             }        
             break;
+        case TLV_TYPE_NARB_HOP_BACK:
+            tlv_len = sizeof(narb_lsp_hopback_tlv);
+            hop_back = ((narb_lsp_hopback_tlv*)tlv)->ipv4;
+            if (hop_back == 0)
+                LOGF("Warning: LSPHandler::SetOptionalConstraints: narb_lsp_hopback_tlv->ipv4 == 0\n");
+            break;
         default:
             tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
             break;
@@ -118,12 +124,12 @@ void LSPHandler::Run()
     options |= LSP_OPT_MRN;
     if ((options & LSP_OPT_MRN) == 0)
     {
-        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag);
+        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, hop_back);
     }
     else
     {
         pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, vtag_mask);
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, hop_back, vtag_mask);
     }
 
     pcen_event->AssociateWriter (api_writer);
