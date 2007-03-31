@@ -152,6 +152,13 @@ void PCEN_MRN::PostBuildTopology()
                     PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
                     assert(nodeHead && nodeTail);
 
+                    // removing all links from nodeHead if it is a hop_back source
+                    if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
+                    {
+                        nodeHead->out_links.clear();
+                        nodeHead->in_links.clear();
+                    }
+
                     // allocating link resource and updating link parameters for forward link
                     assert(hopBackInterdomainPcenLink->reverse_link->link);
                     linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
@@ -159,7 +166,6 @@ void PCEN_MRN::PostBuildTopology()
                     linkForward->link->type = RTYPE_LOC_PHY_LNK;
                     linkForward->lcl_end = nodeHead;
                     linkForward->rmt_end = nodeTail;
-                    nodeHead->out_links.clear();
                     nodeHead->out_links.push_back(linkForward);
                     nodeTail->in_links.push_back(linkForward);
 
@@ -169,7 +175,6 @@ void PCEN_MRN::PostBuildTopology()
                     linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
                     linkHopback->lcl_end = nodeTail;
                     linkHopback->rmt_end = nodeHead;
-                    nodeHead->in_links.clear();
                     nodeHead->in_links.push_back(linkHopback);
                     nodeTail->out_links.push_back(linkHopback);
 
