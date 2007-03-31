@@ -159,6 +159,7 @@ void PCEN_MRN::PostBuildTopology()
                     linkForward->link->type = RTYPE_LOC_PHY_LNK;
                     linkForward->lcl_end = nodeHead;
                     linkForward->rmt_end = nodeTail;
+                    nodeHead->out_links.clear();
                     nodeHead->out_links.push_back(linkForward);
                     nodeTail->in_links.push_back(linkForward);
 
@@ -168,8 +169,13 @@ void PCEN_MRN::PostBuildTopology()
                     linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
                     linkHopback->lcl_end = nodeTail;
                     linkHopback->rmt_end = nodeHead;
-                    nodeTail->out_links.push_back(linkHopback);
+                    nodeHead->in_links.clear();
                     nodeHead->in_links.push_back(linkHopback);
+                    nodeTail->out_links.push_back(linkHopback);
+
+                    // assigning reverse links for the links in both directions
+                    linkHopback->reverse_link = linkForward;
+                    linkForward->reverse_link = linkHopback;
 
                     //removing the links from the PCEN topology
                     hopBackInterdomainPcenLink->linkID = -1;
@@ -581,7 +587,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     subobj1.encoding = subobj2.encoding = pcen_link->lcl_end->tspec.ENCtype;
     subobj1.bandwidth= subobj2.bandwidth = pcen_link->lcl_end->tspec.Bandwidth;
 
-    //@@@@ ?
+    //The second subobj in a pair takes remote-end TE parameters.
     subobj2.sw_type = pcen_link->rmt_end->tspec.SWtype;
     subobj2.encoding = pcen_link->rmt_end->tspec.ENCtype;
     subobj2.bandwidth = pcen_link->rmt_end->tspec.Bandwidth;
