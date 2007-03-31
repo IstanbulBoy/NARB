@@ -1079,10 +1079,10 @@ int PCEN_MRN::PerformComputation()
 
         if (is_via_movaz)
             HandleMovazEROTrack(ero, vtag);
-
-        if (SystemConfig::should_incorporate_subnet)
-            HandleSubnetUNIEROTrack(ero);
     }
+
+    if (SystemConfig::should_incorporate_subnet)
+        HandleSubnetUNIEROTrack(ero);
 
     if (ero.size() == 0)
         return ERR_PCEN_NO_ROUTE;
