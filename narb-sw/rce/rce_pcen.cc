@@ -1160,7 +1160,6 @@ void PCEN::ReplyERO ()
 {
     char body[1024];
     assert (api_writer);
-    int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
     te_tlv_header * tlv = (te_tlv_header*)body;
     tlv->length = htons(sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
@@ -1199,6 +1198,7 @@ void PCEN::ReplyERO ()
         *(ero_hop+i) = (*iter);
     }
 
+    int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
     if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
     {
         tlv = (te_tlv_header*)(body + bodylen);
