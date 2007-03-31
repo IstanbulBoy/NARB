@@ -1160,10 +1160,6 @@ void PCEN::ReplyERO ()
 {
     char body[1024];
     assert (api_writer);
-    te_tlv_header * tlv = (te_tlv_header*)body;
-    tlv->length = htons(sizeof(ero_subobj)*ero.size());
-    tlv->type = htons(TLV_TYPE_NARB_ERO);
-
     list<ero_subobj>::iterator iter; 
 
     //$$$$ Special handling for HOP BACK ...
@@ -1191,14 +1187,18 @@ void PCEN::ReplyERO ()
     }
 
     // coping ero to message buffer
-    int i = 0;
+    int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
+    te_tlv_header * tlv = (te_tlv_header*)body;
+    tlv->length = htons(sizeof(ero_subobj)*ero.size());
+    tlv->type = htons(TLV_TYPE_NARB_ERO);
+
+    int i =0;
     ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
     for (iter = ero.begin(); iter != ero.end(); iter++, i++)
     {
         *(ero_hop+i) = (*iter);
     }
 
-    int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
     if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
     {
         tlv = (te_tlv_header*)(body + bodylen);
