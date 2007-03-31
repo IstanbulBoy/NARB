@@ -50,7 +50,7 @@ typedef enum
     EVENT_READ,
     EVENT_WRITE,
     EVENT_READY,
-    EVENT_IDEL
+    EVENT_IDLE
 } EventType;
 
 typedef  int (*CallBack)(void*, void*);
