@@ -213,11 +213,11 @@ void PCEN_MRN::PostBuildTopology()
                                     continue;
                                 
                                 // remove the links from RDB.
-                                RDB.Remove(pcen_link->link);
-                                RDB.Remove(pcen_link->reverse_link->link);
+                                if (!pcen_link->link_self_allocated)
+                                    RDB.Remove(pcen_link->link);
+                                if (!pcen_link->reverse_link->link_self_allocated)
+                                    RDB.Remove(pcen_link->reverse_link->link);
 
-                                node = RDB.Lookup(pcen_link->link);
-                                node = RDB.Lookup(pcen_link->reverse_link->link);
                                 // change IDs of current RDB link and its reverse link as 'jump' links
                                 pcen_link->link->advRtId = pcen_node->router->advRtId;
                                 // link->id and reverse_link->advRtId unchanged
@@ -272,8 +272,10 @@ void PCEN_MRN::PostBuildTopology()
 
                                 // re-plant the links into RDB.
                                 // !!!! Note: The original links will be restored by OSPF refresh
-                                RDB.Update(pcen_link->link);
-                                RDB.Update(pcen_link->reverse_link->link);
+                                if (!pcen_link->link_self_allocated)
+                                    RDB.Update(pcen_link->link);
+                                if (!pcen_link->reverse_link->link_self_allocated)
+                                    RDB.Update(pcen_link->reverse_link->link);
                             }
                         }
                     }
