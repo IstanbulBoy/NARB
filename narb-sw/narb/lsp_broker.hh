@@ -113,7 +113,6 @@ private:
 #define ERO_ALL_LOOSE 2
 #define ERO_HYBRID 3
 #define ERO_INCOMPLETE 4
-    // @@@@ combine the above two states?
     // Used in joint with narb_apiserver->routing_mode
 
     list<ero_subobj*> ero; // A list of type ero_subobj generated from RCE's reply
