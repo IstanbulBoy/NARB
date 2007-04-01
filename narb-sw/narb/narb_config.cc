@@ -507,13 +507,6 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
                   }
 
-                  /* @@@@
-                  if (ReadConfigResvs(link_body,  &link->resvs))
-                  {
-                      SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_RESV);
-                  }
-                  */
-
                   // more optional TE parameters will be supported in the future
                   domain_info.AddLink(link);
                 }

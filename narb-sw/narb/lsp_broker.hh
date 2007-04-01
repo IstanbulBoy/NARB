@@ -218,7 +218,6 @@ public:
 
 ////////////////////////////////////////////////
 
-//@@@@ Overhaul the format of RCE request ??
 // structure of NARB->RCE CSPF request message (msg body only)
 struct msg_narb_cspf_request 
 {
