@@ -763,7 +763,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     {
         if ( (ntohl((*it)->if_id) >> 16)  == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL )
         {
-            lsp_vtag = ((*it)->if_id & 0xffff);
+            lsp_vtag = (ntohl((*it)->if_id) & 0xffff);
             break;
         }
         
@@ -887,7 +887,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     {
         if ( (ntohl((*it)->if_id) >> 16)  == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL )
         {
-            lsp_vtag = ((*it)->if_id & 0xffff);
+            lsp_vtag = (ntohl((*it)->if_id) & 0xffff);
             break;
         }
         
