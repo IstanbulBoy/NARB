@@ -69,9 +69,10 @@ u_int32_t opt_e2e_vlan = 0;
 u_int32_t opt_via_movaz = 0;
 u_int32_t opt_excluded_layers = 0;
 u_int32_t opt_req_all_vtags = 0;
+u_int32_t opt_vtag_mask = 0;
 in_addr hop_back;
 
-struct msg_app2narb_vtag_mask opt_vtag_mask;
+struct msg_app2narb_vtag_mask vtag_mask;
 
 #define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 
@@ -172,9 +173,12 @@ int set_vtag_mask_from_cmdline(struct msg_app2narb_vtag_mask* vtag_mask, char* v
 {
 	int vlan1, vlan2;
 	vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
-	vtag_mask->type = htons(sizof(struct msg_app2narb_confirm) - 4);
+	vtag_mask->length = htons(sizeof(struct msg_app2narb_vtag_mask) - 4);
 	if (sscanf(vtag_range, "%d-%d", &vlan1, &vlan2) != 2)
+	{
+		printf("Wrong -t option argument '%s': must be in the format of [vtag_low-vtag_high]\n", vtag_range);
 		return -1;
+	}
 	if (vlan1 < 1 || vlan1 > 4095)
 	{
 		printf("Wrong low VLAN tag %d: must be <1-4095>\n", vlan1);
@@ -325,9 +329,9 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
   memcpy(msgbody, app_req, sizeof(msg_app2narb_request));
   bodylen += sizeof(msg_app2narb_request);
 
-  if (opt_vtag_mask.type != 0)
+  if (vtag_mask.type != 0)
   {
-    memcpy(msgbody + bodylen, &opt_vtag_mask, sizeof(msg_app2narb_vtag_mask);
+    memcpy(msgbody + bodylen, &vtag_mask, sizeof(msg_app2narb_vtag_mask));
     bodylen += sizeof(msg_app2narb_vtag_mask);
   }
 
@@ -342,7 +346,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, lspq_id, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
-        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags);
+        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -372,12 +376,12 @@ int main(int argc, char* argv[])
 
     strcpy(host, "localhost");
     source.s_addr = destination.s_addr = hop_back.s_addr = 0;
-	memset(opt_vtag_mask, 0, sizeof(struct msg_app2narb_vtag_mask));
+    memset(&vtag_mask, 0, sizeof(struct msg_app2narb_vtag_mask));
     while (1)
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:T:b:x:e:v:k:BLOMVma", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:BLOMVma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -399,7 +403,7 @@ int main(int argc, char* argv[])
             sscanf(optarg, "%d", &encoding);
             break;
         case 'v':
-            opt_e2e_vlan= LSP_OPT_E2E_VTAG;
+            opt_e2e_vlan = LSP_OPT_E2E_VTAG;
             sscanf(optarg, "%d", &vtag);
             break;
         case 'S':
@@ -434,15 +438,17 @@ int main(int argc, char* argv[])
             //1: excluding layer-1; 2: layer-tdm; 4: layer-2; 8: layer-3 ; 3: both layer 1 (optical) and tdm
             opt_excluded_layers <<= 4;
             break;
-		case 'T':
-			if (set_vtag_mask_from_cmdline(opt_vtag_mask, optarg) < 0)
-			{
-	            printf("Wrong -T option argument '%s': must be in the format of [vtag_low-vtag_high]\n", optarg);
-	            exit(1);
-			}
-			break;
+        case 't':
+            if (set_vtag_mask_from_cmdline(&vtag_mask, optarg) < 0)
+            {
+                exit(1);
+            }
+            opt_e2e_vlan = LSP_OPT_E2E_VTAG;
+            opt_req_all_vtags = LSP_OPT_REQ_ALL_VTAGS;
+            opt_vtag_mask = LSP_OPT_VTAG_MASK;
+            break;
         case 'a':
-            opt_req_all_vtags |= LSP_OPT_REQ_ALL_VTAGS;
+            opt_req_all_vtags = LSP_OPT_REQ_ALL_VTAGS;
             break;
         case 'k':
             inet_aton(optarg, &hop_back);
