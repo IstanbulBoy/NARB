@@ -79,7 +79,6 @@ enum narb_working_mode {
 #define LSP_OPT_STRICT  ((u_int32_t)(0x0001 << 16)) //otherwise LSP_OPT_LOOSE
 #define LSP_OPT_PREFERRED ((u_int32_t)(0x0002 << 16)) //otherwise LSP_OPT_ONLY
 #define LSP_OPT_MRN ((u_int32_t)0x0004 << 16)  //otherwise SINGLE_REGION
-//#define LSP_OPT_MRN_RELAY ((u_int32_t)0x08 << 16)  //relay path computation for multiregion multidomain networks
 #define LSP_OPT_BIDIRECTIONAL ((u_int32_t)0x0010 << 16)  // otherwise UNIDIRECTIONAL
 #define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x0020 << 16)) //otherwise Untgged VLAN for E2E Ethernet
 #define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x0040 << 16)) //using MOVAZ proprietary TLVs for optical layer routing

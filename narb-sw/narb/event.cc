@@ -126,7 +126,6 @@ EventMaster::Remove(Event *event)
     }
 
     eList->remove(event);
-    //@@@@ memory leakage here: Event removed from a schedule may not be deleted
 }
 
 void

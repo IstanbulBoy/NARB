@@ -597,7 +597,6 @@ int LSPQ::HandlePartialERO()
         rec_cspf_req.rec_req_data.switching_type = new_src_subobj->sw_type;
         rec_cspf_req.rec_req_data.encoding_type = new_src_subobj->encoding;
         rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
-        //LSP_OPT_MRN_RELAY//@@@@
     }
 
     peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
