@@ -42,7 +42,9 @@ void APIReader::Run()
     Reader::Run();
 
     //read an API message
-    assert (fd > 0);
+    if (fd < 0)
+        return;
+
     api_msg * msg = ReadMessage();
 
     //something is wrong with socket read
@@ -189,7 +191,8 @@ void APIWriter::Run()
     Writer::Run();
 
     //write an API message
-    assert (fd > 0);
+    if (fd < 0)
+        return;
 
     if (msgQueue.empty())
         return;
