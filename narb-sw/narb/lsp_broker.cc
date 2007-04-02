@@ -757,6 +757,21 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     link_info *link1, *link2;
     link_info *reverse_link1, *reverse_link2;
     bool is_forward_link = false;
+    u_int32_t lsp_vtag = 0;
+
+    for (it = ero_confirm.begin(); it != ero_confirm.end();  it++)
+    {
+        if (((*it)->if_id >> 16)  == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL)
+        {
+            lsp_vtag = ((*it)->if_id & 0xffff);
+            break;
+        }
+        
+        if ((lsp_vtag = (*it)->l2sc_vlantag) !=0)
+        {
+            break;
+        }
+    }
 
     for (it = ero_confirm.begin(); it != ero_confirm.end();  it++)
     {
@@ -776,6 +791,11 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 continue;
             }
             vtag = subobj->l2sc_vlantag;
+            if (vtag == 0 && lsp_vtag != 0 && link1->info_flag & LINK_PARA_FLAG_VLAN &&
+                ((subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+            {
+                vtag = lsp_vtag;
+            }
             if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
             {
                 for (int i = 0; i < 8; i++)

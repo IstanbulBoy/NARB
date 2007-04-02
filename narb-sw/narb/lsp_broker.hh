@@ -337,6 +337,8 @@ enum  narb_error_code
 
 #define LOCAL_ID_TYPE_TAGGED_GROUP (u_int16_t)0x3
 #define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
+#define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10
+#define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11
 
 #endif
  
