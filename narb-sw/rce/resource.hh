@@ -241,8 +241,7 @@ class ResvTable
 public:
     list<Reservation*> reserves;
 
-    ResvTable::ResvTable() {}
-    ResvTable::ResvTable(const ResvTable& rt)
+    ResvTable& operator=(ResvTable& rt)
     {
         this->reserves.clear();
         list<Reservation*>::const_iterator it;
@@ -251,6 +250,7 @@ public:
             Reservation* resv = new Reservation(*(*it));
             this->reserves.push_back(resv);
         }
+        return *this;
     }
     Reservation* operator [](u_int32_t i)
         {
