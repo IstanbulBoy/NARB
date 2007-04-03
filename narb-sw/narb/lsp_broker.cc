@@ -630,6 +630,10 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                 {
                     (*it)->if_id = htonl((ntohl((*it)->if_id) & 0xffff0000) | (req_vtag & 0xffff));
                 }
+                else if ((*it)->l2sc_vlantag != 0)
+                {
+                    (*it)->l2sc_vlantag = (u_int16_t)(req_vtag & 0xffff);
+                }
             }
         }
     }
