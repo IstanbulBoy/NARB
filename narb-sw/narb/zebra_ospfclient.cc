@@ -515,7 +515,9 @@ void ZebraOspfReader::HandleMessage (zebra_msg *msg)
     switch (msg->hdr.msgtype)
     {
     case MSG_ZEBRA_LSA_UPDATE_NOTIFY:
-        //??
+    case MSG_ZEBRA_LSA_DELETE_NOTIFY:
+        // Ignoring the OSPF LSA updates/deletes from other domains
+        // NARB only cares about the LSAs it originates and has been keeping status of those LSAs.
         zebra_msg_delete(msg);
         break;
     case MSG_ZEBRA_NEIGHBOR_COUNT:
