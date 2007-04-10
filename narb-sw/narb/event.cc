@@ -80,6 +80,12 @@ void EventMaster::Schedule(Event* event)
         priorities.push_back(event);
         break;
     case EVENT_READ:
+       if (((Selector*)event)->fd < 0)
+       {
+            event->SetRepeats(0);
+            event->SetObsolete(true);
+            return;
+       }
        if (FD_ISSET(((Selector*)event)->fd, &readfd))
        {
             LOGF("There has been read on [%d]\n", ((Selector*)event)->fd);
@@ -89,6 +95,12 @@ void EventMaster::Schedule(Event* event)
         reads.push_back(event);
         break;
     case EVENT_WRITE:
+       if (((Selector*)event)->fd < 0)
+       {
+            event->SetRepeats(0);
+            event->SetObsolete(true);
+            return;
+       }
        if (FD_ISSET(((Selector*)event)->fd, &writefd))
        {
             LOGF("There has been write on [%d]\n", ((Selector*)event)->fd);
