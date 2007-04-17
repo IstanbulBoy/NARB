@@ -1898,7 +1898,10 @@ COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
     else 
     {
         for (int i = 0; i < 8; i++)
+        {
+            link_to_update->UnreservedBandwidth()[i] = bw;
             link_to_update->GetISCD()->max_lsp_bw[i] = bw;
+        }
     }
     cli_node->ShowPrompt();
 }
