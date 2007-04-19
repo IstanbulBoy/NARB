@@ -781,6 +781,12 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     {
         u_int32_t vtag = 0;
         subobj = *it;
+
+        if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            continue;
+        }
+
         if (subobj->addr.s_addr == app_msg->req.src.s_addr ||subobj->addr.s_addr == app_msg->req.dest.s_addr)
         {
             continue;
@@ -905,6 +911,12 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     {
         u_int32_t vtag = 0;
         subobj = *it;
+
+        if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            continue;
+        }
+
         if (subobj->addr.s_addr == app_msg->req.src.s_addr ||subobj->addr.s_addr == app_msg->req.dest.s_addr)
         {
             continue;
