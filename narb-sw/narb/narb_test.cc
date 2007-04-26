@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include "config.h"
 #include "types.hh"
 #include "log.hh"
 #include "lsp_broker.hh"
@@ -39,7 +40,9 @@
 #include "toolbox.hh"
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/sendfile.h>
+#ifndef FREEBSD
+  #include <sys/sendfile.h>
+#endif
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -472,13 +475,16 @@ int main(int argc, char* argv[])
     if (xml_file)
     {
 	int fd = open(xml_file, O_RDONLY);
-        struct stat file_stat;
-        if (fstat(fd, &file_stat) == -1) {
+#ifndef FREEBSD
+	struct stat file_stat;
+	if (fstat(fd, &file_stat) == -1) {
             printf("fstat failed\n");
             exit(1);
-  	}
-
+	}
         int total = sendfile(sock, fd, 0, file_stat.st_size);
+#else
+        int total = sendfile(fd, sock, 0, 0, NULL, NULL, 0);
+#endif
         if (total <= 0) {
             printf("sendfile() returns %d\n", total);
             exit(1);
