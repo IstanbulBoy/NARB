@@ -114,18 +114,19 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     SendMessage(narb_msg); 
 }
 
-void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_subobj*>& ero_confirm)
+void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_subobj*>& ero_forward)
 {
     api_msg *narb_msg;
     char buf[1500];
     u_int16_t length = sizeof(msg_app2narb_request);
     memcpy(buf, msg->body, length);
     ((msg_app2narb_request*)buf)->type = htons(type);
-    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_confirm, NULL);
+    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
+    api_msg_delete(ero_msg);
     narb_msg = api_msg_new(NARB_MSG_LSPQ, length, buf, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));
-    SendMessage(narb_msg);    
+    SendMessage(narb_msg);
 }
 
 ///////////////////// NARB_APIClient_Factory /////////////////////  

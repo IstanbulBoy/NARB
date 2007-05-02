@@ -395,7 +395,7 @@ public:
     //LinkStateDelta operations
     Link& operator+= (LinkStateDelta& delta);
     Link& operator-= (LinkStateDelta& delta);
-    void insertDelta(LinkStateDelta* delta, int expire_sec=30, int expire_usec=0);
+    void insertDelta(LinkStateDelta* delta, int expire_sec=SystemConfig::delta_expire_reserve, int expire_usec=0);
     LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
     LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
     virtual void hook_PreUpdate(Resource* oldResource);

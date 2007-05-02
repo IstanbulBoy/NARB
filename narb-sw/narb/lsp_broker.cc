@@ -828,13 +828,33 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
     }
 
+    //forward the message to the corresponding RCE server as an LSP reservation confirmation
+    RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    int ret = 0;
+    if (!rce_client)
+    {
+        ret = -1;
+        LOGF("HandleResvConfirm::Error: no RCE client available...\n");
+    }  
+    else if (!rce_client->IsAlive())
+    {
+        ret = rce_client->Connect();
+        if (ret < 0)
+        {
+            LOGF("HandleResvConfirm::Error: dead RCE client died and connect failed...\n");
+        }
+    } //else ret == 0;
+    if (ret >= 0)
+    {
+        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_COMFIRM, msg, ero_confirm);
+    }
+
     //proceed to the next domain if any
     if(narb_ip.s_addr == 0)
         return 0;
     NARB_APIClient * peer_narb = NarbFactory.GetClient(narb_ip);
     if(!peer_narb)
         return -1;
-
     if (!peer_narb->IsAlive())
     {
         int ret = peer_narb->Connect();
@@ -846,8 +866,8 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
             return -1;
         }
     }
-
     peer_narb->RelayMessageToPeer(MSG_APP_CONFIRM, msg, ero_confirm);
+
     return 0;
 }
 
@@ -856,6 +876,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
 {
     int ret = 0;
     NARB_APIClient * peer_narb = NULL;
+    RCE_APIClient * rce_client = NULL;
     list<ero_subobj*>::iterator it;
     ero_subobj* subobj, *reverse_subobj;
     link_info *link1, *link2;
@@ -958,6 +979,30 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         }
     }
 
+    //forward the message to the corresponding RCE server as an LSP release notification
+    rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    if (!rce_client)
+    {
+        ret = -1;
+        LOGF("HandleResvRelease::Error: no RCE client available...\n");
+    }  
+    else if (!rce_client->IsAlive())
+    {
+        ret = rce_client->Connect();
+        if (ret < 0)
+        {
+            LOGF("HandleResvRelease::Error: dead RCE client died and connect failed...\n");
+        }
+    }
+    else 
+    {
+        ret = 0;
+    }
+    if (ret >= 0)
+    {
+        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, msg, ero_confirm);
+    }
+
     //proceed to the next domain if any
     if(narb_ip.s_addr != 0)
     {
@@ -965,13 +1010,11 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     }
     else
         goto _out;
-
     if(!peer_narb)
     {
         ret = -1;
         goto _out;
     }
-
     if (!peer_narb->IsAlive())
     {
         ret = peer_narb->Connect();
@@ -982,7 +1025,6 @@ int LSPQ::HandleResvRelease(api_msg* msg)
             goto _out;
         }
     }
-
     peer_narb->RelayMessageToPeer(MSG_APP_REMOVE, msg, ero_confirm);
 
 _out:

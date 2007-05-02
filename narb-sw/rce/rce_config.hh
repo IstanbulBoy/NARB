@@ -67,6 +67,9 @@ public:
     static int ospf_sync_interval;
     static int max_ospf_sync_attempts;
 
+    static int delta_expire_query;
+    static int delta_expire_reserve;
+
     static string narb_host;
     static int narb_port;
 

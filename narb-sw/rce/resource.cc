@@ -335,11 +335,19 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
     {
         pDeltaList = new list<LinkStateDelta*>;
     }
-    
+
+    list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
+    for ( ; iter != this->pDeltaList->end(); iter++)
+    {
+        if ((*iter)->owner_ucid == delta->owner_ucid && (*iter)->owner_seqnum == delta->owner_seqnum)
+            return; //duplicate ??
+    }
+
     gettimeofday(&delta->create_time, NULL);
     delta->expiration.tv_sec = expire_sec;
     delta->expiration.tv_usec = expire_usec;
-    pDeltaList->push_back(delta);
+
+     pDeltaList->push_back(delta);
     (*this) -= (*delta);
 }
 
