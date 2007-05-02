@@ -538,6 +538,43 @@ void ResourceDB::ClearTree(ResourceType type)
     r_trees[type].ClearTree();
 }
 
+Link* ResourceDB::LookupLinkByLclIf(ResourceType rcType, u_int32_t ipLcl)
+{
+    assert(rcType == RTYPE_GLO_ABS_LNK || rcType == RTYPE_LOC_PHY_LNK);
+    RadixTree<Resource>* link_tree = RDB.Tree(rcType);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+            if (link->lclIfAddr == ipLcl)
+                return link;
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
+Link* ResourceDB::LookupNextLinkByLclIf(Link* prev_link)
+{
+    RadixTree<Resource>* link_tree = RDB.Tree(prev_link->Type());
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    bool found_prev_link = false;
+
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+        {
+            if (link->lclIfAddr == prev_link->lclIfAddr && found_prev_link)
+                return link;
+            if (link == prev_link)
+                found_prev_link = true;
+        }
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
 void ResourceDB::WalkTree(ResourceType type)
 {
     if (!Log::Debug())

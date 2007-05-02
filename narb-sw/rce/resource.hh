@@ -456,10 +456,13 @@ public:
     static void Remove(Resource* rc); //do not free memory
     static void Delete(Resource* rc); //free rc memory
     static void DeleteByPrefix(ResourceType type, Prefix* prefix);
+    static void ClearTree(ResourceType type);
+    //TE link operations
+    static Link* LookupLinkByLclIf(ResourceType rcType, u_int32_t ipLcl);
+    static Link* LookupNextLinkByLclIf(Link* prev_link);
     //testing code
     static void WalkTree(ResourceType type);
     //end testing
-    static void ClearTree(ResourceType type);
 };
 
 #define RDB (ResourceDB::Instance())

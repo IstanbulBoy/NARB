@@ -1209,8 +1209,15 @@ void PCEN::ReplyERO ()
     // placeholder for wave_mask ...
 
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, lspq_id, seqnum, bodylen, vtag);
+    api_writer->PostMessage(msg);
 
-    api_writer->PostMessage(msg);    
+    //@@@@ case ACT_QUERY:
+    //LSPHandler::HoldLinkStateUponQuery
+    //create link state delta loop:
+        //GLO_ABS and LOC_PHY from the same ero
+        //locate Link resource ...
+        //insert and substract
+
 }
     
 PCEN::~PCEN()

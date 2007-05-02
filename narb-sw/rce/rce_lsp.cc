@@ -120,7 +120,7 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
 void LSPHandler::Run()
 {
     PCEN * pcen_event;
-    //@@@@ Enforce all requests to be handled by MRN routing module
+    //@@@@ Enforce all requests being handled by MRN routing module
     options |= LSP_OPT_MRN;
     if ((options & LSP_OPT_MRN) == 0)
     {
@@ -135,5 +135,32 @@ void LSPHandler::Run()
     pcen_event->AssociateWriter (api_writer);
     pcen_event->SetAutoDelete(true);
     eventMaster.Schedule(pcen_event);
+}
+
+void LSPHandler::HandleResvNotification(api_msg* msg)
+{
+    //parse message
+
+    //case ACT_CONFIRM:
+    //create link state delta loop:
+        //GLO_ABS and LOC_PHY from the same ero
+        //locate Link resource ...
+        //insert and substract
+
+    //case ACT_DELETE:
+    //create link state delta loop:
+        //GLO_ABS and LOC_PHY from the same ero
+        //locate Link resource ...
+        //insert and substract
+
+    api_msg_delete(msg);
+}
+
+void LSPHandler::HoldLinkStateUponQuery(list<ero_subobj>& ero_reply)
+{
+    //create link state delta loop:
+        //GLO_ABS and LOC_PHY from the same ero
+        //locate Link resource ...
+        //insert and substract
 }
 

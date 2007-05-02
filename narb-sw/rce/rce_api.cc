@@ -135,6 +135,7 @@ api_msg * APIReader::ReadMessage ()
 void APIReader::HandleMessage (api_msg *msg)
 {
     LSAHandler * lsaEvent;
+    LSPHandler * lspEvent;
     api_msg *rmsg;
     u_int32_t ack_id = 0x0f;
             
@@ -167,12 +168,16 @@ void APIReader::HandleMessage (api_msg *msg)
         {
         case ACT_QUERY:
         case ACT_QUERY_MRN:
-            LSPHandler * lspEvent = new LSPHandler(fd);
+            lspEvent = new LSPHandler(fd);
             lspEvent->SetAutoDelete(true);
             assert(api_writer);
             lspEvent->AssociateWriter(api_writer);
             lspEvent->Load(msg);
             eventMaster.Schedule(lspEvent);
+            break;
+        case ACT_COMFIRM:
+        case ACT_DELETE:
+            LSPHandler::HandleResvNotification(msg);
             break;
         }
         break;

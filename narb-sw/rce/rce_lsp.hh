@@ -97,6 +97,7 @@ struct narb_lsp_hopback_tlv
     u_int32_t ipv4;
 };
 
+struct ero_subobj;
 class LSPHandler: public Event
 {
 private:
@@ -133,7 +134,11 @@ public:
     void Load(api_msg *msg);
     virtual void Run();
     void AssociateWriter (APIWriter *writer) { assert (writer); api_writer = writer; }
-    void SetOptionalConstraints (api_msg* msg);    
+    void SetOptionalConstraints (api_msg* msg);
+
+public:
+    static void HandleResvNotification(api_msg* msg);
+    static void HoldLinkStateUponQuery(list<ero_subobj>& ero_reply);
 };
 
 #endif
