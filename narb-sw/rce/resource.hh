@@ -109,6 +109,8 @@ public:
     TLP* GetAttribute(string attrTag) { return GetAttribute(ResourceSchema::AttrIndexByTag(attrTag)); }
 #endif
 
+    virtual void hook_PreUpdate(Resource* oldResource) {}
+
     friend class ResourceDB;
     friend class LSAHandler;
     friend class PCEN;
@@ -311,6 +313,19 @@ public:
         }
 };
 
+//A LinkStateDelta keep the track record for an LSP provisioning
+struct LinkStateDelta 
+{
+    u_int32_t owner_ucid;
+    u_int32_t owner_seqnum;
+    struct timeval create_time; 
+    struct timeval expiration;   //10 seconds for query; 30 (60?) seconds for confirm; 0 for release
+    float        bandwidth;
+    u_int32_t vlan_tag;
+    u_int32_t wavelength;
+    u_int32_t timeslots[MAX_TIMESLOTS_NUM/8];
+};
+
 class Link: public Resource
 {
 private:
@@ -336,6 +351,10 @@ private:
     list<Link*> dependents; //@@@ need to check dependence...
     ResvTable resvTable;
 
+private:
+    list<LinkStateDelta*> * pDeltaList;
+    struct timeval modifiedTime;
+
 public:
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId) {Init();}
     Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId) {Init();}
@@ -344,6 +363,12 @@ public:
     Link(u_int32_t advRtId, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf): 
         Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf)  {Init();}
     Link(Link* link);
+    void Init()  
+        { 
+            linkType = 0; maxBandwidth = maxReservableBandwidth = minReservableBandwidth = 0; metric = 0;
+            lclId = rmtId = 0; lclIfAddr = rmtIfAddr = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0;
+            gettimeofday (&modifiedTime, NULL);
+        }
     virtual ~Link();
     u_int32_t LclIfAddr() {return lclIfAddr;}
     void SetLclIfAddr(u_int32_t x) { lclIfAddr = x;}
@@ -353,11 +378,8 @@ public:
     void SetMetric(u_int32_t x) { metric = x;}
     float MaxBandwidth() {return maxBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
-    void Init()  
-        { 
-            linkType = 0; maxBandwidth = maxReservableBandwidth = minReservableBandwidth = 0; metric = 0;
-            lclId = rmtId = 0; lclIfAddr = rmtIfAddr = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0;
-        }
+    list<ISCD*>& Iscds() {return iscds;}
+    list<IACD*>& Iacds() {return iacds;}
     virtual Prefix Index() 
         { 
             Prefix index; 
@@ -370,12 +392,18 @@ public:
             return index;
         }
 
-    list<ISCD*>& Iscds() {return iscds;}
-    list<IACD*>& Iacds() {return iacds;}
+    //LinkStateDelta operations
+    Link& operator+= (LinkStateDelta& delta);
+    Link& operator-= (LinkStateDelta& delta);
+    void insertDelta(LinkStateDelta* delta, int expire_sec=30, int expire_usec=0);
+    LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
+    LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
+    virtual void hook_PreUpdate(Resource* oldResource);
 
     //debugging code
     void Dump();
 
+    // friend classes
     friend class ResourceDB;
     friend class LSAHandler;
     friend class PCEN;

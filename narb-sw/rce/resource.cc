@@ -142,9 +142,13 @@ Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
     list<Wavelength*>::iterator it3;
     for (it3 = link->wavelenths.begin(); it3 != link->wavelenths.end(); it3++)
     {
-        Wavelength*wave = new Wavelength(*(*it3));
+        Wavelength* wave = new Wavelength(*(*it3));
         this->wavelenths.push_back(wave);
     }
+
+    //taking over pDeltaList
+    this->pDeltaList = link->pDeltaList;
+    link->pDeltaList = NULL;
 }
 
 Link::~Link()
@@ -163,9 +167,218 @@ Link::~Link()
         delete *iter2;
     }
 
-    // How about dependency?
+    list<Wavelength*>::iterator iter3;
+    for (iter3 = wavelenths.begin(); iter3 != wavelenths.end(); iter3++)
+    {
+        assert (*iter3);
+        delete *iter3;
+    }
 
-    //Clean resvTable ...
+    if (pDeltaList)
+    {
+        list<LinkStateDelta*>::iterator iter4;
+        for (iter4 = pDeltaList->begin(); iter4 != pDeltaList->end(); iter4++)
+        {
+            assert(*iter4);
+            delete *iter4;
+        }
+    }
+    
+    // Clean up dependency?
+}
+
+Link& Link::operator+= (LinkStateDelta& delta)
+{
+    int i;
+
+    if (delta.bandwidth > 0)
+    {
+        for (i = 0; i < 8; i++){
+            this->unreservedBandwidth[i] += delta.bandwidth;
+            if (this->unreservedBandwidth[i] > this->maxReservableBandwidth)
+                this->unreservedBandwidth[i] = this->maxReservableBandwidth;
+        }
+    }
+
+    list<ISCD*>::iterator iter = this->iscds.begin();
+    for ( ; iter != this->iscds.end(); iter++ )
+    {
+        if (delta.bandwidth > 0)
+        {
+            for (i = 0; i < 8; i++)
+            {
+                (*iter)->max_lsp_bw[i] += delta.bandwidth;
+                if ((*iter)->max_lsp_bw[i] > this->maxReservableBandwidth)
+                    (*iter)->max_lsp_bw[i] = this->maxReservableBandwidth;
+            }
+        }
+
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        {
+            if ((delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM) && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+            {
+                SET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
+                if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                    RESET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+            }
+            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
+            {
+                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                    (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
+            }
+        }
+
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC) // || (*iter)->swtype == MOVAZ_LSC
+        {
+            if (delta.wavelength > 0)
+            {
+                ;// adding to this->wavelenths;
+            }
+        }
+    }
+
+    return *this;
+}
+
+Link& Link::operator-= (LinkStateDelta& delta)
+{
+    int i;
+
+    if (delta.bandwidth > 0)
+    {
+        for (i = 0; i < 8; i++){
+            this->unreservedBandwidth[i] -= delta.bandwidth;
+            if (this->unreservedBandwidth[i] < 0)
+                this->unreservedBandwidth[i] = 0;
+        }
+    }
+
+    list<ISCD*>::iterator iter = this->iscds.begin();
+    for ( ; iter != this->iscds.end(); iter++ )
+    {
+        if (delta.bandwidth > 0)
+        {
+            for (i = 0; i < 8; i++) 
+            {
+                (*iter)->max_lsp_bw[i] -= delta.bandwidth;
+                if ((*iter)->max_lsp_bw[i] < 0)
+                    (*iter)->max_lsp_bw[i] = 0;
+            }
+        }
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        {
+            if ((delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM) && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+            {
+                RESET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
+                if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                    SET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+            }
+            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
+            {
+                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                    (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+            }
+        }
+
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)  // || == MOVAZ_LSC(151)
+        {
+            if (delta.wavelength > 0)
+            {
+                ;// remove from this->wavelenths;
+            }
+        }
+    }
+
+    return *this;
+}
+
+void Link::hook_PreUpdate(Resource * oldResource)
+{
+    assert (oldResource != NULL);
+    Link* oldLink = (Link*)oldResource;
+
+    if (!oldLink->pDeltaList)
+        return;
+
+    struct timeval timeNow;
+    gettimeofday(&timeNow, NULL);
+
+    //copy over
+    this->pDeltaList = oldLink->pDeltaList;
+    oldLink->pDeltaList = NULL;
+
+    list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
+    for ( ; iter != this->pDeltaList->end(); iter++)
+    {
+        LinkStateDelta* delta = *iter;
+        assert(delta);
+        struct timeval timeDiff = timeNow - delta->create_time;
+        if (!( timeDiff < delta->expiration))
+        {//write off the expired delta
+            delete delta; 
+            iter = this->pDeltaList->erase(iter);
+        }
+        else if (modifiedTime < delta->create_time) //substract the delta
+        {
+            (*this) -= (*delta);
+        }
+    }
+
+    //reset the modified time for this link
+    modifiedTime = timeNow;
+}
+
+void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
+{
+    assert(delta);
+    if (!pDeltaList)
+    {
+        pDeltaList = new list<LinkStateDelta*>;
+    }
+    
+    gettimeofday(&delta->create_time, NULL);
+    delta->expiration.tv_sec = expire_sec;
+    delta->expiration.tv_usec = expire_usec;
+    pDeltaList->push_back(delta);
+    (*this) -= (*delta);
+}
+
+LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
+{
+    if (!pDeltaList)
+        return NULL;
+
+    list<LinkStateDelta*>::iterator iter = pDeltaList->begin();
+    for ( ; iter != pDeltaList->end(); iter++)
+    {
+        LinkStateDelta* delta = *iter;
+        assert(delta);
+        if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
+            return delta;
+    }
+
+    return NULL;
+}
+
+LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
+{
+    if (!pDeltaList)
+        return NULL;
+
+    list<LinkStateDelta*>::iterator iter =pDeltaList->begin();
+    for ( ; iter != pDeltaList->end(); iter++)
+    {
+        LinkStateDelta* delta = *iter;
+        assert(delta);
+        if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
+        {
+            this->pDeltaList->erase(iter);
+            (*this) += (*delta);
+            return delta;
+        }
+    }
+
+    return NULL;
 }
 
 void Link::Dump()
@@ -277,7 +490,10 @@ RadixNode<Resource>* ResourceDB::Update(Resource* rc)
     Prefix index = rc->Index();
     RadixNode<Resource> *node = r_trees[rc->Type()].GetNode(&index);
     if (node && node->Data())
+    {
+        rc->hook_PreUpdate((Resource*)node->Data());
         delete node->Data();
+    }
     node->SetData(rc);
     return node;
 }
