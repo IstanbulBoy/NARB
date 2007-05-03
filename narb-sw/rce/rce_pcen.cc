@@ -1150,7 +1150,7 @@ void PCEN::ReplyErrorCode (u_int32_t code)
     tlv->length = htons(4);
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE);
     *(u_int32_t*)((char*)tlv + TLV_HDR_SIZE) = htonl(code);
-    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, lspq_id, seqnum, TLV_HDR_SIZE + 4, vtag);
+    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, ucid, seqnum, TLV_HDR_SIZE + 4, vtag);
     delete [] (char*)tlv;
     api_writer->PostMessage(msg);
     return;
@@ -1208,16 +1208,27 @@ void PCEN::ReplyERO ()
 
     // placeholder for wave_mask ...
 
-    api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, lspq_id, seqnum, bodylen, vtag);
+    api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
     api_writer->PostMessage(msg);
 
-    //@@@@ case ACT_QUERY:
-    //LSPHandler::HoldLinkStateUponQuery
-    //create link state delta loop:
-        //GLO_ABS and LOC_PHY from the same ero
-        //locate Link resource ...
-        //insert and substract
+    //holding the resources enqueried for a short period of time to avoid contention...
+    HoldLinkStatesUponQuery();
+}
 
+void PCEN::HoldLinkStatesUponQuery()
+{
+    narb_lsp_request_tlv lsp_req;
+    lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
+    lsp_req.length = sizeof(narb_lsp_request_tlv) - 4;
+    lsp_req.src.s_addr = this->source.s_addr;
+    lsp_req.dest.s_addr = this->destination.s_addr;
+    lsp_req.bandwidth = this->bandwidth_ingress;
+    lsp_req.switching_type = this->switching_type_ingress;
+    lsp_req.encoding_type = this->encoding_type_ingress;
+    lsp_req.gpid = 0;
+
+    bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+    LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir);
 }
     
 PCEN::~PCEN()

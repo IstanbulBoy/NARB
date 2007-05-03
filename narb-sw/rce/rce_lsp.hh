@@ -112,7 +112,7 @@ private:
 
     u_int32_t options;
     u_int32_t tag;
-    u_int32_t lspq_id;
+    u_int32_t ucid;
     u_int32_t seqnum;
     u_int32_t uptime;
     u_int32_t duration;
@@ -126,7 +126,7 @@ private:
     void Init ()
         {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
-            options = 0; tag = 0; lspq_id = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
+            options = 0; tag = 0; ucid = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
             api_writer = NULL;  vtag_mask = NULL; hop_back = 0; }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}
@@ -138,7 +138,8 @@ public:
 
 public:
     static void HandleResvNotification(api_msg* msg);
-    static void HoldLinkStateUponQuery(list<ero_subobj>& ero_reply);
+    static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true);
+    static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0);
 };
 
 #endif

@@ -175,7 +175,7 @@ void APIReader::HandleMessage (api_msg *msg)
             lspEvent->Load(msg);
             eventMaster.Schedule(lspEvent);
             break;
-        case ACT_COMFIRM:
+        case ACT_CONFIRM:
         case ACT_DELETE:
             LSPHandler::HandleResvNotification(msg);
             break;

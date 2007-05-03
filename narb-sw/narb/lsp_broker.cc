@@ -846,7 +846,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     } //else ret == 0;
     if (ret >= 0)
     {
-        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_COMFIRM, msg, ero_confirm);
+        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_CONFIRM, msg, ero_confirm);
     }
 
     //proceed to the next domain if any

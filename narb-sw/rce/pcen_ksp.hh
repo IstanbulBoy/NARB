@@ -15,8 +15,8 @@ protected:
     vector<PathT*> KSP;
 
 public:
-    PCEN_KSP(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum):
-        PCEN(src, dest, sw_type, encoding, bw, opts, lspq_id,  msg_seqnum) {}
+    PCEN_KSP(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum):
+        PCEN(src, dest, sw_type, encoding, bw, opts, ucid,  msg_seqnum) {}
     ~PCEN_KSP();
     void AddLink(int linkid, int localNodeId, int remoteNodeId);
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric);

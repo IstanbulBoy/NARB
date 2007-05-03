@@ -42,7 +42,7 @@ void LSPHandler::Load(api_msg *msg)
 {
     assert(msg);
 
-    lspq_id = ntohl(msg->hdr.ucid);
+    ucid = ntohl(msg->hdr.ucid);
     seqnum = ntohl(msg->hdr.msgseq);
     options = ntohl(msg->hdr.msgtag[0]);
     tag = ntohl(msg->hdr.msgtag[1]);
@@ -124,12 +124,12 @@ void LSPHandler::Run()
     options |= LSP_OPT_MRN;
     if ((options & LSP_OPT_MRN) == 0)
     {
-        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, hop_back);
+        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, tag, hop_back);
     }
     else
     {
         pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, lspq_id, seqnum, tag, hop_back, vtag_mask);
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, tag, hop_back, vtag_mask);
     }
 
     pcen_event->AssociateWriter (api_writer);
@@ -140,27 +140,145 @@ void LSPHandler::Run()
 void LSPHandler::HandleResvNotification(api_msg* msg)
 {
     //parse message
+    ////requested LSP parameters
+    u_int32_t ucid = ntohl(msg->hdr.ucid);
+    u_int32_t seqnum = ntohl(msg->hdr.msgseq);
+    bool is_bidir = ((ntohl(msg->hdr.options) & LSP_OPT_BIDIRECTIONAL) != 0);
+    narb_lsp_request_tlv* lsp_req = (narb_lsp_request_tlv*)msg->body;
+    ////replied ERO    
+    te_tlv_header* tlv_ero = (te_tlv_header*)(msg->body + sizeof(narb_lsp_request_tlv));
+    int len = ntohs(tlv_ero->length);
+    ero_subobj* subobj  = (ero_subobj *)((char *)tlv_ero + sizeof(struct te_tlv_header));
+    list<ero_subobj> ero;
+    for (; len > 0 ;subobj++, len -= sizeof(ero_subobj))
+    {
+        ero.push_back(*subobj);
+    }
 
-    //case ACT_CONFIRM:
-    //create link state delta loop:
-        //GLO_ABS and LOC_PHY from the same ero
-        //locate Link resource ...
-        //insert and substract
-
-    //case ACT_DELETE:
-    //create link state delta loop:
-        //GLO_ABS and LOC_PHY from the same ero
-        //locate Link resource ...
-        //insert and substract
-
+    UpdateLinkStatesByERO(*lsp_req, ero, ucid, seqnum,  is_bidir);
     api_msg_delete(msg);
 }
 
-void LSPHandler::HoldLinkStateUponQuery(list<ero_subobj>& ero_reply)
+void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir)
 {
-    //create link state delta loop:
-        //GLO_ABS and LOC_PHY from the same ero
-        //locate Link resource ...
-        //insert and substract
+    Link *link1;
+    ero_subobj* subobj;
+    bool is_forward_link = false;
+    u_int32_t vtag, lsp_vtag = 0;
+
+    list<ero_subobj>::iterator it;
+    //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
+    for (it = ero_reply.begin(); it != ero_reply.end();  it++)
+    {
+        subobj = &(*it);
+        vtag = 0;
+
+        if (subobj->addr.s_addr == req_data.src.s_addr || subobj->addr.s_addr == req_data.dest.s_addr)
+        {
+            continue;
+        }
+
+        link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
+        while (link1 != NULL) // updating all links with the same local interface address
+        {
+            is_forward_link = (!is_forward_link);
+            if (!is_forward_link && is_bidir) //ignore reverse link for unidirectional request
+            {
+                continue;
+            }
+            vtag = subobj->l2sc_vlantag;
+            if (vtag == 0 && lsp_vtag != 0 &&
+                ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+            {
+                vtag = lsp_vtag;
+            }
+
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj->if_id);
+            link1 = RDB.LookupNextLinkByLclIf(link1);
+        }        
+    }
+
+    //mapping ero_subobj to strict hop links (a.k.a. intradomain physical links)
+    is_forward_link = false;
+    for (it = ero_reply.begin(); it != ero_reply.end();  it++)
+    {
+        subobj = &(*it);
+        vtag = 0;
+
+        if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            break;
+        }
+        link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
+        is_forward_link = (!is_forward_link);
+        if (!is_forward_link && is_bidir) //ignore reverse link for unidirectional request
+        {
+            continue;
+        }
+        vtag = subobj->l2sc_vlantag;
+        if (vtag == 0 && lsp_vtag != 0 && 
+            ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+        {
+            vtag = lsp_vtag;
+        }
+
+        HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id));
+        link1 = RDB.LookupNextLinkByLclIf(link1);
+    }
 }
 
+void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id)
+{
+    assert(link1);
+    u_int8_t reqtype = req_data.type >> 8;
+    assert(reqtype == MSG_LSP);
+    
+    u_int8_t action = req_data.type & 0xff;
+    LinkStateDelta* delta = NULL;
+    
+    switch (action)
+    {
+    case ACT_QUERY:
+        delta = new LinkStateDelta;
+        memset(delta, 0, sizeof(LinkStateDelta));
+        delta->owner_ucid = ucid;
+        delta->owner_seqnum = seqnum;
+        delta->bandwidth = req_data.bandwidth;
+        delta->vlan_tag = vtag;
+        if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        {
+            int ts_1st = (int)(if_id & 0xff);
+            int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
+            for (int ts = 0; ts < ts_num; ts++)
+            {
+                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
+            }
+        }
+        link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
+        break;
+    case ACT_CONFIRM:
+        delta = new LinkStateDelta;
+        memset(delta, 0, sizeof(LinkStateDelta));
+        delta->owner_ucid = ucid;
+        delta->owner_seqnum = seqnum;
+        delta->bandwidth = req_data.bandwidth;
+        delta->vlan_tag = vtag;
+        if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        {
+            int ts_1st = (int)(if_id & 0xff);
+            int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
+            for (int ts = 0; ts < ts_num; ts++)
+            {
+                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
+            }
+        }
+        link1->insertDelta(delta, SystemConfig::delta_expire_reserve, 0);
+        break;
+    case ACT_DELETE:
+        delta = link1->removeDeltaByOwner(ucid, seqnum);
+        if (delta)
+            delete delta;
+        break;
+    }
+    //DONE
+}

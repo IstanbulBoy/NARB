@@ -458,7 +458,7 @@ public:
     static void DeleteByPrefix(ResourceType type, Prefix* prefix);
     static void ClearTree(ResourceType type);
     //TE link operations
-    static Link* LookupLinkByLclIf(ResourceType rcType, u_int32_t ipLcl);
+    static Link* LookupLinkByLclIf(ResourceType rcType, in_addr lclIf);
     static Link* LookupNextLinkByLclIf(Link* prev_link);
     //testing code
     static void WalkTree(ResourceType type);

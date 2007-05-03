@@ -61,7 +61,7 @@ enum api_action
     ACT_ACK = 0x05,
     ACT_ACKDATA = 0x06,
     ACT_ERROR = 0x07,
-    ACT_COMFIRM = 0x08,
+    ACT_CONFIRM = 0x08,
     //extensions:
     ACT_QUERY_MRN = 0x10
 };

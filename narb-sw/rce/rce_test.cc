@@ -293,11 +293,11 @@ msg_narb_cspf_request * new_cspf_request()
 }
 
 
-api_msg* rceapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqnum, msg_narb_cspf_request *cspf_req)
+api_msg* rceapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum, msg_narb_cspf_request *cspf_req)
 {
   struct api_msg *rce_msg;
 
-  rce_msg = api_msg_new(MSG_LSP, ACT_QUERY,  (void*)&(cspf_req->app_req_data), lspq_id, seqnum, sizeof(cspf_req->app_req_data), vtag);
+  rce_msg = api_msg_new(MSG_LSP, ACT_QUERY,  (void*)&(cspf_req->app_req_data), ucid, seqnum, sizeof(cspf_req->app_req_data), vtag);
   rce_msg->hdr.msgtag[0] = htonl(options | LSP_TLV_NARB_REQ |  opt_bidirectional | opt_strict | opt_preferred | opt_mrn | opt_e2e_vlan
     |opt_req_all_vtags);
   

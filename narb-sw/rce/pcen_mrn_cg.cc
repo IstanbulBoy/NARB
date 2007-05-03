@@ -322,8 +322,8 @@ void PCEN_MRN_CG::AddLink(int linkid, int localNodeId, int remoteNodeId, double 
 }
 
 PCEN_MRN_CG::PCEN_MRN_CG(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, 
-    float bw, u_int32_t opts, u_int32_t lspq_id, u_int32_t msg_seqnum):
-    PCEN_KSP(src, dest, sw_type, encoding, bw, opts, lspq_id, msg_seqnum) 
+    float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum):
+    PCEN_KSP(src, dest, sw_type, encoding, bw, opts, ucid, msg_seqnum) 
 {
 
 }

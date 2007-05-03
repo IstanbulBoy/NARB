@@ -340,7 +340,10 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
     for ( ; iter != this->pDeltaList->end(); iter++)
     {
         if ((*iter)->owner_ucid == delta->owner_ucid && (*iter)->owner_seqnum == delta->owner_seqnum)
-            return; //duplicate ??
+        {
+            LOGF("Warning: Link State Delta (LSD) already existed. (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
+              delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
+        }
     }
 
     gettimeofday(&delta->create_time, NULL);
@@ -538,7 +541,7 @@ void ResourceDB::ClearTree(ResourceType type)
     r_trees[type].ClearTree();
 }
 
-Link* ResourceDB::LookupLinkByLclIf(ResourceType rcType, u_int32_t ipLcl)
+Link* ResourceDB::LookupLinkByLclIf(ResourceType rcType, in_addr  lclIf)
 {
     assert(rcType == RTYPE_GLO_ABS_LNK || rcType == RTYPE_LOC_PHY_LNK);
     RadixTree<Resource>* link_tree = RDB.Tree(rcType);
@@ -547,7 +550,7 @@ Link* ResourceDB::LookupLinkByLclIf(ResourceType rcType, u_int32_t ipLcl)
     while (node)
     {
         if (link = (Link*)node->Data())
-            if (link->lclIfAddr == ipLcl)
+            if (link->lclIfAddr == lclIf.s_addr)
                 return link;
         node = link_tree->NextNode(node);
     }
