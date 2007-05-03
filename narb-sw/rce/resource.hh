@@ -367,7 +367,7 @@ public:
         { 
             linkType = 0; maxBandwidth = maxReservableBandwidth = minReservableBandwidth = 0; metric = 0;
             lclId = rmtId = 0; lclIfAddr = rmtIfAddr = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0;
-            gettimeofday (&modifiedTime, NULL);
+            pDeltaList = NULL; gettimeofday (&modifiedTime, NULL);
         }
     virtual ~Link();
     u_int32_t LclIfAddr() {return lclIfAddr;}
