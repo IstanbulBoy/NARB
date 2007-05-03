@@ -210,6 +210,10 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             break;
         }
         link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
+        if (!link1)
+        {
+            break;
+        }
         is_forward_link = (!is_forward_link);
         if (!is_forward_link && is_bidir) //ignore reverse link for unidirectional request
         {
