@@ -243,6 +243,22 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
     switch (action)
     {
     case ACT_QUERY:
+        delta = link1->lookupDeltaByOwner(delta->owner_ucid, delta->owner_seqnum);
+        if (delta)
+        {
+            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
+            {
+                //set time to the current
+                gettimeofday(&delta->create_time, NULL);
+            }
+            else
+            {
+                LOGF("Warning: LinkStateDelta (Query) conflicts with existing ResvConfirm (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
+                    delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
+            }
+            break; // not to continue...
+        }
+        //else ...
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
@@ -261,6 +277,24 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
     case ACT_CONFIRM:
+        delta = link1->lookupDeltaByOwner(delta->owner_ucid, delta->owner_seqnum);
+        if (delta)
+        {
+            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
+            {
+                delta->expiration.tv_sec = SystemConfig::delta_expire_reserve;
+            }
+            else
+            {
+                assert (delta->expiration.tv_sec == SystemConfig::delta_expire_reserve);
+                LOGF("Warning: LinkStateDelta (ResvConfirm) already existed. (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
+                    delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
+            }
+            //set time to the current
+            gettimeofday(&delta->create_time, NULL);
+            break; // not to continue...
+        }
+        //else ...
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;

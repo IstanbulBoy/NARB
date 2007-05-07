@@ -398,6 +398,7 @@ public:
     void insertDelta(LinkStateDelta* delta, int expire_sec=SystemConfig::delta_expire_reserve, int expire_usec=0);
     LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
     LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
+    void deleteExpiredDeltas();
     virtual void hook_PreUpdate(Resource* oldResource);
 
     //debugging code

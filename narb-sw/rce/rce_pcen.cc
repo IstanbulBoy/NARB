@@ -764,6 +764,9 @@ void PCEN::BuildLinkVector(ResourceType type)
                     pcen_node_lcl->out_links.push_back(pcen_link);
                     pcen_node_rmt->in_links.push_back(pcen_link);
 
+                    // handling expired link state deltas. (refer to class Link and class LSPHandler.)
+                    pcen_link->link->deleteExpiredDeltas();
+
                     pcen_link->linkID = ref_num++;
                     links.push_back(pcen_link);
                  }
@@ -942,6 +945,7 @@ int PCEN::BuildTopology()
     }
 
     // Build graph matrix
+    //      Obosolete!!
     if (!(options & LSP_OPT_MRN))
     {
         BuildGraph(routers, links);

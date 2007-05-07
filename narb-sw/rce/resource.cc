@@ -314,7 +314,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
         assert(delta);
         struct timeval timeDiff = timeNow - delta->create_time;
         if (!( timeDiff < delta->expiration))
-        {//write off the expired delta
+        {//write off the expired delta, and no need to add back.
             delete delta; 
             iter = this->pDeltaList->erase(iter);
         }
@@ -336,6 +336,7 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
         pDeltaList = new list<LinkStateDelta*>;
     }
 
+    /*
     list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
     for ( ; iter != this->pDeltaList->end(); iter++)
     {
@@ -345,6 +346,7 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
               delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
         }
     }
+    */
 
     gettimeofday(&delta->create_time, NULL);
     delta->expiration.tv_sec = expire_sec;
@@ -390,6 +392,28 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
     }
 
     return NULL;
+}
+
+void Link::deleteExpiredDeltas()
+{
+    if (!pDeltaList) return;
+
+    struct timeval timeNow;
+    gettimeofday(&timeNow, NULL);
+
+    list<LinkStateDelta*>::iterator iter =pDeltaList->begin();
+    for ( ; iter != pDeltaList->end(); iter++)
+    {
+        LinkStateDelta* delta = *iter;
+        assert(delta);
+        struct timeval timeDiff = timeNow - delta->create_time;
+        if (!( timeDiff < delta->expiration))
+        {//write off the expired delta with states added back to the link
+            (*this) -= (*delta);
+            delete delta; 
+            iter = this->pDeltaList->erase(iter);
+        }
+    }
 }
 
 void Link::Dump()
