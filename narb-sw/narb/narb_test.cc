@@ -73,6 +73,7 @@ u_int32_t opt_via_movaz = 0;
 u_int32_t opt_excluded_layers = 0;
 u_int32_t opt_req_all_vtags = 0;
 u_int32_t opt_vtag_mask = 0;
+u_int32_t opt_query_hold = 0;
 in_addr hop_back;
 
 struct msg_app2narb_vtag_mask vtag_mask;
@@ -91,8 +92,9 @@ void usage()
     cout<<"NARB Tester Usage:"<<endl;
     cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-B] [-b bandwidth] [-x switching type] [-e encoding type] ";
     cout<<"  ( [-S source] and [-D dest] are mandatory [-B]: directional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
-    cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE" <<endl;
-    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags" <<endl;
+    cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
+    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags ]" <<endl;
+    cout<<" [ [-Q] Query and Hold ]" <<endl;
 }
 
 // SIGINT handler.
@@ -384,7 +386,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:BLOMVma", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:BLOMQVma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -429,6 +431,9 @@ int main(int argc, char* argv[])
             break;
         case 'M':
             opt_mrn = LSP_OPT_MRN;
+            break;
+        case 'Q':
+            opt_query_hold = LSP_OPT_QUERY_HOLD;
             break;
         case 'V':
             opt_e2e_vlan= LSP_OPT_E2E_VTAG;

@@ -1216,7 +1216,10 @@ void PCEN::ReplyERO ()
     api_writer->PostMessage(msg);
 
     //holding the resources enqueried for a short period of time to avoid contention...
-    HoldLinkStatesUponQuery();
+    if (options & LSP_OPT_QUERY_HOLD)
+    {
+        HoldLinkStatesUponQuery();
+    }
 }
 
 void PCEN::HoldLinkStatesUponQuery()

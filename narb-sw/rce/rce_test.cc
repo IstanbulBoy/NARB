@@ -60,6 +60,7 @@ u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
 u_int32_t opt_e2e_vlan = 0;
 u_int32_t opt_req_all_vtags = 0;
+u_int32_t opt_query_hold = 0;
 
 struct option longopts[] = 
 {
@@ -73,7 +74,7 @@ void usage()
     cout<<"RCE Tester Usage:"<<endl;
     cout<<"\t rce_test [-H host] [-P port] [-S source] [-D dest] [-B] [-M] [-b bandwidth] [-x switching type] [-e encoding type] ";
     cout<<"  ( [-S source] and [-D dest] are mandatory [-B]: directional [-M]: multi-region-network routing" <<endl;
-    cout<<"  [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE" <<endl;
+    cout<<"  [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE [-Q]: query and hold" <<endl;
 }
 
 int rceapi_connect ()
@@ -299,7 +300,7 @@ api_msg* rceapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum, 
 
   rce_msg = api_msg_new(MSG_LSP, ACT_QUERY,  (void*)&(cspf_req->app_req_data), ucid, seqnum, sizeof(cspf_req->app_req_data), vtag);
   rce_msg->hdr.msgtag[0] = htonl(options | LSP_TLV_NARB_REQ |  opt_bidirectional | opt_strict | opt_preferred | opt_mrn | opt_e2e_vlan
-    |opt_req_all_vtags);
+    |opt_req_all_vtags|opt_query_hold);
   
   if (rceapi_send(sock, rce_msg) < 0)
   {
@@ -371,7 +372,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMVa", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMQVa", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -399,6 +400,9 @@ int main(int argc, char* argv[])
         case 'S':
             inet_aton(optarg, &source);
             break;
+        case 'B':
+            opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
+            break;
         case 'D':
             inet_aton(optarg, &destination);
             break;
@@ -408,11 +412,11 @@ int main(int argc, char* argv[])
         case 'O':
             opt_preferred = 0;
             break;
-        case 'B':
-            opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
-            break;
         case 'M':
             opt_mrn |= LSP_OPT_MRN;
+            break;
+        case 'Q':
+            opt_query_hold = LSP_OPT_QUERY_HOLD;
             break;
         case 'V':
             opt_e2e_vlan|= LSP_OPT_E2E_VTAG;

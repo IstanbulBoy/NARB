@@ -83,6 +83,7 @@ enum narb_working_mode {
 #define LSP_OPT_E2E_VTAG  ((u_int32_t)(0x0020 << 16)) //otherwise Untgged VLAN for E2E Ethernet
 #define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x0040 << 16)) //using MOVAZ proprietary TLVs for optical layer routing
 #define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x0080 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
+#define LSP_OPT_QUERY_HOLD  ((u_int32_t)(0x0100 << 16)) //holding resource upon query for a short period of time to resolve contention
 
 class SystemConfig
 {
