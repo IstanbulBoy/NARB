@@ -409,7 +409,7 @@ void Link::deleteExpiredDeltas()
         struct timeval timeDiff = timeNow - delta->create_time;
         if (!( timeDiff < delta->expiration))
         {//write off the expired delta with states added back to the link
-            (*this) -= (*delta);
+            (*this) += (*delta);
             delete delta; 
             iter = this->pDeltaList->erase(iter);
         }
