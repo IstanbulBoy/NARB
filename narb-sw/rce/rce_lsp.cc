@@ -243,7 +243,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
     switch (action)
     {
     case ACT_QUERY:
-        delta = link1->lookupDeltaByOwner(delta->owner_ucid, delta->owner_seqnum);
+        delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
             if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
@@ -277,7 +277,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
     case ACT_CONFIRM:
-        delta = link1->lookupDeltaByOwner(delta->owner_ucid, delta->owner_seqnum);
+        delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
             if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
