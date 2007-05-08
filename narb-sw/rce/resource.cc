@@ -313,14 +313,14 @@ void Link::hook_PreUpdate(Resource * oldResource)
         LinkStateDelta* delta = *iter;
         assert(delta);
         struct timeval timeDiff = timeNow - delta->create_time;
-        if (!( timeDiff < delta->expiration))
+        if (timeDiff < delta->expiration)
+        { // keep the delta
+            (*this) -= (*delta);
+        }
+        else //if (modifiedTime < delta->create_time)
         {//write off the expired delta, and no need to add back.
             delete delta; 
             iter = this->pDeltaList->erase(iter);
-        }
-        else //if (modifiedTime < delta->create_time) //substract the delta
-        {
-            (*this) -= (*delta);
         }
     }
 

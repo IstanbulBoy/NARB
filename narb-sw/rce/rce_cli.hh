@@ -147,7 +147,7 @@ public:
             iac = iac_sb = false;
             width = height = 0;
             cp = clen = 0; 
-            insert = false; 
+            insert = true; 
             hi =0;
             retry = 3;
         }
