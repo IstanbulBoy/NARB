@@ -1442,18 +1442,18 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
         for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++)
         {
             delta = *it;
-            CLI_OUT ("\t --- Link State Delta #%d - %s---%s", k, 
-                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "queried" : "reserved", cli_cstr_newline);
-            CLI_OUT ("\t ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
-            CLI_OUT ("\t ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
+            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s <<<%s", cli_cstr_newline, k, 
+                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "Queried" : "Reserved", cli_cstr_newline);
+            CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
+            CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
             bool timeslot_found = false;
-            for (i = 1; i <= MAX_VLAN_NUM; i++)
+            for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
             {
                 if (HAS_TIMESLOT(delta->timeslots, i)) 
                 {
                     if (!timeslot_found)
                     {
-                        CLI_OUT ("\t ---> Used time slots:");
+                        CLI_OUT ("\t    ---> Used time slots:");
                         timeslot_found = true;
                     }
                     CLI_OUT (" %d", i);
