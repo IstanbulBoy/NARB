@@ -318,7 +318,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
             delete delta; 
             iter = this->pDeltaList->erase(iter);
         }
-        else if (modifiedTime < delta->create_time) //substract the delta
+        else //if (modifiedTime < delta->create_time) //substract the delta
         {
             (*this) -= (*delta);
         }
