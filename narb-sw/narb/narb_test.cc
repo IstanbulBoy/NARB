@@ -351,7 +351,8 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, lspq_id, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
-        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask);
+        opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
+        opt_query_hold);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {

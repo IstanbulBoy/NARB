@@ -1392,7 +1392,7 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     strcpy (addr_buf3, inet_ntoa (ip));
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
-    CLI_OUT("%s\t ##TE LINK - %s ##%s\t Advertising Router: %s%s\t Link ID: %s %s", 
+    CLI_OUT("%s\t ==TE LINK - %s == %s\t Advertising Router: %s%s\t Link ID: %s %s", cli_cstr_newline,
         rcType == RTYPE_GLO_ABS_LNK? "Abstract":"Physical", cli_cstr_newline,
         cli_cstr_newline, addr_buf2,cli_cstr_newline, addr_buf1, cli_cstr_newline); 
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
@@ -1409,24 +1409,24 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
                 value_to_string(&str_val_conv_encoding, (u_int32_t)(*iter)->encoding), cli_cstr_newline); 
         for (i = 0; i < 8; i++)
         {
-            CLI_OUT ("\t Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline);
+            CLI_OUT ("\t    Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline);
         }
         if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
         {
             if (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             {
-                CLI_OUT ("\t -- L2SC specific information--%s\t    --> Available VLAN tag set:", cli_cstr_newline);
+                CLI_OUT ("\t    -- L2SC specific information--%s\t       --> Available VLAN tag set:", cli_cstr_newline);
                 for (i = 1; i <= MAX_VLAN_NUM; i++)
                     if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i);
                 CLI_OUT("%s", cli_cstr_newline); 
-                CLI_OUT ("\t   --> Allocated VLAN tag set:");
+                CLI_OUT ("\t      --> Allocated VLAN tag set:");
                 for (i = 1; i <= MAX_VLAN_NUM; i++)
                     if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
                 CLI_OUT("%s", cli_cstr_newline);
             }
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
-                CLI_OUT ("\t -- Subnet UNI specific information--%s\t    --> Available time slots:", cli_cstr_newline);
+                CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
                 for (i = 1; i <= MAX_VLAN_NUM; i++)
                     if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
                 CLI_OUT("%s", cli_cstr_newline);
