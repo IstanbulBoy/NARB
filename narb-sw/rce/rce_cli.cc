@@ -1120,6 +1120,34 @@ bool module_connectable (char * host, int port)
   return (ret == 0);
 }
 
+
+struct string_value_conversion str_val_conv_switching = 
+{
+	8,
+	{{ "psc1", 	LINK_IFSWCAP_SUBTLV_SWCAP_PSC1, 		4},
+	{ "psc2", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC2, 		4}, 
+	{ "psc3", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC3, 		4}, 
+	{ "psc4", 		LINK_IFSWCAP_SUBTLV_SWCAP_PSC4, 		4},
+	{ "l2sc", 		LINK_IFSWCAP_SUBTLV_SWCAP_L2SC, 		2},
+	{ "tdm", 		LINK_IFSWCAP_SUBTLV_SWCAP_TDM, 		1}, 
+	{ "lsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_LSC, 		2}, 
+	{ "fsc", 		LINK_IFSWCAP_SUBTLV_SWCAP_FSC, 		1}}
+};
+
+struct string_value_conversion str_val_conv_encoding = 
+{
+	8,
+	{{ "packet", 	LINK_IFSWCAP_SUBTLV_ENC_PKT, 			2}, 
+	{ "ethernet", 	LINK_IFSWCAP_SUBTLV_ENC_ETH, 			1}, 
+	{ "pdh", 		LINK_IFSWCAP_SUBTLV_ENC_PDH, 			2}, 
+	{ "sdh", 		LINK_IFSWCAP_SUBTLV_ENC_SONETSDH, 		1},
+	{ "dwrapper", LINK_IFSWCAP_SUBTLV_ENC_DIGIWRAP, 		1}, 
+	{ "lambda", 	LINK_IFSWCAP_SUBTLV_ENC_LAMBDA, 		1}, 
+	{ "fiber", 		LINK_IFSWCAP_SUBTLV_ENC_FIBER, 			2}, 
+	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
+};
+
+
 COMMAND(cmd_exit, "exit", "Exit the current command level\n")
 {
     cli_node->Reader()->Exit();
@@ -1334,6 +1362,110 @@ COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_
     cli_node->ShowPrompt();
 }
 
+COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+    "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+{
+    in_addr lcl_if, rmt_if;
+    Link * link;
+  
+    inet_aton(argv[1].c_str(), &lcl_if);
+    inet_aton(argv[2].c_str(), &rmt_if);
+    
+    ResourceType rcType = (strncmp(argv[0].c_str(), "interdomain", 5) == 0 ? RTYPE_GLO_ABS_LNK : RTYPE_LOC_PHY_LNK);
+    link = RDB.LookupLinkByLclRmtIf(rcType, lcl_if, rmt_if);
+    if (!link)
+    {
+        CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[1].c_str(), argv[2].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    //general link TE parameters
+    in_addr ip; 
+    int i, k; 
+    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3];
+    ip.s_addr = link->Id();
+    strcpy (addr_buf1, inet_ntoa (ip));
+    ip.s_addr = link->AdvRtId();
+    strcpy (addr_buf2, inet_ntoa (ip));
+    ip.s_addr = link->LclIfAddr();
+    strcpy (addr_buf3, inet_ntoa (ip));
+    ip.s_addr = link->RmtIfAddr();
+    strcpy (addr_buf4, inet_ntoa (ip));
+    CLI_OUT("%s\t ##TE LINK - %s ##%s\t Advertising Router: %s%s\t Link ID: %s %s", 
+        rcType == RTYPE_GLO_ABS_LNK? "Abstract":"Physical", cli_cstr_newline,
+        cli_cstr_newline, addr_buf2,cli_cstr_newline, addr_buf1, cli_cstr_newline); 
+    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
+                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
+    CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
+    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
+    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxReservableBandwidth(), cli_cstr_newline);
+    //ISCDs
+    list<ISCD*>::iterator iter;
+    for (k=1, iter = link->Iscds().begin(); iter != link->Iscds().end(); k++, iter++)
+    {
+        CLI_OUT("\t Interface Switching Capability Descriptor #%d: %s %s%s", k,
+                value_to_string(&str_val_conv_switching, (u_int32_t)(*iter)->swtype),
+                value_to_string(&str_val_conv_encoding, (u_int32_t)(*iter)->encoding), cli_cstr_newline); 
+        for (i = 0; i < 8; i++)
+        {
+            CLI_OUT ("\t Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline);
+        }
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        {
+            if (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
+            {
+                CLI_OUT ("\t -- L2SC specific information--%s\t    --> Available VLAN tag set:", cli_cstr_newline);
+                for (i = 1; i <= MAX_VLAN_NUM; i++)
+                    if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i);
+                CLI_OUT("%s", cli_cstr_newline); 
+                CLI_OUT ("\t   --> Allocated VLAN tag set:");
+                for (i = 1; i <= MAX_VLAN_NUM; i++)
+                    if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
+                CLI_OUT("%s", cli_cstr_newline);
+            }
+            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
+            {
+                CLI_OUT ("\t -- Subnet UNI specific information--%s\t    --> Available time slots:", cli_cstr_newline);
+                for (i = 1; i <= MAX_VLAN_NUM; i++)
+                    if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
+                CLI_OUT("%s", cli_cstr_newline);
+            }
+        }
+    }
+    //Link state deltas
+    list<LinkStateDelta*>* pDeltaList = link->DeltaListPointer();
+    if (pDeltaList)
+    {
+        list<LinkStateDelta*>::iterator it;
+        LinkStateDelta* delta;
+        for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++)
+        {
+            delta = *it;
+            CLI_OUT ("\t --- Link State Delta #%d - %s---%s", k, 
+                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "queried" : "reserved", cli_cstr_newline);
+            CLI_OUT ("\t ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
+            CLI_OUT ("\t ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
+            bool timeslot_found = false;
+            for (i = 1; i <= MAX_VLAN_NUM; i++)
+            {
+                if (HAS_TIMESLOT(delta->timeslots, i)) 
+                {
+                    if (!timeslot_found)
+                    {
+                        CLI_OUT ("\t ---> Used time slots:");
+                        timeslot_found = true;
+                    }
+                    CLI_OUT (" %d", i);
+                }
+            }
+            CLI_OUT("%s", cli_cstr_newline);
+        }
+    }
+
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 
 COMMAND(cmd_connect_ospfd, "connect ospfd {interdomain | intradomain}", "(Re)Connect to an OSPFd\nContinue...\n")
 {
@@ -1410,6 +1542,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_quit);
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_topology_instance);
+    cli_root->AddCommand(&cmd_show_link_instance);
     cli_root->AddCommand(&cmd_load_config_instance);
     cli_root->AddCommand(&cmd_configure_instance);
     //Configure level
@@ -1419,7 +1552,6 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
-
     //////////////// End /////////////////
     current_node = cli_root;
 }

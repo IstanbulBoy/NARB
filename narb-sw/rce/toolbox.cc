@@ -329,5 +329,28 @@ u_int32_t get_slash30_peer (u_int32_t ip)
     return ip;
 }
 
-//function to round requested bandwidth into standard values...
+u_int32_t string_to_value(struct string_value_conversion *db, const char *str)
+{
+	int i;
+	
+	for (i=0; i<db->number; i++)
+	{
+		if (strncmp(db->sv[i].string, str, db->sv[i].len)==0)
+			return db->sv[i].value;
+	}
+	return 0;
+}
+
+const char * value_to_string(struct string_value_conversion *db, u_int32_t value)
+{
+	int i;
+	static const char* def_string = "Unknown";
+	
+	for (i=0; i<db->number; i++)
+	{
+		if (db->sv[i].value == value)
+			return db->sv[i].string;
+	}
+	return def_string;
+}
 

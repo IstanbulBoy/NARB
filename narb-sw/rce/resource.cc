@@ -602,6 +602,22 @@ Link* ResourceDB::LookupNextLinkByLclIf(Link* prev_link)
     return NULL;
 }
 
+Link* ResourceDB::LookupLinkByLclRmtIf(ResourceType rcType, in_addr lclIf, in_addr rmtIf)
+{
+    assert(rcType == RTYPE_GLO_ABS_LNK || rcType == RTYPE_LOC_PHY_LNK);
+    RadixTree<Resource>* link_tree = RDB.Tree(rcType);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+            if (link->lclIfAddr == lclIf.s_addr && link->rmtIfAddr == rmtIf.s_addr)
+                return link;
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
+
 void ResourceDB::WalkTree(ResourceType type)
 {
     if (!Log::Debug())

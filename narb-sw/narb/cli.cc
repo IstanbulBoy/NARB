@@ -1685,7 +1685,7 @@ static link_info* link_to_update = NULL;
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);    \
     CLI_OUT("\t Traffic Engineering Metric: %d%s", L->Metric(), cli_cstr_newline);   \
     CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", L->MaxBandwidth(), cli_cstr_newline);  \
-    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", L->MaxResvervableBandwidth(), cli_cstr_newline);    \
+    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", L->MaxReservableBandwidth(), cli_cstr_newline);    \
     CLI_OUT("\t Interface Switching Capability Descriptor: %s %s%s",    \
             value_to_string(&str_val_conv_switching, (u_int32_t)L->GetISCD()->swtype),   \
             value_to_string(&str_val_conv_encoding, (u_int32_t)L->GetISCD()->encoding), cli_cstr_newline);   \

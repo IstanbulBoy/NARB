@@ -377,9 +377,11 @@ public:
     u_int32_t Metric() {return metric;}
     void SetMetric(u_int32_t x) { metric = x;}
     float MaxBandwidth() {return maxBandwidth;}
+    float MaxReservableBandwidth() {return maxReservableBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
     list<ISCD*>& Iscds() {return iscds;}
     list<IACD*>& Iacds() {return iacds;}
+    list<LinkStateDelta*>* DeltaListPointer() {return pDeltaList;}
     virtual Prefix Index() 
         { 
             Prefix index; 
@@ -461,6 +463,7 @@ public:
     //TE link operations
     static Link* LookupLinkByLclIf(ResourceType rcType, in_addr lclIf);
     static Link* LookupNextLinkByLclIf(Link* prev_link);
+    static Link* LookupLinkByLclRmtIf(ResourceType rcType, in_addr lclIf, in_addr rmtIf);
     //testing code
     static void WalkTree(ResourceType type);
     //end testing

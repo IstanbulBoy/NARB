@@ -311,7 +311,7 @@ public:
     u_int32_t Metric() {return metric;}
     void SetMetric(u_int32_t x) { metric = x;}
     float MaxBandwidth() {return maxBandwidth;}
-    float MaxResvervableBandwidth() {return maxReservableBandwidth;}
+    float MaxReservableBandwidth() {return maxReservableBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
     float* UnreservedBandwidth() { return unreservedBandwidth; }
     u_char* VtagBitMask() { return vtagBitMask; }
