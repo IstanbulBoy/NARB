@@ -1392,9 +1392,9 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     strcpy (addr_buf3, inet_ntoa (ip));
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
-    CLI_OUT("%s\t ## TE LINK - %s ## %s\t Advertising Router: %s%s\t Link ID: %s - Modified @ %d.%d%s", cli_cstr_newline,
-        rcType == RTYPE_GLO_ABS_LNK? "Abstract Global Link":"Physical Local Link", cli_cstr_newline,
-        addr_buf2, cli_cstr_newline, addr_buf1, link->ModifiedTime().tv_sec, link->ModifiedTime().tv_usec, cli_cstr_newline); 
+    CLI_OUT("%s\t ## TE LINK - %s  - Modified @ %d.%d ## %s\t Advertising Router: %s%s\t Link ID: %s%s", cli_cstr_newline,
+        rcType == RTYPE_GLO_ABS_LNK? "Abstract Global Link":"Physical Local Link",  link->ModifiedTime().tv_sec, 
+        link->ModifiedTime().tv_usec, cli_cstr_newline, addr_buf2, cli_cstr_newline, addr_buf1, cli_cstr_newline); 
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
     CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);

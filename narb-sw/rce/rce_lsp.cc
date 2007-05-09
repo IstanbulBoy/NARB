@@ -248,8 +248,8 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
-            LOGF("Warning: LinkStateDelta of same ucid-seqnum (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) has already existed: bandwidth: %d vtag: %d\n", 
-                delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
+            LOGF("Warning: on Link[0x%x--0x%x], delta of same ucid-seqnum (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) has already existed: bandwidth: %g vtag: %d\n", 
+                link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
         }
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
@@ -279,8 +279,8 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             else
             {
                 assert (delta->expiration.tv_sec == SystemConfig::delta_expire_reserve);
-                LOGF("Warning: LinkStateDelta (ResvConfirm) already existed. (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
-                    delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
+                LOGF("Warning: on Link[0x%x--0x%x], delta (ResvConfirm) already existed. (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) bandwidth: %g vtag: %d\n", 
+                    link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
             }
             //set time to the current
             gettimeofday(&delta->create_time, NULL);
