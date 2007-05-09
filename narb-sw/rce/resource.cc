@@ -308,7 +308,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
     oldLink->pDeltaList = NULL;
 
     list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
-    for ( ; iter != this->pDeltaList->end(); iter++)
+    while (iter != this->pDeltaList->end())
     {
         LinkStateDelta* delta = *iter;
         assert(delta);
@@ -316,6 +316,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
         if (timeDiff < delta->expiration)
         { // keep the delta
             (*this) -= (*delta);
+            iter++;
         }
         else //if (modifiedTime < delta->create_time)
         {//write off the expired delta, and no need to add back.
@@ -402,7 +403,7 @@ void Link::deleteExpiredDeltas()
     gettimeofday(&timeNow, NULL);
 
     list<LinkStateDelta*>::iterator iter =pDeltaList->begin();
-    for ( ; iter != pDeltaList->end(); iter++)
+    while (iter != pDeltaList->end())
     {
         LinkStateDelta* delta = *iter;
         assert(delta);
@@ -413,6 +414,8 @@ void Link::deleteExpiredDeltas()
             delete delta; 
             iter = this->pDeltaList->erase(iter);
         }
+        else
+            iter++;
     }
 }
 
