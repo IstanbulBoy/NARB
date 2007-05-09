@@ -76,6 +76,8 @@ void LSPHandler::Load(api_msg *msg)
         // continue to get optional TLVs if applicable ...
         SetOptionalConstraints(msg);
     }
+    LOGF("Accepted LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
+        ucid, seqnum, source, destination, bandwidth_ingress);
     api_msg_delete(msg);
 }
 
@@ -246,19 +248,9 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
-            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
-            {
-                //set time to the current
-                gettimeofday(&delta->create_time, NULL);
-            }
-            else
-            {
-                LOGF("Warning: LinkStateDelta (Query) conflicts with existing ResvConfirm (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
-                    delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
-            }
-            break; // not to continue...
+            LOGF("Warning: LinkStateDelta of same ucid-seqnum (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) has already existed: bandwidth: %d vtag: %d\n", 
+                delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
         }
-        //else ...
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
@@ -287,7 +279,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             else
             {
                 assert (delta->expiration.tv_sec == SystemConfig::delta_expire_reserve);
-                LOGF("Warning: LinkStateDelta (ResvConfirm) already existed. (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
+                LOGF("Warning: LinkStateDelta (ResvConfirm) already existed. (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
                     delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
             }
             //set time to the current

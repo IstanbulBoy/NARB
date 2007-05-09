@@ -1150,6 +1150,9 @@ void PCEN::ReplyErrorCode (u_int32_t code)
 {
     assert (api_writer);
 
+    LOGF("Replying ErrorCode %d for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  code,
+        ucid, seqnum, source, destination, bandwidth_ingress);
+
     te_tlv_header * tlv = (te_tlv_header *)(new char[TLV_HDR_SIZE + 4]);
     tlv->length = htons(4);
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE);
@@ -1164,6 +1167,10 @@ void PCEN::ReplyERO ()
 {
     char body[1024];
     assert (api_writer);
+
+    LOGF("Replying ERO for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
+        ucid, seqnum, source, destination, bandwidth_ingress);
+
     list<ero_subobj>::iterator iter; 
 
     //$$$$ Special handling for HOP BACK ...
