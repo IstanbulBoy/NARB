@@ -179,15 +179,14 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         {
             continue;
         }
-
+        is_forward_link = (!is_forward_link);
+        if (!is_forward_link && !is_bidir) //ignore reverse link for unidirectional request
+        {
+            continue;
+        }
         link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
         while (link1 != NULL) // updating all links with the same local interface address
         {
-            is_forward_link = (!is_forward_link);
-            if (!is_forward_link && !is_bidir) //ignore reverse link for unidirectional request
-            {
-                continue;
-            }
             vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 &&
                 ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
@@ -207,6 +206,10 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         subobj = &(*it);
         vtag = 0;
 
+        if (subobj->addr.s_addr == req_data.src.s_addr || subobj->addr.s_addr == req_data.dest.s_addr)
+        {
+            continue;
+        }
         if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
         {
             break;
