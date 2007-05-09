@@ -182,6 +182,7 @@ Link::~Link()
             assert(*iter4);
             delete *iter4;
         }
+        delete pDeltaList;
     }
     
     // Clean up dependency?
@@ -413,11 +414,11 @@ void Link::deleteExpiredDeltas()
             (*this) += (*delta);
             delete delta; 
             iter = this->pDeltaList->erase(iter);
+            modifiedTime = timeNow;
         }
         else
             iter++;
     }
-    modifiedTime = timeNow;
 }
 
 void Link::Dump()
