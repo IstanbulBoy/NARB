@@ -98,6 +98,26 @@ struct narb_lsp_hopback_tlv
     u_int32_t ipv4;
 };
 
+// data structure of an IPv4 prefix type ERO sub-object
+struct ipv4_prefix_subobj
+{
+    u_char l_and_type;
+    u_char length;
+    u_char addr[4];
+    u_char prefix_len;
+    u_char resvd;
+};
+
+// data structure of an IPv4 prefix type ERO sub-object
+struct unum_if_subobj
+{
+    u_char l_and_type;
+    u_char length;
+    u_char resvd[2];
+    in_addr addr;
+    u_int32_t ifid;
+};
+
 struct ero_subobj;
 class LSPHandler: public Event
 {
@@ -138,6 +158,7 @@ public:
     void SetOptionalConstraints (api_msg* msg);
 
 public:
+    static void GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero);
     static void HandleResvNotification(api_msg* msg);
     static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true);
     static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0);

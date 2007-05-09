@@ -139,6 +139,53 @@ void LSPHandler::Run()
     eventMaster.Schedule(pcen_event);
 }
 
+void LSPHandler::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero)
+{
+    assert (tlv);
+    ero.clear();
+
+    int len = ntohs(tlv->length) ;
+    if (len <= 0)
+        return;
+    
+    int offset = sizeof(struct te_tlv_header);
+
+    ero_subobj new_subobj;
+    ipv4_prefix_subobj* subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
+    unum_if_subobj* subobj_unum;
+    while (len > 0)
+    {
+        memset(&new_subobj, 0, sizeof(ero_subobj));
+        if ((subobj_ipv4->l_and_type & 0x7f) == 4)
+            subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
+        else
+            subobj_unum = NULL;
+
+        if (subobj_unum)
+        {
+            memcpy(&new_subobj.addr, &subobj_unum->addr, 4);
+            new_subobj.hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
+            new_subobj.prefix_len = 32;
+            new_subobj.if_id = subobj_unum->ifid;
+            if ((ntohl(subobj_unum->ifid)>>16) == 0x0004 && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
+                    && (ntohl(subobj_unum->ifid) & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
+                new_subobj.l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
+            len -= sizeof(unum_if_subobj);
+            offset += sizeof(unum_if_subobj);
+        }
+        else
+        {
+            memcpy(&new_subobj.addr, subobj_ipv4->addr, 4);
+            new_subobj.hop_type = (subobj_ipv4->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
+            new_subobj.prefix_len = 32;
+            len -= sizeof(ipv4_prefix_subobj);
+            offset += sizeof(ipv4_prefix_subobj);
+        }
+        ero.push_back(new_subobj);
+        subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
+    }
+}
+
 void LSPHandler::HandleResvNotification(api_msg* msg)
 {
     //parse message
@@ -149,14 +196,8 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     narb_lsp_request_tlv* lsp_req = (narb_lsp_request_tlv*)msg->body;
     ////replied ERO    
     te_tlv_header* tlv_ero = (te_tlv_header*)(msg->body + sizeof(narb_lsp_request_tlv));
-    int len = ntohs(tlv_ero->length);
-    ero_subobj* subobj  = (ero_subobj *)((char *)tlv_ero + sizeof(struct te_tlv_header));
     list<ero_subobj> ero;
-    for (; len > 0 ;subobj++, len -= sizeof(ero_subobj))
-    {
-        ero.push_back(*subobj);
-    }
-
+    GetERO_RFCStandard(tlv_ero, ero);
     UpdateLinkStatesByERO(*lsp_req, ero, ucid, seqnum,  is_bidir);
     api_msg_delete(msg);
 }
@@ -315,3 +356,5 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
     }
     //DONE
 }
+
+
