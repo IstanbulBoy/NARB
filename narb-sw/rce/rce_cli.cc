@@ -1392,9 +1392,9 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     strcpy (addr_buf3, inet_ntoa (ip));
     ip.s_addr = link->RmtIfAddr();
     strcpy (addr_buf4, inet_ntoa (ip));
-    CLI_OUT("%s\t ## TE LINK - %s ## %s\t Advertising Router: %s%s\t Link ID: %s%s", cli_cstr_newline,
+    CLI_OUT("%s\t ## TE LINK - %s ## %s\t Advertising Router: %s%s\t Link ID: %s - Modified @ %d.%d%s", cli_cstr_newline,
         rcType == RTYPE_GLO_ABS_LNK? "Abstract Global Link":"Physical Local Link", cli_cstr_newline,
-        addr_buf2, cli_cstr_newline, addr_buf1, cli_cstr_newline); 
+        addr_buf2, cli_cstr_newline, addr_buf1, link->ModifiedTime().tv_sec, link->ModifiedTime().tv_usec, cli_cstr_newline); 
     CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
                   addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
     CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
@@ -1442,8 +1442,9 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
         for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++)
         {
             delta = *it;
-            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s <<<%s", cli_cstr_newline, k, 
-                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "Queried" : "Reserved", cli_cstr_newline);
+            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s @ %d.%d<<<%s", cli_cstr_newline, k, 
+                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "Queried" : "Reserved", 
+                delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline);
             CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
             CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
             bool timeslot_found = false;

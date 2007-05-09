@@ -355,6 +355,7 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
 
      pDeltaList->push_back(delta);
     (*this) -= (*delta);
+    modifiedTime = delta->create_time;
 }
 
 LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
@@ -388,6 +389,7 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
         {
             this->pDeltaList->erase(iter);
             (*this) += (*delta);
+            gettimeofday(&modifiedTime, NULL);
             return delta;
         }
     }
@@ -417,6 +419,7 @@ void Link::deleteExpiredDeltas()
         else
             iter++;
     }
+    modifiedTime = timeNow;
 }
 
 void Link::Dump()

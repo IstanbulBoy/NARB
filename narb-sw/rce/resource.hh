@@ -382,6 +382,7 @@ public:
     list<ISCD*>& Iscds() {return iscds;}
     list<IACD*>& Iacds() {return iacds;}
     list<LinkStateDelta*>* DeltaListPointer() {return pDeltaList;}
+    struct timeval& ModifiedTime() {return modifiedTime;}
     virtual Prefix Index() 
         { 
             Prefix index; 
