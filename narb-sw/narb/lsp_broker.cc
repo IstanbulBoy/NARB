@@ -792,15 +792,14 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         {
             continue;
         }
-
+        is_forward_link = (!is_forward_link);
+        if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
+        {
+            continue;
+        }
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
         while (link1 != NULL) // updating all links with the same local interface address
         {
-            is_forward_link = (!is_forward_link);
-            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
-            {
-                continue;
-            }
             vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && link1->info_flag & LINK_PARA_FLAG_VLAN &&
                 ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
@@ -943,15 +942,14 @@ int LSPQ::HandleResvRelease(api_msg* msg)
         {
             continue;
         }
-
+        is_forward_link = (!is_forward_link);
+        if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
+        {
+            continue;
+        }
         link1 = NarbDomainInfo.LookupLinkByLclIf(subobj->addr);
         while (link1 != NULL)
         {
-            is_forward_link = (!is_forward_link);
-            if (!is_forward_link && (app_options & LSP_OPT_BIDIRECTIONAL) == 0) //ignore reverse link for unidirectional request
-            {
-                continue;
-            }
             vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && link1->info_flag & LINK_PARA_FLAG_VLAN &&
                 ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
