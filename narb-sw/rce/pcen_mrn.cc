@@ -614,11 +614,11 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     } 
 
     //Subnet UNI related
-    u_int8_t ts = 0;  // one-based
+    u_int8_t ts = 0;  //one-based
     if (SystemConfig::should_incorporate_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        for (ts = 0; ts < MAX_TIMESLOTS_NUM; ts++)
+        for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
                 break;
@@ -630,7 +630,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        for (ts = 0; ts < MAX_TIMESLOTS_NUM; ts++)
+        for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
                 break;
