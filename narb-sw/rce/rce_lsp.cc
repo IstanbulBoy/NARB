@@ -167,8 +167,8 @@ void LSPHandler::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero)
             new_subobj.hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj.prefix_len = 32;
             new_subobj.if_id = subobj_unum->ifid;
-            if ((ntohl(subobj_unum->ifid)>>16) == 0x0004 && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
-                    && (ntohl(subobj_unum->ifid) & 0xffff) < 4906) //0x0004 == LOCAL_ID_TAGGED_GROUP_GLOBAL
+            if ((ntohl(subobj_unum->ifid)>>16) == LOCAL_ID_TAGGED_GROUP_GLOBAL && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
+                    && (ntohl(subobj_unum->ifid) & 0xffff) < 4906)
                 new_subobj.l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
             len -= sizeof(unum_if_subobj);
             offset += sizeof(unum_if_subobj);
@@ -208,6 +208,21 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
     ero_subobj* subobj;
     bool is_forward_link = false;
     u_int32_t vtag, lsp_vtag = 0;
+    list<ero_subobj>::iterator it;
+
+    for (it = ero_reply.begin(); it != ero_reply.end();  it++)
+    {
+        if ( (ntohl((*it).if_id) >> 16)  == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL )
+        {
+            lsp_vtag = (ntohl((*it).if_id) & 0xffff);
+            break;
+        }
+        
+        if ((lsp_vtag = (*it).l2sc_vlantag) !=0)
+        {
+            break;
+        }
+    }
 
     list<ero_subobj>::iterator it;
     //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
@@ -237,7 +252,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
 
             HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj->if_id);
             link1 = RDB.LookupNextLinkByLclIf(link1);
-        }        
+        }
     }
 
     //mapping ero_subobj to strict hop links (a.k.a. intradomain physical links)

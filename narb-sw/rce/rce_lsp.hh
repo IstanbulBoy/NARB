@@ -62,6 +62,8 @@
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing
 
+#define LOCAL_ID_TAGGED_GROUP_GLOBAL 0x0004 //the localid type for an intermediate tagged vlan link (ERO subobject)
+
 enum  narb_tlv_type
 {
     TLV_TYPE_NARB_REQUEST = 0x02,
