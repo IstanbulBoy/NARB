@@ -167,7 +167,7 @@ void LSPHandler::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero)
             new_subobj.hop_type = (subobj_unum->l_and_type >> 7) ? ERO_TYPE_LOOSE_HOP : ERO_TYPE_STRICT_HOP;
             new_subobj.prefix_len = 32;
             new_subobj.if_id = subobj_unum->ifid;
-            if ((ntohl(subobj_unum->ifid)>>16) == LOCAL_ID_TAGGED_GROUP_GLOBAL && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
+            if ((ntohl(subobj_unum->ifid)>>16) == LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL && (ntohl(subobj_unum->ifid) & 0xffff) > 0  
                     && (ntohl(subobj_unum->ifid) & 0xffff) < 4906)
                 new_subobj.l2sc_vlantag = (u_int16_t)ntohl(subobj_unum->ifid);
             len -= sizeof(unum_if_subobj);
@@ -224,7 +224,6 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         }
     }
 
-    list<ero_subobj>::iterator it;
     //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
     for (it = ero_reply.begin(); it != ero_reply.end();  it++)
     {
