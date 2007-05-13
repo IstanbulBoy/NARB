@@ -147,8 +147,17 @@ Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
     }
 
     //taking over pDeltaList
-    this->pDeltaList = link->pDeltaList;
-    link->pDeltaList = NULL;
+    if (link->pDeltaList)
+   	{
+	    this->pDeltaList = new list<LinkStateDelta*>;
+		list<LinkStateDelta*>::iterator it4 = link->pDeltaList->begin();
+		for ( ; it4 != link->pDeltaList->end(); it4++)
+		{
+			LinkStateDelta* delta = new LinkStateDelta;
+			memcpy(delta, (*it4), sizeof(LinkStateDelta));
+			link->pDeltaList->push_back(delta);
+		}
+   	}
 }
 
 Link::~Link()

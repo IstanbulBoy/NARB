@@ -957,13 +957,7 @@ int PCEN_MRN::PerformComputation()
                     continue;
 
                 // @@@@ With VTAG constraint, the link can be egress only if its reverse link also satisfies the vtag constraint.
-                // @@@@ Move above as part of the *birectional* contraint
-                /*
-                if (is_e2e_tagged_vlan) 
-                    if (!nextNode->vtagset.HasTag(vtag))
-                        continue;
-                */
-
+                // @@@@ Move to above as part of the *birectional* contraint ???
                 //Excluding allocated VLAN tags on the destination node (last hop).
                 if (is_e2e_tagged_vlan && nextLink->reverse_link)
                 {
