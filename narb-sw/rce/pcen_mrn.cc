@@ -965,8 +965,10 @@ int PCEN_MRN::PerformComputation()
                 */
 
                 //Excluding allocated VLAN tags on the destination node (last hop).
-                if (is_e2e_tagged_vlan)
+                if (is_e2e_tagged_vlan && nextLink->reverse_link)
                 {
+                    nextLink->reverse_link->ProceedByUpdatingVtags(headNode->vtagset, nextVtagSet);
+                    /*
                     list<PCENLink*>::iterator it_link;
                     for (it_link = destNode->in_links.begin(); it_link != destNode->in_links.end(); it_link++)
                     {
@@ -977,7 +979,9 @@ int PCEN_MRN::PerformComputation()
                         if (*it_link != nextLink)
                             (*it_link)->ExcludeAllocatedVtags(headNode->vtagset);
                     }
-                    if (headNode->vtagset.IsEmpty())
+                    */
+                    headNode->vtagset = nextVtagSet;
+                    if (nextVtagSet.IsEmpty())
                         continue;
                 }
             }
