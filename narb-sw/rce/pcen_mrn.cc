@@ -538,7 +538,7 @@ bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
     list<ISCD*>::iterator it;
     for (it = pcen_link->link->iscds.begin(); it != pcen_link->link->iscds.end(); it++)
     {
-        if ((*it)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_UNI)
+        if (ntohs((*it)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
         {
             iscd = *it;
             break;
@@ -548,19 +548,16 @@ bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
     if (!iscd)
         return true; // no subnetIf ISCD? never mind...
 
-    u_int8_t ts, ts_num = 0,  max_ts_num = 0;
+    u_int8_t ts, ts_num = 0;
     for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
     {
         if (HAS_TIMESLOT(iscd->subnet_uni_info.timeslot_bitmask, ts))
             ts_num++;
         else
             ts_num = 0;
-        if (max_ts_num < ts_num)
-            max_ts_num = ts_num;
+        if (ts_num >= bandwidth/50.0) //50Mbps per timeslot
+            return true;
     }
-
-    if (max_ts_num >= bandwidth/50.0) //50Mbps per timeslot
-        return true;
 
     return false;
 }
@@ -672,6 +669,10 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         {
             ts = 0;
         }
+        else 
+        {
+            ts = ts-ts_num+1;
+        }
         subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
         subobj1.l2sc_vlantag = 0;
     }
@@ -698,6 +699,10 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         if (ts > MAX_TIMESLOTS_NUM) 
         {
             ts = 0;
+        }
+        else 
+        {
+            ts = ts-ts_num+1;
         }
         subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) |(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id <<8) | ts );
         subobj2.l2sc_vlantag = 0;
