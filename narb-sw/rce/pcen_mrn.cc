@@ -531,6 +531,40 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     return -1;
 }
 
+bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
+{
+    // find the ISCD with subnetUniIf specific information
+    ISCD * iscd = NULL;
+    list<ISCD*>::iterator it;
+    for (it = pcen_link->link->iscds.begin(); it != pcen_link->link->iscds.end(); it++)
+    {
+        if ((*it)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_UNI)
+        {
+            iscd = *it;
+            break;
+        }
+    }
+
+    if (!iscd)
+        return true; // no subnetIf ISCD? never mind...
+
+    u_int8_t ts, ts_num = 0,  max_ts_num = 0;
+    for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
+    {
+        if (HAS_TIMESLOT(iscd->subnet_uni_info.timeslot_bitmask, ts))
+            ts_num++;
+        else
+            ts_num = 0;
+        if (max_ts_num < ts_num)
+            max_ts_num = ts_num;
+    }
+
+    if (max_ts_num >= bandwidth/50.0) //50Mbps per timeslot
+        return true;
+
+    return false;
+}
+    
 int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
 {
     MovazTeLambda tel;
@@ -618,10 +652,25 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if (SystemConfig::should_incorporate_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
+        u_int8_t ts_num = 0;
         for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
+            {
+                ts_num++;
+            }
+            else
+            {
+                ts_num = 0;
+            }
+            if (ts_num >= pcen_link->rmt_end->tspec.Bandwidth/50.0) //50Mbps per timeslot
+            {
                 break;
+            }
+        }
+        if (ts > MAX_TIMESLOTS_NUM) 
+        {
+            ts = 0;
         }
         subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
         subobj1.l2sc_vlantag = 0;
@@ -630,10 +679,25 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
+        u_int8_t ts_num = 0;
         for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
+            {
+                ts_num++;
+            }
+            else
+            {
+                ts_num = 0;
+            }
+            if (ts_num >= pcen_link->lcl_end->tspec.Bandwidth/50.0) //50Mbps per timeslot
+            {
                 break;
+            }
+        }
+        if (ts > MAX_TIMESLOTS_NUM) 
+        {
+            ts = 0;
         }
         subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) |(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id <<8) | ts );
         subobj2.l2sc_vlantag = 0;
@@ -992,19 +1056,38 @@ int PCEN_MRN::PerformComputation()
                 //$$$$ VLSR<->RayExpress crossing should be properly recognized
                 // Update nextNode->tspec according to the next region constraints
                 GetNextRegionTspec(nextLink, nextNode->tspec);
-				
-                //$$$$ Get MOVAZ proprietary information, e.g. TE lambda's. 
-                //$$$$ Picka set of lambda's by mapping capacity/encoding, requiring proper configuration of port rate
-                //$$$$ ---> using a fixed mapping table ...
-                //$$$$ change MOVAZ Switching Type to 151 (MOVAZ_LSC instead of standard LSC (150)) ???
 
-                //@@@@Movaz special handling
+                //$$$$ Movaz subnet special handling
                 if (is_via_movaz && nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
                 {
+                    //$$$$ change MOVAZ Switching Type to 151 (MOVAZ_LSC instead of standard LSC (150)) ???
+                    //$$$$ Get MOVAZ proprietary information, e.g. TE lambda's. 
+                    //$$$$ Picka set of lambda's by mapping capacity/encoding, requiring proper configuration of port rate
+                    //$$$$ ---> using a fixed mapping table ...
+
                     nextNode->tspec.SWtype = MOVAZ_LSC;
                     //Setting intial TE lambda/wavelength information into nextNode->waveset
                     if (InitiateMovazWaves(nextWaveSet, nextLink) < 0)
                         continue;
+                }
+
+                //$$$$ TDM (Ciena CDs) subnet special handling 
+                //@@@@ We might make a special Ciena sw_type like CIENA_TDM (101) ...
+                if ( SystemConfig::should_incorporate_subnet ) 
+                {
+                    // $$$$ Checking available timeslots on the region-border interface
+                    // getting out of TDM region
+                    if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
+                    {                    
+                        if (!VerifyTimeslotsAvailability(nextLink, nextNode->tspec.Bandwidth))
+                            continue;
+                    }
+                    // getting into TDM region
+                    else if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM  && nextLink->reverse_link)
+                    {
+                        if (!VerifyTimeslotsAvailability(nextLink->reverse_link, headNode->tspec.Bandwidth))
+                            continue;
+                    }
                 }
             }
 

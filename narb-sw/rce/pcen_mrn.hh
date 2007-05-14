@@ -70,6 +70,8 @@ public:
     void SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
     void HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track);
 
+    bool VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth);
+
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
