@@ -333,7 +333,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         {
             int ts_1st = (int)(if_id & 0xff);
             int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
-            for (int ts = 0; ts < ts_num; ts++)
+            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
             {
                 SET_TIMESLOT(delta->timeslots, ts_1st+ts);
             }
@@ -369,7 +369,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         {
             int ts_1st = (int)(if_id & 0xff);
             int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
-            for (int ts = 0; ts < ts_num; ts++)
+            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
             {
                 SET_TIMESLOT(delta->timeslots, ts_1st+ts);
             }

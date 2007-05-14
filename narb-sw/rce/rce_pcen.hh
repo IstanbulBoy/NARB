@@ -189,6 +189,7 @@ public:
                 if (!tagset.HasTag(*it))
                 {
                     it = tag_list.erase(it);
+                    if (tag_list.size() == 0) break;
                 }
         }
     void DisplayTags()

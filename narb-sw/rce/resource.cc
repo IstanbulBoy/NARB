@@ -334,6 +334,8 @@ void Link::hook_PreUpdate(Resource * oldResource)
         {//write off the expired delta, and no need to add back.
             delete delta; 
             iter = this->pDeltaList->erase(iter);
+	    if (this->pDeltaList->size() == 0)
+                break;
         }
     }
 
