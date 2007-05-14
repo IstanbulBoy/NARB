@@ -50,15 +50,15 @@ fi
 if test -f $PREFIX/sbin/rce; then
     killall -9 rce
     sleep 3
-    $PREFIX/sbin/rce -d -s $SCHEMA_FILE  -c /usr/local/dragon/etc/subnet_ciena.conf
+    $PREFIX/sbin/rce -d -s $SCHEMA_FILE 
 elif test -f $PREFIX2/sbin/rce; then
     killall -9 rce
     sleep 3
-    $PREFIX2/sbin/rce -d -s $SCHEMA_FILE  -c /usr/local/dragon/etc/subnet_ciena.conf
+    $PREFIX2/sbin/rce -d -s $SCHEMA_FILE 
 elif test -f ./rce/rce; then
     killall -9 rce
     sleep 3
-    ./rce/rce -d -s $SCHEMA_FILE  -c /usr/local/dragon/etc/subnet_ciena.conf
+    ./rce/rce -d -s $SCHEMA_FILE 
 else
     echo '******* ERROR: RCE executable does not exist *******'
     exit 1
