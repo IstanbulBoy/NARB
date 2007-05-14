@@ -234,8 +234,7 @@ EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
         {
             if (FD_ISSET (event->fd, &readfd))
                 FD_CLR(event->fd, &readfd);
-            reads.remove (event);
-            iter--;
+            iter = reads.erase(iter);
             ready.push_back (event);
             if (reads.size() == 0)
                 break;
@@ -251,8 +250,7 @@ EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
   	 {
             if (FD_ISSET (event->fd, &writefd))
                 FD_CLR(event->fd, &writefd);
-            writes.remove (event);
-            iter--;
+            iter = writes.erase (iter);
             ready.push_back (event);
             if (writes.size() == 0)
                 break;

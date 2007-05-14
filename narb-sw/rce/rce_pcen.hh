@@ -188,8 +188,7 @@ public:
             for (it = tag_list.begin(); it != tag_list.end(); it++)
                 if (!tagset.HasTag(*it))
                 {
-                    tag_list.erase(it);
-                    it--;
+                    it = tag_list.erase(it);
                 }
         }
     void DisplayTags()
