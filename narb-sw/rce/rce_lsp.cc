@@ -238,7 +238,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
     }
 
     //mapping ero_subobj to strict hop links (a.k.a. intradomain physical links)
-    is_forward_link = !is_starting_backward;
+    is_forward_link = is_starting_backward;
     for (it = ero_reply.begin(); it != ero_reply.end();  it++)
     {
         subobj = &(*it);
@@ -274,7 +274,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
     }
 
     //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
-    is_forward_link = !is_starting_backward;
+    is_forward_link = is_starting_backward;
     for (it = ero_reply.begin(); it != ero_reply.end();  it++)
     {
         subobj = &(*it);
