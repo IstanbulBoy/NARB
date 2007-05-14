@@ -54,7 +54,7 @@ u_int8_t swtype = 51;
 u_int8_t encoding = 2;
 float bandwidth = 500; //Mbps
 u_int32_t vtag = 0x0000ffff;
-u_int32_t opt_bidirectional = 0;
+u_int32_t opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
 u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
@@ -73,7 +73,7 @@ void usage()
 {
     cout<<"RCE Tester Usage:"<<endl;
     cout<<"\t rce_test [-H host] [-P port] [-S source] [-D dest] [-B] [-M] [-b bandwidth] [-x switching type] [-e encoding type] ";
-    cout<<"  ( [-S source] and [-D dest] are mandatory [-B]: directional [-M]: multi-region-network routing" <<endl;
+    cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional [-M]: multi-region-network routing" <<endl;
     cout<<"  [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE [-Q]: query and hold" <<endl;
 }
 
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:BLOMQVa", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:b:x:e:v:LOMQUVa", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -400,8 +400,8 @@ int main(int argc, char* argv[])
         case 'S':
             inet_aton(optarg, &source);
             break;
-        case 'B':
-            opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
+        case 'U':
+            opt_bidirectional = 0;
             break;
         case 'D':
             inet_aton(optarg, &destination);

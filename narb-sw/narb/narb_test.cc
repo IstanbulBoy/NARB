@@ -64,7 +64,7 @@ u_int8_t swtype = 51;
 u_int8_t encoding = 2;
 float bandwidth = 500; //Mbps
 u_int32_t vtag = 0x0000ffff;
-u_int32_t opt_bidirectional = 0;
+u_int32_t opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
 u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
 u_int32_t opt_mrn = 0;
@@ -91,7 +91,7 @@ void usage()
 {
     cout<<"NARB Tester Usage:"<<endl;
     cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-B] [-b bandwidth] [-x switching type] [-e encoding type] ";
-    cout<<"  ( [-S source] and [-D dest] are mandatory [-B]: directional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
+    cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
     cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
     cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags ]" <<endl;
     cout<<" [ [-Q] Query and Hold ]" <<endl;
@@ -387,7 +387,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:BLOMQVma", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:LOMQUVma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -418,8 +418,8 @@ int main(int argc, char* argv[])
         case 'D':
             inet_aton(optarg, &destination);
             break;
-        case 'B':
-            opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
+        case 'U':
+            opt_bidirectional = 0;
             break;
         case 'L':
             opt_strict = 0;
