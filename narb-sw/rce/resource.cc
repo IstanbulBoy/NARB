@@ -330,7 +330,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
             (*this) -= (*delta);
             iter++;
         }
-        else //if (modifiedTime < delta->create_time)
+        else //$$$$ xx if (modifiedTime < delta->create_time)
         {//write off the expired delta, and no need to add back.
             delete delta; 
             iter = this->pDeltaList->erase(iter);
@@ -423,8 +423,14 @@ void Link::deleteExpiredDeltas()
         assert(delta);
         struct timeval timeDiff = timeNow - delta->create_time;
         if (!( timeDiff < delta->expiration))
-        {//write off the expired delta with states added back to the link
-            (*this) += (*delta);
+        {
+            // $$$$ write off the expired delta with states added back to the link
+            // only add back the resources held by 'query'
+            // 'reserved' resources won't be implicitly added back --> only by release message
+            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query)
+       	    {
+                (*this) += (*delta);
+       	    }
             delete delta; 
             iter = this->pDeltaList->erase(iter);
             modifiedTime = timeNow;
