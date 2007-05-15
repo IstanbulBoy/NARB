@@ -224,7 +224,7 @@ public:
     void Move(u_int32_t current)
         {
             list<Reservation*>::iterator iter = reserves.begin();
-            while (iter = reserves.begin(); iter != reserves.end())
+            while (iter != reserves.end())
             {
                 assert (*(iter));
                 if ((*(iter))->uptime +  (*(iter))->duration <= current)
