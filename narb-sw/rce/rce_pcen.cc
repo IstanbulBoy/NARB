@@ -760,10 +760,12 @@ void PCEN::BuildLinkVector(ResourceType type)
                     assert (pcen_node_rmt);
                     pcen_link->lcl_end = pcen_node_lcl;
                     pcen_link->rmt_end = pcen_node_rmt;
-
                     pcen_node_lcl->out_links.push_back(pcen_link);
                     pcen_node_rmt->in_links.push_back(pcen_link);
 
+					assert(pcen_link->link);
+					// handling quried/existing link state deltas for the same ucid/seqnum ...
+					pcen_link->link->removeDeltaByOwner(ucid, seqnum);
                     // handling expired link state deltas. (refer to class Link and class LSPHandler.)
                     pcen_link->link->deleteExpiredDeltas();
 
