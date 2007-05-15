@@ -268,14 +268,14 @@ public:
         }
     void Move(u_int32_t current)
         {
-            list<Reservation*>::iterator iter;
-            for (iter = reserves.begin(); iter != reserves.end(); iter++)
+            list<Reservation*>::iterator iter = reserves.begin();
+            while (iter = reserves.begin(); iter != reserves.end())
             {
                 assert (*(iter));
                 if ((*(iter))->uptime +  (*(iter))->duration <= current)
                 {
-                    reserves.erase(iter);
-                 }
+                    iter = reserves.erase(iter);
+                }
                 else
                     return;
             }

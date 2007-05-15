@@ -506,9 +506,9 @@ int main(int argc, char* argv[])
     }
 
     msg_app2narb_request * app_req = new_app_request();
-    u_int32_t seqnum = time(NULL);
-    srandom(seqnum);
+    srandom(getpid() + getppid() + time(NULL));
     u_int32_t ucid = random();
+    u_int32_t seqnum = random();
 
     api_msg * narb_reply =  narbapi_query_lsp(0, ucid, seqnum, app_req);
 

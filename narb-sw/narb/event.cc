@@ -221,10 +221,10 @@ EventMaster::WaitLimit ()
 void
 EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
 {
-  list<Event*>::iterator iter;
   Selector *event;
-      
-  for (iter = reads.begin(); iter != reads.end(); iter++)
+  list<Event*>::iterator iter = reads.begin();
+
+  while (iter != reads.end())
     {
         event = (Selector*)*iter;
         if (!event)
@@ -233,30 +233,30 @@ EventMaster::ModifyFDSets (fd_set *pReadfd, fd_set *pWritefd)
         {
             if (FD_ISSET (event->fd, &readfd))
                 FD_CLR(event->fd, &readfd);
-            iter = reads.erase (iter);
+            iter = reads.erase(iter);
             ready.push_back (event);
-            if (reads.size() == 0)
-                break;
+			continue;
         }
+		iter++;
     }
 
-  for (iter = writes.begin(); iter != writes.end(); iter++)
+  iter = writes.begin();
+  while (iter != writes.end())
     {
         event = (Selector*)*iter;              
         if (!event)
             break;
         if (FD_ISSET (event->fd, pWritefd))
-  	 {
+  		 {
             if (FD_ISSET (event->fd, &writefd))
                 FD_CLR(event->fd, &writefd);
             iter = writes.erase (iter);
             ready.push_back (event);
-            if (writes.size() == 0)
-                break;
-  	 }
+			continue;
+	  	 }
+		iter++;
     }
 }
-
 
 Event* 
 EventMaster::Fetch()

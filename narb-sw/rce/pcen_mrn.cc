@@ -234,16 +234,20 @@ void PCEN_MRN::PostBuildTopology()
                                 // remove current pcen_link and its reverse link from the original VLSR pce_node
                                 assert(pcen_link->lcl_end);
                                 link_iter = pcen_link->lcl_end->out_links.begin();
-                                for ( ; link_iter != pcen_link->lcl_end->out_links.end(); link_iter++ )
+                                while (link_iter != pcen_link->lcl_end->out_links.end())
                                 {
                                     if((*link_iter) == pcen_link)
                                         link_iter = pcen_link->lcl_end->out_links.erase(link_iter);
+									else
+										link_iter++;
                                 }
                                 link_iter = pcen_link->lcl_end->in_links.begin();
-                                for ( ; link_iter != pcen_link->lcl_end->in_links.end(); link_iter++ )
+                                while (link_iter != pcen_link->lcl_end->in_links.end())
                                 {
                                     if((*link_iter) == pcen_link->reverse_link)
                                         link_iter = pcen_link->lcl_end->in_links.erase(link_iter);
+									else
+										link_iter++;
                                 }
 
                                 // connect current pcen_link and its reverse link to current pce_node

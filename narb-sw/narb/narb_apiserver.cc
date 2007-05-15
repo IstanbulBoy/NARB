@@ -37,14 +37,17 @@ list<LSP_Broker*> NARB_APIServer::lsp_brokers;
 
 NARB_APIServer::~NARB_APIServer()
 {
-    list<LSP_Broker*>::iterator it;
-    for (it = lsp_brokers.begin(); it != lsp_brokers.end(); it++)
+    list<LSP_Broker*>::iterator it = lsp_brokers.begin();
+    while (it != lsp_brokers.end())
+   	{
         if ((*it)->Obsolete())
         {
             delete (*it);
-            lsp_brokers.erase(it);
-            it--;
+            it = lsp_brokers.erase(it);
+			continue;
         }
+		it++;
+   	}
 }
 
 void NARB_APIServer::Run()
