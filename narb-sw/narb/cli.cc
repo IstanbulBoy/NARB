@@ -831,7 +831,7 @@ inline void CLIReader::ForwardChar ()
 
 inline void CLIReader::LineBeginning ()
 {
-    if (cp + current_node->Prompt().size() > width)
+    if (cp + current_node->Prompt().size() >= width)
         return;
 
     while(cp > 0)

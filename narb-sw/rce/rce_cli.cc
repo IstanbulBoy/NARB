@@ -813,7 +813,7 @@ inline void CLIReader::ForwardChar ()
 
 inline void CLIReader::LineBeginning ()
 {
-    if (cp + current_node->Prompt().size() > width)
+    if (cp + current_node->Prompt().size() >= width)
         return;
 
     while(cp > 0)
@@ -1427,7 +1427,7 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
                 CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
-                for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
+                for (i = 1; i <= MAX_VLAN_NUM; i++)
                     if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
                 CLI_OUT("%s", cli_cstr_newline);
             }
