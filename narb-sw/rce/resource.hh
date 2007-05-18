@@ -465,6 +465,8 @@ public:
     static Link* LookupLinkByLclIf(ResourceType rcType, in_addr lclIf);
     static Link* LookupNextLinkByLclIf(Link* prev_link);
     static Link* LookupLinkByLclRmtIf(ResourceType rcType, in_addr lclIf, in_addr rmtIf);
+    static Link* LookupNextLinkByLclRmtIf(Link* prev_link);
+
     //testing code
     static void WalkTree(ResourceType type);
     //end testing

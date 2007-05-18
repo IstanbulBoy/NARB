@@ -1384,6 +1384,10 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     in_addr ip; 
     int i, k; 
     char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3];
+    list<ISCD*>::iterator iter;
+
+_show_more_links:
+
     ip.s_addr = link->Id();
     strcpy (addr_buf1, inet_ntoa (ip));
     ip.s_addr = link->AdvRtId();
@@ -1400,8 +1404,8 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
     CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
     CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxReservableBandwidth(), cli_cstr_newline);
+
     //ISCDs
-    list<ISCD*>::iterator iter;
     for (k=1, iter = link->Iscds().begin(); iter != link->Iscds().end(); k++, iter++)
     {
         CLI_OUT("\t Interface Switching Capability Descriptor #%d: %s %s%s", k,
@@ -1461,6 +1465,9 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
             CLI_OUT("%s", cli_cstr_newline);
         }
     }
+
+    if ((link = RDB.LookupNextLinkByLclRmtIf(link)) != NULL)
+        goto _show_more_links;
 
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
