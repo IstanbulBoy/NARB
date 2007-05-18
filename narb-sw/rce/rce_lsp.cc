@@ -252,25 +252,24 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         {
             break;
         }
-        link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
-        if (!link1)
-        {
-            break;
-        }
         is_forward_link = (!is_forward_link);
         if (!is_forward_link && !is_bidir) //ignore reverse link for unidirectional request
         {
             continue;
         }
-        vtag = subobj->l2sc_vlantag;
-        if (vtag == 0 && lsp_vtag != 0 && 
-            ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+        link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
+        while (link1 != NULL) // updating all links with the same local interface address
         {
-            vtag = lsp_vtag;
-        }
+            vtag = subobj->l2sc_vlantag;
+            if (vtag == 0 && lsp_vtag != 0 && 
+                ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+            {
+                vtag = lsp_vtag;
+            }
 
-        HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id));
-        link1 = RDB.LookupNextLinkByLclIf(link1);
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id));
+            link1 = RDB.LookupNextLinkByLclIf(link1);
+        }
     }
 
     //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
