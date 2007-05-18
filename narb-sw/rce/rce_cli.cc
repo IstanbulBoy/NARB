@@ -1411,26 +1411,24 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
         {
             CLI_OUT ("\t    Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline);
         }
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
         {
-            if (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
-            {
-                CLI_OUT ("\t    -- L2SC specific information--%s\t       --> Available VLAN tag set:", cli_cstr_newline);
-                for (i = 1; i <= MAX_VLAN_NUM; i++)
-                    if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i);
-                CLI_OUT("%s", cli_cstr_newline); 
-                CLI_OUT ("\t      --> Allocated VLAN tag set:");
-                for (i = 1; i <= MAX_VLAN_NUM; i++)
-                    if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
-                CLI_OUT("%s", cli_cstr_newline);
-            }
-            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
-            {
-                CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
-                for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
-                    if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
-                CLI_OUT("%s", cli_cstr_newline);
-            }
+            CLI_OUT ("\t    -- L2SC specific information--%s\t       --> Available VLAN tag set:", cli_cstr_newline);
+            for (i = 1; i <= MAX_VLAN_NUM; i++)
+                if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i);
+            CLI_OUT("%s", cli_cstr_newline); 
+            CLI_OUT ("\t      --> Allocated VLAN tag set:");
+            for (i = 1; i <= MAX_VLAN_NUM; i++)
+                if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
+            CLI_OUT("%s", cli_cstr_newline);
+        }
+        if (((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || (*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) 
+            && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+        {
+            CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
+            for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
+                if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
+            CLI_OUT("%s", cli_cstr_newline);
         }
     }
     //Link state deltas
