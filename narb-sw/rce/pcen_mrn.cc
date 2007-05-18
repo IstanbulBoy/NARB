@@ -238,16 +238,16 @@ void PCEN_MRN::PostBuildTopology()
                                 {
                                     if((*link_iter) == pcen_link)
                                         link_iter = pcen_link->lcl_end->out_links.erase(link_iter);
-									else
-										link_iter++;
+					 else
+                                        link_iter++;
                                 }
                                 link_iter = pcen_link->lcl_end->in_links.begin();
                                 while (link_iter != pcen_link->lcl_end->in_links.end())
                                 {
                                     if((*link_iter) == pcen_link->reverse_link)
                                         link_iter = pcen_link->lcl_end->in_links.erase(link_iter);
-									else
-										link_iter++;
+                                    else
+                                        link_iter++;
                                 }
 
                                 // connect current pcen_link and its reverse link to current pce_node

@@ -239,8 +239,12 @@ Link& Link::operator+= (LinkStateDelta& delta)
                     (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
             }
         }
-
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC) // || (*iter)->swtype == MOVAZ_LSC
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+        {
+                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                    (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
+        }
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC) // || (*iter)->swtype == MOVAZ_LSC
         {
             if (delta.wavelength > 0)
             {
@@ -291,8 +295,12 @@ Link& Link::operator-= (LinkStateDelta& delta)
                     (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
             }
         }
-
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)  // || == MOVAZ_LSC(151)
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+        {
+                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                    (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+        }
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)  // || == MOVAZ_LSC(151)
         {
             if (delta.wavelength > 0)
             {
