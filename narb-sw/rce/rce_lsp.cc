@@ -283,6 +283,13 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         {
             continue;
         }
+
+        //@@@@ this condition restricts holding of global/abstract resources to the strict path segment only!
+        if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            break;
+        }
+       
         is_forward_link = (!is_forward_link);
         if (!is_forward_link && !is_bidir) //ignore reverse link for unidirectional request
         {
