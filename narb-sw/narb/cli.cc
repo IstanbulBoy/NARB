@@ -1566,7 +1566,7 @@ COMMAND(cmd_set_peer_narb, "set peer-narb HOST port PORT via IF_ADDR",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-preferred-with-confirmation|all-loose-allowed|all-loose-allowed-with-confirmation}",
+COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-confirmed|all-loose-allowed|all-loose-confirmed}",
        "Set/Reset configuration\nPick a NARB routing mode.\n")
 {
     if(argv[0] == "all-strict-only")
