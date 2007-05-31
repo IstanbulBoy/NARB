@@ -735,16 +735,18 @@ int ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
 int ConfigFile::ReadCliCommands(char * buf, const char* quote, list<string>& cmd_lines)
 {
     int ret = 0;
-    char *str;
     string cmd_str;
+    char *str = strtok(buf, quote);
 
-    while ((str = strtok(buf, quote)) != NULL)
+    while (str != NULL)
     {
-        if (strlen(str) < 3)
-            continue;
-        cmd_str = str;
-        cmd_lines.push_back(cmd_str);
-        ret++;
+        if (strlen(str) > 2)
+        {
+            cmd_str = str;
+            cmd_lines.push_back(cmd_str);
+            ret++;
+        }
+        str = strtok(NULL, quote);
     }
 
     return ret;
