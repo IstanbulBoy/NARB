@@ -62,8 +62,8 @@ enum narb_routing_mode {
 };
 
 enum narb_working_mode {
-  WORKING_MODE_SINGLE_DOMAIN = 0x01,
-  WORKING_MODE_MULTI_DOMAIN
+  WORKING_MODE_STATIC_INTERDOMAIN_TOPOLOGY = 0x01,
+  WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY
 };
 
 // The types of wrapped RCE-Request TLV 

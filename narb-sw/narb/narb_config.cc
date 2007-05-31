@@ -36,8 +36,8 @@
 #include <arpa/inet.h>
 
 string SystemConfig::config_file = NARB_DEFAULT_CONFIG_FILE;
-narb_routing_mode SystemConfig::routing_mode  =RT_MODE_MIXED_ALLOWED;
-narb_working_mode SystemConfig::working_mode  =WORKING_MODE_MULTI_DOMAIN;
+narb_routing_mode SystemConfig::routing_mode  = RT_MODE_MIXED_ALLOWED;
+narb_working_mode SystemConfig::working_mode  = WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY;
 u_int32_t SystemConfig::rce_options = LSP_TLV_NARB_CSPF_REQ | LSP_OPT_STRICT;
 bool SystemConfig::forced_merge = true;
 bool SystemConfig::zcompress = true;
@@ -595,7 +595,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             list<string> cli_cmd_lines;
             CLIReader* cli_reader = NULL;
             CLIWriter* cli_writer = NULL;
-            if ( ReadCliCommands(blk_body,"'`\"()", cli_cmd_lines) > 0)
+            if ( ReadCliCommands(blk_body,"'`\"\t()", cli_cmd_lines) > 0)
             {
                 cli_reader = new CLIReader(0, NULL);
                 cli_writer = new CLIWriter(0, NULL);
@@ -756,40 +756,3 @@ int ConfigFile::ReadCliCommands(char * buf, const char* quote, list<string>& cmd
     return ret;
 }
 
-/*
-int ReadConfigResvs(char * buf, list * resvs)
-{
-  char *str_resvs, *str;
-  char resvs_buf[200];
-  struct reservation *resv;
-  int i;
-  
-  str_resvs = strstr(buf, "reservations");
-  if (str_resvs == NULL)
-    return 0;
-
-  if (*resvs == NULL)
-    *resvs = list_new();
-
-  // get manually defined reservations into list (for testing only)
-  while (*(str_resvs++) !='[') 
-    ;
-  i = 0;
-  while (*str_resvs !=']') 
-      resvs_buf[i++] = *(str_resvs++);
-  resvs_buf[i] = 0;
-
-  str = strtok(resvs_buf, " \t");
-  while(str)
-    {
-        resv = XMALLOC(MTYPE_TMP, RESV_SIZE);
-        memset(resv, 0, RESV_SIZE);
-        i = sscanf (str, "%ld/%ld:%f", &resv->uptime, &resv->duration, &resv->bandwidth);
-        assert (i == 3);
-        resv->uptime += time(NULL);
-        listnode_add(*resvs, resv);
-        str = strtok(NULL, " \t");
-    }
-  return 1;
-}
-*/

@@ -822,7 +822,11 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                     link1->ResetVtag(vtag);
                     link1->AllocateVtag(vtag);
                 }
-                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                // update the link to inter-domain topology if the narb working mode is dynamic
+                if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+                {
+                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                }
             }
             link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
         }
@@ -972,7 +976,11 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                     link1->SetVtag(vtag);
                     link1->DeallocateVtag(vtag);
                 }
-                NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                // update the link to inter-domain topology if the narb working mode is dynamic
+                if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+                {
+                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                }
             }
             link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
         }

@@ -1572,7 +1572,7 @@ COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|
     if(argv[0] == "all-strict-only")
         SystemConfig::routing_mode= RT_MODE_ALL_STRICT_ONLY;
     else if(argv[0] =="mixed-allowed")
-        SystemConfig::routing_mode= RT_MODE_MIXED_ALLOWED; //loose preferred?
+        SystemConfig::routing_mode= RT_MODE_MIXED_ALLOWED;
     else if(argv[0] == "mixed-preferred")
         SystemConfig::routing_mode= RT_MODE_MIXED_PREFERRED;
     else if(argv[0] == "mixed-confirmed")
@@ -1616,15 +1616,35 @@ COMMAND (cmd_show_routing_mode, "show routing-mode",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_working_mode, "set working-mode {single-domain-mode|multi-domain-mode}",
+COMMAND (cmd_set_working_mode, "set working-mode {static-interdomain-topology|dynamic-interdomain-topology}",
        "Set/Reset configurartion\nPick aNARB working mode\n")
 {
-    if(argv[0] == "single-domain-mode")
-        SystemConfig::working_mode = WORKING_MODE_SINGLE_DOMAIN;
-    else if (argv[0] == "multi-domain-mode")
-        SystemConfig::working_mode = WORKING_MODE_MULTI_DOMAIN;
+    if(argv[0] == "static-interdomain-topology")
+        SystemConfig::working_mode = WORKING_MODE_STATIC_INTERDOMAIN_TOPOLOGY;
+    else if (argv[0] == "dynamic-interdomain-topology")
+        SystemConfig::working_mode = WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY;
     cli_node->ShowPrompt();
 }
+
+COMMAND (cmd_show_working_mode, "show working-mode",
+       "Show configuration\nNARB working mode.\n")
+{
+    string working_mode;
+    switch (SystemConfig::working_mode)
+    {
+    case WORKING_MODE_STATIC_INTERDOMAIN_TOPOLOGY:
+        working_mode = "static-interdomain-topology";
+        break;
+    case WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY:
+        working_mode = "dynamic-interdomain-topology";
+        break;
+    default:
+        working_mode = "unknow";
+    }
+    CLI_OUT("%s\tCurrent working mode: %s%s", cli_cstr_newline, working_mode.c_str(), cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
 
 COMMAND (cmd_set_forced_merge, "set forced-merge {on|off}",
        "Set/Reset configurartion\nforced merging inter- and intra-domain ERO in recursive path computation\nOn or Off\n")
@@ -2213,6 +2233,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_routing_mode_instance);
     node->AddCommand(&cmd_show_routing_mode_instance);
     node->AddCommand(&cmd_set_working_mode_instance);
+    node->AddCommand(&cmd_show_working_mode_instance);
     node->AddCommand(&cmd_set_forced_merge_instance);
     node->AddCommand(&cmd_set_rce_instance);
     node->AddCommand(&cmd_delete_rce_instance);
