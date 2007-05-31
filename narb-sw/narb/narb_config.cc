@@ -32,6 +32,7 @@
  */
 #include "types.hh"
 #include "narb_config.hh"
+#include "cli.hh"
 #include <arpa/inet.h>
 
 string SystemConfig::config_file = NARB_DEFAULT_CONFIG_FILE;
@@ -578,17 +579,42 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
         break;
       case CONFIG_CLI:
         {
-             char pass[20];
-             char host[20];
-             
-             if (ReadConfigParameter(blk_body, "password", "%s", pass))
-             {
-                 SystemConfig::cli_password = pass;
-             }
-             if (ReadConfigParameter(blk_body, "host", "%s", host))
-             {
-                 SystemConfig::cli_address = host;
-             }
+            char pass[20];
+            char host[20];
+
+            if (ReadConfigParameter(blk_body, "password", "%s", pass))
+            {
+                SystemConfig::cli_password = pass;
+            }
+            if (ReadConfigParameter(blk_body, "host", "%s", host))
+            {
+                SystemConfig::cli_address = host;
+            }
+
+            // Executing the CLI commands embedded in narb.conf
+            string cli_cmd;
+            CLIReader* cli_reader = NULL;
+            CLIWriter* cli_writer = NULL;
+            char* blk_cmd = ReadCliCommand(blk_body,"exec-cmd", cli_cmd);
+            if (blk_cmd)
+            {
+                cli_reader = new CLIReader(0, NULL);
+                cli_writer = new CLIWriter(0, NULL);
+                cli_writer->SetReader(cli_reader);
+                cli_writer->SetIsPasswd(false);
+                cli_reader->SetWriter(cli_writer);
+                cli_reader->InitSession();
+            }
+            while (blk_cmd)
+            {
+                cli_reader->Execute(cli_cmd, true);
+                blk_cmd = ReadCliCommand(blk_cmd, "exec-cmd", cli_cmd);
+            }
+            if (cli_reader)
+            {
+                delete cli_reader;
+                delete cli_writer;
+            }
         }
         break;
       case  CONFIG_UNKNOWN:
@@ -707,6 +733,31 @@ int ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
     return 1;
 }
 
+// reading a CLI command following prefix id, store the command into cmd_str 
+// return the pointer to the end of the found command
+char* ConfigFile::ReadCliCommand(char * buf, const char* id, string& cmd_str)
+{
+    cmd_str.clear();
+    char *str, *ptr1, *ptr2;
+
+    str = strstr(buf, id);
+    if (!str)
+        return NULL;
+
+    ptr2 = ptr1 = str + strlen(id) + 1;
+
+    while ((*ptr2) != '\n' && (*ptr2) != '\r' && (*ptr2) != ')' && (*ptr2) != '}' && (*ptr2) != '\0')
+        ptr2++;
+
+    if (ptr2 - ptr1 < 3)
+        return NULL;
+
+    if (*ptr2 != '\0')
+        *(ptr2++) = '\0';
+
+    cmd_str = ptr1;
+    return ptr2;
+}
 
 /*
 int ReadConfigResvs(char * buf, list * resvs)

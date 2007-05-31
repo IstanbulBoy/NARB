@@ -92,7 +92,7 @@ Copyright 2003-2005 the Dragon Team.\r\n\
 
 CLIReader::CLIReader(int fd, CLIServer *server_ptr):Reader(fd), server(server_ptr), timer(SystemConfig::cli_timeout, this)
 {
-    assert(server_ptr);
+    //assert(server_ptr);
     cli_writer = NULL;
     status = CLI_STATUS_NORMAL; 
     iac = iac_sb = false;
@@ -917,6 +917,9 @@ inline void CLIReader::NextLine ()
 
 void CLIWriter::WriteBuffer(string &buf)
 { 
+    if (fd <= 0) // non-terninal execution
+        return;
+
     buf_queue.push_back(buf); 
     this->SetObsolete(false);
     this->SetRepeats(0);

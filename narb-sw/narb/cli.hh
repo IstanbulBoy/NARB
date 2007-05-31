@@ -176,7 +176,7 @@ private:
 
 public:
     CLIWriter(int fd, CLIServer *server_ptr): Writer(fd), server(server_ptr) 
-        { assert(server_ptr); first_run = true; is_passwd =false; }
+        { /*assert(server_ptr);*/ first_run = true; is_passwd =false; }
     virtual ~CLIWriter() {}
     void InitTerminal();
     virtual void Run ();
