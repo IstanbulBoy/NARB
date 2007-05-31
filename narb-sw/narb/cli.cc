@@ -1566,7 +1566,7 @@ COMMAND(cmd_set_peer_narb, "set peer-narb HOST port PORT via IF_ADDR",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|all-loose-allowed}",
+COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-preferred-with-confirmation|all-loose-allowed|all-loose-allowed-with-confirmation}",
        "Set/Reset configuration\nPick a NARB routing mode.\n")
 {
     if(argv[0] == "all-strict-only")
@@ -1575,9 +1575,44 @@ COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|
         SystemConfig::routing_mode= RT_MODE_MIXED_ALLOWED; //loose preferred?
     else if(argv[0] == "mixed-preferred")
         SystemConfig::routing_mode= RT_MODE_MIXED_PREFERRED;
+    else if(argv[0] == "mixed-preferred-with-confirmation")
+        SystemConfig::routing_mode= RT_MODE_MIXED_PREFERRED_WITH_CONFIRMATION;
     else if(argv[0] == "all-loose-allowed")
       SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_ALLOWED;
+    else if(argv[0] == "all-loose-allowed-with-confirmation")
+      SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_ALLOWED_WITH_CONFIRMATION;
     CLI_OUT("Routing mode changed succesfully.%sThe new mode will be effective for new requests.%sHowever, it does not apply to requests in progress. %s", cli_cstr_newline, cli_cstr_newline, cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+COMMAND (cmd_show_routing_mode, "show routing-mode",
+       "Show configuration\nNARB routing mode.\n")
+{
+    string routing_mode;
+    switch(SystemConfig::routing_mode)
+    {
+    case RT_MODE_ALL_STRICT_ONLY:
+        routing_mode = "all-strict-only";
+        break;
+    case RT_MODE_MIXED_ALLOWED:
+        routing_mode = "mixed-allowed";
+        break;
+    case RT_MODE_MIXED_PREFERRED:
+        routing_mode = "mixed-preferred";
+        break;
+    case RT_MODE_MIXED_PREFERRED_WITH_CONFIRMATION:
+        routing_mode = "mixed-preferred-with-confirmation";
+        break;
+    case RT_MODE_ALL_LOOSE_ALLOWED:
+        routing_mode = "all-loose-allowed";
+        break;
+    case RT_MODE_ALL_LOOSE_ALLOWED_WITH_CONFIRMATION:
+        routing_mode = "all-loose-allowed-with-confirmation";
+        break;
+    default:
+        routing_mode = "unknow";
+    }
+    CLI_OUT("%s\tCurrent routing mode: %s%s", cli_cstr_newline, routing_mode.c_str(), cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
@@ -2176,6 +2211,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_ospfd_instance);
     node->AddCommand(&cmd_set_peer_narb_instance);
     node->AddCommand(&cmd_set_routing_mode_instance);
+    node->AddCommand(&cmd_show_routing_mode_instance);
     node->AddCommand(&cmd_set_working_mode_instance);
     node->AddCommand(&cmd_set_forced_merge_instance);
     node->AddCommand(&cmd_set_rce_instance);
