@@ -1575,12 +1575,12 @@ COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|
         SystemConfig::routing_mode= RT_MODE_MIXED_ALLOWED; //loose preferred?
     else if(argv[0] == "mixed-preferred")
         SystemConfig::routing_mode= RT_MODE_MIXED_PREFERRED;
-    else if(argv[0] == "mixed-preferred-with-confirmation")
-        SystemConfig::routing_mode= RT_MODE_MIXED_PREFERRED_WITH_CONFIRMATION;
+    else if(argv[0] == "mixed-confirmed")
+        SystemConfig::routing_mode= RT_MODE_MIXED_CONFIRMED;
     else if(argv[0] == "all-loose-allowed")
       SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_ALLOWED;
-    else if(argv[0] == "all-loose-allowed-with-confirmation")
-      SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_ALLOWED_WITH_CONFIRMATION;
+    else if(argv[0] == "all-loose-confirmed")
+      SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_CONFIRMED;
     CLI_OUT("Routing mode changed succesfully.%sThe new mode will be effective for new requests.%sHowever, it does not apply to requests in progress. %s", cli_cstr_newline, cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
@@ -1600,14 +1600,14 @@ COMMAND (cmd_show_routing_mode, "show routing-mode",
     case RT_MODE_MIXED_PREFERRED:
         routing_mode = "mixed-preferred";
         break;
-    case RT_MODE_MIXED_PREFERRED_WITH_CONFIRMATION:
-        routing_mode = "mixed-preferred-with-confirmation";
+    case RT_MODE_MIXED_CONFIRMED:
+        routing_mode = "mixed-confirmed";
         break;
     case RT_MODE_ALL_LOOSE_ALLOWED:
         routing_mode = "all-loose-allowed";
         break;
-    case RT_MODE_ALL_LOOSE_ALLOWED_WITH_CONFIRMATION:
-        routing_mode = "all-loose-allowed-with-confirmation";
+    case RT_MODE_ALL_LOOSE_CONFIRMED:
+        routing_mode = "all-loose-confirmed";
         break;
     default:
         routing_mode = "unknow";
