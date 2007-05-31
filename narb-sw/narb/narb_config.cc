@@ -736,7 +736,11 @@ int ConfigFile::ReadCliCommands(char * buf, const char* quote, list<string>& cmd
 {
     int ret = 0;
     string cmd_str;
-    char *str = strtok(buf, quote);
+    char *str = strstr(buf, "execute-commands");
+    if (!str)
+        return 0;
+    str += 17;
+    str = strtok(str, quote);
 
     while (str != NULL)
     {
