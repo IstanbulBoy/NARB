@@ -158,7 +158,7 @@ public:
     int ReadConfigBlock(char *buf, char * header, char * body, char ** next);
     int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
     int ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask);
-    char* ReadCliCommand(char * buf, const char* id, string& cmd_str);
+    int ReadCliCommands(char * buf, const char* id, list<string>& cmd_lines);
 };
 
 

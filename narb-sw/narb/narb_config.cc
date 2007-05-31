@@ -592,11 +592,10 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             }
 
             // Executing the CLI commands embedded in narb.conf
-            string cli_cmd;
+            list<string> cli_cmd_lines;
             CLIReader* cli_reader = NULL;
             CLIWriter* cli_writer = NULL;
-            char* blk_cmd = ReadCliCommand(blk_body,"exec-cmd", cli_cmd);
-            if (blk_cmd)
+            if ( ReadCliCommands(blk_body,"'`\"()", cli_cmd_lines) > 0)
             {
                 cli_reader = new CLIReader(0, NULL);
                 cli_writer = new CLIWriter(0, NULL);
@@ -604,14 +603,12 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                 cli_writer->SetIsPasswd(false);
                 cli_reader->SetWriter(cli_writer);
                 cli_reader->InitSession();
-            }
-            while (blk_cmd)
-            {
-                cli_reader->Execute(cli_cmd, true);
-                blk_cmd = ReadCliCommand(blk_cmd, "exec-cmd", cli_cmd);
-            }
-            if (cli_reader)
-            {
+                while (!cli_cmd_lines.empty())
+                {
+                    
+                    cli_reader->Execute(cli_cmd_lines.front(), true);
+                    cli_cmd_lines.pop_front();
+                }
                 delete cli_reader;
                 delete cli_writer;
             }
@@ -733,30 +730,24 @@ int ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
     return 1;
 }
 
-// reading a CLI command following prefix id, store the command into cmd_str 
+// reading a CLI command demarked by characters in 'quote', store the command into cmd_str 
 // return the pointer to the end of the found command
-char* ConfigFile::ReadCliCommand(char * buf, const char* id, string& cmd_str)
+int ConfigFile::ReadCliCommands(char * buf, const char* quote, list<string>& cmd_lines)
 {
-    cmd_str.clear();
-    char *str, *ptr1, *ptr2;
+    int ret = 0;
+    char *str;
+    string cmd_str;
 
-    str = strstr(buf, id);
-    if (!str)
-        return NULL;
+    while ((str = strtok(buf, quote)) != NULL)
+    {
+        if (strlen(str) < 3)
+            continue;
+        cmd_str = str;
+        cmd_lines.push_back(cmd_str);
+        ret++;
+    }
 
-    ptr2 = ptr1 = str + strlen(id) + 1;
-
-    while ((*ptr2) != '\n' && (*ptr2) != '\r' && (*ptr2) != ')' && (*ptr2) != '}' && (*ptr2) != '\0')
-        ptr2++;
-
-    if (ptr2 - ptr1 < 3)
-        return NULL;
-
-    if (*ptr2 != '\0')
-        *(ptr2++) = '\0';
-
-    cmd_str = ptr1;
-    return ptr2;
+    return ret;
 }
 
 /*
