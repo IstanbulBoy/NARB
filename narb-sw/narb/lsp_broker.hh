@@ -92,7 +92,9 @@ private:
     msg_app2narb_request mrn_spec;    // for multi-region networks
     msg_app2narb_vtag_mask* vtag_mask;
     u_int32_t hop_back;
-
+    bool is_recursive_request;
+    bool is_confirmation_mode;
+    
     //state of the current LSPQ request, values defined below
     u_char state;
 #define STATE_IDLE 0

@@ -899,6 +899,9 @@ inline void CLIReader::NextLine ()
 
 void CLIWriter::WriteBuffer(string &buf)
 { 
+    if (fd <= 0) // non-terninal execution
+        return;
+
     buf_queue.push_back(buf); 
     this->SetObsolete(false);
     this->SetRepeats(0);

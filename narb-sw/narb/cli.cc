@@ -1566,7 +1566,7 @@ COMMAND(cmd_set_peer_narb, "set peer-narb HOST port PORT via IF_ADDR",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-confirmed|all-loose-allowed|all-loose-confirmed}",
+COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-confirmed|all-loose-allowed}",
        "Set/Reset configuration\nPick a NARB routing mode.\n")
 {
     if(argv[0] == "all-strict-only")
@@ -1579,8 +1579,6 @@ COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|
         SystemConfig::routing_mode= RT_MODE_MIXED_CONFIRMED;
     else if(argv[0] == "all-loose-allowed")
       SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_ALLOWED;
-    else if(argv[0] == "all-loose-confirmed")
-      SystemConfig::routing_mode= RT_MODE_ALL_LOOSE_CONFIRMED;
     CLI_OUT("Routing mode changed succesfully.%sThe new mode will be effective for new requests.%sHowever, it does not apply to requests in progress. %s", cli_cstr_newline, cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
@@ -1605,9 +1603,6 @@ COMMAND (cmd_show_routing_mode, "show routing-mode",
         break;
     case RT_MODE_ALL_LOOSE_ALLOWED:
         routing_mode = "all-loose-allowed";
-        break;
-    case RT_MODE_ALL_LOOSE_CONFIRMED:
-        routing_mode = "all-loose-confirmed";
         break;
     default:
         routing_mode = "unknow";

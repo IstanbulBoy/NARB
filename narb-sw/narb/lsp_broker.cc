@@ -83,6 +83,8 @@ void LSPQ::Init()
     mrn_spec = req_spec;
     vtag_mask = NULL;
     hop_back = 0;
+    is_recursive_request = false;
+    is_confirmation_mode = false;
 }
 
 LSPQ::~LSPQ()
@@ -370,9 +372,11 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
 /////// STATE_APP_REQ ////////
 int LSPQ::HandleLSPQRequest()
 {
-    SetState(STATE_APP_REQ);
-
     int ret; 
+
+    SetState(STATE_APP_REQ);
+    is_recursive_request = false;
+    is_confirmation_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
 
     RCE_APIClient * rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
 
@@ -423,6 +427,8 @@ int LSPQ::HandleLSPQRequest()
 int LSPQ::HandleRecursiveRequest()
 {
     SetState(STATE_REQ_RECURSIVE);
+    is_recursive_request = true;
+    is_confirmation_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
 
     int ret; 
 
@@ -534,6 +540,12 @@ int LSPQ::HandleRCEReply(api_msg *msg)
         if(!is_all_loose_hops(ero))
             NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
         return HandleCompleteERO();
+        break;
+    case RT_MODE_MIXED_CONFIRMED:
+//        if (is_all_strict_hops(ero)) // &&  recursive
+//            return HandleCompleteEROWithConfirmation(); //w/o ERO
+//        else if (!is_all_loose_hops(ero)) && !recursive)
+//            return HandleCompleteEROWithConfirmation(); //with ERO
         break;
     }
 

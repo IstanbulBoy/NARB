@@ -57,8 +57,7 @@ enum narb_routing_mode {
   RT_MODE_MIXED_ALLOWED,
   RT_MODE_MIXED_PREFERRED,
   RT_MODE_ALL_LOOSE_ALLOWED,
-  RT_MODE_MIXED_CONFIRMED,
-  RT_MODE_ALL_LOOSE_CONFIRMED
+  RT_MODE_MIXED_CONFIRMED
 };
 
 enum narb_working_mode {
@@ -86,6 +85,7 @@ enum narb_working_mode {
 #define LSP_OPT_VIA_MOVAZ  ((u_int32_t)(0x0040 << 16)) //using MOVAZ proprietary TLVs for optical layer routing
 #define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x0080 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
 #define LSP_OPT_QUERY_HOLD  ((u_int32_t)(0x0100 << 16)) //holding resource upon query for a short period of time to resolve contention
+#define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
 
 class SystemConfig
 {
