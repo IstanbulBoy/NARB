@@ -83,8 +83,8 @@ void LSPQ::Init()
     mrn_spec = req_spec;
     vtag_mask = NULL;
     hop_back = 0;
-    is_recursive_request = false;
-    is_confirmation_mode = false;
+    is_recursive_req = false;
+    is_qconf_mode = false;
 }
 
 LSPQ::~LSPQ()
@@ -364,6 +364,23 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
     return 0;
 }
 
+void LSPQ::SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag)
+{
+    list<ero_subobj*>::iterator iter;
+    ero_subobj *subobj;
+
+    for (iter = ero.begin(); iter != ero.end(); iter++)
+    {
+        if (subobj->sw_type != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+            continue;
+        subobj = *iter;
+        if (subobj->l2sc_vlantag != 0)
+            subobj->l2sc_vlantag = vtag;
+        if ((subobj->if_id >> 16) == 0)
+            subobj->if_id = vtag;
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////
 //////////////////////// LSPQ FSM Functions ////////////////////////
@@ -372,11 +389,11 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
 /////// STATE_APP_REQ ////////
 int LSPQ::HandleLSPQRequest()
 {
-    int ret; 
-
     SetState(STATE_APP_REQ);
-    is_recursive_request = false;
-    is_confirmation_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
+    is_recursive_req = false;
+    is_qconf_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
+
+    int ret; 
 
     RCE_APIClient * rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
 
@@ -427,8 +444,8 @@ int LSPQ::HandleLSPQRequest()
 int LSPQ::HandleRecursiveRequest()
 {
     SetState(STATE_REQ_RECURSIVE);
-    is_recursive_request = true;
-    is_confirmation_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
+    is_recursive_req = true;
+    is_qconf_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
 
     int ret; 
 
@@ -506,7 +523,19 @@ int LSPQ::HandleRCEReply(api_msg *msg)
     if (ero.size() == 0)
         return HandleErrorCode(NARB_ERROR_INTERNAL);
 
-    switch (SystemConfig::routing_mode)
+    if (is_qconf_mode) // including "case RT_MODE_MIXED_CONFIRMED" 
+    { 
+        if (is_recursive_req && is_all_strict_hops(ero))
+        {
+            // >>>> re-pick a vlan tag --> randomize?
+            return HandleCompleteEROWithConfirmationID();
+        }
+        else if (!is_recursive_req && !is_all_loose_hops(ero))
+            return HandleCompleteEROWithConfirmationID();
+        else //e.g. all loose hops ....
+            return HandleErrorCode(NARB_ERROR_NO_ROUTE);
+    }
+    else switch (SystemConfig::routing_mode)
     {
     case RT_MODE_ALL_STRICT_ONLY:
     case RT_MODE_MIXED_ALLOWED:
@@ -533,19 +562,13 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
             return HandleCompleteERO();
         }
-        else
+         else
             return HandleErrorCode(NARB_ERROR_NO_ROUTE);
         break;            
     case RT_MODE_ALL_LOOSE_ALLOWED:
         if(!is_all_loose_hops(ero))
             NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
         return HandleCompleteERO();
-        break;
-    case RT_MODE_MIXED_CONFIRMED:
-//        if (is_all_strict_hops(ero)) // &&  recursive
-//            return HandleCompleteEROWithConfirmation(); //w/o ERO
-//        else if (!is_all_loose_hops(ero)) && !recursive)
-//            return HandleCompleteEROWithConfirmation(); //with ERO
         break;
     }
 
@@ -560,8 +583,9 @@ int LSPQ::HandlePartialERO()
 
     int ret; 
 
-    assert (SystemConfig::routing_mode == RT_MODE_ALL_STRICT_ONLY ||
-                SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED);
+    assert (SystemConfig::routing_mode == RT_MODE_ALL_STRICT_ONLY
+               ||SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED
+               ||is_qconf_mode); 
     
 
     NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
@@ -612,6 +636,7 @@ int LSPQ::HandlePartialERO()
         rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
     }
 
+    // $$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
     peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
 }
 
@@ -624,13 +649,16 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
 
     list<ero_subobj*> rec_ero;
     te_tlv_header *tlv = (te_tlv_header*)msg->body;
-    if (ntohs(tlv->type) == TLV_TYPE_NARB_ERROR_CODE)
+    switch ( ntohs(msg->header.type) )
     {
+    case MSG_REPLY_ERROR:
+        assert (ntohs(tlv->type) == TLV_TYPE_NARB_ERROR_CODE);
         api_msg_delete(msg);
-        goto _CANNOT_EXPAND_ROUTE;
-    }
-    else if (ntohs(tlv->type) == TLV_TYPE_NARB_ERO)
-    {
+        //goto _CANNOT_EXPAND_ROUTE;
+        break;
+
+    case MSG_REPLY_ERO:
+        assert (ntohs(tlv->type) == TLV_TYPE_NARB_ERO);
         GetERO_RFCStandard((te_tlv_header*)msg->body, rec_ero);
         if (msg->header.tag != 0 && ntohl(msg->header.tag) != ANY_VTAG) {
             req_vtag = ntohl(msg->header.tag);
@@ -649,19 +677,86 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                 }
             }
         }
-    }
 
-    api_msg_delete(msg);
-    if (ero.size() == 0 || rec_ero.size() == 0)
-        return HandleErrorCode(NARB_ERROR_INTERNAL);
+        // $$$$ Should not receirve QUERY_CONFIRM option along with ERO from next hop NARB 
+        assert ( ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM == 0);
 
-    if (SystemConfig::forced_merge && is_all_strict_hops(rec_ero))
-    {
-        if (ForceMergeERO(ero, rec_ero) == 0) // force-merged succssfully
+        api_msg_delete(msg);
+        if (ero.size() == 0 || rec_ero.size() == 0)
+            return HandleErrorCode(NARB_ERROR_INTERNAL);
+
+        if (SystemConfig::forced_merge && is_all_strict_hops(rec_ero))
+        {
+            if (ForceMergeERO(ero, rec_ero) == 0) // force-merged succssfully
+                return HandleCompleteERO();
+        }
+        else if (MergeERO(ero, rec_ero) == 0) // merged succssfully
             return HandleCompleteERO();
+        break;
+
+    case MSG_REPLY_CONFIRMATION_ID:
+        // Verifying confirmation ID
+        LOGF("HandleNextHopNARBReply:: receieved message (ucid=%x,seqnum=%x)(ucid=%x,seqnum=%x)\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        if (ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM == 0)
+        {
+            LOGF("HandleNextHopNARBReply::Error: no LSP_OPT_QUERY_CONFIRM option flag in MSG_REPLY_CONFIRMATION_ID message header.\n");
+            return HandleErrorCode(NARB_ERROR_INTERNAL);
+        }
+        if (ntohl(msg->header.ucid) != req_ucid || ntohl(msg->header.seqnum) !=  app_seqnum)
+        {
+            LOGF("HandleNextHopNARBReply::Error: Confirmation ID in recursive LSPQ reply message mismatches with the local LSPQ (ucid=%x,seqnum=%x).\n", req_ucid, app_seqnum);
+            return HandleErrorCode(NARB_ERROR_INTERNAL);
+        }
+
+        // Checking the vlan tag (against the returned picked one)
+        if (ntohl(msg->header.tag) == ANY_VTAG)
+        {
+                LOGF("HandleNextHopNARBReply::Error: ANY_VTAG is received along with MSG_REPLY_CONFIRMATION_ID message.\n");
+                return HandleErrorCode(NARB_ERROR_NO_ROUTE);                                
+        }
+        else if (msg->header.tag != 0) 
+        {
+            req_vtag = ntohl(msg->header.tag);
+            // update vtag in all ero subojects.
+            SetVtagToERO(ero, req_vtag);
+            if (vtag_mask)
+            {
+                if(!HAS_VLAN(vtag_mask->bitmask, req_vtag))
+                {
+                    LOGF("HandleNextHopNARBReply::Error: The VLAN tag %d returned along with the confirmation ID message mismatches with the pre-calculated VLAN tag mask.\n", req_vtag);
+                    return HandleErrorCode(NARB_ERROR_NO_ROUTE);                    
+                }
+                else if (!is_all_loose_hops(ero))
+                {
+                    //notify the corresponding RCE server for LSP query confirmation that may have changed vlan tag assignment
+                    RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+                    int ret = 0;
+                    if (!rce_client)
+                    {
+                        ret = -1;
+                        LOGF("HandleNextHopNARBReply::Error: no RCE client available...\n");
+                    }  
+                    else if (!rce_client->IsAlive())
+                    {
+                        ret = rce_client->Connect();
+                        if (ret < 0)
+                        {
+                            LOGF("HandleNextHopNARBReply::Error: dead RCE client died and connect failed...\n");
+                        }
+                    } //else ret == 0;
+                    if (ret >= 0)
+                    {
+                        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, req_ucid, app_seqnum, req_vtag);
+                    }
+                }
+            }
+        }           
+
+        // return complete ERO with confirmation ID (or confirmation ID alone)
+        return HandleCompleteEROWithConfirmationID();
+        api_msg_delete(msg);        
+        break;
     }
-    else if (MergeERO(ero, rec_ero) == 0) // merged succssfully
-        return HandleCompleteERO();
 
     //Unsucessful recursive routing
 _CANNOT_EXPAND_ROUTE:
@@ -701,8 +796,35 @@ int LSPQ::HandleCompleteERO()
 
     rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
     if (!rmsg)
-        HandleErrorCode(NARB_ERROR_NO_ROUTE);
+        HandleErrorCode(NARB_ERROR_INTERNAL);
     rmsg->header.tag = htonl(req_vtag);
+
+    broker->HandleReplyMessage(rmsg);
+    return 0;
+}
+
+// $$$$ Other state?
+/////// STATE_ERO_COMPLETE ////////
+int LSPQ::HandleCompleteEROWithConfirmationID()
+{
+    SetState(STATE_ERO_COMPLETE);
+
+    int length;
+    void * tlv_data;
+    api_msg * rmsg;
+
+    assert(broker);
+
+    if (is_recursive_req) // confirmation ID only (empty message body)
+        rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, 0, NULL, req_ucid, app_seqnum, req_vtag); 
+    else //ERO and confirmation ID (ucid, seqnum)
+        rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
+    
+    if (!rmsg)
+        HandleErrorCode(NARB_ERROR_INTERNAL);
+
+    rmsg->header.tag = htonl(req_vtag);
+    rmsg->header.options |= htonl(LSP_OPT_QUERY_CONFIRM);
 
     broker->HandleReplyMessage(rmsg);
     return 0;

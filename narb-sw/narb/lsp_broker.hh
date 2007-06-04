@@ -92,8 +92,8 @@ private:
     msg_app2narb_request mrn_spec;    // for multi-region networks
     msg_app2narb_vtag_mask* vtag_mask;
     u_int32_t hop_back;
-    bool is_recursive_request;
-    bool is_confirmation_mode;
+    bool is_recursive_req;
+    bool is_qconf_mode;
     
     //state of the current LSPQ request, values defined below
     u_char state;
@@ -145,6 +145,7 @@ public:
     static void GetERO_RFCStandard(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
     static int MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
     static int ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
+    void SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag);
 
     // FSM state handlers ...
     
@@ -168,6 +169,7 @@ public:
 
     ////// STATE_ERO_COMPLETE ////
     int HandleCompleteERO();
+    int HandleCompleteEROWithConfirmationID();
 
     ////// STATE_RESV_CONFIRM ////
     int HandleResvConfirm(api_msg* msg);
@@ -297,6 +299,7 @@ enum  narb_msg_type
     MSG_REPLY_ERO = 0x21,
     MSG_REPLY_ERROR = 0x22,
     MSG_REPLY_REMOVE_CONFIRM = 0x23,
+    MSG_REPLY_CONFIRMATION_ID = 0x24,
     MSG_PEER_REQUEST = 0x41,
 //    MSG_PEER_REPLY = 0x42,
 //    MSG_PEER_CONFIRM = 0x43,
@@ -341,6 +344,8 @@ enum  narb_error_code
 #define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
 #define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10
 #define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11
+
+#define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 
 #endif
  

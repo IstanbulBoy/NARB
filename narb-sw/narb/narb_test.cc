@@ -78,8 +78,6 @@ in_addr hop_back;
 
 struct msg_app2narb_vtag_mask vtag_mask;
 
-#define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
-
 struct option longopts[] = 
 {
     { "host",        no_argument,       NULL, 'H'},

@@ -382,6 +382,27 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_reserve, 0);
         break;
+    case ACT_UPDATE:
+        delta = link1->removeDeltaByOwner(ucid, seqnum);
+        if (!delta)
+            delta = new LinkStateDelta;
+        memset(delta, 0, sizeof(LinkStateDelta));
+        delta->owner_ucid = ucid;
+        delta->owner_seqnum = seqnum;
+        delta->bandwidth = req_data.bandwidth;
+        delta->vlan_tag = vtag;
+        if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        {
+            int ts_1st = (int)(if_id & 0xff);
+            int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
+            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
+            {
+                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
+            }
+        }
+        link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
+        break;
+        break;
     case ACT_DELETE:
         delta = link1->removeDeltaByOwner(ucid, seqnum);
         if (delta)

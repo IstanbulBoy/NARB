@@ -321,9 +321,12 @@ struct LinkStateDelta
     struct timeval create_time; 
     struct timeval expiration;   //10 seconds for query; 30 (60?) seconds for confirm; 0 for release
     float        bandwidth;
-    u_int32_t vlan_tag;
     u_int32_t wavelength;
-    u_int32_t timeslots[MAX_TIMESLOTS_NUM/8];
+    union {
+      u_int32_t timeslots[MAX_TIMESLOTS_NUM/8];
+      u_int32_t vlan_tag;
+      u_int32_t vtag_mask[MAX_VLAN_NUM/8];
+    };
 };
 
 class Link: public Resource
