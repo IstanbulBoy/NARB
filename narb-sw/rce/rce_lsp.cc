@@ -193,16 +193,46 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     u_int32_t ucid = ntohl(msg->hdr.ucid);
     u_int32_t seqnum = ntohl(msg->hdr.msgseq);
     bool is_bidir = ((ntohl(msg->hdr.options) & LSP_OPT_BIDIRECTIONAL) != 0);
-    narb_lsp_request_tlv* lsp_req = (narb_lsp_request_tlv*)msg->body;
-    ////replied ERO    
-    te_tlv_header* tlv_ero = (te_tlv_header*)(msg->body + sizeof(narb_lsp_request_tlv));
+    narb_lsp_request_tlv* lsp_req_tlv =NULL;
+    narb_lsp_vtagmask_tlv* vtag_mask_tlv = NULL;
     list<ero_subobj> ero;
-    GetERO_RFCStandard(tlv_ero, ero);
-    UpdateLinkStatesByERO(*lsp_req, ero, ucid, seqnum,  is_bidir);
+
+    int msg_len = ntohs(msg->hdr.msglen);
+    te_tlv_header* tlv = (te_tlv_header*)(msg->body);
+    int tlv_len;
+
+    while (msg_len > 0)
+    {
+        switch (ntohs(tlv->type))
+        {
+        case TLV_TYPE_NARB_REQUEST:
+        case TLV_TYPE_NARB_PEER_REQUEST:
+            tlv_len = sizeof(narb_lsp_request_tlv);
+            lsp_req_tlv = (narb_lsp_request_tlv*)tlv;
+            break;
+        case TLV_TYPE_NARB_VTAG_MASK:
+            tlv_len = sizeof(narb_lsp_vtagmask_tlv);
+            vtag_mask_tlv =(narb_lsp_vtagmask_tlv*)tlv; 
+            break;
+        case TLV_TYPE_NARB_ERO:
+            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            GetERO_RFCStandard(tlv, ero);
+            break;
+        default:
+            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            break;
+        }
+        tlv = (te_tlv_header*)((char*)tlv + tlv_len);
+        msg_len -= tlv_len;
+    }
+
+    assert(lsp_req_tlv);
+    assert(ero.size() > 0);
+    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, vtag_mask_tlv);
     api_msg_delete(msg);
 }
 
-void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir)
+void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, narb_lsp_vtagmask_tlv* vtag_mask)
 {
     Link *link1;
     ero_subobj* subobj;
@@ -267,7 +297,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 vtag = lsp_vtag;
             }
 
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id));
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
     }
@@ -305,13 +335,13 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 vtag = lsp_vtag;
             }
 
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj->if_id);
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
     }
 }
 
-void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id)
+void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id, narb_lsp_vtagmask_tlv* vtag_mask)
 {
     assert(link1);
     u_int8_t reqtype = req_data.type >> 8;
@@ -334,15 +364,25 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
-        delta->vlan_tag = vtag;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
+            delta->flags |= DELTA_TIMESLOTS;
             int ts_1st = (int)(if_id & 0xff);
             int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
             for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
             {
                 SET_TIMESLOT(delta->timeslots, ts_1st+ts);
             }
+        }
+        else if (vtag_mask)
+        {
+            delta->flags |= DELTA_VTAGMASK;
+            memcpy(delta->vtag_mask, vtag_mask->bitmask, MAX_VLAN_NUM/8);
+        }
+        else if (vtag != 0)
+        {
+            delta->flags |= DELTA_VLANTAG;
+            delta->vlan_tag = vtag;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
@@ -370,15 +410,25 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
-        delta->vlan_tag = vtag;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
+            delta->flags |= DELTA_TIMESLOTS;
             int ts_1st = (int)(if_id & 0xff);
             int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
             for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
             {
                 SET_TIMESLOT(delta->timeslots, ts_1st+ts);
             }
+        }
+        else if (vtag_mask)
+        {
+            delta->flags |= DELTA_VTAGMASK;
+            memcpy(delta->vtag_mask, vtag_mask->bitmask, MAX_VLAN_NUM/8);
+        }
+        else if (vtag != 0)
+        {
+            delta->flags |= DELTA_VLANTAG;
+            delta->vlan_tag = vtag;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_reserve, 0);
         break;
@@ -390,15 +440,25 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
-        delta->vlan_tag = vtag;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
+            delta->flags |= DELTA_TIMESLOTS;
             int ts_1st = (int)(if_id & 0xff);
             int ts_num = (int)(delta->bandwidth / 50.0);//STS-1
             for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
             {
                 SET_TIMESLOT(delta->timeslots, ts_1st+ts);
             }
+        }
+        else if (vtag_mask)
+        {
+            delta->flags |= DELTA_VTAGMASK;
+            memcpy(delta->vtag_mask, vtag_mask->bitmask, MAX_VLAN_NUM/8);
+        }
+        else if (vtag != 0)
+        {
+            delta->flags |= DELTA_VLANTAG;
+            delta->vlan_tag = vtag;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;

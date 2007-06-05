@@ -1227,11 +1227,11 @@ void PCEN::ReplyERO ()
     //holding the resources enqueried for a short period of time to avoid contention...
     if (options & LSP_OPT_QUERY_HOLD)
     {
-        HoldLinkStatesUponQuery();
+        HoldLinkStatesUponQuery(vtag_mask);
     }
 }
 
-void PCEN::HoldLinkStatesUponQuery()
+void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 {
     narb_lsp_request_tlv lsp_req;
     lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
@@ -1244,7 +1244,7 @@ void PCEN::HoldLinkStatesUponQuery()
     lsp_req.gpid = 0;
 
     bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-    LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir);
+    LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir, vtag_mask);
 }
     
 PCEN::~PCEN()

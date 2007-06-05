@@ -163,8 +163,8 @@ public:
 public:
     static void GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero);
     static void HandleResvNotification(api_msg* msg);
-    static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true);
-    static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0);
+    static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true, narb_lsp_vtagmask_tlv* vtag_mask=NULL);
+    static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0, narb_lsp_vtagmask_tlv* vtag_mask=NULL);
 };
 
 #endif

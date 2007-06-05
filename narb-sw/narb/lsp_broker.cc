@@ -746,7 +746,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                     } //else ret == 0;
                     if (ret >= 0)
                     {
-                        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, req_ucid, app_seqnum, req_vtag);
+                        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, req_ucid, app_seqnum, req_vtag, vtag_mask);
                     }
                 }
             }

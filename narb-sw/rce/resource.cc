@@ -227,26 +227,44 @@ Link& Link::operator+= (LinkStateDelta& delta)
 
         if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
         {
-            if ((delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM) && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+            if (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             {
-                SET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
-                if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
-                    RESET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+                if (delta.flags & DELTA_VLANTAG && (delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM))
+                {
+                    SET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
+                    if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                        RESET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+                }
+                else if (delta.flags & DELTA_VTAGMASK)
+                {
+                    for (i = 0; i < MAX_VLAN_NUM/8; i++)
+                    {
+                        (*iter)->vlan_info.bitmask[i] |= delta.vtag_mask[i]; //set
+                        if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                            (*iter)->vlan_info.bitmask_alloc[i] &= (~delta.vtag_mask[i]); //reset
+                    }
+                }
             }
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
-                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
-                    (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
+                if (delta.flags & DELTA_TIMESLOTS)
+                {
+                    for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                        (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
+                }
             }
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
+            if (delta.flags & DELTA_TIMESLOTS)
+            {
                 for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
                     (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
+            }
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC) // || (*iter)->swtype == MOVAZ_LSC
         {
-            if (delta.wavelength > 0)
+            if (delta.flags & DELTA_WAVELENGTH && delta.wavelength > 0)
             {
                 ;// adding to this->wavelenths;
             }
@@ -283,28 +301,46 @@ Link& Link::operator-= (LinkStateDelta& delta)
         }
         if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
         {
-            if ((delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM) && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+            if (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
             {
-                RESET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
-                if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
-                    SET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+                if (delta.flags & DELTA_VLANTAG && (delta.vlan_tag > 0 && delta.vlan_tag < MAX_VLAN_NUM))
+                {
+                    RESET_VLAN((*iter)->vlan_info.bitmask, delta.vlan_tag);
+                    if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                        SET_VLAN((*iter)->vlan_info.bitmask_alloc, delta.vlan_tag);
+                }
+                else if (delta.flags & DELTA_VTAGMASK)
+                {
+                    for (i = 0; i < MAX_VLAN_NUM/8; i++)
+                    {
+                        (*iter)->vlan_info.bitmask[i] &= (~delta.vtag_mask[i]);//reset
+                        if ((ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_ALLOC))
+                            (*iter)->vlan_info.bitmask_alloc[i] |= delta.vtag_mask[i]; //set
+                    }
+                }
             }
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
-                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
-                    (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+                if (delta.flags & DELTA_TIMESLOTS)
+                {
+                    for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                        (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+                }
             }
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
-                for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
-                    (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+                if (delta.flags & DELTA_TIMESLOTS)
+                {
+                    for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
+                        (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
+                }
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)  // || == MOVAZ_LSC(151)
         {
-            if (delta.wavelength > 0)
+            if (delta.flags & DELTA_WAVELENGTH && delta.wavelength > 0)
             {
-                ;// remove from this->wavelenths;
+                ;// adding to this->wavelenths;
             }
         }
     }
