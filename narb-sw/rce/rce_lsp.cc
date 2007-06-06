@@ -193,23 +193,18 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     u_int32_t ucid = ntohl(msg->hdr.ucid);
     u_int32_t seqnum = ntohl(msg->hdr.msgseq);
     bool is_bidir = ((ntohl(msg->hdr.options) & LSP_OPT_BIDIRECTIONAL) != 0);
-    narb_lsp_request_tlv* lsp_req_tlv =NULL;
     narb_lsp_vtagmask_tlv* vtag_mask_tlv = NULL;
     list<ero_subobj> ero;
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
+    narb_lsp_request_tlv* lsp_req_tlv =tlv; // mandatory
     int tlv_len;
 
     while (msg_len > 0)
     {
         switch (ntohs(tlv->type))
         {
-        case TLV_TYPE_NARB_REQUEST:
-        case TLV_TYPE_NARB_PEER_REQUEST:
-            tlv_len = sizeof(narb_lsp_request_tlv);
-            lsp_req_tlv = (narb_lsp_request_tlv*)tlv;
-            break;
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(narb_lsp_vtagmask_tlv);
             vtag_mask_tlv =(narb_lsp_vtagmask_tlv*)tlv; 
@@ -226,7 +221,6 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
         msg_len -= tlv_len;
     }
 
-    assert(lsp_req_tlv);
     assert(ero.size() > 0);
     UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, vtag_mask_tlv);
     api_msg_delete(msg);
