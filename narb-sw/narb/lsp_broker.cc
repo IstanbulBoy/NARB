@@ -741,7 +741,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                         ret = rce_client->Connect();
                         if (ret < 0)
                         {
-                            LOGF("HandleNextHopNARBReply::Error: dead RCE client died and connect failed...\n");
+                            LOGF("HandleNextHopNARBReply::Error: RCE client died and connect failed...\n");
                         }
                     } //else ret == 0;
                     if (ret >= 0)

@@ -150,7 +150,7 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
     char buf[1500];
     u_int16_t length = sizeof(msg_app2narb_request);
     memcpy(buf, msg_req, length);
-    ((msg_app2narb_request*)buf)->type = ((type<<8) | action);
+    ((msg_app2narb_request*)buf)->type = htons(TLV_TYPE_NARB_REQUEST);
     api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
