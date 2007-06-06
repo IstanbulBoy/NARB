@@ -198,7 +198,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
-    narb_lsp_request_tlv* lsp_req_tlv =tlv; // mandatory
+    narb_lsp_request_tlv* lsp_req_tlv = (narb_lsp_request_tlv*)tlv; // mandatory
     int tlv_len;
 
     while (msg_len > 0)
