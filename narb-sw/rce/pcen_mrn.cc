@@ -653,39 +653,8 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if (SystemConfig::should_incorporate_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        //going backward to find the LOCAL_ID_TYPE_SUBNET_UNI_SRC link and see if both interfaces are on the same card
-        PCENLink* pcen_link_src = NULL;
-        list<ero_subobj>::reverse_iterator it;
-        for ( it = ero_track.rbegin(); it != ero_track.rend(); it++)
-        {
-            if ((ntohl((*it).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
-            {
-                int i;
-                for (i = 0; i < links.size(); i++)
-                    if (links[i]->link->lclIfAddr == (*it).addr.s_addr)
-                    {
-                       pcen_link_src = links[i];
-                       break;
-                    }
-            }
-            if (pcen_link_src)
-                break;
-        }
-        assert (pcen_link_src);
-        //initiating ts (special handling for source and destination interfaces on the same card (say Ciena ESLM)
-        if (pcen_link_src->link->iscds.front()->subnet_uni_info.nid_ipv4 == pcen_link->link->iscds.front()->subnet_uni_info.nid_ipv4 &&
-            (pcen_link_src->link->iscds.front()->subnet_uni_info.logical_port_number >>8) == (pcen_link->link->iscds.front()->subnet_uni_info.logical_port_number >>8))
-        {
-            //avoiding overlapping with timeslots belonging to the source interface (on the same card)
-            ts = pcen_link_src->link->iscds.front()->subnet_uni_info.first_timeslot + (u_int8_t)(pcen_link->rmt_end->tspec.Bandwidth/50.0);
-        }
-        else
-        {
-            ts = 1;
-        }
-        //regular timeslots constraint for destination interface
         u_int8_t ts_num = 0;
-        for (; ts <= MAX_TIMESLOTS_NUM; ts++)
+        for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
             {
@@ -715,7 +684,6 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        //regular timeslots constraint for source interface
         u_int8_t ts_num = 0;
         for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
