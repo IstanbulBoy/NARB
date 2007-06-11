@@ -648,6 +648,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
 {
     SetState(STATE_NEXT_HOP_NARB_REPLY);
 
+    bool had_vtag_mask = (vtag_mask != NULL);
     HandleOptionalResponseTLVs(msg);
 
     list<ero_subobj*> rec_ero;
@@ -722,14 +723,16 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
             req_vtag = ntohl(msg->header.tag);
             // update vtag in all ero subojects.
             SetVtagToERO(ero, req_vtag);
-            if (vtag_mask)
+            if (had_vtag_mask)
             {
-                if(!HAS_VLAN(vtag_mask->bitmask, req_vtag))
-                {
-                    LOGF("HandleNextHopNARBReply::Error: The VLAN tag %d returned along with the confirmation ID message mismatches with the pre-calculated VLAN tag mask.\n", req_vtag);
-                    return HandleErrorCode(NARB_ERROR_NO_ROUTE);                    
-                }
-                else if (!is_all_loose_hops(ero))
+                //if(vtag_mask && !HAS_VLAN(vtag_mask->bitmask, req_vtag))
+                //{
+                //    LOGF("HandleNextHopNARBReply::Error: The VLAN tag %d returned along with the confirmation ID message mismatches with the pre-calculated VLAN tag mask.\n", req_vtag);
+                //    return HandleErrorCode(NARB_ERROR_NO_ROUTE);                    
+                //}
+                // @@@@ Verify if the picked VTAG is still available <== (needed only if vtag_mask holding is active!)
+                
+                if (!is_all_loose_hops(ero))
                 {
                     //notify the corresponding RCE server for LSP query confirmation that may have changed vlan tag assignment
                     RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
@@ -749,7 +752,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                     } //else ret == 0;
                     if (ret >= 0)
                     {
-                        //single (picked) vlan tag instead of vtag_mask!
+                        //single (picked) vlan tag instead of vtag_mask!==> (needed only if vtag_mask holding is active!)
                         rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, req_ucid, app_seqnum, app_options, req_vtag, NULL);
                     }
                 }
