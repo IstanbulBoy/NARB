@@ -81,10 +81,10 @@ public:
     void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0,  msg_app2narb_vtag_mask* vtag_bitmask = NULL);
     void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, msg_app2narb_vtag_mask* vtag_bitmask = NULL);
 
-    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, u_int32_t ucid, u_int32_t seqnum, u_int32_t msgtag, msg_app2narb_vtag_mask* vtag_mask_tlv = NULL);
+    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, msg_app2narb_vtag_mask* vtag_mask_tlv = NULL);
     void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, api_msg* msg, list<ero_subobj*>& ero_forward)
         {
-            NotifyResvStateWithERO(type, action, (msg_app2narb_request*)msg->body, ero_forward, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));
+            NotifyResvStateWithERO(type, action, (msg_app2narb_request*)msg->body, ero_forward, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.options), ntohl(msg->header.tag));
         }
 };
 
