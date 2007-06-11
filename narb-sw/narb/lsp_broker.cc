@@ -679,7 +679,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
         }
 
         // $$$$ Should not receirve QUERY_CONFIRM option along with ERO from next hop NARB 
-        assert ( ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM == 0);
+        assert ( (ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM) == 0);
 
         api_msg_delete(msg);
         if (ero.size() == 0 || rec_ero.size() == 0)
