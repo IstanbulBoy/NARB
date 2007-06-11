@@ -1459,7 +1459,7 @@ _show_more_links:
             {
                 CLI_OUT ("\t    ---> Used wavelength: %d%s", delta->wavelength, cli_cstr_newline);
          }
-            else if (delta->flags & DELTA_WAVELENGTH)
+            else if (delta->flags & DELTA_VTAGMASK)
             {
                 CLI_OUT ("\t    ---> Used VLAN tags:");
                 for (i = 1; i <= MAX_VLAN_NUM; i++)
