@@ -1451,21 +1451,38 @@ _show_more_links:
                 (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "Queried" : "Reserved", 
                 delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline);
             CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
-            CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
-            bool timeslot_found = false;
-            for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
+            if (delta->flags & DELTA_VLANTAG)
             {
-                if (HAS_TIMESLOT(delta->timeslots, i)) 
-                {
-                    if (!timeslot_found)
-                    {
-                        CLI_OUT ("\t    ---> Used time slots:");
-                        timeslot_found = true;
-                    }
-                    CLI_OUT (" %d", i);
-                }
+                CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
             }
-            CLI_OUT("%s", cli_cstr_newline);
+            else if (delta->flags & DELTA_WAVELENGTH)
+            {
+                CLI_OUT ("\t    ---> Used wavelength: %d%s", delta->wavelength, cli_cstr_newline);
+         }
+            else if (delta->flags & DELTA_WAVELENGTH)
+            {
+                CLI_OUT ("\t    ---> Used VLAN tags:");
+                for (i = 1; i <= MAX_VLAN_NUM; i++)
+                {
+                    if (HAS_VLAN(delta->vtag_mask, i)) 
+                    {
+                        CLI_OUT (" %d", i);
+                    }
+                }
+                CLI_OUT("%s", cli_cstr_newline);
+         }         
+            else if (delta->flags & DELTA_TIMESLOTS)
+            {
+               CLI_OUT ("\t    ---> Used time slots:");
+                for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
+                {
+                    if (HAS_TIMESLOT(delta->timeslots, i)) 
+                    {
+                        CLI_OUT (" %d", i);
+                    }
+                }
+                CLI_OUT("%s", cli_cstr_newline);
+            }
         }
     }
 
