@@ -1215,7 +1215,7 @@ void PCEN::ReplyERO ()
             is_ero_all_strict = false;
     }
 
-    if (!is_ero_all_strict && vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS)) // no vtag_mask holding for last domain (all_strict)
+    if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS)) // no vtag_mask holding for last domain (all_strict)
     {
         tlv = (te_tlv_header*)(body + bodylen);
         memcpy(tlv, vtag_mask, sizeof(narb_lsp_vtagmask_tlv));
@@ -1230,7 +1230,7 @@ void PCEN::ReplyERO ()
     //holding the resources enqueried for a short period of time to avoid contention...
     if (options & LSP_OPT_QUERY_HOLD)
     {
-        HoldLinkStatesUponQuery(vtag_mask);
+        HoldLinkStatesUponQuery(is_ero_all_strict ? NULL : vtag_mask);
     }
 }
 
