@@ -177,6 +177,7 @@ void APIReader::HandleMessage (api_msg *msg)
             break;
         case ACT_CONFIRM:
         case ACT_DELETE:
+        case ACT_UPDATE:
             LSPHandler::HandleResvNotification(msg);
             break;
         }
