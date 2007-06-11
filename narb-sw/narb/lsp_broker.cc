@@ -434,7 +434,8 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
 
-    if (req_vtag == ANY_VTAG || vtag_mask)
+    //if (vtag_mask)
+    if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, hop_back, vtag_mask);
     return 0;
