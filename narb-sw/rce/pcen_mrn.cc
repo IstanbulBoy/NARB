@@ -1159,7 +1159,7 @@ int PCEN_MRN::PerformComputation()
             if (vtag > MAX_VLAN_NUM)
                 vtag = 0;
             SetVTagToEROTrack(ero, vtag);
-            if (destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
+            if ( destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS) && (options & LSP_OPT_VTAG_MASK) ) //?LSP_OPT_VTAG_MASK
                 SetVTagMask(destNode->vtagset);
         }
 
