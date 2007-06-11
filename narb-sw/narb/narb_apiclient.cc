@@ -44,6 +44,7 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
     {
      case MSG_REPLY_ERO:
      case MSG_REPLY_ERROR:
+    case MSG_REPLY_CONFIRMATION_ID:
         {
             LSPQ * lspq = FindOwnerLSPQ(msg);
             if (!lspq)
