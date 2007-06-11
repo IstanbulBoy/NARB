@@ -434,10 +434,12 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
 
-    //if (vtag_mask)
+    if (vtag_mask)
+        app_options |= LSP_OPT_VTAG_MASK;
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
-    rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0), req_vtag, hop_back, vtag_mask);
+    rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
+        | (is_qconf_mode ? LSP_OPT_QUERY_HOLD |LSP_OPT_QUERY_CONFIRM : 0) , req_vtag, hop_back, vtag_mask);
     return 0;
 }
 
@@ -480,7 +482,7 @@ int LSPQ::HandleRecursiveRequest()
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, req_ucid, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	| (app_options & LSP_OPT_E2E_VTAG) |(app_options & LSP_OPT_VIA_MOVAZ) | (app_options & LSP_OPT_QUERY_HOLD)
 	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0)
-	| (app_options & LSP_OPT_BIDIRECTIONAL) 
+	| (app_options & LSP_OPT_BIDIRECTIONAL) | (is_qconf_mode ? LSP_OPT_QUERY_HOLD |LSP_OPT_QUERY_CONFIRM : 0)
 	, req_vtag, hop_back, vtag_mask); 
 }
 
@@ -699,6 +701,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
         break;
 
     case MSG_REPLY_CONFIRMATION_ID:
+        assert(is_qconf_mode);
         // Verifying confirmation ID
         LOGF("HandleNextHopNARBReply:: receieved message (ucid=%x,seqnum=%x)(ucid=%x,seqnum=%x)\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         if (ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM == 0)
