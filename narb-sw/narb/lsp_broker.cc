@@ -525,13 +525,14 @@ int LSPQ::HandleRCEReply(api_msg *msg)
 
     if (is_qconf_mode) // including "case RT_MODE_MIXED_CONFIRMED" 
     { 
-        if (is_recursive_req && is_all_strict_hops(ero))
+        if (is_all_strict_hops(ero))
         {
             // >>>> re-pick a vlan tag --> randomize?
             return HandleCompleteEROWithConfirmationID();
         }
-        else if (!is_recursive_req && !is_all_loose_hops(ero))
-            return HandleCompleteEROWithConfirmationID();
+        else if (!is_recursive_req && !is_all_loose_hops(ero) && !is_all_strict_hops(ero))
+            //return HandleCompleteEROWithConfirmationID();
+            return HandlePartialERO();
         else //e.g. all loose hops ....
             return HandleErrorCode(NARB_ERROR_NO_ROUTE);
     }
@@ -637,7 +638,8 @@ int LSPQ::HandlePartialERO()
     }
 
     // $$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
-    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED), req_vtag, vtag_mask);
+    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0)
+        , req_vtag, vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
