@@ -1205,14 +1205,17 @@ void PCEN::ReplyERO ()
     tlv->length = htons(sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
 
+    bool is_ero_all_strict = true;
     int i =0;
     ero_subobj* ero_hop = (ero_subobj*)((char*)tlv + TLV_HDR_SIZE);
     for (iter = ero.begin(); iter != ero.end(); iter++, i++)
     {
         *(ero_hop+i) = (*iter);
+        if ((*iter).hop_type == ERO_TYPE_LOOSE_HOP)
+            is_ero_all_strict = false;
     }
 
-    if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
+    if (!is_ero_all_strict && vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS)) // no vtag_mask holding for last domain (all_strict)
     {
         tlv = (te_tlv_header*)(body + bodylen);
         memcpy(tlv, vtag_mask, sizeof(narb_lsp_vtagmask_tlv));
