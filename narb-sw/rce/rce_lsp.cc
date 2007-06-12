@@ -384,6 +384,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
+            /* $$$$
             if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
             {
                 delta->expiration.tv_sec = SystemConfig::delta_expire_reserve;
@@ -396,6 +397,11 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             }
             //set time to the current
             gettimeofday(&delta->create_time, NULL);
+            */
+
+            //simply removing without put back the held resources
+            link1->DeltaListPointer()->remove(delta); 
+            delete delta;
             break; // not to continue...
         }
         //else ...
