@@ -512,14 +512,14 @@ int LSPQ::HandleRCEReply(api_msg *msg)
     {
         GetERO((te_tlv_header*)msg->body, ero);
         if ((app_options & LSP_OPT_E2E_VTAG) && req_vtag == ANY_VTAG)
-	{
+        {
             req_vtag = ntohl(msg->header.tag);
             if (req_vtag == ANY_VTAG)
             {
                 LOG("The impossible happened: RCE returns ANY_VTAG." << endl);
                 return HandleErrorCode(NARB_ERROR_NO_ROUTE);
             }
-	}
+        }
     }
     api_msg_delete(msg);    
     

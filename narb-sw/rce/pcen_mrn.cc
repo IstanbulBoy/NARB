@@ -1155,6 +1155,10 @@ int PCEN_MRN::PerformComputation()
             return ERR_PCEN_NO_ROUTE;
 
         if (vtag == ANY_VTAG) {
+			//TODO: Handling suggested vtag TLV
+				//If a VTAG is suggested in previous-domain recurisve request, first try to accomodate that.
+
+			//TODO: New VTAG selection logic to facilitate Q-Conf process (for example, random selection)
             vtag  = destNode->vtagset.TagSet().front();
             if (vtag > MAX_VLAN_NUM)
                 vtag = 0;

@@ -103,10 +103,13 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     int msglen = sizeof(rec_cspf_req) - 12;
     memcpy(msgbody, ((char*)&rec_cspf_req) + 12, msglen);
     if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS)) 
-   {
+    {
         memcpy(msgbody+msglen, vtag_mask, sizeof(msg_app2narb_vtag_mask));
         msglen += sizeof(msg_app2narb_vtag_mask);
         options |= LSP_OPT_VTAG_MASK;
+
+		//TODO: Adding suggested VTAG TLV!
+
         vtag = ANY_VTAG;
     }
     

@@ -1230,7 +1230,9 @@ void PCEN::ReplyERO ()
     //holding the resources enqueried for a short period of time to avoid contention...
     if (options & LSP_OPT_QUERY_HOLD)
     {
-        HoldLinkStatesUponQuery(is_ero_all_strict ? NULL : vtag_mask);
+        //HoldLinkStatesUponQuery(is_ero_all_strict ? NULL : vtag_mask);
+        // $$$$ test --> Do not hold vtag_mask in Q-Conf process!
+        HoldLinkStatesUponQuery(NULL);
     }
 }
 
