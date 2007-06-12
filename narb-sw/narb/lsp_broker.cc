@@ -703,7 +703,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
     case MSG_REPLY_CONFIRMATION_ID:
         assert(is_qconf_mode);
         // Verifying confirmation ID
-        LOGF("HandleNextHopNARBReply:: receieved message (ucid=%x,seqnum=%x)(ucid=%x,seqnum=%x)\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+        LOGF("HandleNextHopNARBReply:: receieved MSG_REPLY_CONFIRMATION_ID message(ucid=%x,seqnum=%x)\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         if (ntohl(msg->header.options) & LSP_OPT_QUERY_CONFIRM == 0)
         {
             LOGF("HandleNextHopNARBReply::Error: no LSP_OPT_QUERY_CONFIRM option flag in MSG_REPLY_CONFIRMATION_ID message header.\n");
@@ -826,9 +826,15 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
     assert(broker);
 
     if (is_recursive_req) // confirmation ID only (empty message body)
+    {
         rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, 0, NULL, req_ucid, app_seqnum, req_vtag); 
+        LOGF("HandleCompleteEROWithConfirmationID:: For recursive query, sending back confirmation ID only (ucid=%x,seqnum=%x), vtag=%d\n", req_ucid, app_seqnum, req_vtag);
+    }
     else //ERO and confirmation ID (ucid, seqnum)
+    {
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
+        LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
+    }
     
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
