@@ -82,6 +82,7 @@ void LSPQ::Init()
     req_spec.length = htons(sizeof(req_spec) - 4);
     mrn_spec = req_spec;
     vtag_mask = NULL;
+    suggested_vtag = NULL;
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
@@ -97,6 +98,9 @@ LSPQ::~LSPQ()
 
     if (vtag_mask)
         delete vtag_mask;
+
+    if (suggested_vtag)
+        delete suggested_vtag;
 }
 
 void LSPQ::DescribeLSP(string& desc)
@@ -511,8 +515,14 @@ int LSPQ::HandleRCEReply(api_msg *msg)
     else if (msg->header.action == ACT_ACKDATA)
     {
         GetERO((te_tlv_header*)msg->body, ero);
-        if ((app_options & LSP_OPT_E2E_VTAG) && req_vtag == ANY_VTAG)
+        if (suggested_vtag && vtag_mask && HAS_VLAN(vtag_mask->bitmask, suggested_vtag->suggested_vtag))
         {
+            //try using suggested_vtag first
+            req_vtag = suggested_vtag->suggested_vtag;
+        }
+        else if ((app_options & LSP_OPT_E2E_VTAG) && req_vtag == ANY_VTAG)
+        {
+            //otherwise use the vtag picked by RCE
             req_vtag = ntohl(msg->header.tag);
             if (req_vtag == ANY_VTAG)
             {
@@ -641,8 +651,7 @@ int LSPQ::HandlePartialERO()
     }
 
     // $$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
-    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0)
-        , req_vtag, vtag_mask);
+    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0), req_vtag, vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
@@ -1444,6 +1453,14 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             if (hop_back == 0)
                 LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: hop_back_tlv->ipv4 == 0\n");
             break;
+        case TLV_TYPE_NARB_SUGGESTED_VTAG:
+            if (!suggested_vtag)
+                suggested_vtag = new (struct msg_app2narb_suggested_vtag);
+            else if (suggested_vtag->suggested_vtag != ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag)
+                LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: existing suggested_vtag (%d) does not match the received (%d)\n",
+                    suggested_vtag->suggested_vtag, ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag);
+            memcpy(suggested_vtag, tlv, sizeof(msg_app2narb_suggested_vtag));
+            break;
         default:
             tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
             break;
@@ -1481,6 +1498,13 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
                 vtag_mask = new (struct msg_app2narb_vtag_mask);
             memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
             break;
+        /* RCE does not suggest vtag in the current implemention
+        case TLV_TYPE_NARB_SUGGESTED_VTAG:
+            if (!suggested_vtag)
+                suggested_vtag = new (struct msg_app2narb_suggested_vtag);
+            memcpy(suggested_vtag, tlv, sizeof(msg_app2narb_suggested_vtag));
+            break;
+        */
         default:
             break;
         }

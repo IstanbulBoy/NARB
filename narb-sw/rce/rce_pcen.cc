@@ -1230,8 +1230,10 @@ void PCEN::ReplyERO ()
     //holding the resources enqueried for a short period of time to avoid contention...
     if (options & LSP_OPT_QUERY_HOLD)
     {
+        // $$$$ option 1 --> Holding all vtag_mask, which may block colliding requests
         //HoldLinkStatesUponQuery(is_ero_all_strict ? NULL : vtag_mask);
-        // $$$$ test --> Do not hold vtag_mask in Q-Conf process!
+        // $$$$ option 2 --> Do not hold vtag_mask in Q-Conf process, reducing chance of collision blocking
+        // $$$$ this will still hold the single vtag of pick, which will in turn be sent to next domain as suggested vtag
         HoldLinkStatesUponQuery(NULL);
     }
 }
