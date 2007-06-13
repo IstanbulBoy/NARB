@@ -74,6 +74,7 @@ u_int32_t opt_excluded_layers = 0;
 u_int32_t opt_req_all_vtags = 0;
 u_int32_t opt_vtag_mask = 0;
 u_int32_t opt_query_hold = 0;
+u_int32_t opt_query_with_confirmation = 0;
 in_addr hop_back;
 
 struct msg_app2narb_vtag_mask vtag_mask;
@@ -92,7 +93,7 @@ void usage()
     cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
     cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
     cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags ]" <<endl;
-    cout<<" [ [-Q] Query and Hold ]" <<endl;
+    cout<<" [ [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
 }
 
 // SIGINT handler.
@@ -350,7 +351,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, lspq_id, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
-        opt_query_hold);
+        opt_query_hold | opt_query_with_confirmation);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -385,7 +386,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:LOMQUVma", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:CLMOQUVma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -433,6 +434,9 @@ int main(int argc, char* argv[])
             break;
         case 'Q':
             opt_query_hold = LSP_OPT_QUERY_HOLD;
+            break;
+        case 'C':
+            opt_query_with_confirmation = LSP_OPT_QUERY_CONFIRM;
             break;
         case 'V':
             opt_e2e_vlan= LSP_OPT_E2E_VTAG;

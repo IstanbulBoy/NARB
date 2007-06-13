@@ -443,7 +443,7 @@ int LSPQ::HandleLSPQRequest()
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
-        | (is_qconf_mode ? LSP_OPT_QUERY_HOLD |LSP_OPT_QUERY_CONFIRM : 0) , req_vtag, hop_back, vtag_mask);
+        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, vtag_mask);
     return 0;
 }
 
@@ -486,8 +486,7 @@ int LSPQ::HandleRecursiveRequest()
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, req_ucid, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	| (app_options & LSP_OPT_E2E_VTAG) |(app_options & LSP_OPT_VIA_MOVAZ) | (app_options & LSP_OPT_QUERY_HOLD)
 	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0)
-	| (app_options & LSP_OPT_BIDIRECTIONAL) | (is_qconf_mode ? LSP_OPT_QUERY_HOLD |LSP_OPT_QUERY_CONFIRM : 0)
-	, req_vtag, hop_back, vtag_mask); 
+	| (app_options & LSP_OPT_BIDIRECTIONAL), req_vtag, hop_back, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
@@ -538,7 +537,14 @@ int LSPQ::HandleRCEReply(api_msg *msg)
 
     if (is_qconf_mode) // including "case RT_MODE_MIXED_CONFIRMED" 
     { 
-        if (is_all_strict_hops(ero))
+    	// NARB is in Qconf mode but the request is for query only
+    	if ((app_options & (LSP_OPT_QUERY_HOLD|LSP_OPT_QUERY_CONFIRM)) == 0)
+    	{
+    		// return whatever available without proceed to next domains ???
+			return HandleCompleteERO();
+    	}
+		//otherwise
+		else if (is_all_strict_hops(ero))
         {
             // >>>> re-pick a vlan tag --> randomize?
             return HandleCompleteEROWithConfirmationID();
@@ -744,7 +750,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                 //}
                 // @@@@ Verify if the picked VTAG is still available <== (needed only if vtag_mask holding is active!)
                 
-                if (!is_all_loose_hops(ero))
+                if (!is_all_loose_hops(ero) && (app_options&LSP_OPT_QUERY_HOLD) != 0) // only if holding is requested!
                 {
                     //notify the corresponding RCE server for LSP query confirmation that may have changed vlan tag assignment
                     RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
