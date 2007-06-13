@@ -879,6 +879,8 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
                 ++it;
                 if (it == ero.end())//last subobject ineligible
                     ret_ip.s_addr = 0;
+                // $$$$ This condition does not allow RelayMessageToPeer if the ERO has no strict hops in next domains,
+                // $$$$ which is usually necessary in hybrid routing mode!
                 else if ((*it)->hop_type == ERO_TYPE_LOOSE_HOP) // should still have strict hops after the inter-domain link.
                     ret_ip.s_addr = 0;
 
