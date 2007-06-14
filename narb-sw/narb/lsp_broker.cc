@@ -537,23 +537,32 @@ int LSPQ::HandleRCEReply(api_msg *msg)
 
     if (is_qconf_mode) // including "case RT_MODE_MIXED_CONFIRMED" 
     { 
-    	// NARB is in Qconf mode but the request is for query only
-    	if ((app_options & (LSP_OPT_QUERY_HOLD|LSP_OPT_QUERY_CONFIRM)) == 0)
-    	{
-    		// return whatever available without proceed to next domains ???
-			return HandleCompleteERO();
-    	}
-		//otherwise
-		else if (is_all_strict_hops(ero))
+        // NARB is in Qconf mode but the request is for query only
+        if ((app_options & (LSP_OPT_QUERY_HOLD|LSP_OPT_QUERY_CONFIRM)) == 0)
+        {
+            // return whatever available without proceed to next domains ???
+            return HandleCompleteERO();
+        }
+         //otherwise
+        else if (is_all_strict_hops(ero))
         {
             // >>>> re-pick a vlan tag --> randomize?
             return HandleCompleteEROWithConfirmationID();
         }
-        else if (!is_recursive_req && !is_all_loose_hops(ero) && !is_all_strict_hops(ero))
+        else
+        {
+            NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
+        }
+
+        if (!is_recursive_req && !is_all_loose_hops(ero) && !is_all_strict_hops(ero))
+        {
             //return HandleCompleteEROWithConfirmationID();
             return HandlePartialERO();
+        }
         else //e.g. all loose hops ....
+        {
             return HandleErrorCode(NARB_ERROR_NO_ROUTE);
+        }
     }
     else switch (SystemConfig::routing_mode)
     {
