@@ -375,9 +375,9 @@ void LSPQ::SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag)
 
     for (iter = ero.begin(); iter != ero.end(); iter++)
     {
+        subobj = *iter;
         if (subobj->sw_type != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
             continue;
-        subobj = *iter;
         if (subobj->l2sc_vlantag != 0)
             subobj->l2sc_vlantag = vtag;
         if ((subobj->if_id >> 16) == 0)
