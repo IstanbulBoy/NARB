@@ -803,6 +803,33 @@ _CANNOT_EXPAND_ROUTE:
 /////// STATE_ERROR ////////
 int LSPQ::HandleErrorCode(u_int32_t errcode)
 {
+    // If having proceeded into next domains but got error, release the currently held resources (delta deletion)...
+    if (state ==STATE_NEXT_HOP_NARB_REPLY && !is_all_loose_hops(ero) && (app_options&LSP_OPT_QUERY_HOLD) != 0) // only if holding is requested!
+    {
+        //notify the corresponding RCE server for LSP query confirmation that may have changed vlan tag assignment
+        RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+        int ret = 0;
+        if (!rce_client)
+        {
+            ret = -1;
+            LOGF("HandleNextHopNARBReply::Error: no RCE client available...\n");
+        }  
+        else if (!rce_client->IsAlive())
+        {
+            ret = rce_client->Connect();
+            if (ret < 0)
+            {
+                LOGF("HandleNextHopNARBReply::Error: RCE client died and connect failed...\n");
+            }
+        } //else ret == 0;
+        if (ret >= 0)
+        {
+            //vtag and vtag_mask doesn't matter for delta deletion
+            rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, &req_spec, ero, req_ucid, app_seqnum, app_options, 0, NULL);
+        }
+    }
+
+    // regular Error Code handling
     SetState(STATE_ERROR);
 
     assert(broker);
