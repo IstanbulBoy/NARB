@@ -47,7 +47,7 @@ int SystemConfig::ospfd_intra_port_local = 4617;
 int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;
 
-int SystemConfig::delta_expire_query = 10;
+int SystemConfig::delta_expire_query = 20;
 int SystemConfig::delta_expire_reserve = 30;
 
 string SystemConfig::narb_host("localhost");
