@@ -554,12 +554,12 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
         }
 
-        if (!is_recursive_req && !is_all_loose_hops(ero) && !is_all_strict_hops(ero))
+        if (!is_all_loose_hops(ero) && !is_all_strict_hops(ero))
         {
             //return HandleCompleteEROWithConfirmationID();
             return HandlePartialERO();
         }
-        else //e.g. all loose hops ....
+        else //e.g. still all loose hops after SearchAndProcessInterdomainLink(ero)
         {
             return HandleErrorCode(NARB_ERROR_NO_ROUTE);
         }
