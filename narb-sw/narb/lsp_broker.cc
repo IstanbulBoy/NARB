@@ -438,6 +438,15 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
 
+    char _src_addr[20], _dst_addr[20];
+    LOGF("CSPF Request Detail: Src %s, Dest %s, Enc %d, SwType %d, G-PID %d, Rate %.1f\n",
+	 inet_ntop(AF_INET, &cspf_req.app_req_data.src.s_addr,  _src_addr, sizeof(_src_addr)),
+	 inet_ntop(AF_INET, &cspf_req.app_req_data.dest.s_addr, _dst_addr, sizeof(_dst_addr)),
+	 cspf_req.app_req_data.encoding_type,
+	 cspf_req.app_req_data.switching_type,
+	 cspf_req.app_req_data.gpid,
+	 cspf_req.app_req_data.bandwidth);
+
     if (vtag_mask)
         app_options |= LSP_OPT_VTAG_MASK;
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
