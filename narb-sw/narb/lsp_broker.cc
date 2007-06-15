@@ -462,6 +462,7 @@ int LSPQ::HandleRecursiveRequest()
     SetState(STATE_REQ_RECURSIVE);
     is_recursive_req = true;
     is_qconf_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
+    LOGF("Handling recursive path request from peering NARB\n");
 
     int ret; 
 
@@ -487,6 +488,15 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used, replaced by ucid
+
+    char _src_addr[20], _dst_addr[20];
+    LOGF("CSPF Request Detail: Src %s, Dest %s, Enc %d, SwType %d, G-PID %d, Rate %.1f\n",
+	 inet_ntop(AF_INET, &cspf_req.app_req_data.src.s_addr,  _src_addr, sizeof(_src_addr)),
+	 inet_ntop(AF_INET, &cspf_req.app_req_data.dest.s_addr, _dst_addr, sizeof(_dst_addr)),
+	 cspf_req.app_req_data.encoding_type,
+	 cspf_req.app_req_data.switching_type,
+	 cspf_req.app_req_data.gpid,
+	 cspf_req.app_req_data.bandwidth);
 
     if (vtag_mask)
         app_options |= LSP_OPT_VTAG_MASK;

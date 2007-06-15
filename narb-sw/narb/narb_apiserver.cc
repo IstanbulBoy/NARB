@@ -74,7 +74,7 @@ void NARB_APIServer::Run()
     eventMaster.Schedule(lspb);
 
     char addr[20];
-    LOGF("Accepted connection from %s port %d on socket %d for LSP Query\n",
+    LOGF("Accepted API connection from %s port %d on socket %d for LSP Query\n",
 	 inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
 	 ntohs(sa_in.sin_port), new_sock);
 }
