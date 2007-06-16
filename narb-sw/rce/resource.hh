@@ -51,6 +51,7 @@ enum ResourceType
     RTYPE_GLO_PHY_LNK = 0x03,
     RTYPE_GLO_ABS_LNK = 0x04,
     RTYPE_GLO_RTID = 0x05,
+    RTYPE_LOC_PHY_LNK_INCOMPLETE = 0x06,
 };
 
 #ifdef HAVE_EXT_ATTR
@@ -404,6 +405,20 @@ public:
             return index;
         }
 
+    // handling TE link with incomplete information
+    bool IsIncomplete()
+        {
+            return ((lclIfAddr != 0 && rmtIfAddr == 0) || (lclId != 0 && rmtId == 0));
+        }
+    Prefix IncompleteIndex()
+        {
+            Prefix index; 
+            index.length = 64;
+            prefix_word(index, 0) = advRtId;
+            prefix_word(index, 1) = lclIfAddr;
+            return index;
+        }
+
     //LinkStateDelta operations
     Link& operator+= (LinkStateDelta& delta);
     Link& operator-= (LinkStateDelta& delta);
@@ -453,6 +468,7 @@ private:
     #define dbForPhyLnk r_trees[RTYPE_GLO_PHY_LNK]
     #define dbForAbsLnk r_trees[RTYPE_GLO_ABS_LNK]
     #define dbForRtid r_trees[RTYPE_GLO_RTID]
+    #define dbIncompleteLoclPhyLnkBookmark r_trees[RTYPE_LOC_PHY_LNK_INCOMPLETE]
     ResourceDB () {}
     ~ResourceDB();
 
@@ -475,6 +491,10 @@ public:
     static Link* LookupNextLinkByLclIf(Link* prev_link);
     static Link* LookupLinkByLclRmtIf(ResourceType rcType, in_addr lclIf, in_addr rmtIf);
     static Link* LookupNextLinkByLclRmtIf(Link* prev_link);
+
+    //Hanlding incomplete local physical links
+    static Link* LookupIncompleteLink(Prefix* prefix);
+    static void BookmarkIncompleteLink(Link* link);
 
     //testing code
     static void WalkTree(ResourceType type);

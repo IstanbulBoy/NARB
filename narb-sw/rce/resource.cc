@@ -708,6 +708,16 @@ Link* ResourceDB::LookupNextLinkByLclRmtIf(Link* prev_link)
 }
 
 
+Link* ResourceDB::LookupIncompleteLink(Prefix* prefix)
+{
+    return (Link*)dbIncompleteLoclPhyLnkBookmark.LookupNode(prefix);
+}
+
+void ResourceDB::BookmarkIncompleteLink(Link* link)
+{
+    dbIncompleteLoclPhyLnkBookmark.InsertNode(&link->IncompleteIndex(), (Resource*)link);
+}
+
 void ResourceDB::WalkTree(ResourceType type)
 {
     if (!Log::Debug())
