@@ -40,6 +40,8 @@
 
 extern ZebraOspfSync* zebra_client;
 
+list<struct ConfirmationIDIndxedEROWithTimer*> LSP_Broker::qconf_id_indexed_ero_list;
+
 LSPQ::LSPQ(LSP_Broker* b, in_addr s, in_addr d, u_int32_t bw, u_char swt, u_char enc, u_int32_t seq, u_int32_t op): 
 broker(b), app_seqnum(seq), app_options(op)
 { 
@@ -897,6 +899,11 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
     if (is_recursive_req) // confirmation ID only (empty message body)
     {
+        ConfirmationIDIndxedEROWithTimer *qconfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
+        if (qconfEROTimer)
+        {
+            eventMaster.Schedule(qconfEROTimer);
+        }
         rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, 0, NULL, req_ucid, app_seqnum, req_vtag); 
         LOGF("HandleCompleteEROWithConfirmationID:: For recursive query, sending back confirmation ID only (ucid=%x,seqnum=%x), vtag=%d\n", req_ucid, app_seqnum, req_vtag);
     }
@@ -1626,9 +1633,52 @@ void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
     }    
 }
 
-
 u_int32_t LSP_Broker::get_unique_lspb_id()
 {
     static u_int32_t id = htonl(NarbDomainInfo.domain_id);
     return id++;
 }
+
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum)
+{
+    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = LookupEROWithConfirmationID(ucid, seqnum);
+    if (qconfEROTimer)
+    {
+        LOGF("LSP_Broker::StoreEROWithConfirmationID finds existing qconf ID (ucid=0x%x, seqnum=0x%x) --> removed the old one...\n",
+            ucid, seqnum);
+    }
+    
+    ConfirmationIDIndxedEROWithTimer* qconf_ero_entry = new ConfirmationIDIndxedEROWithTimer(ero, ucid, seqnum, 
+        SystemConfig::confirmed_ero_expire_secs, SystemConfig::confirmed_ero_trash_secs);
+    qconf_id_indexed_ero_list.push_front(qconf_ero_entry);
+    return qconf_ero_entry;
+}
+
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum)
+{
+    list<ConfirmationIDIndxedEROWithTimer*>::iterator iter = qconf_id_indexed_ero_list.begin();
+    for ( ; iter != qconf_id_indexed_ero_list.end(); iter++ )
+    {
+        if ((*iter)->ConfirmationIDMatched(ucid, seqnum))
+            return (*iter);
+    }
+    return NULL;
+}
+
+
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum)
+{
+    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = NULL;
+    list<ConfirmationIDIndxedEROWithTimer*>::iterator iter = qconf_id_indexed_ero_list.begin();
+    for ( ; iter != qconf_id_indexed_ero_list.end(); iter++ )
+    {
+        if ((*iter)->ConfirmationIDMatched(ucid, seqnum))
+        {
+            qconfEROTimer = (*iter);
+            qconf_id_indexed_ero_list.erase(iter);
+            break;
+        }
+    }
+    return qconfEROTimer;
+}
+

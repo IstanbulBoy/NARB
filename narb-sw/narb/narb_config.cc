@@ -63,6 +63,9 @@ int SystemConfig::cli_timeout = 900; //CLI time out = 15 minutes
 bool SystemConfig::use_manual_ero = false;
 list<ero_subobj*> SystemConfig::manual_ero;
 
+int SystemConfig::confirmed_ero_expire_secs = 10;
+int SystemConfig::confirmed_ero_trash_secs = 30;
+
 /////////////////// Config File Processing //////////////////////
 
 string ConfigFile::fileName(NARB_DEFAULT_CONFIG_FILE);

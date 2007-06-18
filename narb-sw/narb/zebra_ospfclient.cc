@@ -1052,9 +1052,8 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
     case TE_LINK_SUBTLV_LINK_IFSWCAP:
         {
             int i; float x;
-            te_link_subtlv_link_ifswcap *ifswcap 
-                    = (te_link_subtlv_link_ifswcap *)(buf + tlv_size);
-  
+
+            te_link_subtlv_link_ifswcap *ifswcap = (te_link_subtlv_link_ifswcap*)(buf+tlv_size);
             ifswcap->header.type = htons(TE_LINK_SUBTLV_LINK_IFSWCAP);
             sub_tlv_size = sizeof (te_link_subtlv_link_ifswcap);
             ifswcap->header.length = htons(sizeof(te_link_subtlv_link_ifswcap) - sizeof(te_tlv_header));

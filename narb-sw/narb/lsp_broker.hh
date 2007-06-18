@@ -191,9 +191,11 @@ public:
     friend class LSP_Broker;
 };
 
+
 ////////////////////////////////////////////////
 
 class NARB_APIServer;
+class ConfirmationIDIndxedEROWithTimer;
 class LSP_Broker: public APIReader
 {
 private:
@@ -211,6 +213,9 @@ protected:
     list<LSPQ*> lspq_list;    // request querry list
 
 public:
+    static list<ConfirmationIDIndxedEROWithTimer*> qconf_id_indexed_ero_list;
+
+public:
     LSP_Broker(int sock, NARB_APIServer* server);
     virtual ~LSP_Broker();
     virtual void Run();
@@ -223,6 +228,11 @@ public:
     void DescribeLSPbyState(u_char state, vector<string>& desc_v);
 
     static u_int32_t get_unique_lspb_id();
+
+    // global functions to manage qconf_id_indexed_ero_list
+    static ConfirmationIDIndxedEROWithTimer* StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum);
+    static ConfirmationIDIndxedEROWithTimer* LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum);
+    static ConfirmationIDIndxedEROWithTimer* RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum);
 
     friend class LSPQ;
 };
@@ -335,6 +345,76 @@ enum  narb_error_code
     NARB_ERROR_INVALID_REQ = 5,
     NARB_ERROR_JUST_HOLDON = 6,
     NARB_ERROR_EXCEED_MAX_RETRAN = 7
+};
+
+
+////////////////////////////////////////////////
+
+class ConfirmationIDIndxedEROWithTimer: public Timer
+{
+private:
+    u_int32_t qconf_ucid;
+    u_int32_t qconf_seqnum;
+    list<ero_subobj*> qconf_ero;
+    int trash_seconds; // time before deletion after expired
+    bool expired;
+
+    ConfirmationIDIndxedEROWithTimer(): Timer(0, 0) { }
+
+public:
+    ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, 
+        int expire_secs=10, int trash_secs=30)
+        : Timer(expire_secs, 0), qconf_ucid(0), qconf_seqnum(0), trash_seconds(trash_secs), expired(false)
+        {
+            list<ero_subobj*>::iterator iter = ero.begin();
+            for ( ; iter != ero.end(); iter++ )
+            {
+                ero_subobj* subobj = new (struct ero_subobj);
+                *subobj = *(*iter);
+                qconf_ero.push_back(subobj);
+            }
+        }
+    ~ConfirmationIDIndxedEROWithTimer()
+        {
+            while (qconf_ero.size() > 0)
+            {
+                delete qconf_ero.front();
+                qconf_ero.pop_front();
+            }
+        }
+
+    bool ConfirmationIDMatched (u_int32_t ucid, u_int32_t seqnum)
+        {
+            return (qconf_ucid == ucid && qconf_seqnum == seqnum);
+        }
+    bool Expired() { return expired; }
+    list<ero_subobj*>& GetERO() { return qconf_ero; }
+    void SetERO(list<ero_subobj*>& ero) 
+        {
+            qconf_ero.clear();
+            list<ero_subobj*>::iterator iter = ero.begin();
+            for ( ; iter != ero.end(); iter++ )
+            {
+                ero_subobj* subobj = new (struct ero_subobj);
+                *subobj = *(*iter);
+                qconf_ero.push_back(subobj);
+            }
+        }
+    virtual void Run()
+        {
+            if (trash_seconds > 0) // first call --> expired
+            {
+                expired = true;
+                SetInterval(trash_seconds, 0);
+                SetRepeats(1);
+            }
+            else
+            {
+                trash_seconds = 0;
+                SetObsolete(true);
+                SetAutoDelete(true);
+            }
+        }
 };
 
 // macro to combine loose hop indicator and type into an octet

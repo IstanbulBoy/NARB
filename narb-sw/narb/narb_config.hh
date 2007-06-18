@@ -116,6 +116,9 @@ public:
 
     static bool use_manual_ero;
     static list<ero_subobj*> manual_ero;
+
+    static int confirmed_ero_expire_secs;
+    static int confirmed_ero_trash_secs;
 };
 
 #define NarbDomainInfo (SystemConfig::narb_domain_info)
