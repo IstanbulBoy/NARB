@@ -714,7 +714,7 @@ Link* ResourceDB::LookupIncompleteLink(ResourceType rcType, Prefix* prefix)
         rcType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
     else if (rcType == RTYPE_GLO_ABS_LNK)
         rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
-    else
+    else if (rcType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return NULL;
 
     return (Link*)r_trees[rcType].LookupNode(prefix);
@@ -728,7 +728,7 @@ void ResourceDB::BookmarkIncompleteLink(Link* link)
         rcType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
     else if (link->Type() == RTYPE_GLO_ABS_LNK)
         rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
-    else
+    else if (rcType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return;
 
     Prefix prefix_incomplete = link->IncompleteIndex();
@@ -737,17 +737,11 @@ void ResourceDB::BookmarkIncompleteLink(Link* link)
 
 Link* ResourceDB::RemoveIncompleteLink(Link* link)
 {
-    assert(link);
-    ResourceType rcType;
-    if (link->Type() == RTYPE_LOC_PHY_LNK)
-        rcType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
-    else if (link->Type() == RTYPE_GLO_ABS_LNK)
-        rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
-    else
+    if (!link || link->Type() != RTYPE_LOC_PHY_LNK_INCOMPLETE && link->Type() != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return NULL;
 
     Prefix prefix_incomplete = link->IncompleteIndex();
-    return (Link*)(r_trees[rcType].DeleteNode(&prefix_incomplete));
+    return (Link*)(r_trees[link->Type()].DeleteNode(&prefix_incomplete));
 }
 
 void ResourceDB::WalkTree(ResourceType type)
