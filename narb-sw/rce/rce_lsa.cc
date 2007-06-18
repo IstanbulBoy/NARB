@@ -53,7 +53,8 @@ void LSAHandler::Run()
             }
             else 
             {
-                Link* link_incomplete= RDB.LookupIncompleteLink(&((Link*)rc)->IncompleteIndex());
+                Prefix prefix_incomplete = ((Link*)rc)->IncompleteIndex();
+                Link* link_incomplete= RDB.LookupIncompleteLink(&prefix_incomplete);
                 if (link_incomplete)
                 {
                     RDB.Delete(link_incomplete);

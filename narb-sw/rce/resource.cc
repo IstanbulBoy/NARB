@@ -715,7 +715,8 @@ Link* ResourceDB::LookupIncompleteLink(Prefix* prefix)
 
 void ResourceDB::BookmarkIncompleteLink(Link* link)
 {
-    dbIncompleteLoclPhyLnkBookmark.InsertNode(&link->IncompleteIndex(), (Resource*)link);
+    Prefix prefix_incomplete = link->IncompleteIndex();
+    dbIncompleteLoclPhyLnkBookmark.InsertNode(&prefix_incomplete, (Resource*)link);
 }
 
 void ResourceDB::WalkTree(ResourceType type)
