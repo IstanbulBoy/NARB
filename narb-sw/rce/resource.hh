@@ -52,6 +52,7 @@ enum ResourceType
     RTYPE_GLO_ABS_LNK = 0x04,
     RTYPE_GLO_RTID = 0x05,
     RTYPE_LOC_PHY_LNK_INCOMPLETE = 0x06,
+    RTYPE_GLO_ABS_LNK_INCOMPLETE = 0x07,
 };
 
 #ifdef HAVE_EXT_ATTR
@@ -469,6 +470,7 @@ private:
     #define dbForAbsLnk r_trees[RTYPE_GLO_ABS_LNK]
     #define dbForRtid r_trees[RTYPE_GLO_RTID]
     #define dbIncompleteLoclPhyLnkBookmark r_trees[RTYPE_LOC_PHY_LNK_INCOMPLETE]
+    #define dbIncompleteGloAbsLnkBookmark r_trees[RTYPE_GLO_ABS_LNK_INCOMPLETE]
     ResourceDB () {}
     ~ResourceDB();
 
@@ -493,8 +495,9 @@ public:
     static Link* LookupNextLinkByLclRmtIf(Link* prev_link);
 
     //Hanlding incomplete local physical links
-    static Link* LookupIncompleteLink(Prefix* prefix);
+    static Link* LookupIncompleteLink(ResourceType rcType, Prefix* prefix);
     static void BookmarkIncompleteLink(Link* link);
+    static Link* RemoveIncompleteLink(Link* link);
 
     //testing code
     static void WalkTree(ResourceType type);
