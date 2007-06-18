@@ -410,7 +410,7 @@ public:
     // handling TE link with incomplete information
     bool IsIncomplete()
         {
-            return ((lclIfAddr != 0 && rmtIfAddr == 0) || (lclId != 0 && rmtId == 0));
+            return (((id >> 24) & 0x3) == 0 ||  (lclIfAddr != 0 && rmtIfAddr == 0) || (lclId != 0 && rmtId == 0));
         }
     Prefix IncompleteIndex()
         {
