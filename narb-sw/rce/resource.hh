@@ -397,6 +397,7 @@ public:
     virtual Prefix Index() 
         { 
             Prefix index; 
+            memset(&index, 0, sizeof(Prefix));
             index.length = 128;
             //prefix_word(index, 0) = domainId; 
             prefix_word(index, 0) = advRtId;
@@ -414,6 +415,7 @@ public:
     Prefix IncompleteIndex()
         {
             Prefix index; 
+            memset(&index, 0, sizeof(Prefix));
             index.length = 64;
             prefix_word(index, 0) = advRtId;
             prefix_word(index, 1) = lclIfAddr;

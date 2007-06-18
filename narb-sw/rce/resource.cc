@@ -516,6 +516,8 @@ ResourceDB::~ResourceDB()
     ClearTree(RTYPE_GLO_PHY_LNK);
     ClearTree(RTYPE_GLO_ABS_LNK);
     ClearTree(RTYPE_GLO_RTID);
+    ClearTree(RTYPE_LOC_PHY_LNK_INCOMPLETE);
+    ClearTree(RTYPE_GLO_ABS_LNK_INCOMPLETE);
 
     list<RouterId2DomainId*>::iterator it;
 
@@ -716,8 +718,8 @@ Link* ResourceDB::LookupIncompleteLink(ResourceType rcType, Prefix* prefix)
         rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
     else if (rcType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return NULL;
-
-    return (Link*)r_trees[rcType].LookupNode(prefix);
+    RadixNode<Resource>* node = r_trees[rcType].LookupNode(prefix);
+    return (node == NULL) ? NULL : (Link*)node->Data();
 }
 
 void ResourceDB::BookmarkIncompleteLink(Link* link)
@@ -730,7 +732,6 @@ void ResourceDB::BookmarkIncompleteLink(Link* link)
         rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
     else if (rcType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return;
-
     Prefix prefix_incomplete = link->IncompleteIndex();
     r_trees[rcType].InsertNode(&prefix_incomplete, (Resource*)link);
 }
