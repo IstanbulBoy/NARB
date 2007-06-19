@@ -994,6 +994,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
                 subobj = new (struct ero_subobj);
                 *subobj = *ero.front();
                 subobj->addr.s_addr = hop_back;
+                ero.push_front(subobj);
             }
         }
     }
