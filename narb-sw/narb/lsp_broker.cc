@@ -995,7 +995,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
 /////// STATE_RESV_CONFIRM ////////
 int LSPQ::HandleResvConfirm(api_msg* msg)
 {
-    if (state != STATE_ERO_COMPLETE)
+    if (state != STATE_ERO_COMPLETE && state != STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID)
     {
         LOGF("Trying to confirm an uncomputed LSP: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         return -1;
@@ -1154,7 +1154,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     LOGF("HandleResvRelease upating LSP link states: (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
     //if (state != STATE_RESV_CONFIRM)
-    if (state != STATE_ERO_COMPLETE && state != STATE_RESV_CONFIRM)
+    if (state != STATE_ERO_COMPLETE && state != STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID && state != STATE_RESV_CONFIRM)
     {
         LOGF("Trying on an unconfirmed (state = %d) LSP (ucid=0x%x, seqno=0x%x).\n", state, ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         // sending back relesae confirmation anyway
@@ -1421,7 +1421,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                         lspq->HandleErrorCode(NARB_ERROR_EXCEED_MAX_RETRAN);
                     }
                 }
-                else if (lspq->State() == STATE_ERO_COMPLETE)
+                else if (lspq->State() == STATE_ERO_COMPLETE || lspq->State() == STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID)
                 {
                     // Re-reply to app with the resulting ERO
                     lspq->HandleLSPQRequest();
