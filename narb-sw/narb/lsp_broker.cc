@@ -392,6 +392,7 @@ void LSPQ::SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag)
 //////////////////////// LSPQ FSM Functions ////////////////////////
 //////////////////////////////////////////////////////////////////
 
+
 /////// STATE_APP_REQ ////////
 int LSPQ::HandleLSPQRequest()
 {
@@ -401,15 +402,23 @@ int LSPQ::HandleLSPQRequest()
 
     int ret; 
 
-    RCE_APIClient * rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    //handling LSP request with Q-Conf ID
+    if ((app_options & LSP_OPT_QUERY_CONFIRM) != 0)
+    {
+        ret = HandleStoredEROWithConfirmationID();
+        if (ret >= 0)
+            return ret;
+        //else, continue in this function ...
+    }
 
+    //instantiating RCE client
+    RCE_APIClient * rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
     if (!rce_client)
     {
         rce_client = RceFactory.GetClient((char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
         if (!rce_client)
             return HandleErrorCode(NARB_ERROR_INTERNAL);
     }
-
     if(!rce_client->IsAlive())
     {
         ret = rce_client->Connect();
@@ -440,15 +449,6 @@ int LSPQ::HandleLSPQRequest()
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used (replaced by ucid)
 
-    char _src_addr[20], _dst_addr[20];
-    LOGF("CSPF Request Detail: Src %s, Dest %s, Enc %d, SwType %d, G-PID %d, Rate %.1f\n",
-	 inet_ntop(AF_INET, &cspf_req.app_req_data.src.s_addr,  _src_addr, sizeof(_src_addr)),
-	 inet_ntop(AF_INET, &cspf_req.app_req_data.dest.s_addr, _dst_addr, sizeof(_dst_addr)),
-	 cspf_req.app_req_data.encoding_type,
-	 cspf_req.app_req_data.switching_type,
-	 cspf_req.app_req_data.gpid,
-	 cspf_req.app_req_data.bandwidth);
-
     if (vtag_mask)
         app_options |= LSP_OPT_VTAG_MASK;
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
@@ -464,7 +464,6 @@ int LSPQ::HandleRecursiveRequest()
     SetState(STATE_REQ_RECURSIVE);
     is_recursive_req = true;
     is_qconf_mode = ( (app_options & LSP_OPT_QUERY_CONFIRM) != 0  || SystemConfig::routing_mode == RT_MODE_MIXED_CONFIRMED );
-    LOGF("Handling recursive path request from peering NARB\n");
 
     int ret; 
 
@@ -490,15 +489,6 @@ int LSPQ::HandleRecursiveRequest()
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;
     cspf_req.lspb_id = broker->lspb_id; //not used, replaced by ucid
-
-    char _src_addr[20], _dst_addr[20];
-    LOGF("CSPF Request Detail: Src %s, Dest %s, Enc %d, SwType %d, G-PID %d, Rate %.1f\n",
-	 inet_ntop(AF_INET, &cspf_req.app_req_data.src.s_addr,  _src_addr, sizeof(_src_addr)),
-	 inet_ntop(AF_INET, &cspf_req.app_req_data.dest.s_addr, _dst_addr, sizeof(_dst_addr)),
-	 cspf_req.app_req_data.encoding_type,
-	 cspf_req.app_req_data.switching_type,
-	 cspf_req.app_req_data.gpid,
-	 cspf_req.app_req_data.bandwidth);
 
     if (vtag_mask)
         app_options |= LSP_OPT_VTAG_MASK;
@@ -889,7 +879,7 @@ int LSPQ::HandleCompleteERO()
 /////// STATE_ERO_COMPLETE ////////
 int LSPQ::HandleCompleteEROWithConfirmationID()
 {
-    SetState(STATE_ERO_COMPLETE);
+    SetState(STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID);
 
     int length;
     void * tlv_data;
@@ -960,6 +950,41 @@ static in_addr LookupPeerNarbByERO(list<ero_subobj*>& ero)
     //note: assuming both local and remote interface addresses are unique for inter-domain te links
 }
 
+/////// STATE_STORED_ERO_WITH_CONFIRMATION_ID ////////
+int LSPQ::HandleStoredEROWithConfirmationID()
+{
+    SetState(STATE_STORED_ERO_WITH_CONFIRMATION_ID);
+
+    ConfirmationIDIndxedEROWithTimer* qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+    if (qConfEROTimer)
+    {
+        if (qConfEROTimer->Expired())
+        {
+            //to update destination to next domain boundary in the ERO...
+            //@@@@TODO ...
+            return -1;
+        }
+        else // valid, active stored ERO
+        {
+            list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
+            ero.clear();
+            list<ero_subobj*>::iterator iter = ero_p->begin();
+            for ( ; iter != ero_p->end(); iter++ )
+            {
+                ero_subobj* subobj = new (struct ero_subobj);
+                *subobj = *(*iter);
+                ero.push_back(subobj);
+            }
+        }
+    }
+    else 
+    {
+        //to recompute path using the original destination
+        return -2;
+    }
+
+    return HandleCompleteEROWithConfirmationID();
+}
 
 /////// STATE_RESV_CONFIRM ////////
 int LSPQ::HandleResvConfirm(api_msg* msg)
@@ -1633,6 +1658,8 @@ void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
     }    
 }
 
+
+// Static/Global functions ...
 u_int32_t LSP_Broker::get_unique_lspb_id()
 {
     static u_int32_t id = htonl(NarbDomainInfo.domain_id);

@@ -116,6 +116,9 @@ private:
 #define STATE_RESV_CONFIRM 8
 #define STATE_RESV_RELEASE 9
 #define STATE_RESV_RELEASE_CONFIRM 10
+#define STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID 11
+#define STATE_STORED_ERO_WITH_CONFIRMATION_ID 12
+
     // sub states values are defined below
     u_char ero_state;
 #define ERO_NONE 0
@@ -177,7 +180,12 @@ public:
 
     ////// STATE_ERO_COMPLETE ////
     int HandleCompleteERO();
+    
+    ////// STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID ////
     int HandleCompleteEROWithConfirmationID();
+    
+    ////// STATE_STORED_ERO_WITH_CONFIRMATION_ID ////
+    int HandleStoredEROWithConfirmationID();
 
     ////// STATE_RESV_CONFIRM ////
     int HandleResvConfirm(api_msg* msg);
@@ -363,7 +371,7 @@ private:
 
 public:
     ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, 
-        int expire_secs=10, int trash_secs=30)
+        int expire_secs=10, int trash_secs=0)
         : Timer(expire_secs, 0), qconf_ucid(0), qconf_seqnum(0), trash_seconds(trash_secs), expired(false)
         {
             list<ero_subobj*>::iterator iter = ero.begin();
@@ -402,15 +410,19 @@ public:
         }
     virtual void Run()
         {
-            if (trash_seconds > 0) // first call --> expired
-            {
+            if (!expired)
                 expired = true;
+            else
+                trash_seconds = 0;
+
+            if (trash_seconds > 0)
+            {
                 SetInterval(trash_seconds, 0);
                 SetRepeats(1);
+                trash_seconds = 0;
             }
             else
             {
-                trash_seconds = 0;
                 SetObsolete(true);
                 SetAutoDelete(true);
             }
