@@ -372,7 +372,7 @@ private:
 public:
     ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, 
         int expire_secs=10, int trash_secs=0)
-        : Timer(expire_secs, 0), qconf_ucid(0), qconf_seqnum(0), trash_seconds(trash_secs), expired(false)
+        : Timer(expire_secs, 0), qconf_ucid(ucid), qconf_seqnum(seqnum), trash_seconds(trash_secs), expired(false)
         {
             list<ero_subobj*>::iterator iter = ero.begin();
             for ( ; iter != ero.end(); iter++ )
