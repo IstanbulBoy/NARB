@@ -969,17 +969,31 @@ int LSPQ::HandleStoredEROWithConfirmationID()
         {
             LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) index ERO is returned!\n", req_ucid, app_seqnum);
             char addr[20];
+            ero_subobj* subobj;
             list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
             ero.clear();
             list<ero_subobj*>::iterator iter = ero_p->begin();
+            bool hop_back_found = false;
             for ( ; iter != ero_p->end(); iter++ )
             {
-                ero_subobj* subobj = new (struct ero_subobj);
+                subobj = new (struct ero_subobj);
                 *subobj = *(*iter);
                 ero.push_back(subobj);
+                if (subobj->addr.s_addr == hop_back)
+                    hop_back_found = true;
+                // log message for debugging
                 inet_ntop(AF_INET, &subobj->addr, addr, 20);
                 LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  
                     ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+            }
+
+            // adding hop_back to beginning of the stored ERO.
+            // this is not needed for recomputed ERO, in which hop_back will be taken care of by RCE.
+            if (hop_back != 0 && !hop_back_found)
+            {
+                subobj = new (struct ero_subobj);
+                *subobj = *ero.front();
+                subobj->addr.s_addr = hop_back;
             }
         }
     }
