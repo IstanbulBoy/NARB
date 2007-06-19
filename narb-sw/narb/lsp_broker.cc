@@ -960,12 +960,15 @@ int LSPQ::HandleStoredEROWithConfirmationID()
     {
         if (qConfEROTimer->Expired())
         {
+            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) has Expired!\n", req_ucid, app_seqnum);
             //to update destination to next domain boundary in the ERO...
             //@@@@TODO ...
             return -1;
         }
         else // valid, active stored ERO
         {
+            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) index ERO is returned!\n", req_ucid, app_seqnum);
+            char addr[20];
             list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
             ero.clear();
             list<ero_subobj*>::iterator iter = ero_p->begin();
@@ -974,6 +977,9 @@ int LSPQ::HandleStoredEROWithConfirmationID()
                 ero_subobj* subobj = new (struct ero_subobj);
                 *subobj = *(*iter);
                 ero.push_back(subobj);
+                inet_ntop(AF_INET, &subobj->addr, addr, 20);
+                LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  
+                    ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
             }
         }
     }
@@ -1678,6 +1684,7 @@ ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<er
     ConfirmationIDIndxedEROWithTimer* qconf_ero_entry = new ConfirmationIDIndxedEROWithTimer(ero, ucid, seqnum, 
         SystemConfig::confirmed_ero_expire_secs, SystemConfig::confirmed_ero_trash_secs);
     qconf_id_indexed_ero_list.push_front(qconf_ero_entry);
+    LOGF("LSP_Broker::StoreEROWithConfirmationID enqueued qconf ID (ucid=0x%x, seqnum=0x%x)\n", ucid, seqnum);
     return qconf_ero_entry;
 }
 
@@ -1692,7 +1699,6 @@ ConfirmationIDIndxedEROWithTimer* LSP_Broker::LookupEROWithConfirmationID(u_int3
     return NULL;
 }
 
-
 ConfirmationIDIndxedEROWithTimer* LSP_Broker::RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum)
 {
     ConfirmationIDIndxedEROWithTimer* qconfEROTimer = NULL;
@@ -1703,6 +1709,7 @@ ConfirmationIDIndxedEROWithTimer* LSP_Broker::RemoveEROWithConfirmationID(u_int3
         {
             qconfEROTimer = (*iter);
             qconf_id_indexed_ero_list.erase(iter);
+            LOGF("LSP_Broker::RemoveEROWithConfirmationID dequeued qconf ID (ucid=0x%x, seqnum=0x%x)\n", ucid, seqnum);
             break;
         }
     }

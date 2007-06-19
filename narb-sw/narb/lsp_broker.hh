@@ -389,6 +389,7 @@ public:
                 delete qconf_ero.front();
                 qconf_ero.pop_front();
             }
+            LSP_Broker::RemoveEROWithConfirmationID(qconf_ucid, qconf_seqnum);
         }
 
     bool ConfirmationIDMatched (u_int32_t ucid, u_int32_t seqnum)
