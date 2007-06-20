@@ -879,18 +879,15 @@ int LSPQ::HandleCompleteERO()
 /////// STATE_ERO_COMPLETE ////////
 int LSPQ::HandleCompleteEROWithConfirmationID()
 {
-    SetState(STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID);
-
     int length;
     void * tlv_data;
     api_msg * rmsg;
 
     assert(broker);
 
-    ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
-
-    if (is_recursive_req) // confirmation ID only (empty message body)
+    if (is_recursive_req && state != STATE_STORED_ERO_WITH_CONFIRMATION_ID) // confirmation ID only (empty message body)
     {
+        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
         if (qConfEROTimer)
         {
             eventMaster.Schedule(qConfEROTimer);
@@ -900,33 +897,40 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
     }
     else //ERO and confirmation ID (ucid, seqnum)
     {
-        link_info * link_bdr_egress;
-        if (qConfEROTimer && (link_bdr_egress = qConfEROTimer->GetBorderEgressLink()) != NULL)
+        // handling the special case that a valid stored ERO shall be returned, which may have been locally rerouted
+        if (state == STATE_STORED_ERO_WITH_CONFIRMATION_ID) 
         {
-            LOGF("HandleCompleteEROWithConfirmationID:: Local reroute for Q-Conf (ucid=%x,seqnum=%x) new destination 0x%x.\n", req_ucid, app_seqnum, req_spec.dest);
-            //combine local re-route results with stored ERO
-            ero_subobj* subobj; 
-            //locating the border egress hop
-            list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
-            assert (ero_p);
-            list<ero_subobj*>::iterator iter = ero_p->begin();
-            for ( ; iter != ero_p->end(); iter++ )
+            ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+            link_info * link_bdr_egress;
+            if (qConfEROTimer && (link_bdr_egress = qConfEROTimer->GetBorderEgressLink()) != NULL)
             {
-                subobj = *iter;
-                if (link_bdr_egress->LclIfAddr() == subobj->addr.s_addr)
-                    break;
-            }
-            //appending the hops in the stored ERO that are beyond the egress border
-            for ( ; iter != ero_p->end(); iter++)
-            {
-                subobj = new (struct ero_subobj);
-                *subobj = *(*iter);
-                ero.push_back(subobj);
+                LOGF("HandleCompleteEROWithConfirmationID:: Local reroute for Q-Conf (ucid=%x,seqnum=%x) new destination 0x%x.\n", req_ucid, app_seqnum, req_spec.dest);
+                //combine local re-route results with stored ERO
+                ero_subobj* subobj; 
+                //locating the border egress hop
+                list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
+                assert (ero_p);
+                list<ero_subobj*>::iterator iter = ero_p->begin();
+                for ( ; iter != ero_p->end(); iter++ )
+                {
+                    subobj = *iter;
+                    if (link_bdr_egress->LclIfAddr() == subobj->addr.s_addr)
+                        break;
+                }
+                //appending the hops in the stored ERO that are beyond the egress border
+                for ( ; iter != ero_p->end(); iter++)
+                {
+                    subobj = new (struct ero_subobj);
+                    *subobj = *(*iter);
+                    ero.push_back(subobj);
+                }
             }
         }
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
+
+    SetState(STATE_ERO_COMPLETE_WITH_CONFIRMATION_ID);
     
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
@@ -1013,7 +1017,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
         }
         else // valid, active stored ERO
         {
-            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) index ERO is returned!\n", req_ucid, app_seqnum);
+            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) indexed ERO is returned!\n", req_ucid, app_seqnum);
             char addr[20];
             ero.clear();
             bool hop_back_found = false;
