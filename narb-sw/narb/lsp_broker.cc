@@ -887,18 +887,43 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
     assert(broker);
 
+    ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
+
     if (is_recursive_req) // confirmation ID only (empty message body)
     {
-        ConfirmationIDIndxedEROWithTimer *qconfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
-        if (qconfEROTimer)
+        if (qConfEROTimer)
         {
-            eventMaster.Schedule(qconfEROTimer);
+            eventMaster.Schedule(qConfEROTimer);
         }
         rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, 0, NULL, req_ucid, app_seqnum, req_vtag); 
         LOGF("HandleCompleteEROWithConfirmationID:: For recursive query, sending back confirmation ID only (ucid=%x,seqnum=%x), vtag=%d\n", req_ucid, app_seqnum, req_vtag);
     }
     else //ERO and confirmation ID (ucid, seqnum)
     {
+        link_info * link_bdr_egress;
+        if (qConfEROTimer && (link_bdr_egress = qConfEROTimer->GetBorderEgressLink()) != NULL)
+        {
+            LOGF("HandleCompleteEROWithConfirmationID:: Local reroute for Q-Conf (ucid=%x,seqnum=%x) new destination 0x%x.\n", req_ucid, app_seqnum, req_spec.dest);
+            //combine local re-route results with stored ERO
+            ero_subobj* subobj; 
+            //locating the border egress hop
+            list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
+            assert (ero_p);
+            list<ero_subobj*>::iterator iter = ero_p->begin();
+            for ( ; iter != ero_p->end(); iter++ )
+            {
+                subobj = *iter;
+                if (link_bdr_egress->LclIfAddr() == subobj->addr.s_addr)
+                    break;
+            }
+            //appending the hops in the stored ERO that are beyond the egress border
+            for ( ; iter != ero_p->end(); iter++)
+            {
+                subobj = new (struct ero_subobj);
+                *subobj = *(*iter);
+                ero.push_back(subobj);
+            }
+        }
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
@@ -958,23 +983,41 @@ int LSPQ::HandleStoredEROWithConfirmationID()
     ConfirmationIDIndxedEROWithTimer* qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
     if (qConfEROTimer)
     {
+        list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
+        list<ero_subobj*>::iterator iter;
+        ero_subobj* subobj;
+
         if (qConfEROTimer->Expired())
         {
             LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) has Expired!\n", req_ucid, app_seqnum);
-            //to update destination to next domain boundary in the ERO...
-            //@@@@TODO ...
-            return -1;
+
+            // identify the interdomian link iterface (hop) in the stored ERO that is originated from Egress border router
+            if_narb_info * narb_info;
+            link_info * link_bdr_egress;
+            for ( iter = ero_p->begin(); iter != ero_p->end(); iter++ )
+            {
+                subobj = (*iter);
+                if (subobj->hop_type = ERO_TYPE_LOOSE_HOP && (narb_info = NarbDomainInfo.LookupNarbByRmtIf((*iter)->addr)) != NULL)
+                {
+                    if ((link_bdr_egress = NarbDomainInfo.LookupLinkByRmtIf((*iter)->addr)) != NULL)
+                    {
+                        // mark the border egress link
+                        qConfEROTimer->SetBorderEgressLink(link_bdr_egress);
+                        // change destination to the Egress border router
+                        req_spec.dest.s_addr = link_bdr_egress->AdvRtId();
+                        return -1; // path recomputation towards domain egress border router
+                    }
+                }
+            }
+            return -2; // path recomputation towards global destination
         }
         else // valid, active stored ERO
         {
             LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) index ERO is returned!\n", req_ucid, app_seqnum);
             char addr[20];
-            ero_subobj* subobj;
-            list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
             ero.clear();
-            list<ero_subobj*>::iterator iter = ero_p->begin();
             bool hop_back_found = false;
-            for ( ; iter != ero_p->end(); iter++ )
+            for ( iter = ero_p->begin(); iter != ero_p->end(); iter++ )
             {
                 subobj = new (struct ero_subobj);
                 *subobj = *(*iter);
@@ -1000,7 +1043,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
     }
     else 
     {
-        //to recompute path using the original destination
+        // path recomputation towards original global destination
         return -2;
     }
 

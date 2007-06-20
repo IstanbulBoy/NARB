@@ -358,6 +358,7 @@ enum  narb_error_code
 
 ////////////////////////////////////////////////
 
+class link_info;
 class ConfirmationIDIndxedEROWithTimer: public Timer
 {
 private:
@@ -366,13 +367,14 @@ private:
     list<ero_subobj*> qconf_ero;
     int trash_seconds; // time before deletion after expired
     bool expired;
+    link_info* link_border_egress;
 
     ConfirmationIDIndxedEROWithTimer(): Timer(0, 0) { }
 
 public:
     ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, 
-        int expire_secs=10, int trash_secs=0)
-        : Timer(expire_secs, 0), qconf_ucid(ucid), qconf_seqnum(seqnum), trash_seconds(trash_secs), expired(false)
+        int expire_secs=10, int trash_secs=0) : Timer(expire_secs, 0), qconf_ucid(ucid), qconf_seqnum(seqnum), 
+            trash_seconds(trash_secs), expired(false), link_border_egress(NULL)
         {
             list<ero_subobj*>::iterator iter = ero.begin();
             for ( ; iter != ero.end(); iter++ )
@@ -409,6 +411,8 @@ public:
                 qconf_ero.push_back(subobj);
             }
         }
+    link_info* GetBorderEgressLink() { return link_border_egress; } 
+    void SetBorderEgressLink(link_info* link) { link_border_egress = link; } 
     virtual void Run()
         {
             if (!expired)
