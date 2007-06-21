@@ -935,6 +935,27 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
                 }
             }
         }
+
+        // handling hop_back for the stored (and some rerouted) ERO ...
+        bool hop_back_found = false;
+        list<ero_subobj*>::iterator iter = ero.begin();
+        for ( ; iter != ero.end(); iter++ )
+        {
+            if ((*iter)->addr.s_addr == hop_back)
+            {
+                hop_back_found = true;
+                break;
+            }
+        }
+        // adding hop_back to beginning of the stored ERO.
+        if (hop_back != 0 && !hop_back_found)
+        {
+            ero_subobj* subobj = new (struct ero_subobj);
+            *subobj = *ero.front();
+            subobj->addr.s_addr = hop_back;
+            ero.push_front(subobj);
+        }
+
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
@@ -1029,28 +1050,15 @@ int LSPQ::HandleStoredEROWithConfirmationID()
             LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) indexed ERO is returned!\n", req_ucid, app_seqnum);
             char addr[20];
             ero.clear();
-            bool hop_back_found = false;
             for ( iter = ero_p->begin(); iter != ero_p->end(); iter++ )
             {
                 subobj = new (struct ero_subobj);
                 *subobj = *(*iter);
                 ero.push_back(subobj);
-                if (subobj->addr.s_addr == hop_back)
-                    hop_back_found = true;
                 // log message for debugging
                 inet_ntop(AF_INET, &subobj->addr, addr, 20);
                 LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  
                     ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
-            }
-
-            // adding hop_back to beginning of the stored ERO.
-            // this is not needed for recomputed ERO, in which hop_back will be taken care of by RCE.
-            if (hop_back != 0 && !hop_back_found)
-            {
-                subobj = new (struct ero_subobj);
-                *subobj = *ero.front();
-                subobj->addr.s_addr = hop_back;
-                ero.push_front(subobj);
             }
         }
     }
