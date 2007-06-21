@@ -509,6 +509,15 @@ int LSPQ::HandleRCEReply(api_msg *msg)
         return 0;
     }
 
+    //special handling for local rerouting based on stored, expired ERO, in which case only all-strict local hop ERO is acceptable
+    bool local_rerouting_requires_all_strict_hops = false;
+    if (is_qconf_mode && state == STATE_STORED_ERO_WITH_CONFIRMATION_ID)
+    {
+        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+        if (qConfEROTimer && qConfEROTimer->GetBorderEgressLink())
+            local_rerouting_requires_all_strict_hops = true;        
+    }
+    
     SetState(STATE_RCE_REPLY);
 
     assert(msg && msg->header.type_8 == MSG_LSP);
@@ -565,7 +574,7 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
         }
 
-        if (!is_all_loose_hops(ero) && !is_all_strict_hops(ero))
+        if (!is_all_loose_hops(ero) && !is_all_strict_hops(ero) && !local_rerouting_requires_all_strict_hops)
         {
             //return HandleCompleteEROWithConfirmationID();
             return HandlePartialERO();
@@ -914,10 +923,13 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
                 for ( ; iter != ero_p->end(); iter++ )
                 {
                     subobj = *iter;
-                    if (link_bdr_egress->LclIfAddr() == subobj->addr.s_addr)
+                    if (link_bdr_egress->RmtIfAddr() == subobj->addr.s_addr)
+                    {
+                        iter++;
                         break;
+                    }
                 }
-                //appending the hops in the stored ERO that are beyond the egress border
+                //appending the next-domain hops in the stored ERO
                 for ( ; iter != ero_p->end(); iter++)
                 {
                     subobj = new (struct ero_subobj);
@@ -995,7 +1007,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
         {
             LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) has Expired!\n", req_ucid, app_seqnum);
 
-            // identify the interdomian link iterface (hop) in the stored ERO that is originated from Egress border router
+            // identify the interdomian link iterface (hop) in the stored ERO that is originated from Egress border router in the current domain
             if_narb_info * narb_info;
             link_info * link_bdr_egress;
             for ( iter = ero_p->begin(); iter != ero_p->end(); iter++ )
@@ -1007,9 +1019,9 @@ int LSPQ::HandleStoredEROWithConfirmationID()
                     {
                         // mark the border egress link
                         qConfEROTimer->SetBorderEgressLink(link_bdr_egress);
-                        // change destination to the Egress border router
-                        req_spec.dest.s_addr = link_bdr_egress->AdvRtId();
-                        return -1; // path recomputation towards domain egress border router
+                        // change destination to the next-domain border router ID
+                        req_spec.dest.s_addr = link_bdr_egress->ID();
+                        return -1; // path recomputation towards next domain border router
                     }
                 }
             }
