@@ -563,18 +563,15 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             // return whatever available without proceed to next domains ???
             return HandleCompleteERO();
         }
-         //otherwise
-        else if (is_all_strict_hops(ero))
+        else if (!is_all_strict_hops(ero))
+            NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
+
+        if (is_all_strict_hops(ero))
         {
             // >>>> re-pick a vlan tag --> randomize?
             return HandleCompleteEROWithConfirmationID();
         }
-        else
-        {
-            NarbDomainInfo.SearchAndProcessInterdomainLink(ero);
-        }
-
-        if (!is_all_loose_hops(ero) && !is_all_strict_hops(ero) && !local_rerouting_requires_all_strict_hops)
+        else if (!is_all_loose_hops(ero) && !is_all_strict_hops(ero) && !local_rerouting_requires_all_strict_hops)
         {
             //return HandleCompleteEROWithConfirmationID();
             return HandlePartialERO();
