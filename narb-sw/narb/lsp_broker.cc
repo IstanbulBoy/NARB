@@ -811,7 +811,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
 
     //Unsucessful recursive routing
 _CANNOT_EXPAND_ROUTE:
-    if (SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED)
+    if ( SystemConfig::routing_mode == RT_MODE_MIXED_ALLOWED && !is_qconf_mode )
         return HandleCompleteERO();
     else 
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
