@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="DC"
+	targetNamespace="http://hopi.internet2.edu/DRAGON/DC/WS"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/"
+	xmlns:tns="http://hopi.internet2.edu/DRAGON/DC/WS">
+
+	<wsdl:documentation>
+		This is WSDL for the path computation service provided by the DRAGON DC.
+		VERSION 0.1
+	</wsdl:documentation>
+
+	<!-- Element definitons -->
+	<wsdl:types>
+		<xsd:schema targetNamespace="http://hopi.internet2.edu/DRAGON/DC/WS"
+			elementFormDefault="qualified"
+			xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+			xmlns:tns="http://hopi.internet2.edu/DRAGON/DC/WS">
+			<xsd:include schemaLocation="DC.xsd"/>
+		</xsd:schema>
+	</wsdl:types>
+	
+	<!--  Message definitions -->
+	<wsdl:message name="findPath">
+		<wsdl:part name="findPath"
+			element="tns:findPath">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="findPathResponse">
+		<wsdl:part name="findPathResponse"
+			element="tns:findPathResponse" />
+	</wsdl:message>
+	
+	<wsdl:message name="DCFaultMessage">
+		<wsdl:part name="fault" element="tns:DCFault" />
+	</wsdl:message>
+	
+	<!-- PortType operation definitions -->
+	<wsdl:portType name="DC">
+		<wsdl:operation name="findPath">
+			<wsdl:input message="tns:findPath" />
+			<wsdl:output message="tns:findPathResponse" />
+			<wsdl:fault name="DCException" message="tns:DCFaultMessage" />
+		</wsdl:operation>
+	</wsdl:portType>
+	
+	<!-- Binding to SOAP -->
+	<wsdl:binding name="DCSOAP" type="tns:DC">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+
+		<wsdl:operation name="findPath">
+			<soap:operation style="document"
+				soapAction="http://hopi.internet2.edu/DRAGON/DC/WS/findPath" />
+			<wsdl:input>
+				<soap:body use="literal" parts="findPath" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					parts="findPathResponse" />
+			</wsdl:output>
+			<wsdl:fault name="DCException">
+				<soap:fault name="DCException" use="literal" />
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:binding>
+	
+	<!-- Define service -->
+	<wsdl:service name="DC">
+		<wsdl:port name="DC" binding="tns:DCSOAP">
+			<soap:address
+				location="https://hopibruw.internet2.edu/axis2/services/DRAGON/DC" />
+		</wsdl:port>
+	</wsdl:service>
+	
+</wsdl:definitions>

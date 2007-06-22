@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://hopi.internet2.edu/DRAGON/DC/WS" 
+	elementFormDefault="qualified"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://hopi.internet2.edu/DRAGON/DC/WS">
+	
+	<!-- element definitions -->
+	<xsd:element name="findPath" type="tns:findPathContent" />
+	<xsd:element name="findPathResponse" type="tns:findPathResponseContent" />
+	<xsd:element name="DCFault">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="msg" type="xsd:string" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	
+	<!-- type definitions -->
+	<xsd:complexType name="findPathContent">
+		<xsd:all>
+			<xsd:element name="srcHost" type="xsd:string"  minOccurs="1" maxOccurs="1"/>
+			<xsd:element name="dstHost" type="xsd:string"  minOccurs="1" maxOccurs="1"/>
+			<xsd:element name="bandwidth" type="xsd:int"  minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="encoding" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="swcap" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="gpid" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="vtag" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="exclude" type="tns:exclude"  minOccurs="0" maxOccurs="unbounded" />
+		</xsd:all>
+		<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="strict" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="preferred" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="mrn" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="viamovaz" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="allvtags" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="allwaves" type="xsd:boolean" use="optional"/>
+	</xsd:complexType>
+	
+	<xsd:complexType name="findPathResponseContent">
+		<xsd:all>
+			<xsd:element name="path" type="tns:path" minOccurs="1"/>
+		</xsd:all>
+	</xsd:complexType>
+	
+	<xsd:complexType name="path">
+		<xsd:sequence>
+			<xsd:element name="hops" type="tns:hopList" minOccurs="1"/>
+			<xsd:element name="vtag" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="availableVtags" type="tns:vtagList" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+	<xsd:complexType name="hopList">
+		<xsd:sequence>
+			<xsd:element name="hop" type="tns:hop" minOccurs="1" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+	<xsd:complexType name="hop">
+		<xsd:simpleContent>
+			<xsd:extension base="xsd:string">
+				<xsd:attribute name="loose" type="xsd:boolean" use="optional"/>
+				<xsd:attribute name="type" type="xsd:string" use="optional"/>
+			</xsd:extension>
+		</xsd:simpleContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="vtagList">
+		<xsd:sequence>
+			<xsd:element name="vtag" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+	<xsd:complexType name="exclude">
+		<!-- 1,2,3,TDM -->
+		<xsd:attribute name="layer" type="xsd:string"/>
+	</xsd:complexType>
+	
+</xsd:schema>
