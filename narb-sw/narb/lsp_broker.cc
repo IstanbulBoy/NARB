@@ -682,8 +682,25 @@ int LSPQ::HandlePartialERO()
         rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
     }
 
-    // $$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
-    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0), req_vtag, vtag_mask);
+    //use last strict hop address into hop_back into recursive LSP query and remove this hop from the current ERO.
+    ero_subobj *last_strict_hop_subobj = NULL;
+    list<ero_subobj*>::iterator it;
+    for (it = ero.begin(); it != ero.end(); it++)
+    {
+        assert ((*it) != NULL);
+        if ((*it)->hop_type == ERO_TYPE_STRICT_HOP)
+            last_strict_hop_subobj = (*it);
+        else if ((*it)->hop_type == ERO_TYPE_LOOSE_HOP)
+        {
+            if (last_strict_hop_subobj != NULL)
+               ero.erase(--it);
+            break;
+        }
+    }
+
+    //$$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
+    peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0), 
+        req_vtag, (last_strict_hop_subobj ? last_strict_hop_subobj->addr.s_addr : 0), vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////

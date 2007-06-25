@@ -61,7 +61,7 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
         api_msg_delete(msg);
         break;
     default:
-        LOGF("Peer NARB returned unknown msg type %d \n", ntohs(msg->header.type));
+        LOGF("Peer NARB returned unkonwn msg type %d \n", ntohs(msg->header.type));
          api_msg_delete(msg);
         return -1;
         break;
@@ -96,7 +96,7 @@ void NARB_APIClient::AssociateTEAddr(in_addr ip)
     associated_addrs.push_back(ip);
 }
 
-void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, msg_app2narb_vtag_mask* vtag_mask)
+void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_app2narb_vtag_mask* vtag_mask)
 {
     char msgbody[1024];
     api_msg *narb_msg;
@@ -118,6 +118,16 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
 	}
         //The vtag put into the msg header tag field must be ANY_VTAG wih presence of vtag_mask TLV
         vtag = ANY_VTAG;
+    }
+
+    //Adding hop back address into recursive LSP quesry into next domain NARB
+    if (hop_back != 0)
+    {
+            msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(msgbody + msglen);;
+            hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
+            hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+            hop_back_tlv->ipv4 = hop_back;
+            msglen += sizeof(msg_app2narb_hop_back);
     }
     
     narb_msg = api_msg_new(NARB_MSG_LSPQ, msglen, (void*)msgbody, ucid, rec_cspf_req.app_seqnum, vtag);
