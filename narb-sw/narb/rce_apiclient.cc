@@ -75,7 +75,7 @@ int RCE_APIClient::HandleMessage(api_msg * rce_msg)
      case MSG_RM:
         break;
     default:
-        LOGF("Unknown msg type %d \n", rce_msg->header.type_8);
+        LOGF("Unkonwn msg type %d \n", rce_msg->header.type_8);
          api_msg_delete(rce_msg);
         return -1;
         break;
@@ -105,7 +105,7 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
         hop_back_tlv->ipv4 = hop_back;
         mlen += sizeof(msg_app2narb_hop_back);
     }
@@ -132,7 +132,7 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
         hop_back_tlv->ipv4 = hop_back;
         mlen += sizeof(msg_app2narb_hop_back);
     }

@@ -337,6 +337,13 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
     do
     {
         assert(*node_inter != NULL);
+        //removing duplicates
+        if (ero_intra.begin() != ero_intra.end() && (*node_inter)->addr.s_addr == (*ero_intra.begin())->addr.s_addr)
+        {
+            node_inter++;
+            continue;
+        }
+
         nodedata = new ero_subobj(*(*node_inter));
         merged_ero.push_back(nodedata);
         node_inter++;
@@ -639,12 +646,12 @@ int LSPQ::HandlePartialERO()
     if (is_all_strict_hops(ero))
         return HandleCompleteERO();
 
-    ero_subobj *new_src_subobj = last_strict_hop(ero);
-    if (!new_src_subobj)
+    ero_subobj* last_strict_hop_subobj = last_strict_hop(ero);
+    if (!last_strict_hop_subobj)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
 
     //this should be the interdomain link; DRAGN assumes interface addresses are unique for interdomain links
-    link_info * link = NarbDomainInfo.LookupLinkByRmtIf(new_src_subobj->addr);
+    link_info * link = NarbDomainInfo.LookupLinkByRmtIf(last_strict_hop_subobj->addr);
     if (!link)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
 
@@ -657,7 +664,7 @@ int LSPQ::HandlePartialERO()
     rec_cspf_req.rec_req_data = rec_cspf_req.app_req_data;
     rec_cspf_req.rec_req_data.src.s_addr = link->Id();
 
-    NARB_APIClient * peer_narb = NarbFactory.GetClient(new_src_subobj->addr);
+    NARB_APIClient * peer_narb = NarbFactory.GetClient(last_strict_hop_subobj->addr);
 
     if(!peer_narb)
         return HandleErrorCode(NARB_ERROR_NO_ROUTE);
@@ -673,7 +680,7 @@ int LSPQ::HandlePartialERO()
     }
 
     //multi-region network
-    new_src_subobj = first_loose_hop(ero);
+    ero_subobj* new_src_subobj = first_loose_hop(ero);
     if (new_src_subobj->sw_type != rec_cspf_req.app_req_data.switching_type ||
         new_src_subobj->encoding != rec_cspf_req.app_req_data.encoding_type)
     {
@@ -682,23 +689,8 @@ int LSPQ::HandlePartialERO()
         rec_cspf_req.rec_req_data.bandwidth = new_src_subobj->bandwidth;
     }
 
-    //use last strict hop address into hop_back into recursive LSP query and remove this hop from the current ERO.
-    ero_subobj *last_strict_hop_subobj = NULL;
-    list<ero_subobj*>::iterator it;
-    for (it = ero.begin(); it != ero.end(); it++)
-    {
-        assert ((*it) != NULL);
-        if ((*it)->hop_type == ERO_TYPE_STRICT_HOP)
-            last_strict_hop_subobj = (*it);
-        else if ((*it)->hop_type == ERO_TYPE_LOOSE_HOP)
-        {
-            if (last_strict_hop_subobj != NULL)
-               ero.erase(--it);
-            break;
-        }
-    }
-
     //$$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
+    //$$$$ use last strict hop address into hop_back into recursive LSP query
     peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0), 
         req_vtag, (last_strict_hop_subobj ? last_strict_hop_subobj->addr.s_addr : 0), vtag_mask);
 }
