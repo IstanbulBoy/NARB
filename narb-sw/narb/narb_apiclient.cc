@@ -125,7 +125,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     {
             msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(msgbody + msglen);;
             hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-            hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+            hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
             hop_back_tlv->ipv4 = hop_back;
             msglen += sizeof(msg_app2narb_hop_back);
     }

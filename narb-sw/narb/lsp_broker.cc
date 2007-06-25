@@ -1651,6 +1651,7 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
                 LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: hop_back_tlv->ipv4 == 0\n");
             break;
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
+            tlv_len = sizeof(msg_app2narb_suggested_vtag);
             if (!suggested_vtag)
                 suggested_vtag = new (struct msg_app2narb_suggested_vtag);
             else if (suggested_vtag->suggested_vtag != ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag)
