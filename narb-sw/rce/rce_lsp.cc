@@ -97,6 +97,7 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             ; //do nothing
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
+            tlv_len = sizeof(narb_lsp_vtagmask_tlv);
             if (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
             {
                 if (!vtag_mask)
