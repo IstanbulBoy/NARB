@@ -402,7 +402,8 @@ public:
                 }
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
-                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 ? false : true);
+                // VIA_MOVAZ and INCOPORATE_SUBNET modes are mutually exclusive and the later overrides the former...
+                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 && (!SystemConfig::should_incorporate_subnet) ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
