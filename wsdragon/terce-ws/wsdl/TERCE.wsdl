@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="TERCE"
+	targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/"
+	xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS">
+
+	<wsdl:documentation>
+		This is WSDL for the path computation service provided by the DRAGON TERCE.
+		VERSION 0.1
+	</wsdl:documentation>
+
+	<!-- Element definitons -->
+	<wsdl:types>
+		<xsd:schema targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS"
+			elementFormDefault="qualified"
+			xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+			xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS">
+			<xsd:include schemaLocation="TERCE.xsd"/>
+		</xsd:schema>
+	</wsdl:types>
+	
+	<!--  Message definitions -->
+	<wsdl:message name="findPath">
+		<wsdl:part name="findPath"
+			element="tns:findPath">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="findPathResponse">
+		<wsdl:part name="findPathResponse"
+			element="tns:findPathResponse" />
+	</wsdl:message>
+	
+	<wsdl:message name="TERCEFaultMessage">
+		<wsdl:part name="fault" element="tns:TERCEFault" />
+	</wsdl:message>
+	
+	<!-- PortType operation definitions -->
+	<wsdl:portType name="TERCE">
+		<wsdl:operation name="findPath">
+			<wsdl:input message="tns:findPath" />
+			<wsdl:output message="tns:findPathResponse" />
+			<wsdl:fault name="TERCEException" message="tns:TERCEFaultMessage" />
+		</wsdl:operation>
+	</wsdl:portType>
+	
+	<!-- Binding to SOAP -->
+	<wsdl:binding name="TERCESOAP" type="tns:TERCE">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+
+		<wsdl:operation name="findPath">
+			<soap:operation style="document"
+				soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath" />
+			<wsdl:input>
+				<soap:body use="literal" parts="findPath" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					parts="findPathResponse" />
+			</wsdl:output>
+			<wsdl:fault name="TERCEException">
+				<soap:fault name="TERCEException" use="literal" />
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:binding>
+	
+	<!-- Define service -->
+	<wsdl:service name="TERCE">
+		<wsdl:port name="TERCE" binding="tns:TERCESOAP">
+			<soap:address
+				location="https://hopibruw.internet2.edu/axis2/services/DRAGON/TERCE" />
+		</wsdl:port>
+	</wsdl:service>
+	
+</wsdl:definitions>

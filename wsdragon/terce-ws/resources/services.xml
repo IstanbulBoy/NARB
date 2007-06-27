@@ -1,0 +1,15 @@
+<!-- This file was auto-generated from WSDL -->
+<!-- by the Apache Axis2 version: #axisVersion# #today# -->
+<serviceGroup>
+<service name="TERCE">
+<messageReceivers>
+<messageReceiver mep="http://www.w3.org/2004/08/wsdl/in-out" class="edu.internet2.hopi.dragon.terce.ws.server.TERCEMessageReceiverInOut"/>
+</messageReceivers>
+<parameter locked="false" name="ServiceClass">edu.internet2.hopi.dragon.terce.ws.server.TERCESkeleton</parameter>
+<operation name="findPath" mep="http://www.w3.org/2004/08/wsdl/in-out">
+<actionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath</actionMapping>
+<outputActionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPathResponse</outputActionMapping>
+<faultActionMapping faultName="TERCEException">http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPath/Fault/TERCEException</faultActionMapping>
+</operation>
+</service>
+</serviceGroup>
