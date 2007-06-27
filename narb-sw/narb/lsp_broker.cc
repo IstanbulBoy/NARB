@@ -1527,15 +1527,15 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             if (!lspq)
             {
                 //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
-                lspq = NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 int pingPongCount = 0;
+                lspq = NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 if (lspq)
                 {
                     pingPongCount = lspq->GetPingPongCount();
                     lspq->SetPingPongCount(++pingPongCount);
                 }
                 //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
-                if (pingPongCount > 1)
+                if (pingPongCount > 0)
                 {
                     LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
                         ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
