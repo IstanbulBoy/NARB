@@ -88,6 +88,7 @@ void LSPQ::Init()
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
+    ping_pong_count = 0;
 }
 
 LSPQ::~LSPQ()
@@ -1525,8 +1526,16 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
-                //checking duplicates (the LSP has been handled by other LSPBroker or PingPong happened)
-                if (NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum)) != NULL)
+                //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
+                lspq = NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+                int pingPongCount = 0;
+                if (lspq)
+                {
+                    pingPongCount = lspq->GetPingPongCount();
+                    lspq->SetPingPongCount(++pingPongCount);
+                }
+                //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
+                if (pingPongCount > 1)
                 {
                     LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
                         ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
@@ -1540,6 +1549,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
                 lspq->SetReqVtag(ntohl(msg->header.tag));
+                lspq->SetPingPongCount(pingPongCount); //LSPQs with same (ucid,seqnum) inheritate the pingPongCount
                 lspq->HandleOptionalRequestTLVs(msg);
                 lspq_list.push_back(lspq);
                 lspq->HandleRecursiveRequest();
