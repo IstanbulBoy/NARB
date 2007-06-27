@@ -180,6 +180,6 @@ void APIClient::SendMessage(api_msg *msg)
 LSPQ* APIClient::FindOwnerLSPQ(api_msg *msg)
 {
     assert(msg);
-    return NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    return NARB_APIServer::LspqLookupLatest(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 }
 
