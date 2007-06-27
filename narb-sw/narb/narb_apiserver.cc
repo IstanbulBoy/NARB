@@ -30,7 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <arpa/inet.h>
 #include "narb_apiserver.hh"
 #include "lsp_broker.hh"
 
@@ -73,10 +72,7 @@ void NARB_APIServer::Run()
     lsp_brokers.push_back(lspb);
     eventMaster.Schedule(lspb);
 
-    char addr[20];
-    LOGF("Accepted API connection from %s port %d on socket %d for LSP Query\n",
-	 inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
-	 ntohs(sa_in.sin_port), new_sock);
+    LOG_DEBUG("Accepted an LSPQ connection on socket(" <<new_sock <<")" << endl);
 }
 
 LSP_Broker* NARB_APIServer::LspBrokerLookup (u_int32_t id)
@@ -134,6 +130,29 @@ LSP_Broker* NARB_APIServer::LspBrokerLookupBySocket (int sock)
     }
 
     return NULL;
+}
+
+int NARB_APIServer::LspqCount (u_int32_t ucid, u_int32_t seqnum)
+{
+    list<LSP_Broker*>::reverse_iterator it1;
+    LSP_Broker *broker;
+    list<LSPQ*>::iterator it2;
+    LSPQ* lspq;
+    int ret = 0;
+
+    for (it1 = lsp_brokers.rbegin(); it1 != lsp_brokers.rend(); it1++)
+    {
+        broker = *it1;
+        if (!broker)
+            continue;
+        for (it2 = broker->LspqList().begin(); it2 !=  broker->LspqList().end(); it2++)
+        {
+        	if ((lspq = broker->LspqLookup(ucid, seqnum)) != NULL)
+                  ret++;
+        }
+    }
+
+    return ret;
 }
 
 api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t errorcode)

@@ -102,7 +102,6 @@ private:
     u_int32_t hop_back;
     bool is_recursive_req;
     bool is_qconf_mode;
-    int ping_pong_count;
     
     //state of the current LSPQ request, values defined below
     u_char state;
@@ -147,8 +146,6 @@ public:
     void SetReqOptions(u_int32_t x) { app_options = x; }
     void SetReqAppMsg(msg_app2narb_request& r) { req_spec = r; }
     void SetReqMrnMsg(msg_app2narb_request& mr) { mrn_spec = mr; }
-    void SetPingPongCount(int x) { ping_pong_count = x; }
-    int GetPingPongCount() { return ping_pong_count; }
     u_char State() {  return state;  }
     void SetState(u_char s);
     void HandleOptionalRequestTLVs (api_msg* msg);

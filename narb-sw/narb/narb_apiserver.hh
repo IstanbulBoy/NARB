@@ -54,6 +54,7 @@ public:
    static LSP_Broker * LspBrokerLookupBySocket(int sock);
 
    static LSPQ* LspqLookup (u_int32_t ucid, u_int32_t seqnum);
+   static int LspqCount (u_int32_t ucid, u_int32_t seqnum);
 };
 
 struct msg_app2narb_vtag_mask;
