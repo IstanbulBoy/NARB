@@ -4,7 +4,9 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
 	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/"
-	xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS">
+	xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS"
+	xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE"
+	xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB">
 
 	<wsdl:documentation>
 		This is WSDL for the path computation service provided by the DRAGON TERCE.
@@ -16,24 +18,51 @@
 		<xsd:schema targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS"
 			elementFormDefault="qualified"
 			xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-			xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS">
-			<xsd:include schemaLocation="TERCE.xsd"/>
+			xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS"
+			xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE"
+	        xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB">
+			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="TERCE-RCE.xsd"/>
+			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="TERCE-TEDB.xsd"/>
 		</xsd:schema>
 	</wsdl:types>
 	
 	<!--  Message definitions -->
 	<wsdl:message name="findPath">
 		<wsdl:part name="findPath"
-			element="tns:findPath">
+			element="rce:findPath">
 		</wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="findPathResponse">
 		<wsdl:part name="findPathResponse"
-			element="tns:findPathResponse" />
+			element="rce:findPathResponse" />
 	</wsdl:message>
 	
-	<wsdl:message name="TERCEFaultMessage">
-		<wsdl:part name="fault" element="tns:TERCEFault" />
+	<wsdl:message name="selectNetworkTopology">
+		<wsdl:part name="selectNetworkTopology"
+			element="tedb:selectNetworkTopology">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="selectNetworkTopologyResponse">
+		<wsdl:part name="selectNetworkTopologyResponse"
+			element="tedb:selectNetworkTopologyResponse" />
+	</wsdl:message>
+	
+	<wsdl:message name="insertNetworkTopology">
+		<wsdl:part name="insertNetworkTopology"
+			element="tedb:insertNetworkTopology">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="insertNetworkTopologyResponse">
+		<wsdl:part name="insertNetworkTopologyResponse"
+			element="tedb:insertNetworkTopologyResponse" />
+	</wsdl:message>
+	
+	<wsdl:message name="RCEFaultMessage">
+		<wsdl:part name="fault" element="rce:TerceRceFault" />
+	</wsdl:message>
+	
+	<wsdl:message name="TEDBFaultMessage">
+		<wsdl:part name="fault" element="tedb:TerceTedbFault" />
 	</wsdl:message>
 	
 	<!-- PortType operation definitions -->
@@ -41,7 +70,19 @@
 		<wsdl:operation name="findPath">
 			<wsdl:input message="tns:findPath" />
 			<wsdl:output message="tns:findPathResponse" />
-			<wsdl:fault name="TERCEException" message="tns:TERCEFaultMessage" />
+			<wsdl:fault name="RCEException" message="tns:RCEFaultMessage" />
+		</wsdl:operation>
+		
+		<wsdl:operation name="selectNetworkTopology">
+			<wsdl:input message="tns:selectNetworkTopology" />
+			<wsdl:output message="tns:selectNetworkTopologyResponse" />
+			<wsdl:fault name="TEDBException" message="tns:TEDBFaultMessage" />
+		</wsdl:operation>
+		
+		<wsdl:operation name="insertNetworkTopology">
+			<wsdl:input message="tns:insertNetworkTopology" />
+			<wsdl:output message="tns:insertNetworkTopologyResponse" />
+			<wsdl:fault name="TEDBException" message="tns:TEDBFaultMessage" />
 		</wsdl:operation>
 	</wsdl:portType>
 	
@@ -60,8 +101,38 @@
 				<soap:body use="literal"
 					parts="findPathResponse" />
 			</wsdl:output>
-			<wsdl:fault name="TERCEException">
-				<soap:fault name="TERCEException" use="literal" />
+			<wsdl:fault name="RCEException">
+				<soap:fault name="RCEException" use="literal" />
+			</wsdl:fault>
+		</wsdl:operation>
+		
+		<wsdl:operation name="selectNetworkTopology">
+			<soap:operation style="document"
+				soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/selectNetworkTopology" />
+			<wsdl:input>
+				<soap:body use="literal" parts="selectNetworkTopology" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					parts="selectNetworkTopologyResponse" />
+			</wsdl:output>
+			<wsdl:fault name="TEDBException">
+				<soap:fault name="TEDBException" use="literal" />
+			</wsdl:fault>
+		</wsdl:operation>
+		
+		<wsdl:operation name="insertNetworkTopology">
+			<soap:operation style="document"
+				soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/insertNetworkTopology" />
+			<wsdl:input>
+				<soap:body use="literal" parts="insertNetworkTopology" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					parts="insertNetworkTopologyResponse" />
+			</wsdl:output>
+			<wsdl:fault name="TEDBException">
+				<soap:fault name="TEDBException" use="literal" />
 			</wsdl:fault>
 		</wsdl:operation>
 	</wsdl:binding>
@@ -70,7 +141,7 @@
 	<wsdl:service name="TERCE">
 		<wsdl:port name="TERCE" binding="tns:TERCESOAP">
 			<soap:address
-				location="https://hopibruw.internet2.edu/axis2/services/DRAGON/TERCE" />
+				location="https://hopi.internet2.edu/axis2/services/DRAGON/TERCE" />
 		</wsdl:port>
 	</wsdl:service>
 	
