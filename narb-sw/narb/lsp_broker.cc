@@ -1535,7 +1535,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                     lspq->SetPingPongCount(++pingPongCount);
                 }
                 //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
-                if (pingPongCount > 0)
+                if (pingPongCount > 1)
                 {
                     LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
                         ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
@@ -1556,6 +1556,17 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             }
             else // retransmission of lsp query
             {
+
+               if (lspq->GetPingPongCount() > 1)
+                {
+                    LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
+                        ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
+                    api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ);
+                    if (rmsg)
+                        HandleReplyMessage(rmsg);
+                    goto _abnormal_out;
+                }
+
                 lspq->SetReqAppMsg(*app_req);
                 lspq->SetReqMrnMsg(*mrn_req);
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
