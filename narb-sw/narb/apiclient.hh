@@ -56,6 +56,7 @@ public:
     bool IsAlive();
     void SendMessage(api_msg *msg);
     LSPQ* FindOwnerLSPQ(api_msg *msg);
+    LSPQ* FindOwnerLSPQLatest(api_msg *msg);
 };
 
 

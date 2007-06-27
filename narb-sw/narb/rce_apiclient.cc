@@ -61,7 +61,7 @@ int RCE_APIClient::HandleMessage(api_msg * rce_msg)
                 ntohs(((te_tlv_header*)rce_msg->body)->length)/sizeof(ero_subobj));
         }
 
-        lspq = FindOwnerLSPQ(rce_msg);
+        lspq = FindOwnerLSPQLatest(rce_msg);
         if (!lspq)
         {
             api_msg_delete(rce_msg);
