@@ -1535,24 +1535,24 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     case MSG_PEER_REQUEST:
        {
             LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+
+            //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
+            int pingPongCount = NARB_APIServer::LspqCount(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
+            if (pingPongCount > 1) //we can have up to two lspq's of same (ucid, seqnum), including this current one to be created...
+            {
+                LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
+                    ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+                u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
+                api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ, lspb_id);
+                if (rmsg)
+                    HandleReplyMessage(rmsg);
+                goto _abnormal_out;
+            }
+
             msg_app2narb_request * mrn_req = app_req + 1;
             if (!lspq)
             {
-                //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
-                int pingPongCount = NARB_APIServer::LspqCount(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-                //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
-                if (pingPongCount > 1) //we can have up to two lspq's of same (ucid, seqnum), including this current one to be created...
-                {
-                    LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
-                        ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
-                    u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
-                    api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ, lspb_id);
-                    if (rmsg)
-                        HandleReplyMessage(rmsg);
-                    delete lspq;
-                    goto _abnormal_out;
-                }
-
                 //creating new LSPQ
                 lspq = new LSPQ(this, *app_req, *mrn_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
                 lspq->SetReqUcid(ntohl(msg->header.ucid));
