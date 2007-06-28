@@ -89,11 +89,11 @@ struct option longopts[] =
 void usage()
 {
     cout<<"NARB Tester Usage:"<<endl;
-    cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-b bandwidth] [-x switching type] [-e encoding type] " <<endl;
+    cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-B] [-b bandwidth] [-x switching type] [-e encoding type] ";
     cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
-    cout<<"  [ [-M] multi-region network [-v tag]: E2E VLAN with specified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
-    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all available VLAN tags ]" <<endl;
-    cout<<"  [ [-Q] Query and Hold [-C] Query expecting Confirmation ID ]" <<endl;
+    cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
+    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags ]" <<endl;
+    cout<<" [ [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
 }
 
 // SIGINT handler.
@@ -325,7 +325,7 @@ msg_app2narb_request * new_app_request()
 }
 
 
-api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqnum, msg_app2narb_request *app_req)
+api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum, msg_app2narb_request *app_req)
 {
   struct api_msg *narb_msg;
   int bodylen = 0;
@@ -348,7 +348,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t lspq_id, u_int32_t seqn
     bodylen += sizeof (msg_app2narb_hop_back);
   }
 
-  narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, lspq_id, seqnum, vtag);
+  narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
         opt_query_hold | opt_query_with_confirmation);

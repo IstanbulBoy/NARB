@@ -119,7 +119,14 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
         //The vtag put into the msg header tag field must be ANY_VTAG wih presence of vtag_mask TLV
         vtag = ANY_VTAG;
     }
-
+    //lspb_id TLV
+    if (rec_cspf_req.lspb_id != 0)
+    {
+        msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(msgbody+msglen);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->lspb_id = rec_cspf_req.lspb_id;
+    }  
     //Adding hop back address into recursive LSP quesry into next domain NARB
     if (hop_back != 0)
     {
@@ -142,7 +149,7 @@ void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_s
     u_int16_t length = sizeof(msg_app2narb_request);
     memcpy(buf, msg->body, length);
     ((msg_app2narb_request*)buf)->type = htons(type);
-    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL);
+    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL, 0);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
     api_msg_delete(ero_msg);

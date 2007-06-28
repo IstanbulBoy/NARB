@@ -101,6 +101,13 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
         memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
     u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_app2narb_vtag_mask));
+    if (cspf_req.lspb_id != 0)
+    {
+        msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->lspb_id = cspf_req.lspb_id;
+    }  
     if (hop_back != 0)
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
@@ -128,6 +135,13 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
         memcpy(buf+mlen, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
         mlen += sizeof(msg_app2narb_vtag_mask);
     }
+    if (cspf_req.lspb_id != 0)
+    {
+        msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->lspb_id = cspf_req.lspb_id;
+    }  
     if (hop_back != 0)
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
@@ -151,7 +165,7 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
     u_int16_t length = sizeof(msg_app2narb_request);
     memcpy(buf, msg_req, length);
     ((msg_app2narb_request*)buf)->type = ((type<<8) | action);
-    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL);
+    api_msg *ero_msg = narb_new_msg_reply_ero(0, 0, ero_forward, NULL, 0);
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
     api_msg_delete(ero_msg);

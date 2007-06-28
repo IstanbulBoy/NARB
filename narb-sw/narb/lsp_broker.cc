@@ -81,10 +81,11 @@ void LSPQ::Init()
     req_retran_counter = MAX_REQ_RETRAN;
     memset(&req_spec, 0, sizeof(req_spec));
     req_spec.type = htons(TLV_TYPE_NARB_REQUEST);
-    req_spec.length = htons(sizeof(req_spec) - 4);
+    req_spec.length = htons(sizeof(req_spec));
     mrn_spec = req_spec;
     vtag_mask = NULL;
     suggested_vtag = NULL;
+    previous_lspb_id = 0;
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
@@ -148,7 +149,7 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
 {
     assert (tlv);
     ero.clear();
-    int len = ntohs(tlv->length);
+    int len = ntohs(tlv->length)-4;
     assert( len > 0 && len% sizeof(ero_subobj) == 0);
 
     char addr[20]; //debug
@@ -862,7 +863,7 @@ int LSPQ::HandleErrorCode(u_int32_t errcode)
 
     api_msg* rmsg;
 
-    rmsg = narb_new_msg_reply_error(req_ucid, app_seqnum, errcode);
+    rmsg = narb_new_msg_reply_error(req_ucid, app_seqnum, errcode, is_recursive_req? previous_lspb_id : 0);
     assert(rmsg);
     rmsg->header.tag = htonl(req_vtag);
 
@@ -881,7 +882,7 @@ int LSPQ::HandleCompleteERO()
 
     assert(broker);
 
-    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
+    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req? previous_lspb_id : 0);
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
     rmsg->header.tag = htonl(req_vtag);
@@ -907,7 +908,13 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
         {
             eventMaster.Schedule(qConfEROTimer);
         }
-        rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, 0, NULL, req_ucid, app_seqnum, req_vtag); 
+
+        msg_app2narb_lspb_id lspb_id_tlv;
+        lspb_id_tlv.type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv.lspb_id = previous_lspb_id;
+        
+        rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, sizeof(msg_app2narb_lspb_id), &lspb_id_tlv, req_ucid, app_seqnum, req_vtag); 
         LOGF("HandleCompleteEROWithConfirmationID:: For recursive query, sending back confirmation ID only (ucid=%x,seqnum=%x), vtag=%d\n", req_ucid, app_seqnum, req_vtag);
     }
     else //ERO and confirmation ID (ucid, seqnum)
@@ -965,7 +972,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
             ero.push_front(subobj);
         }
 
-        rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask);
+        rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req ? previous_lspb_id : 0);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
 
@@ -1399,7 +1406,7 @@ int LSPQ::HandleResvReleaseConfirm()
 
     api_msg* rmsg;
 
-    rmsg = narb_new_msg_reply_release_confirm(req_ucid, app_seqnum);
+    rmsg = narb_new_msg_reply_release_confirm(req_ucid, app_seqnum, previous_lspb_id);
 
     assert(rmsg);
 
@@ -1464,7 +1471,7 @@ void LSP_Broker::Run()
 int LSP_Broker::HandleMessage(api_msg * msg)
 {
     LSPQ* lspq;
-	msg_app2narb_request * app_req;
+    msg_app2narb_request * app_req;
 	
     if (ntohs(msg->header.type) != NARB_MSG_LSPQ)
     {
@@ -1531,10 +1538,12 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                 if (pingPongCount > 1) //we can have up to two lspq's of same (ucid, seqnum), including this current one to be created...
                 {
                     LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
-                        ntohl(msg->header.ucid), ntohl(msg->header.seqnum));  
-                    api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ);
+                        ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+                    u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
+                    api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ, lspb_id);
                     if (rmsg)
                         HandleReplyMessage(rmsg);
+                    delete lspq;
                     goto _abnormal_out;
                 }
 
@@ -1653,8 +1662,12 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
                     suggested_vtag->suggested_vtag, ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag);
             memcpy(suggested_vtag, tlv, sizeof(msg_app2narb_suggested_vtag));
             break;
+        case TLV_TYPE_NARB_LSPB_ID:
+            tlv_len = sizeof(msg_app2narb_lspb_id);
+            previous_lspb_id = ((msg_app2narb_lspb_id*)tlv)->lspb_id;
+            break;
         default:
-            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length);
             break;
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
@@ -1675,7 +1688,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
         switch (ntohs(tlv->type)) 
         {
         case TLV_TYPE_NARB_ERO:
-            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length);
             ; //do nothing
             break;
         case TLV_TYPE_NARB_ERROR_CODE:
@@ -1689,6 +1702,10 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             if (!vtag_mask)
                 vtag_mask = new (struct msg_app2narb_vtag_mask);
             memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+            break;
+        case TLV_TYPE_NARB_LSPB_ID:
+            tlv_len = sizeof(msg_app2narb_lspb_id);
+            returned_lspb_id = ((msg_app2narb_lspb_id*)tlv)->lspb_id;
             break;
         /* RCE does not suggest vtag in the current implemention
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
