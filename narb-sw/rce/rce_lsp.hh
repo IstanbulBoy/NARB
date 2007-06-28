@@ -73,6 +73,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ERROR_CODE = 0x04,
     TLV_TYPE_NARB_VTAG_MASK = 0x05,
     TLV_TYPE_NARB_HOP_BACK = 0x06,
+    TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
@@ -101,6 +102,14 @@ struct narb_lsp_hopback_tlv
     u_int16_t length;
     u_int32_t ipv4;
 };
+
+struct narb_lsp_lspb_id_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t lspb_id;
+};
+
 
 // data structure of an IPv4 prefix type ERO sub-object
 struct ipv4_prefix_subobj
@@ -139,6 +148,7 @@ private:
     u_int32_t tag;
     u_int32_t ucid;
     u_int32_t seqnum;
+    u_int32_t lspb_id;
     u_int32_t uptime;
     u_int32_t duration;
 
@@ -151,7 +161,7 @@ private:
     void Init ()
         {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
-            options = 0; tag = 0; ucid = seqnum = 0xffffffff; uptime = 0; duration = 0xffffffff; 
+            options = 0; tag = 0; ucid = seqnum = 0xffffffff; lspb_id = 0; uptime = 0; duration = 0xffffffff;
             api_writer = NULL;  vtag_mask = NULL; hop_back = 0; }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}

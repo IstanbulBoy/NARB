@@ -41,9 +41,9 @@
 
 PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
         float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
-        u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t tag, u_int32_t hopback, narb_lsp_vtagmask_tlv* vtm):
+        u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t lspb_id, u_int32_t tag, u_int32_t hopback, narb_lsp_vtagmask_tlv* vtm):
         PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
-        bw_egress,opts, ucid, msg_seqnum, tag, hopback, vtm) 
+        bw_egress,opts, ucid, msg_seqnum, lspb_id, tag, hopback, vtm) 
 {
 }
 

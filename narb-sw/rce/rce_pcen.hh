@@ -374,6 +374,7 @@ protected:
     u_int32_t duration;
     u_int32_t ucid;
     u_int32_t seqnum;
+    u_int32_t lspb_id;
     u_int32_t vtag;    
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
@@ -385,8 +386,8 @@ protected:
     APIWriter* api_writer;
 
 public:
-    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
-            source(src), destination(dest), ucid(ucid1), seqnum(msg_seqnum), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+    PCEN(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t lspb_id1 = 0, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
+            source(src), destination(dest), ucid(ucid1), seqnum(msg_seqnum), lspb_id(lspb_id1), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type;
                 encoding_type_ingress = encoding_type_egress = encoding;
@@ -406,8 +407,8 @@ public:
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
-                float bw_egress, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
-                source(src), destination(dest), ucid(ucid1), seqnum(msg_seqnum), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
+                float bw_egress, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t lspb_id1 = 0, u_int32_t tag = 0, u_int32_t hopback = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
+                source(src), destination(dest), ucid(ucid1), seqnum(msg_seqnum), lspb_id(lspb_id1), options(opts), vtag(tag), hop_back(hopback), api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
                 switching_type_ingress = switching_type_egress = sw_type_ingress;
                 encoding_type_ingress = encoding_type_egress = encoding_ingress;

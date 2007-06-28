@@ -282,7 +282,7 @@ msg_narb_cspf_request * new_cspf_request()
   cspf_req->area_id.s_addr = 0;
   cspf_req->narb_apiserv_id = 0;
   cspf_req->app_req_data.type = htons(0x02);
-  cspf_req->app_req_data.length = htons(sizeof(struct msg_app2narb_request) - 4);
+  cspf_req->app_req_data.length = htons(sizeof(struct msg_app2narb_request));
   cspf_req->app_req_data.src.s_addr = source.s_addr;
   cspf_req->app_req_data.dest.s_addr = destination.s_addr;
   cspf_req->app_req_data.bandwidth = bandwidth;

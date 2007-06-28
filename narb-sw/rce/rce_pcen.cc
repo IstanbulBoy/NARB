@@ -1156,10 +1156,19 @@ void PCEN::ReplyErrorCode (u_int32_t code)
         ucid, seqnum, source, destination, bandwidth_ingress);
 
     te_tlv_header * tlv = (te_tlv_header *)(new char[TLV_HDR_SIZE + 4]);
-    tlv->length = htons(4);
+    tlv->length = htons(8);
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE);
     *(u_int32_t*)((char*)tlv + TLV_HDR_SIZE) = htonl(code);
-    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, ucid, seqnum, TLV_HDR_SIZE + 4, vtag);
+
+    if (lspb_id != 0)
+    {
+        narb_lsp_lspb_id_tlv* lspb_id_tlv = (narb_lsp_lspb_id_tlv*)((char*)tlv + 8);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(narb_lsp_lspb_id_tlv));
+        lspb_id_tlv->lspb_id = lspb_id;
+    }
+
+    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, ucid, seqnum, TLV_HDR_SIZE + 4 + sizeof(narb_lsp_lspb_id_tlv), vtag);
     delete [] (char*)tlv;
     api_writer->PostMessage(msg);
     return;
@@ -1202,7 +1211,7 @@ void PCEN::ReplyERO ()
     // coping ero to message buffer
     int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
     te_tlv_header * tlv = (te_tlv_header*)body;
-    tlv->length = htons(sizeof(ero_subobj)*ero.size());
+    tlv->length = htons(TLV_HDR_SIZE+sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
 
     bool is_ero_all_strict = true;
@@ -1222,6 +1231,14 @@ void PCEN::ReplyERO ()
         bodylen += sizeof(narb_lsp_vtagmask_tlv);
     }
 
+    if (lspb_id != 0)
+    {
+        narb_lsp_lspb_id_tlv* lspb_id_tlv = (narb_lsp_lspb_id_tlv*)(body + bodylen);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(narb_lsp_lspb_id_tlv));
+        lspb_id_tlv->lspb_id = lspb_id;
+        bodylen += sizeof(narb_lsp_lspb_id_tlv);
+    }
     // placeholder for wave_mask ...
 
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
