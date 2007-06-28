@@ -173,7 +173,7 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
     assert (tlv);
     ero.clear();
 
-    int len = ntohs(tlv->length) ;
+    int len = ntohs(tlv->length) -4;
     if (len <= 0)
         return;
     
