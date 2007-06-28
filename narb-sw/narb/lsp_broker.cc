@@ -901,7 +901,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
     assert(broker);
 
-    if (is_recursive_req && state != STATE_STORED_ERO_WITH_CONFIRMATION_ID) // confirmation ID only (empty message body)
+    if (is_recursive_req && state != STATE_STORED_ERO_WITH_CONFIRMATION_ID) // confirmation ID only (w/o ERO TLV)
     {
         ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
         if (qConfEROTimer)
@@ -909,12 +909,18 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
             eventMaster.Schedule(qConfEROTimer);
         }
 
-        msg_app2narb_lspb_id lspb_id_tlv;
-        lspb_id_tlv.type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
-        lspb_id_tlv.lspb_id = previous_lspb_id;
+        char buf[8];
+        int mlen = 0;
+        if (previous_lspb_id != 0)
+        {
+            msg_app2narb_lspb_id *lspb_id_tlv = (msg_app2narb_lspb_id*)(buf + mlen);
+            lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+            lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+            lspb_id_tlv->lspb_id = previous_lspb_id;
+            mlen += sizeof(msg_app2narb_lspb_id);
+        }
         
-        rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, sizeof(msg_app2narb_lspb_id), &lspb_id_tlv, req_ucid, app_seqnum, req_vtag); 
+        rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, mlen, buf, req_ucid, app_seqnum, req_vtag);
         LOGF("HandleCompleteEROWithConfirmationID:: For recursive query, sending back confirmation ID only (ucid=%x,seqnum=%x), vtag=%d\n", req_ucid, app_seqnum, req_vtag);
     }
     else //ERO and confirmation ID (ucid, seqnum)
