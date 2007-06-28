@@ -1155,7 +1155,7 @@ void PCEN::ReplyErrorCode (u_int32_t code)
     LOGF("Replying ErrorCode %d for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  code,
         ucid, seqnum, source, destination, bandwidth_ingress);
 
-    te_tlv_header * tlv = (te_tlv_header *)(new char[TLV_HDR_SIZE + 4]);
+    te_tlv_header * tlv = (te_tlv_header *)(new char[8 + sizeof(narb_lsp_lspb_id_tlv)]);
     tlv->length = htons(8);
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE);
     *(u_int32_t*)((char*)tlv + TLV_HDR_SIZE) = htonl(code);
@@ -1168,7 +1168,7 @@ void PCEN::ReplyErrorCode (u_int32_t code)
         lspb_id_tlv->lspb_id = lspb_id;
     }
 
-    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, ucid, seqnum, TLV_HDR_SIZE + 4 + sizeof(narb_lsp_lspb_id_tlv), vtag);
+    api_msg* msg = api_msg_new(MSG_LSP, ACT_ERROR, tlv, ucid, seqnum, 8 + sizeof(narb_lsp_lspb_id_tlv), vtag);
     delete [] (char*)tlv;
     api_writer->PostMessage(msg);
     return;
@@ -1259,7 +1259,7 @@ void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 {
     narb_lsp_request_tlv lsp_req;
     lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
-    lsp_req.length = sizeof(narb_lsp_request_tlv) - 4;
+    lsp_req.length = sizeof(narb_lsp_request_tlv);
     lsp_req.src.s_addr = this->source.s_addr;
     lsp_req.dest.s_addr = this->destination.s_addr;
     lsp_req.bandwidth = this->bandwidth_ingress;

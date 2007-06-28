@@ -116,7 +116,7 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             lspb_id = ((narb_lsp_lspb_id_tlv*)tlv)->lspb_id;
             break;
         default:
-            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length);
             break;
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
@@ -216,11 +216,11 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             vtag_mask_tlv =(narb_lsp_vtagmask_tlv*)tlv; 
             break;
         case TLV_TYPE_NARB_ERO:
-            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length);
             GetERO_RFCStandard(tlv, ero);
             break;
         default:
-            tlv_len = TLV_HDR_SIZE + ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length);
             break;
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);

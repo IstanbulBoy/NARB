@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
         case TLV_TYPE_NARB_ERO:
             assert (rce_reply->hdr.action = ACT_ACKDATA);
             LOGF("Request successful! ERO returned...\n");
-            len = ntohs(tlv->length);
+            len = ntohs(tlv->length) - 4;
             assert( len > 0 && len% sizeof(ero_subobj) == 0);
 
             subobj  = (ero_subobj *)((char *)tlv + sizeof(struct te_tlv_header));
@@ -467,7 +467,7 @@ int main(int argc, char* argv[])
             }
             if (opt_e2e_vlan)
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(rce_reply->hdr.tag));
-            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(rce_reply->hdr.msglen) > TLV_HDR_SIZE + ntohs(tlv->length))
+            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(rce_reply->hdr.msglen) > ntohs(tlv->length))
             {
                 narb_lsp_vtagmask_tlv* vtagmask = (narb_lsp_vtagmask_tlv*) ((char*)tlv + sizeof(struct te_tlv_header) + ntohs(tlv->length));
                 LOGF("ALL E2E VLAN TAGS:");

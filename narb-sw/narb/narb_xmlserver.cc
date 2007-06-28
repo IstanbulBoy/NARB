@@ -93,10 +93,7 @@ void NARB_XMLServer::Run()
     NARB_APIServer::lsp_brokers.push_back(broker);
     eventMaster.Schedule(broker);
 
-    char addr[20];
-    LOGF("Accepted XML API connection from %s port %d on socket %d\n",
-         inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
-         ntohs(sa_in.sin_port), new_sock);
+    LOG_DEBUG("Accepted an XML API connection on socket(" <<new_sock <<")" << endl);
 }
 
 //////////////////////////////////
@@ -289,7 +286,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             xmlChar* key;
 
             app_req.type = htons(MSG_APP_REQUEST);
-            app_req.length = htons(sizeof(struct msg_app2narb_request) - 4);        
+            app_req.length = htons(sizeof(struct msg_app2narb_request));
 
             //source
             level1Node = findxmlnode(cur, "source");

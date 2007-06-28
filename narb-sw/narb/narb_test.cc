@@ -177,6 +177,7 @@ int set_vtag_mask_from_cmdline(struct msg_app2narb_vtag_mask* vtag_mask, char* v
 {
 	int vlan1, vlan2;
 	vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
+	// TLV length = content length (for OSPF only)
 	vtag_mask->length = htons(sizeof(struct msg_app2narb_vtag_mask) - 4);
 	if (sscanf(vtag_range, "%d-%d", &vlan1, &vlan2) != 2)
 	{
@@ -313,7 +314,7 @@ msg_app2narb_request * new_app_request()
 {
   msg_app2narb_request* app_req = new (struct msg_app2narb_request);
   app_req->type = htons(MSG_APP_REQUEST);
-  app_req->length = htons(sizeof(struct msg_app2narb_request) - 4);
+  app_req->length = htons(sizeof(struct msg_app2narb_request));
   app_req->src.s_addr = source.s_addr;
   app_req->dest.s_addr = destination.s_addr;
   app_req->bandwidth = bandwidth;
@@ -525,7 +526,7 @@ int main(int argc, char* argv[])
         {
         case MSG_REPLY_ERO:
             LOGF("Request successful! ERO returned...\n");
-            len = ntohs(tlv->length);
+            len = ntohs(tlv->length) - 4;
             assert( len > 0 && len % 4 == 0);
             offset = sizeof(struct te_tlv_header);
             subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
