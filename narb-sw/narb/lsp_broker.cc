@@ -1789,13 +1789,13 @@ u_int32_t LSP_Broker::get_unique_lspb_id()
 
 ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum)
 {
-    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = LookupEROWithConfirmationID(ucid, seqnum);
+    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = RemoveEROWithConfirmationID(ucid, seqnum); // remove instead of lookup
     if (qconfEROTimer)
     {
         LOGF("LSP_Broker::StoreEROWithConfirmationID finds existing qconf ID (ucid=0x%x, seqnum=0x%x) --> removed the old one...\n",
             ucid, seqnum);
     }
-    
+
     ConfirmationIDIndxedEROWithTimer* qconf_ero_entry = new ConfirmationIDIndxedEROWithTimer(ero, ucid, seqnum, 
         SystemConfig::confirmed_ero_expire_secs, SystemConfig::confirmed_ero_trash_secs);
     qconf_id_indexed_ero_list.push_front(qconf_ero_entry);
