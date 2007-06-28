@@ -314,7 +314,7 @@ msg_app2narb_request * new_app_request()
 {
   msg_app2narb_request* app_req = new (struct msg_app2narb_request);
   app_req->type = htons(MSG_APP_REQUEST);
-  app_req->length = htons(sizeof(struct msg_app2narb_request));
+  app_req->length = htons(sizeof(struct msg_app2narb_request) - TLV_HDR_SIZE);
   app_req->src.s_addr = source.s_addr;
   app_req->dest.s_addr = destination.s_addr;
   app_req->bandwidth = bandwidth;
@@ -344,7 +344,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
   {
     msg_app2narb_hop_back* hopback_tlv = (msg_app2narb_hop_back*)(msgbody + bodylen);
     hopback_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-    hopback_tlv->length = htons(sizeof(msg_app2narb_hop_back)-4);
+    hopback_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
     hopback_tlv->ipv4 = hop_back.s_addr;
     bodylen += sizeof (msg_app2narb_hop_back);
   }
@@ -526,7 +526,7 @@ int main(int argc, char* argv[])
         {
         case MSG_REPLY_ERO:
             LOGF("Request successful! ERO returned...\n");
-            len = ntohs(tlv->length) - 4;
+            len = ntohs(tlv->length);
             assert( len > 0 && len % 4 == 0);
             offset = sizeof(struct te_tlv_header);
             subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
@@ -555,9 +555,9 @@ int main(int argc, char* argv[])
             }
             if (opt_e2e_vlan)
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
-            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > ntohs(tlv->length))
+            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > TLV_HDR_SIZE + ntohs(tlv->length))
             {
-                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + ntohs(tlv->length));
+                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
                 LOGF("ALL E2E VLAN TAGS:");
                 for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
                 {

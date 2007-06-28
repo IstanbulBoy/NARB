@@ -819,7 +819,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
             {
             case TLV_TYPE_NARB_ERO:
                 {
-                    tlv_len = ntohs(tlv->length);
+                    tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
                     LSPQ::GetERO((te_tlv_header*)rce_msg->body, ero);
                     if (ero.size() == 0)
                         goto _out;
@@ -862,6 +862,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
                 }
                 break;
             default:
+                tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
                 break;
             }
             tlv = (te_tlv_header*)((char*)tlv + tlv_len);

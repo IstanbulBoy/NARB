@@ -722,7 +722,7 @@ void PCEN_MRN::SetVTagMask(ConstraintTagSet& vtagset)
         vtag_mask = new (narb_lsp_vtagmask_tlv);
     memset(vtag_mask, 0, sizeof(narb_lsp_vtagmask_tlv));
     vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
-    vtag_mask->length= htons(sizeof(narb_lsp_vtagmask_tlv));
+    vtag_mask->length= htons(sizeof(narb_lsp_vtagmask_tlv) - TLV_HDR_SIZE);
  
     list<u_int32_t>::iterator it = vtagset.TagSet().begin();
     for (; it != vtagset.TagSet().end(); it++)

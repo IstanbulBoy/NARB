@@ -1211,7 +1211,7 @@ void PCEN::ReplyERO ()
     // coping ero to message buffer
     int bodylen = TLV_HDR_SIZE + sizeof(ero_subobj)*ero.size();
     te_tlv_header * tlv = (te_tlv_header*)body;
-    tlv->length = htons(TLV_HDR_SIZE+sizeof(ero_subobj)*ero.size());
+    tlv->length = htons(sizeof(ero_subobj)*ero.size());
     tlv->type = htons(TLV_TYPE_NARB_ERO);
 
     bool is_ero_all_strict = true;
@@ -1235,7 +1235,7 @@ void PCEN::ReplyERO ()
     {
         narb_lsp_lspb_id_tlv* lspb_id_tlv = (narb_lsp_lspb_id_tlv*)(body + bodylen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(narb_lsp_lspb_id_tlv));
+        lspb_id_tlv->length = htons(sizeof(narb_lsp_lspb_id_tlv) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = lspb_id;
         bodylen += sizeof(narb_lsp_lspb_id_tlv);
     }
@@ -1259,7 +1259,7 @@ void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 {
     narb_lsp_request_tlv lsp_req;
     lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
-    lsp_req.length = sizeof(narb_lsp_request_tlv);
+    lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
     lsp_req.src.s_addr = this->source.s_addr;
     lsp_req.dest.s_addr = this->destination.s_addr;
     lsp_req.bandwidth = this->bandwidth_ingress;

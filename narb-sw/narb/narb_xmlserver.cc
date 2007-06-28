@@ -286,7 +286,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             xmlChar* key;
 
             app_req.type = htons(MSG_APP_REQUEST);
-            app_req.length = htons(sizeof(struct msg_app2narb_request));
+            app_req.length = htons(sizeof(struct msg_app2narb_request) - TLV_HDR_SIZE);
 
             //source
             level1Node = findxmlnode(cur, "source");

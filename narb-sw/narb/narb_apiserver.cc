@@ -172,12 +172,12 @@ api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t e
 
     te_tlv_header *tlv = (te_tlv_header*)buf;
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE); 
-    tlv->length = htons(8);
+    tlv->length = htons(4);
     * (u_int32_t *)((char *)tlv + 4) = htonl(errorcode);
 
     msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)((char *)tlv + sizeof(msg_app2narb_lspb_id));
     lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
     lspq_id_tlv->lspb_id = prev_lspb_id;
 
     msg = api_msg_new (MSG_REPLY_ERROR, 8+sizeof(msg_app2narb_lspb_id), tlv, ucid, seqnr);
@@ -191,7 +191,7 @@ api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr, u
 
     msg_app2narb_lspb_id lspb_id_tlv;
     lspb_id_tlv.type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id));
+    lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
     lspb_id_tlv.lspb_id = prev_lspb_id;
      
     msg = api_msg_new (MSG_REPLY_REMOVE_CONFIRM, sizeof(msg_app2narb_lspb_id), &lspb_id_tlv, ucid, seqnr);
@@ -254,7 +254,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         offset += subobj_size;
     }
 
-    tlv->length = htons(offset);
+    tlv->length = htons(offset - TLV_HDR_SIZE);
     tlv->type = htons(TLV_TYPE_NARB_ERO);
 
     if (vtagmask)
@@ -265,7 +265,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
 
     msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)(buf+offset);
     lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
     lspq_id_tlv->lspb_id = prev_lspb_id;
     offset += sizeof(msg_app2narb_lspb_id);
 
@@ -286,7 +286,7 @@ u_int32_t narb_get_msg_lspb_id(api_msg* msg)
         {
             return ((msg_app2narb_lspb_id*)tlv)->lspb_id;
         }
-        tlv_len = ntohs(tlv->length);
+        tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
         msg_len -= tlv_len;
     }
@@ -297,7 +297,7 @@ u_int32_t narb_get_msg_lspb_id(api_msg* msg)
 void narb_extract_ero_tlv (te_tlv_header& ero_tlv, list<ero_subobj*>& ero)
 {
     ero.clear();
-    int length = ntohs(ero_tlv.length);
+    int length = ntohs(ero_tlv.length) + TLV_HDR_SIZE;
     if (length  <= 4)
         return;
     

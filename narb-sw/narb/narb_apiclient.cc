@@ -112,7 +112,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
 	{
             msg_app2narb_suggested_vtag *suggested_vtag = (msg_app2narb_suggested_vtag *)(msgbody + msglen);
             suggested_vtag->type = htons(TLV_TYPE_NARB_SUGGESTED_VTAG);
-            suggested_vtag->length = htons(sizeof(msg_app2narb_suggested_vtag));
+            suggested_vtag->length = htons(sizeof(msg_app2narb_suggested_vtag) - TLV_HDR_SIZE);
             suggested_vtag->suggested_vtag = vtag; //$$$$ or pick some random tag in vtag_mask?
             msglen += sizeof(msg_app2narb_suggested_vtag);
 	}
@@ -124,7 +124,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     {
         msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(msgbody+msglen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = rec_cspf_req.lspb_id;
     }  
     //Adding hop back address into recursive LSP quesry into next domain NARB
@@ -132,7 +132,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     {
             msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(msgbody + msglen);;
             hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-            hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
+            hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
             hop_back_tlv->ipv4 = hop_back;
             msglen += sizeof(msg_app2narb_hop_back);
     }

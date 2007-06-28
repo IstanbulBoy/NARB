@@ -81,7 +81,7 @@ void LSPQ::Init()
     req_retran_counter = MAX_REQ_RETRAN;
     memset(&req_spec, 0, sizeof(req_spec));
     req_spec.type = htons(TLV_TYPE_NARB_REQUEST);
-    req_spec.length = htons(sizeof(req_spec));
+    req_spec.length = htons(sizeof(req_spec) - TLV_HDR_SIZE);
     mrn_spec = req_spec;
     vtag_mask = NULL;
     suggested_vtag = NULL;
@@ -149,11 +149,11 @@ void LSPQ::GetERO(te_tlv_header* tlv, list<ero_subobj*>& ero)
 {
     assert (tlv);
     ero.clear();
-    int len = ntohs(tlv->length)-4;
+    int len = ntohs(tlv->length);
     assert( len > 0 && len% sizeof(ero_subobj) == 0);
 
     char addr[20]; //debug
-    ero_subobj * subobj  = (ero_subobj *)((char *)tlv + sizeof(struct te_tlv_header));
+    ero_subobj * subobj  = (ero_subobj *)((char *)tlv + TLV_HDR_SIZE);
     for (; len > 0 ;subobj++, len -= sizeof(ero_subobj))
     {
         inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
@@ -173,11 +173,11 @@ void LSPQ::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj*>& ero)
     assert (tlv);
     ero.clear();
 
-    int len = ntohs(tlv->length) -4;
+    int len = ntohs(tlv->length);
     if (len <= 0)
         return;
     
-    int offset = sizeof(struct te_tlv_header);
+    int offset = TLV_HDR_SIZE;
 
     ipv4_prefix_subobj* subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
     unum_if_subobj* subobj_unum;
@@ -911,7 +911,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
         msg_app2narb_lspb_id lspb_id_tlv;
         lspb_id_tlv.type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv.lspb_id = previous_lspb_id;
         
         rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, sizeof(msg_app2narb_lspb_id), &lspb_id_tlv, req_ucid, app_seqnum, req_vtag); 
@@ -1667,7 +1667,7 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             previous_lspb_id = ((msg_app2narb_lspb_id*)tlv)->lspb_id;
             break;
         default:
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
@@ -1688,7 +1688,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
         switch (ntohs(tlv->type)) 
         {
         case TLV_TYPE_NARB_ERO:
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             ; //do nothing
             break;
         case TLV_TYPE_NARB_ERROR_CODE:
@@ -1715,6 +1715,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             break;
         */
         default:
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         }
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);

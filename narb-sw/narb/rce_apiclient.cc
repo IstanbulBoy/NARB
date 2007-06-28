@@ -105,14 +105,14 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     {
         msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = cspf_req.lspb_id;
     }  
     if (hop_back != 0)
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
         hop_back_tlv->ipv4 = hop_back;
         mlen += sizeof(msg_app2narb_hop_back);
     }
@@ -139,14 +139,14 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     {
         msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id));
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = cspf_req.lspb_id;
     }  
     if (hop_back != 0)
     {
         msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back));
+        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
         hop_back_tlv->ipv4 = hop_back;
         mlen += sizeof(msg_app2narb_hop_back);
     }
