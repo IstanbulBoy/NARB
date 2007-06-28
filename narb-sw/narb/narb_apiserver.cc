@@ -168,19 +168,25 @@ int NARB_APIServer::LspqCount (u_int32_t ucid, u_int32_t seqnum)
 api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t errorcode, u_int32_t prev_lspb_id)
 {
     api_msg *msg;
-    char buf[16];
 
+    char buf[16];
+    int mlen = 0;
     te_tlv_header *tlv = (te_tlv_header*)buf;
     tlv->type = htons(TLV_TYPE_NARB_ERROR_CODE); 
     tlv->length = htons(4);
     * (u_int32_t *)((char *)tlv + 4) = htonl(errorcode);
+    mlen += 8;
 
-    msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)((char *)tlv + sizeof(msg_app2narb_lspb_id));
-    lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
-    lspq_id_tlv->lspb_id = prev_lspb_id;
+    if (prev_lspb_id != 0)
+    {
+        msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)((char *)tlv + mlen);
+        lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspq_id_tlv->lspb_id = prev_lspb_id;
+        mlen += sizeof(msg_app2narb_lspb_id);
+    }
 
-    msg = api_msg_new (MSG_REPLY_ERROR, 8+sizeof(msg_app2narb_lspb_id), tlv, ucid, seqnr);
+    msg = api_msg_new (MSG_REPLY_ERROR, mlen, buf, ucid, seqnr);
   
     return msg;
 }
@@ -189,12 +195,18 @@ api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr, u
 {
     api_msg *msg;
 
-    msg_app2narb_lspb_id lspb_id_tlv;
-    lspb_id_tlv.type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspb_id_tlv.length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
-    lspb_id_tlv.lspb_id = prev_lspb_id;
+    char buf[8];
+    int mlen = 0;
+    if (prev_lspb_id != 0)
+    {
+        msg_app2narb_lspb_id *lspb_id_tlv = (msg_app2narb_lspb_id*)(buf + mlen);
+        lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspb_id_tlv->lspb_id = prev_lspb_id;
+        mlen += sizeof(msg_app2narb_lspb_id);
+    }
      
-    msg = api_msg_new (MSG_REPLY_REMOVE_CONFIRM, sizeof(msg_app2narb_lspb_id), &lspb_id_tlv, ucid, seqnr);
+    msg = api_msg_new (MSG_REPLY_REMOVE_CONFIRM, mlen, buf, ucid, seqnr);
   
     return msg;
 }
@@ -263,11 +275,14 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         offset += sizeof(msg_app2narb_vtag_mask);
     }
 
-    msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)(buf+offset);
-    lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-    lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
-    lspq_id_tlv->lspb_id = prev_lspb_id;
-    offset += sizeof(msg_app2narb_lspb_id);
+    if (prev_lspb_id != 0)
+    {
+        msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)(buf+offset);
+        lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
+        lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspq_id_tlv->lspb_id = prev_lspb_id;
+        offset += sizeof(msg_app2narb_lspb_id);
+    }
 
     msg = api_msg_new (MSG_REPLY_ERO, offset, buf, ucid, seqnr);
     
