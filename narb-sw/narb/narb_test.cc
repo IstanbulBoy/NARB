@@ -555,9 +555,9 @@ int main(int argc, char* argv[])
             }
             if (opt_e2e_vlan)
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
-            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > TLV_HDR_SIZE + ntohs(tlv->length))
+            if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > ntohs(tlv->length))
             {
-                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + sizeof(struct te_tlv_header) + ntohs(tlv->length));
+                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + ntohs(tlv->length));
                 LOGF("ALL E2E VLAN TAGS:");
                 for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
                 {
