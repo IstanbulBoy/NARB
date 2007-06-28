@@ -1,4 +1,4 @@
-<project basedir="." default="jar.server">
+<project name="terce-ws" basedir="." default="jar.server">
 <!--Auto generated ant build file-->
 <property environment="env"/>
 <property name="axis2.home" value="${env.AXIS2_HOME}"/>
