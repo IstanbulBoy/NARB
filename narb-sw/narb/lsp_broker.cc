@@ -1536,6 +1536,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
        {
             LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
+            /*
             //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
             int pingPongCount = NARB_APIServer::LspqCount(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
@@ -1554,8 +1555,22 @@ int LSP_Broker::HandleMessage(api_msg * msg)
                     HandleReplyMessage(rmsg);
                 goto _abnormal_out;
             }
+            */
 
             msg_app2narb_request * mrn_req = app_req + 1;
+
+            //checking ping-pong effect (undesired looping in recursive path request)
+            u_int32_t prev_lspb_id = narb_get_msg_lspb_id(msg);
+            if (NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), prev_lspb_id) != NULL)
+            { // found existing LSPQ in this or other LSP_Broker that serves the same LSP (ucid, seqnum) and is requested from the same previous-domain NARB
+                LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) serving the same previous domain NARB (lspb_id = 0x%x) has existed --> PingPong effect.\n",
+                    ntohl(msg->header.ucid), ntohl(msg->header.seqnum), prev_lspb_id);
+                api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ, prev_lspb_id);
+                if (rmsg)
+                    HandleReplyMessage(rmsg);
+                goto _abnormal_out;                
+            }
+            
             if (!lspq)
             {
                 //creating new LSPQ
