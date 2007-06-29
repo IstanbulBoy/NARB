@@ -1,10 +1,10 @@
 import java.rmi.RemoteException;
 
-import edu.internet2.hopi.dragon.terce.rce.FindPath;
-import edu.internet2.hopi.dragon.terce.rce.FindPathContent;
-import edu.internet2.hopi.dragon.terce.rce.FindPathResponse;
-import edu.internet2.hopi.dragon.terce.ws.RCEFaultMessageException;
-import edu.internet2.hopi.dragon.terce.ws.TERCEStub;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 
 
 
