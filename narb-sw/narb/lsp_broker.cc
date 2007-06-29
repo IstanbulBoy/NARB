@@ -521,7 +521,7 @@ int LSPQ::HandleRCEReply(api_msg *msg)
     bool local_rerouting_requires_all_strict_hops = false;
     if (is_qconf_mode && state == STATE_STORED_ERO_WITH_CONFIRMATION_ID)
     {
-        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum, req_spec.src.s_addr);
         if (qConfEROTimer && qConfEROTimer->GetBorderEgressLink())
             local_rerouting_requires_all_strict_hops = true;        
     }
@@ -903,7 +903,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
     if (is_recursive_req && state != STATE_STORED_ERO_WITH_CONFIRMATION_ID) // confirmation ID only (w/o ERO TLV)
     {
-        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum);
+        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum, req_spec.src.s_addr);
         if (qConfEROTimer)
         {
             eventMaster.Schedule(qConfEROTimer);
@@ -928,11 +928,11 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
         // handling the special case that a valid stored ERO shall be returned, which may have been locally rerouted
         if (state == STATE_STORED_ERO_WITH_CONFIRMATION_ID) 
         {
-            ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+            ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum, req_spec.src.s_addr);
             link_info * link_bdr_egress;
             if (qConfEROTimer && (link_bdr_egress = qConfEROTimer->GetBorderEgressLink()) != NULL)
             {
-                LOGF("HandleCompleteEROWithConfirmationID:: Local reroute for Q-Conf (ucid=%x,seqnum=%x) new destination 0x%x.\n", req_ucid, app_seqnum, req_spec.dest);
+                LOGF("HandleCompleteEROWithConfirmationID:: Local reroute for Q-Conf (ucid=%x,seqnum=%x) (src: 0x%x --> dest: 0x%x).\n", req_ucid, app_seqnum, req_spec.src.s_addr, req_spec.dest);
                 //combine local re-route results with stored ERO
                 ero_subobj* subobj; 
                 //locating the border egress hop
@@ -1036,7 +1036,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
 {
     SetState(STATE_STORED_ERO_WITH_CONFIRMATION_ID);
 
-    ConfirmationIDIndxedEROWithTimer* qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum);
+    ConfirmationIDIndxedEROWithTimer* qConfEROTimer = LSP_Broker::LookupEROWithConfirmationID(req_ucid, app_seqnum, req_spec.src.s_addr);
     if (qConfEROTimer)
     {
         list<ero_subobj*>* ero_p = &qConfEROTimer->GetERO();
@@ -1045,7 +1045,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
 
         if (qConfEROTimer->Expired())
         {
-            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) has Expired!\n", req_ucid, app_seqnum);
+            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x, source_ip=0x%x) has Expired!\n", req_ucid, app_seqnum, req_spec.src.s_addr);
 
             // identify the interdomian link iterface (hop) in the stored ERO that is originated from Egress border router in the current domain
             if_narb_info * narb_info;
@@ -1069,7 +1069,7 @@ int LSPQ::HandleStoredEROWithConfirmationID()
         }
         else // valid, active stored ERO
         {
-            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x) indexed ERO is returned!\n", req_ucid, app_seqnum);
+            LOGF("LSP_Broker::HandleStoredEROWithConfirmationID qconf ID (ucid=0x%x, seqnum=0x%x, source_ip=0x%x) indexed ERO is returned!\n", req_ucid, app_seqnum, req_spec.src.s_addr);
             char addr[20];
             ero.clear();
             for ( iter = ero_p->begin(); iter != ero_p->end(); iter++ )
@@ -1539,9 +1539,14 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             //checking ping-pong effect (the LSP has been handled by other LSPBroker or PingPong happened)
             int pingPongCount = NARB_APIServer::LspqCount(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             //allowing for up to one count of ping-pong in order to support this kind of paths: RON->Backbone->SameRon...
+            if (pingPongCount == 1) //we can have up to two lspq's of same (ucid, seqnum), including this current one to be created...
+            {
+                LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled once by this NARB --> Still a valid PingPong...\n",
+                    ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            }
             if (pingPongCount > 1) //we can have up to two lspq's of same (ucid, seqnum), including this current one to be created...
             {
-                LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled by other LSPBroker, probably due to PingPong effect.\n",
+                LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) has been handled more than once by this NARB --> invalid PingPong(s).\n",
                     ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
                 u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
                 api_msg* rmsg = narb_new_msg_reply_error(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), NARB_ERROR_INVALID_REQ, lspb_id);
@@ -1787,44 +1792,44 @@ u_int32_t LSP_Broker::get_unique_lspb_id()
     return id++;
 }
 
-ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum)
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t src_id, u_int32_t seqnum)
 {
-    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = RemoveEROWithConfirmationID(ucid, seqnum); // remove instead of lookup
+    ConfirmationIDIndxedEROWithTimer* qconfEROTimer = RemoveEROWithConfirmationID(ucid, seqnum, src_id); // remove instead of lookup
     if (qconfEROTimer)
     {
-        LOGF("LSP_Broker::StoreEROWithConfirmationID finds existing qconf ID (ucid=0x%x, seqnum=0x%x) --> removed the old one...\n",
-            ucid, seqnum);
+        LOGF("LSP_Broker::StoreEROWithConfirmationID finds existing qconf ID (ucid=0x%x, seqnum=0x%x, source_ip=0x%x) --> removed the old one...\n",
+            ucid, seqnum, src_id);
     }
 
-    ConfirmationIDIndxedEROWithTimer* qconf_ero_entry = new ConfirmationIDIndxedEROWithTimer(ero, ucid, seqnum, 
+    ConfirmationIDIndxedEROWithTimer* qconf_ero_entry = new ConfirmationIDIndxedEROWithTimer(ero, ucid, seqnum, src_id,
         SystemConfig::confirmed_ero_expire_secs, SystemConfig::confirmed_ero_trash_secs);
     qconf_id_indexed_ero_list.push_front(qconf_ero_entry);
-    LOGF("LSP_Broker::StoreEROWithConfirmationID enqueued qconf ID (ucid=0x%x, seqnum=0x%x)\n", ucid, seqnum);
+    LOGF("LSP_Broker::StoreEROWithConfirmationID enqueued qconf ID (ucid=0x%x, seqnum=0x%x, source_ip=0x%x)\n", ucid, seqnum, src_id);
     return qconf_ero_entry;
 }
 
-ConfirmationIDIndxedEROWithTimer* LSP_Broker::LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum)
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id)
 {
     list<ConfirmationIDIndxedEROWithTimer*>::iterator iter = qconf_id_indexed_ero_list.begin();
     for ( ; iter != qconf_id_indexed_ero_list.end(); iter++ )
     {
-        if ((*iter)->ConfirmationIDMatched(ucid, seqnum))
+        if ((*iter)->ConfirmationIDMatched(ucid, seqnum, src_id))
             return (*iter);
     }
     return NULL;
 }
 
-ConfirmationIDIndxedEROWithTimer* LSP_Broker::RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum)
+ConfirmationIDIndxedEROWithTimer* LSP_Broker::RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id)
 {
     ConfirmationIDIndxedEROWithTimer* qconfEROTimer = NULL;
     list<ConfirmationIDIndxedEROWithTimer*>::iterator iter = qconf_id_indexed_ero_list.begin();
     for ( ; iter != qconf_id_indexed_ero_list.end(); iter++ )
     {
-        if ((*iter)->ConfirmationIDMatched(ucid, seqnum))
+        if ((*iter)->ConfirmationIDMatched(ucid, seqnum, src_id))
         {
             qconfEROTimer = (*iter);
             qconf_id_indexed_ero_list.erase(iter);
-            LOGF("LSP_Broker::RemoveEROWithConfirmationID dequeued qconf ID (ucid=0x%x, seqnum=0x%x)\n", ucid, seqnum);
+            LOGF("LSP_Broker::RemoveEROWithConfirmationID dequeued qconf ID (ucid=0x%x, seqnum=0x%x, source_ip=0x%x)\n", ucid, seqnum, src_id);
             break;
         }
     }

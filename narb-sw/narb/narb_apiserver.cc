@@ -104,7 +104,7 @@ LSPQ* NARB_APIServer::LspqLookup (u_int32_t ucid, u_int32_t seqnum, u_int32_t ls
         broker = *it1;
         if (!broker || (lspb_id != 0 && broker->LspbId() != lspb_id))
             continue;
-       	if ((lspq = broker->LspqLookup(ucid, seqnum)) != NULL)
+        if ((lspq = broker->LspqLookup(ucid, seqnum)) != NULL)
             return lspq;
     }
 

@@ -247,9 +247,9 @@ public:
     static u_int32_t get_unique_lspb_id();
 
     // global functions to manage qconf_id_indexed_ero_list
-    static ConfirmationIDIndxedEROWithTimer* StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum);
-    static ConfirmationIDIndxedEROWithTimer* LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum);
-    static ConfirmationIDIndxedEROWithTimer* RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum);
+    static ConfirmationIDIndxedEROWithTimer* StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id);
+    static ConfirmationIDIndxedEROWithTimer* LookupEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id);
+    static ConfirmationIDIndxedEROWithTimer* RemoveEROWithConfirmationID(u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id);
 
     friend class LSPQ;
 };
@@ -374,6 +374,7 @@ class ConfirmationIDIndxedEROWithTimer: public Timer
 private:
     u_int32_t qconf_ucid;
     u_int32_t qconf_seqnum;
+    u_int32_t qconf_source;
     list<ero_subobj*> qconf_ero;
     int trash_seconds; // time before deletion after expired
     bool expired;
@@ -382,8 +383,8 @@ private:
     ConfirmationIDIndxedEROWithTimer(): Timer(0, 0) { }
 
 public:
-    ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, 
-        int expire_secs=10, int trash_secs=0) : Timer(expire_secs, 0), qconf_ucid(ucid), qconf_seqnum(seqnum), 
+    ConfirmationIDIndxedEROWithTimer(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id,
+        int expire_secs=10, int trash_secs=0) : Timer(expire_secs, 0), qconf_ucid(ucid), qconf_seqnum(seqnum), qconf_source(src_id),
             trash_seconds(trash_secs), expired(false), link_border_egress(NULL)
         {
             list<ero_subobj*>::iterator iter = ero.begin();
@@ -401,12 +402,12 @@ public:
                 delete qconf_ero.front();
                 qconf_ero.pop_front();
             }
-            LSP_Broker::RemoveEROWithConfirmationID(qconf_ucid, qconf_seqnum);
+            LSP_Broker::RemoveEROWithConfirmationID(qconf_ucid, qconf_seqnum, qconf_source);
         }
 
-    bool ConfirmationIDMatched (u_int32_t ucid, u_int32_t seqnum)
+    bool ConfirmationIDMatched (u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id)
         {
-            return (qconf_ucid == ucid && qconf_seqnum == seqnum);
+            return (qconf_ucid == ucid && qconf_seqnum == seqnum && qconf_source == src_id);
         }
     bool Expired() { return expired; }
     list<ero_subobj*>& GetERO() { return qconf_ero; }

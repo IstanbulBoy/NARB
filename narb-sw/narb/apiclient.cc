@@ -181,12 +181,13 @@ LSPQ* APIClient::FindOwnerLSPQ(api_msg *msg)
 {
     assert(msg);
     u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
-    return NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    return NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), lspb_id);
 }
 
 LSPQ* APIClient::FindOwnerLSPQLatest(api_msg *msg)
 {
     assert(msg);
     u_int32_t lspb_id = narb_get_msg_lspb_id(msg);
-    return NARB_APIServer::LspqLookupLatest(ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+    return NARB_APIServer::LspqLookupLatest(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), lspb_id);
 }
+
