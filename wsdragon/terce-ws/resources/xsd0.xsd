@@ -1,7 +1,8 @@
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ctrlp="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/RCE" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE">
+<xsd:import namespace="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/" schemaLocation="xsd1.xsd"/>
 <xsd:element name="findPath" type="tns:findPathContent"/>
 <xsd:element name="findPathResponse" type="tns:findPathResponseContent"/>
-<xsd:element name="TERCEFault">
+<xsd:element name="TerceRceFault">
 <xsd:complexType>
 <xsd:sequence>
 <xsd:element name="msg" type="xsd:string"/>
@@ -35,22 +36,13 @@
 <xsd:complexType name="path">
 <xsd:sequence>
 <xsd:element name="hops" type="tns:hopList"/>
-<xsd:element minOccurs="0" name="vtag" type="xsd:string"/>
 <xsd:element minOccurs="0" name="availableVtags" type="tns:vtagList"/>
 </xsd:sequence>
 </xsd:complexType>
 <xsd:complexType name="hopList">
 <xsd:sequence>
-<xsd:element maxOccurs="unbounded" name="hop" type="tns:hop"/>
+<xsd:element maxOccurs="unbounded" ref="ctrlp:domain"/>
 </xsd:sequence>
-</xsd:complexType>
-<xsd:complexType name="hop">
-<xsd:simpleContent>
-<xsd:extension base="xsd:string">
-<xsd:attribute name="loose" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="type" type="xsd:string" use="optional"/>
-</xsd:extension>
-</xsd:simpleContent>
 </xsd:complexType>
 <xsd:complexType name="vtagList">
 <xsd:sequence>

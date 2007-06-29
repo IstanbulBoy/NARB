@@ -1,0 +1,88 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:CtrlPlane="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/" xmlns:nmtl2="http://ggf.org/ns/nmwg/topology/l2/3.0/" xmlns:nmtl3="http://ggf.org/ns/nmwg/topology/l3/3.0/" xmlns:nmtl4="http://ggf.org/ns/nmwg/topology/l4/3.0/" xmlns:nmwgtopo3="http://ggf.org/ns/nmwg/topology/base/3.0/" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://ggf.org/ns/nmwg/topology/l2/3.0/">
+<xs:import namespace="http://ggf.org/ns/nmwg/topology/base/3.0/" schemaLocation="xsd2.xsd"/>
+<xs:import namespace="http://ggf.org/ns/nmwg/topology/l3/3.0/" schemaLocation="xsd4.xsd"/>
+<xs:import namespace="http://ggf.org/ns/nmwg/topology/l4/3.0/" schemaLocation="xsd5.xsd"/>
+<xs:import namespace="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/" schemaLocation="xsd1.xsd"/>
+<xs:element name="interface" type="nmtl2:L2InterfaceContent"/>
+<xs:complexType name="L2InterfaceContent">
+<xs:choice maxOccurs="unbounded" minOccurs="0">
+<xs:group ref="nmtl2:L2Role"/>
+<xs:element ref="nmtl2:type"/>
+<xs:element ref="nmtl2:address"/>
+<xs:element ref="nmtl2:name"/>
+<xs:element ref="nmtl2:description"/>
+<xs:element ref="nmtl2:ifHostName"/>
+<xs:element ref="nmtl2:ifIndex"/>
+<xs:element ref="nmtl2:capacity"/>
+</xs:choice>
+<xs:attribute name="interfaceIdRef" type="xs:string"/>
+<xs:attributeGroup ref="nmtl2:L2Role"/>
+</xs:complexType>
+<xs:element name="type" type="xs:string"/>
+<xs:element name="address" type="nmtl2:address_type9"/>
+<xs:element name="name" type="nmtl2:name_type7"/>
+<xs:element name="description" type="xs:string"/>
+<xs:element name="ifHostName" type="xs:string"/>
+<xs:element name="ifIndex" type="xs:string"/>
+<xs:element name="capacity" type="xs:string"/>
+<xs:attributeGroup name="L2Address">
+<xs:attribute name="value" type="xs:string"/>
+<xs:attribute name="type" type="xs:string" use="required"/>
+</xs:attributeGroup>
+<xs:element name="link" type="nmtl2:L2LinkContent"/>
+<xs:complexType name="L2LinkContent">
+<xs:choice maxOccurs="unbounded" minOccurs="0">
+<xs:element ref="nmtl2:index"/>
+<xs:element ref="nmtl2:type"/>
+<xs:element ref="nmtl2:name"/>
+<xs:element ref="nmtl2:globalName"/>
+<xs:element ref="nmtl2:interface"/>
+<xs:element ref="nmtl2:link"/>
+<xs:element ref="nmwgtopo3:node"/>
+</xs:choice>
+<xs:attribute name="linkIdRef" type="xs:string"/>
+</xs:complexType>
+<xs:element name="index" type="xs:string"/>
+<xs:element name="globalName" type="nmtl2:globalName_type8"/>
+<xs:element name="network" type="nmtl2:L2NetworkContent"/>
+<xs:complexType name="L2NetworkContent">
+<xs:choice maxOccurs="unbounded" minOccurs="0">
+<xs:element ref="nmtl2:name"/>
+<xs:element ref="nmtl2:type"/>
+<xs:element ref="nmtl2:vlan"/>
+<xs:element ref="nmtl2:interface"/>
+<xs:element ref="nmtl2:link"/>
+<xs:element ref="nmwgtopo3:node"/>
+</xs:choice>
+<xs:attribute name="networkIdRef" type="xs:string"/>
+</xs:complexType>
+<xs:element name="vlan" type="xs:string"/>
+<xs:element name="path" type="nmtl2:L2PathContent"/>
+<xs:complexType name="L2PathContent">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" minOccurs="0" ref="nmtl2:link"/>
+</xs:sequence>
+<xs:attribute name="pathIdRef" type="xs:string"/>
+</xs:complexType>
+<xs:group name="L2Role">
+<xs:sequence>
+<xs:element minOccurs="0" ref="nmtl2:role"/>
+</xs:sequence>
+</xs:group>
+<xs:element name="role" type="xs:string"/>
+<xs:attributeGroup name="L2Role">
+<xs:attribute name="role" type="xs:string"/>
+</xs:attributeGroup>
+<xs:attributeGroup name="L2InterfaceIdRef">
+<xs:attribute name="interfaceIdRef" type="xs:string" use="required"/>
+</xs:attributeGroup>
+<xs:attributeGroup name="L2LinkIdRef">
+<xs:attribute name="linkIdRef" type="xs:string" use="required"/>
+</xs:attributeGroup>
+<xs:attributeGroup name="L2NetworkIdRef">
+<xs:attribute name="networkIdRef" type="xs:string" use="required"/>
+</xs:attributeGroup>
+<xs:attributeGroup name="L2PathIdRef">
+<xs:attribute name="pathIdRef" type="xs:string" use="required"/>
+</xs:attributeGroup>
+</xs:schema>

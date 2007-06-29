@@ -1,6 +1,115 @@
-<wsdl:definitions xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS"><wsdl:documentation>
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="TERCE" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+<wsdl:documentation>
 		This is WSDL for the path computation service provided by the DRAGON TERCE.
 		VERSION 0.1
-	</wsdl:documentation><wsdl:types><xsd:schema xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap12/" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS">
-<xsd:include schemaLocation="xsd0.xsd" />
-</xsd:schema></wsdl:types><wsdl:message name="findPath"><wsdl:part name="part1" element="tns:findPath" /></wsdl:message><wsdl:message name="findPathResponse"><wsdl:part name="part1" element="tns:findPathResponse" /></wsdl:message><wsdl:message name="TERCEFaultMessage"><wsdl:part name="part1" element="tns:TERCEFault" /></wsdl:message><wsdl:portType name="TERCEPortType"><wsdl:operation name="findPath"><wsdl:input xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" message="tns:findPath" wsaw:Action="http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath" /><wsdl:output xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" message="tns:findPathResponse" wsaw:Action="http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPathResponse" /><wsdl:fault message="tns:TERCEFaultMessage" name="TERCEFaultMessage" /></wsdl:operation></wsdl:portType><wsdl:binding name="TERCESOAP11Binding" type="tns:TERCEPortType"><soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" /><wsdl:operation name="findPath"><soap:operation soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath" style="document" /><wsdl:input><soap:body use="literal" /></wsdl:input><wsdl:output><soap:body use="literal" /></wsdl:output><wsdl:fault name="TERCEFaultMessage"><soap:body use="literal" /></wsdl:fault></wsdl:operation></wsdl:binding><wsdl:binding name="TERCESOAP12Binding" type="tns:TERCEPortType"><soap12:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" /><wsdl:operation name="findPath"><soap12:operation soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath" style="document" /><wsdl:input><soap12:body use="literal" /></wsdl:input><wsdl:output><soap12:body use="literal" /></wsdl:output><wsdl:fault name="TERCEFaultMessage"><soap12:fault use="literal" name="TERCEFaultMessage" /></wsdl:fault></wsdl:operation></wsdl:binding><wsdl:service name="TERCE"><wsdl:port name="TERCESOAP11port_https" binding="tns:TERCESOAP11Binding"><soap:address location="https://hopibruw.internet2.edu/axis2/services/DRAGON/TERCE" /></wsdl:port><wsdl:port name="TERCESOAP12port_https" binding="tns:TERCESOAP12Binding"><soap12:address location="https://hopibruw.internet2.edu/axis2/services/DRAGON/TERCE" /></wsdl:port></wsdl:service></wsdl:definitions>
+	</wsdl:documentation>
+  <wsdl:types>
+    <xsd:schema elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE" xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="xsd0.xsd"/>
+			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="xsd6.xsd"/>
+		</xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="selectNetworkTopologyResponse">
+    <wsdl:part name="selectNetworkTopologyResponse" element="tedb:selectNetworkTopologyResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="RCEFaultMessage">
+    <wsdl:part name="fault" element="rce:TerceRceFault">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="insertNetworkTopology">
+    <wsdl:part name="insertNetworkTopology" element="tedb:insertNetworkTopology">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="findPath">
+    <wsdl:part name="findPath" element="rce:findPath">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="selectNetworkTopology">
+    <wsdl:part name="selectNetworkTopology" element="tedb:selectNetworkTopology">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="insertNetworkTopologyResponse">
+    <wsdl:part name="insertNetworkTopologyResponse" element="tedb:insertNetworkTopologyResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="findPathResponse">
+    <wsdl:part name="findPathResponse" element="rce:findPathResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="TEDBFaultMessage">
+    <wsdl:part name="fault" element="tedb:TerceTedbFault">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="TERCE">
+    <wsdl:operation name="findPath">
+      <wsdl:input message="tns:findPath">
+    </wsdl:input>
+      <wsdl:output message="tns:findPathResponse">
+    </wsdl:output>
+      <wsdl:fault name="RCEException" message="tns:RCEFaultMessage">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="selectNetworkTopology">
+      <wsdl:input message="tns:selectNetworkTopology">
+    </wsdl:input>
+      <wsdl:output message="tns:selectNetworkTopologyResponse">
+    </wsdl:output>
+      <wsdl:fault name="TEDBException" message="tns:TEDBFaultMessage">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="insertNetworkTopology">
+      <wsdl:input message="tns:insertNetworkTopology">
+    </wsdl:input>
+      <wsdl:output message="tns:insertNetworkTopologyResponse">
+    </wsdl:output>
+      <wsdl:fault name="TEDBException" message="tns:TEDBFaultMessage">
+    </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="TERCESOAP" type="tns:TERCE">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="findPath">
+      <soap:operation soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath" style="document"/>
+      <wsdl:input>
+        <soap:body parts="findPath" use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body parts="findPathResponse" use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="RCEException">
+        <soap:fault name="RCEException" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="selectNetworkTopology">
+      <soap:operation soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/selectNetworkTopology" style="document"/>
+      <wsdl:input>
+        <soap:body parts="selectNetworkTopology" use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body parts="selectNetworkTopologyResponse" use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="TEDBException">
+        <soap:fault name="TEDBException" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="insertNetworkTopology">
+      <soap:operation soapAction="http://hopi.internet2.edu/DRAGON/TERCE/WS/insertNetworkTopology" style="document"/>
+      <wsdl:input>
+        <soap:body parts="insertNetworkTopology" use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body parts="insertNetworkTopologyResponse" use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="TEDBException">
+        <soap:fault name="TEDBException" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="TERCE">
+    <wsdl:port name="TERCE" binding="tns:TERCESOAP">
+      <soap:address location="https://hopi.internet2.edu/axis2/services/DRAGON/TERCE"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

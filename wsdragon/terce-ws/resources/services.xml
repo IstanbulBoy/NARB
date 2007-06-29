@@ -3,13 +3,25 @@
 <serviceGroup>
 <service name="TERCE">
 <messageReceivers>
-<messageReceiver mep="http://www.w3.org/2004/08/wsdl/in-out" class="edu.internet2.hopi.dragon.terce.ws.server.TERCEMessageReceiverInOut"/>
+<messageReceiver mep="http://www.w3.org/ns/wsdl/in-out" class="edu.internet2.hopi.dragon.terce.ws.service.TERCEMessageReceiverInOut"/>
 </messageReceivers>
-<parameter locked="false" name="ServiceClass">edu.internet2.hopi.dragon.terce.ws.server.TERCESkeleton</parameter>
-<operation name="findPath" mep="http://www.w3.org/2004/08/wsdl/in-out">
+<parameter locked="false" name="ServiceClass">edu.internet2.hopi.dragon.terce.ws.service.TERCESkeleton</parameter>
+<parameter locked="false" name="useOriginalwsdl">true</parameter>
+<parameter locked="false" name="modifyUserWSDLPortAddress">true</parameter>
+<operation name="findPath" mep="http://www.w3.org/ns/wsdl/in-out">
 <actionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/findPath</actionMapping>
 <outputActionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPathResponse</outputActionMapping>
-<faultActionMapping faultName="TERCEException">http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPath/Fault/TERCEException</faultActionMapping>
+<faultActionMapping faultName="RCEException">http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/findPath/Fault/RCEException</faultActionMapping>
+</operation>
+<operation name="selectNetworkTopology" mep="http://www.w3.org/ns/wsdl/in-out">
+<actionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/selectNetworkTopology</actionMapping>
+<outputActionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/selectNetworkTopologyResponse</outputActionMapping>
+<faultActionMapping faultName="TEDBException">http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/selectNetworkTopology/Fault/TEDBException</faultActionMapping>
+</operation>
+<operation name="insertNetworkTopology" mep="http://www.w3.org/ns/wsdl/in-out">
+<actionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/insertNetworkTopology</actionMapping>
+<outputActionMapping>http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/insertNetworkTopologyResponse</outputActionMapping>
+<faultActionMapping faultName="TEDBException">http://hopi.internet2.edu/DRAGON/TERCE/WS/TERCE/insertNetworkTopology/Fault/TEDBException</faultActionMapping>
 </operation>
 </service>
 </serviceGroup>
