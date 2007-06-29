@@ -55,7 +55,7 @@
 	
 	<xsd:complexType name="hopList">
 		<xsd:sequence>
-			<xsd:element ref="ctrlp:domain" minOccurs="1"/>
+			<xsd:element ref="ctrlp:domain" minOccurs="1" maxOccurs="unbounded"/>
 		</xsd:sequence>
 	</xsd:complexType>
 	
