@@ -126,6 +126,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
         lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = rec_cspf_req.lspb_id;
+        msglen += sizeof(msg_app2narb_lspb_id);
     }  
     //Adding hop back address into recursive LSP quesry into next domain NARB
     if (hop_back != 0)
