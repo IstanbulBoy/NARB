@@ -55,7 +55,8 @@ public:
 
    static LSPQ* LspqLookup (u_int32_t ucid, u_int32_t seqnum, u_int32_t lspb_id=0);
    static LSPQ* LspqLookupLatest (u_int32_t ucid, u_int32_t seqnum, u_int32_t lspb_id=0);
-   static int LspqCount (u_int32_t ucid, u_int32_t seqnum);
+   static LSPQ* LspqLookupByReqSpec(u_int32_t ucid, u_int32_t seqnum, msg_app2narb_request* req_spec, msg_app2narb_request* mrn_spec);
+   //static int LspqCount (u_int32_t ucid, u_int32_t seqnum);
 };
 
 struct msg_app2narb_vtag_mask;

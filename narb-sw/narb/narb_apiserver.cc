@@ -93,6 +93,23 @@ LSP_Broker* NARB_APIServer::LspBrokerLookup (u_int32_t id)
     return NULL;
 }
 
+LSP_Broker* NARB_APIServer::LspBrokerLookupBySocket (int sock)
+{
+    list<LSP_Broker*>::iterator it;
+
+    assert(sock > 0);
+    for (it = lsp_brokers.begin(); it != lsp_brokers.end(); it++)
+    {
+        if (!(*it))
+            continue;
+
+        if (sock == (*it)->Socket() && !(*it)->Obsolete())
+            return *it;
+    }
+
+    return NULL;
+}
+
 LSPQ* NARB_APIServer::LspqLookup (u_int32_t ucid, u_int32_t seqnum, u_int32_t lspb_id)
 {
     list<LSP_Broker*>::iterator it1;
@@ -129,23 +146,24 @@ LSPQ* NARB_APIServer::LspqLookupLatest (u_int32_t ucid, u_int32_t seqnum, u_int3
     return NULL;
 }
 
-LSP_Broker* NARB_APIServer::LspBrokerLookupBySocket (int sock)
+LSPQ* NARB_APIServer::LspqLookupByReqSpec(u_int32_t ucid, u_int32_t seqnum, msg_app2narb_request* req_spec, msg_app2narb_request* mrn_spec)
 {
-    list<LSP_Broker*>::iterator it;
+    list<LSP_Broker*>::iterator it1;
+    LSP_Broker *broker;
+    LSPQ* lspq;
 
-    assert(sock > 0);
-    for (it = lsp_brokers.begin(); it != lsp_brokers.end(); it++)
+    for (it1 = lsp_brokers.begin(); it1 != lsp_brokers.end(); it1++)
     {
-        if (!(*it))
-            continue;
-
-        if (sock == (*it)->Socket() && !(*it)->Obsolete())
-            return *it;
+        broker = *it1;
+        if (broker && (lspq = broker->LspqLookupByReqSpec(ucid, seqnum, req_spec, mrn_spec)) != NULL)
+            return lspq;
     }
 
     return NULL;
 }
 
+
+/*
 int NARB_APIServer::LspqCount (u_int32_t ucid, u_int32_t seqnum)
 {
     list<LSP_Broker*>::iterator it1;
@@ -164,6 +182,7 @@ int NARB_APIServer::LspqCount (u_int32_t ucid, u_int32_t seqnum)
 
     return ret;
 }
+*/
 
 api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t errorcode, u_int32_t prev_lspb_id)
 {

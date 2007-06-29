@@ -241,7 +241,7 @@ public:
     u_int32_t LspbId() { return lspb_id; }
     list<LSPQ*>& LspqList() { return lspq_list; }
     LSPQ * LspqLookup (u_int32_t ucid, u_int32_t seqnum);
-
+    LSPQ * LspqLookupByReqSpec (u_int32_t ucid, u_int32_t seqnum, msg_app2narb_request* req_spec, msg_app2narb_request* mrn_spec);
     void DescribeLSPbyState(u_char state, vector<string>& desc_v);
 
     static u_int32_t get_unique_lspb_id();

@@ -1561,7 +1561,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
 
             //checking ping-pong effect (undesired looping in recursive path request)
             u_int32_t prev_lspb_id = narb_get_msg_lspb_id(msg);
-            if (NARB_APIServer::LspqLookup(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), prev_lspb_id) != NULL)
+            if (NARB_APIServer::LspqLookupByReqSpec(ntohl(msg->header.ucid), ntohl(msg->header.seqnum), app_req, mrn_req) != NULL)
             { // found existing LSPQ in this or other LSP_Broker that serves the same LSP (ucid, seqnum) and is requested from the same previous-domain NARB
                 LOGF("LSP_Broker:: The LSPQ  (ucid=0x%x, seqno=0x%x) serving the same previous domain NARB (lspb_id = 0x%x) has existed --> PingPong effect.\n",
                     ntohl(msg->header.ucid), ntohl(msg->header.seqnum), prev_lspb_id);
@@ -1766,6 +1766,24 @@ LSPQ * LSP_Broker::LspqLookup (u_int32_t ucid, u_int32_t seqnum)
             continue;
 
         if (ucid == (*it)->req_ucid && seqnum == (*it)->app_seqnum)
+            return *it;
+    }
+
+    return NULL;
+}
+
+// searching for a request data record on lspq_list using msg ucid and sequence number plus req_spec
+LSPQ * LSP_Broker::LspqLookupByReqSpec (u_int32_t ucid, u_int32_t seqnum, msg_app2narb_request* req_spec, msg_app2narb_request* mrn_spec)
+{
+    list<LSPQ*>::iterator it;
+
+    for (it = lspq_list.begin(); it != lspq_list.end(); it++)
+    {
+        if (!(*it))
+            continue;
+
+        if (ucid == (*it)->req_ucid && seqnum == (*it)->app_seqnum 
+            && memcmp(&(*it)->req_spec, req_spec, sizeof(msg_app2narb_request)) == 0 && memcmp(&(*it)->mrn_spec, mrn_spec, sizeof(msg_app2narb_request)) == 0)
             return *it;
     }
 
