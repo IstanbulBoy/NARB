@@ -479,7 +479,7 @@
                             if (!"CtrlPlaneSwitchingCapabilitySpecficInfo".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CtrlPlaneSwitchingCapabilitySpecficInfo)net.es.oscars.oscars.ExtensionMapper.getTypeObject(
+                                return (CtrlPlaneSwitchingCapabilitySpecficInfo)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         

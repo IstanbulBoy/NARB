@@ -406,7 +406,7 @@
                             if (!"CtrlPlaneAdministrativeGroup".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CtrlPlaneAdministrativeGroup)net.es.oscars.oscars.ExtensionMapper.getTypeObject(
+                                return (CtrlPlaneAdministrativeGroup)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         

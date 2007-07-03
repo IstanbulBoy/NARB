@@ -765,7 +765,7 @@
                             if (!"CtrlPlaneDomainContent".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CtrlPlaneDomainContent)net.es.oscars.oscars.ExtensionMapper.getTypeObject(
+                                return (CtrlPlaneDomainContent)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         

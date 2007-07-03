@@ -582,7 +582,7 @@
                             if (!"CtrlPlaneTopologyContent".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CtrlPlaneTopologyContent)net.es.oscars.oscars.ExtensionMapper.getTypeObject(
+                                return (CtrlPlaneTopologyContent)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         
