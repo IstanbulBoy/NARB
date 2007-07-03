@@ -3,9 +3,9 @@
 	elementFormDefault="qualified"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/RCE"
-	xmlns:ctrlp="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/">
+	xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/">
 	
-	<xsd:import namespace="http://ogf.org/schema/nm/topology/CtrlPlane/20070611/" schemaLocation="nmtopo-ctrlp.xsd"/>
+	<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="nmtopo-ctrlp.xsd"/>
 	
 	
 	<!-- element definitions -->
