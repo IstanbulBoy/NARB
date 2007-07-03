@@ -1,9 +1,9 @@
 import java.rmi.RemoteException;
 
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneLinkContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneNodeContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlanePortContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent;
 
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
@@ -12,8 +12,8 @@ import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 
 /**
- * Test program for querying TERCE-WS accepts a source, destination, and TERCE location 
- * then requests a path calculation
+ * Test program for querying TERCE-WS accepts a source and destination then requests 
+ * a path calculation
  * 
  * @author Andrew Lake(alake@internet2.edu)
  *
@@ -57,8 +57,8 @@ public class TERCETest {
 			System.out.println("Path: ");
 			for(CtrlPlaneDomainContent d : domains){
 				CtrlPlaneNodeContent n = d.getNode()[0];
-				CtrlPlanePortContent p = n.getNodePort()[0];
-				CtrlPlaneLinkContent l = p.getLink();
+				CtrlPlanePortContent p = n.getPort()[0];
+				CtrlPlaneLinkContent l = p.getLink()[0];
 				System.out.print(d.getId() + ":");
 				System.out.print(n.getId() + ":");
 				System.out.print(p.getId());
