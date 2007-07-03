@@ -2,6 +2,7 @@ package edu.internet2.hopi.dragon.terce.ws.handlers.tedb.dynamicdb;
 
 import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDB;
 import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDBInterface;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
@@ -16,12 +17,12 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyRespon
  */
 public class DynamicTEDB extends TEDB implements TEDBInterface {
 
-	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) {
+	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessageException{
 		// TODO JARDA WILL IMPLEMENT
 		return null;
 	}
 
-	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) {
+	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException{
 		// TODO JARDA WILL IMPLEMENT
 		return null;
 	}

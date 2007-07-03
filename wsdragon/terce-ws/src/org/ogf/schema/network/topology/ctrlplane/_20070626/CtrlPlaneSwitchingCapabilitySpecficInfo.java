@@ -28,6 +28,12 @@
                         
                             protected java.lang.String localCapability ;
                         
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localCapabilityTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -45,6 +51,14 @@
                                */
                                public void setCapability(java.lang.String param){
                             
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localCapabilityTracker = true;
+                                       } else {
+                                          localCapabilityTracker = false;
+                                              
+                                       }
+                                   
                                             this.localCapability=param;
                                     
 
@@ -58,6 +72,12 @@
                         
                             protected int localInterfaceMTU ;
                         
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localInterfaceMTUTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -75,6 +95,15 @@
                                */
                                public void setInterfaceMTU(int param){
                             
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Integer.MIN_VALUE) {
+                                           localInterfaceMTUTracker = false;
+                                              
+                                       } else {
+                                          localInterfaceMTUTracker = true;
+                                       }
+                                   
                                             this.localInterfaceMTU=param;
                                     
 
@@ -88,6 +117,12 @@
                         
                             protected java.lang.String localVlanRangeAvailability ;
                         
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localVlanRangeAvailabilityTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -105,6 +140,14 @@
                                */
                                public void setVlanRangeAvailability(java.lang.String param){
                             
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localVlanRangeAvailabilityTracker = true;
+                                       } else {
+                                          localVlanRangeAvailabilityTracker = false;
+                                              
+                                       }
+                                   
                                             this.localVlanRangeAvailability=param;
                                     
 
@@ -180,7 +223,7 @@
                 }
 
                 
-               
+                if (localCapabilityTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -214,7 +257,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             } if (localInterfaceMTUTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -243,7 +286,7 @@
                                                }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             } if (localVlanRangeAvailabilityTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -277,7 +320,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             }
                    
                xmlWriter.writeEndElement();
             
@@ -402,7 +445,7 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                
+                 if (localCapabilityTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "capability"));
                             
@@ -411,13 +454,13 @@
                                         } else {
                                            throw new RuntimeException("capability cannot be null!!");
                                         }
-                                    
+                                    } if (localInterfaceMTUTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "interfaceMTU"));
                             
                                 elementList.add(
                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInterfaceMTU));
-                            
+                            } if (localVlanRangeAvailabilityTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "vlanRangeAvailability"));
                             
@@ -426,7 +469,7 @@
                                         } else {
                                            throw new RuntimeException("vlanRangeAvailability cannot be null!!");
                                         }
-                                    
+                                    }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -513,11 +556,10 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -532,11 +574,12 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                               object.setInterfaceMTU(java.lang.Integer.MIN_VALUE);
+                                           
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -551,11 +594,10 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
+                                    else {
+                                        
+                                    }
+                                  
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             if (reader.isStartElement())

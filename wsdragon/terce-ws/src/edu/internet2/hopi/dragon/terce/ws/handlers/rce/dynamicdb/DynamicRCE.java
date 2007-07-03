@@ -79,9 +79,6 @@ public class DynamicRCE extends RCE implements RCEInterface{
 						IPv4PrefixSubobject sub = (IPv4PrefixSubobject)ero.get(i);
 						d.setId(sub.getIp().getHostAddress());
 						n.setId(sub.getIp().getHostAddress());
-						CtrlPlaneAddressContent nid = new CtrlPlaneAddressContent();
-						nid.setString(sub.getIp().getHostAddress());
-						n.setNodeid(nid);
 						p.setId(sub.getIp().getHostAddress());
 						l.setId(sub.getIp().getHostAddress());
 						p.addLink(l);
@@ -93,12 +90,9 @@ public class DynamicRCE extends RCE implements RCEInterface{
 						d.setId(sub.getIp().getHostAddress());
 						
 						n.setId(sub.getIp().getHostAddress());
-						CtrlPlaneAddressContent nid = new CtrlPlaneAddressContent();
-						nid.setString(sub.getIp().getHostAddress());
 						CtrlPlaneAddressContent nadd = new CtrlPlaneAddressContent();
 						nadd.setString(sub.getIp().getHostAddress());
 						n.setNodeAddress(nadd);
-						n.setNodeid(nid);
 						
 						p.setId(sub.getIp().getHostAddress());
 						l.setId(sub.getIp().getHostAddress());

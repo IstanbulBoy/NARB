@@ -117,11 +117,14 @@
   
   <xs:element name="administrativeGroups" type="CtrlPlane:CtrlPlaneAdministrativeGroup"/>
   
-  <xs:element name="SwitchingCapabilityDescriptors" type="CtrlPlaneSwcapContent"/>
+  <xs:element name="SwitchingCapabilityDescriptors" type="CtrlPlane:CtrlPlaneSwcapContent"/>
+  
   <xs:complexType name="CtrlPlaneSwcapContent">
+    <xs:sequence>
       <xs:element name="switchingcapType" type="xs:string" />
       <xs:element name="encodingType" type="xs:string" />
       <xs:element name="switchingCapabilitySpecficInfo" type="CtrlPlane:CtrlPlaneSwitchingCapabilitySpecficInfo"/>
+    </xs:sequence>
   </xs:complexType>
   
   <xs:complexType name="CtrlPlaneAdministrativeGroup">
@@ -136,10 +139,10 @@
   <xs:element name="groupID" type="xs:string"/>
   <xs:complexType name="CtrlPlaneSwitchingCapabilitySpecficInfo">
     <xs:sequence>
-      <xs:element minOccus="0" ref="CtrlPlane:capability"/>
+      <xs:element minOccurs="0" ref="CtrlPlane:capability"/>
       <!-- <xs:group ref="CtrlPlane:CtrlPlaneSwitchingCapabilitySpecficInfo_l2sc"/> -->
-      <xs:element minOccus="0" name="interfaceMTU" type="xs:int"/>
-      <xs:element minOccus="0" name="vlanRangeAvailability" type="xs:string"/>
+      <xs:element minOccurs="0" name="interfaceMTU" type="xs:int"/>
+      <xs:element minOccurs="0" name="vlanRangeAvailability" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
   

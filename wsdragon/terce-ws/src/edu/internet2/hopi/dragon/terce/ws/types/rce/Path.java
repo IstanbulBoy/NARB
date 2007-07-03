@@ -1,6 +1,6 @@
 
             /**
-            * Path33.java
+            * Path.java
             *
             * This file was auto-generated from WSDL
             * by the Apache Axis2 version: #axisVersion# #today#
@@ -8,16 +8,16 @@
 
             package edu.internet2.hopi.dragon.terce.ws.types.rce;
             /**
-            *  Path33 bean class
+            *  Path bean class
             */
         
 
-        public  class Path33
+        public  class Path
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = path
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/RCE
-                Namespace Prefix = ns6
+                Namespace Prefix = ns2
                 */
             
 
@@ -127,7 +127,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
 
                  public void serialize(javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       Path33.this.serialize(parentQName,factory,xmlWriter);
+                       Path.this.serialize(parentQName,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -344,8 +344,8 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static Path33 parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            Path33 object = new Path33();
+        public static Path parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            Path object = new Path();
 
             int event;
             java.lang.String nillableValue = null;
@@ -372,7 +372,7 @@
                             if (!"path".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (Path33)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
+                                return (Path)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         

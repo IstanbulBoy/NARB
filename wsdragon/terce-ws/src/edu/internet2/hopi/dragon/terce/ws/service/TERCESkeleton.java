@@ -7,25 +7,28 @@
  */
 package edu.internet2.hopi.dragon.terce.ws.service;
 
+import edu.internet2.hopi.dragon.PropertyReader;
+import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEFactory;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
+import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDBFactory;
+import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDBInterface;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
 
 /**
  *  TERCESkeleton java skeleton for the axisService
  */
 public class TERCESkeleton{
 
-
 	/**
 	 * Auto generated method signature
-
-
 	 * @param findPath
 	 */
-
-
 	public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessageException{
 		RCEFactory factory = new RCEFactory();
 		RCEInterface rce = factory.createRCE("dynamic");
@@ -34,40 +37,27 @@ public class TERCESkeleton{
 		return response;
 	}
 
-
 	/**
 	 * Auto generated method signature
-
-
 	 * @param selectNetworkTopology
 	 */
-
-
-	public edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse selectNetworkTopology
-	(
-			edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology selectNetworkTopology
-	)
-	throws TEDBFaultMessageException{
-		//Todo fill this with the necessary business logic
-		throw new  java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#selectNetworkTopology");
+	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectNetworkTopology)
+		throws TEDBFaultMessageException{
+		PropertyReader props = TERCEHandler.createPropertyReader();
+		TEDBFactory factory = new TEDBFactory();
+		TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
+		SelectNetworkTopologyResponse response = tedb.selectNetworkTopology(selectNetworkTopology);
+		
+		return response;
 	}
-
 
 	/**
 	 * Auto generated method signature
-
-
 	 * @param insertNetworkTopology
 	 */
-
-
-	public edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse insertNetworkTopology
-	(
-			edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology insertNetworkTopology
-	)
-	throws TEDBFaultMessageException{
+	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertNetworkTopology)
+		throws TEDBFaultMessageException{
 		//Todo fill this with the necessary business logic
 		throw new  java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#insertNetworkTopology");
 	}
-
 }

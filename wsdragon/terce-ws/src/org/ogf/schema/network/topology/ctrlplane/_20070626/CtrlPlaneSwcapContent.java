@@ -21,6 +21,96 @@
                 */
             
 
+                        /**
+                        * field for SwitchingcapType
+                        */
+
+                        
+                            protected java.lang.String localSwitchingcapType ;
+                        
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getSwitchingcapType(){
+                               return localSwitchingcapType;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param SwitchingcapType
+                               */
+                               public void setSwitchingcapType(java.lang.String param){
+                            
+                                            this.localSwitchingcapType=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for EncodingType
+                        */
+
+                        
+                            protected java.lang.String localEncodingType ;
+                        
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getEncodingType(){
+                               return localEncodingType;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param EncodingType
+                               */
+                               public void setEncodingType(java.lang.String param){
+                            
+                                            this.localEncodingType=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for SwitchingCapabilitySpecficInfo
+                        */
+
+                        
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneSwitchingCapabilitySpecficInfo localSwitchingCapabilitySpecficInfo ;
+                        
+
+                           /**
+                           * Auto generated getter method
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneSwitchingCapabilitySpecficInfo
+                           */
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneSwitchingCapabilitySpecficInfo getSwitchingCapabilitySpecficInfo(){
+                               return localSwitchingCapabilitySpecficInfo;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param SwitchingCapabilitySpecficInfo
+                               */
+                               public void setSwitchingCapabilitySpecficInfo(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneSwitchingCapabilitySpecficInfo param){
+                            
+                                            this.localSwitchingCapabilitySpecficInfo=param;
+                                    
+
+                               }
+                            
+
      /**
      * isReaderMTOMAware
      * @return true if the reader supports MTOM
@@ -91,6 +181,80 @@
 
                 
                
+                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"switchingcapType", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"switchingcapType");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("switchingcapType");
+                                    }
+                                
+
+                                          if (localSwitchingcapType==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("switchingcapType cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localSwitchingcapType);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             
+                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"encodingType", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"encodingType");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("encodingType");
+                                    }
+                                
+
+                                          if (localEncodingType==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("encodingType cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localEncodingType);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             
+                                    if (localSwitchingCapabilitySpecficInfo==null){
+                                         throw new RuntimeException("switchingCapabilitySpecficInfo cannot be null!!");
+                                    }
+                                   localSwitchingCapabilitySpecficInfo.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","switchingCapabilitySpecficInfo"),
+                                       factory,xmlWriter);
+                                
                    
                xmlWriter.writeEndElement();
             
@@ -216,6 +380,33 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
+                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "switchingcapType"));
+                            
+                                        if (localSwitchingcapType != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localSwitchingcapType));
+                                        } else {
+                                           throw new RuntimeException("switchingcapType cannot be null!!");
+                                        }
+                                    
+                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "encodingType"));
+                            
+                                        if (localEncodingType != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localEncodingType));
+                                        } else {
+                                           throw new RuntimeException("encodingType cannot be null!!");
+                                        }
+                                    
+                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "switchingCapabilitySpecficInfo"));
+                            
+                            
+                                    if (localSwitchingCapabilitySpecficInfo==null){
+                                         throw new RuntimeException("switchingCapabilitySpecficInfo cannot be null!!");
+                                    }
+                                    elementList.add(localSwitchingCapabilitySpecficInfo);
+                                
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -288,6 +479,66 @@
                     
                     reader.next();
                 
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","switchingcapType").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setSwitchingcapType(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                else{
+                                    // A start element we are not expecting indicates an invalid parameter was passed
+                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
+                                }
+                            
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","encodingType").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setEncodingType(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                else{
+                                    // A start element we are not expecting indicates an invalid parameter was passed
+                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
+                                }
+                            
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","switchingCapabilitySpecficInfo").equals(reader.getName())){
+                                
+                                        object.setSwitchingCapabilitySpecficInfo(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneSwitchingCapabilitySpecficInfo.Factory.parse(reader));
+                                      
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                else{
+                                    // A start element we are not expecting indicates an invalid parameter was passed
+                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
+                                }
+                              
+                            while (!reader.isStartElement() && !reader.isEndElement())
+                                reader.next();
+                            if (reader.isStartElement())
+                                // A start element we are not expecting indicates a trailing invalid property
+                                throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
+                        
 
 
 
