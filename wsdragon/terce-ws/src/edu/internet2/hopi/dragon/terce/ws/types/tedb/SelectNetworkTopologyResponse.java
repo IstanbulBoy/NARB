@@ -18,7 +18,7 @@
                 public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName(
                 "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                 "selectNetworkTopologyResponse",
-                "ns7");
+                "ns3");
 
             
 

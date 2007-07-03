@@ -17,7 +17,7 @@
         /* This type was generated from the piece of schema that had
                 name = insertNetworkTopologyContent
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/TEDB
-                Namespace Prefix = ns7
+                Namespace Prefix = ns3
                 */
             
 
@@ -70,14 +70,14 @@
                         */
 
                         
-                            protected org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneTopologyContent localTopology ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent localTopology ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneTopologyContent
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent
                            */
-                           public  org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneTopologyContent getTopology(){
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent getTopology(){
                                return localTopology;
                            }
 
@@ -87,7 +87,7 @@
                                * Auto generated setter method
                                * @param param Topology
                                */
-                               public void setTopology(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneTopologyContent param){
+                               public void setTopology(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent param){
                             
                                             this.localTopology=param;
                                     
@@ -202,7 +202,7 @@
                                     if (localTopology==null){
                                          throw new RuntimeException("topology cannot be null!!");
                                     }
-                                   localTopology.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/","topology"),
+                                   localTopology.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","topology"),
                                        factory,xmlWriter);
                                 
                    
@@ -339,7 +339,7 @@
                                            throw new RuntimeException("database cannot be null!!");
                                         }
                                     }
-                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/",
+                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "topology"));
                             
                             
@@ -441,9 +441,9 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/","topology").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","topology").equals(reader.getName())){
                                 
-                                        object.setTopology(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneTopologyContent.Factory.parse(reader));
+                                        object.setTopology(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent.Factory.parse(reader));
                                       
                                         reader.next();
                                     

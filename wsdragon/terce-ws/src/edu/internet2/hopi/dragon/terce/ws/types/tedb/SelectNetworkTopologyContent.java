@@ -17,7 +17,7 @@
         /* This type was generated from the piece of schema that had
                 name = selectNetworkTopologyContent
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/TEDB
-                Namespace Prefix = ns7
+                Namespace Prefix = ns3
                 */
             
 

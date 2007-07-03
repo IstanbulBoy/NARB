@@ -17,7 +17,7 @@
         /* This type was generated from the piece of schema that had
                 name = findPathResponseContent
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/RCE
-                Namespace Prefix = ns6
+                Namespace Prefix = ns2
                 */
             
 
@@ -26,14 +26,14 @@
                         */
 
                         
-                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.Path33 localPath ;
+                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.Path localPath ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.Path33
+                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.Path
                            */
-                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.Path33 getPath(){
+                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.Path getPath(){
                                return localPath;
                            }
 
@@ -43,7 +43,7 @@
                                * Auto generated setter method
                                * @param param Path
                                */
-                               public void setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path33 param){
+                               public void setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path param){
                             
                                             this.localPath=param;
                                     
@@ -338,7 +338,7 @@
                 
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","path").equals(reader.getName())){
                                 
-                                        object.setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path33.Factory.parse(reader));
+                                        object.setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path.Factory.parse(reader));
                                       
                                         reader.next();
                                     

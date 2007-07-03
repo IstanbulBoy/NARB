@@ -17,7 +17,7 @@
         /* This type was generated from the piece of schema that had
                 name = vtagList
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/RCE
-                Namespace Prefix = ns6
+                Namespace Prefix = ns2
                 */
             
 

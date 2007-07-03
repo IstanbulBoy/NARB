@@ -17,7 +17,7 @@
         /* This type was generated from the piece of schema that had
                 name = hopList
                 Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/RCE
-                Namespace Prefix = ns6
+                Namespace Prefix = ns2
                 */
             
 
@@ -27,14 +27,14 @@
                         */
 
                         
-                            protected org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[] localDomain ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] localDomain ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[]
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[]
                            */
-                           public  org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[] getDomain(){
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] getDomain(){
                                return localDomain;
                            }
 
@@ -46,7 +46,7 @@
                               /**
                                * validate the array for Domain
                                */
-                              protected void validateDomain(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[] param){
+                              protected void validateDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] param){
                              
                               if ((param != null) && (param.length < 1)){
                                 throw new java.lang.RuntimeException();
@@ -59,7 +59,7 @@
                               * Auto generated setter method
                               * @param param Domain
                               */
-                              public void setDomain(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[] param){
+                              public void setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] param){
                               
                                    validateDomain(param);
 
@@ -71,11 +71,11 @@
                              
                              /**
                              * Auto generated add method for the array for convenience
-                             * @param param org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent
+                             * @param param org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent
                              */
-                             public void addDomain(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent param){
+                             public void addDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent param){
                                    if (localDomain == null){
-                                   localDomain = new org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[]{};
+                                   localDomain = new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[]{};
                                    }
 
                             
@@ -84,8 +84,8 @@
                             org.apache.axis2.databinding.utils.ConverterUtil.toList(localDomain);
                                list.add(param);
                                this.localDomain =
-                             (org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[])list.toArray(
-                            new org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[list.size()]);
+                             (org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[])list.toArray(
+                            new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[list.size()]);
 
                              }
                              
@@ -163,7 +163,7 @@
                              if (localDomain!=null){
                                     for (int i = 0;i < localDomain.length;i++){
                                         if (localDomain[i] != null){
-                                         localDomain[i].serialize(new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/","domain"),
+                                         localDomain[i].serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain"),
                                                    factory,xmlWriter);
                                         } else {
                                            
@@ -307,7 +307,7 @@
                                  for (int i = 0;i < localDomain.length;i++){
 
                                     if (localDomain[i] != null){
-                                         elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/",
+                                         elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                           "domain"));
                                          elementList.add(localDomain[i]);
                                     } else {
@@ -401,12 +401,12 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/","domain").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
                                 
                                     
                                     
                                     // Process the array and step past its final element's end.
-                                    list1.add(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent.Factory.parse(reader));
+                                    list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
                                             
                                             //loop until we find a start element that is not part of this array
                                             boolean loopDone1 = false;
@@ -423,8 +423,8 @@
                                                     //two continuous end elements means we are exiting the xml structure
                                                     loopDone1 = true;
                                                 } else {
-                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/nm/topology/CtrlPlane/20070611/","domain").equals(reader.getName())){
-                                                        list1.add(org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent.Factory.parse(reader));
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
+                                                        list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
                                                         
                                                     }else{
                                                         loopDone1 = true;
@@ -433,9 +433,9 @@
                                             }
                                             // call the converter utility  to convert and set the array
                                             
-                                            object.setDomain((org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent[])
+                                            object.setDomain((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[])
                                                 org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                    org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent.class,
+                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.class,
                                                     list1));
                                                 
                               }  // End of if for expected property start element

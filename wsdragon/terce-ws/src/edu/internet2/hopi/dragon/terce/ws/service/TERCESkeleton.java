@@ -20,8 +20,12 @@ public class TERCESkeleton{
 
 	/**
 	 * Auto generated method signature
+
+
 	 * @param findPath
 	 */
+
+
 	public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessageException{
 		RCEFactory factory = new RCEFactory();
 		RCEInterface rce = factory.createRCE("dynamic");
