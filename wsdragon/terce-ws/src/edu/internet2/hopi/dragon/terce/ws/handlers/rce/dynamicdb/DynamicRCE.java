@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneDomainSignatureContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneLinkContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlaneNodeContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.CtrlPlanePortContent;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.NodeAddress_type14;
-import org.ogf.schema.nm.topology.ctrlplane._20070611.Nodeid_type13;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent;
 
 import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.TERCEClient;
@@ -29,7 +27,7 @@ import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponseContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.HopList;
-import edu.internet2.hopi.dragon.terce.ws.types.rce.Path33;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.Path;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList;
 
 /**
@@ -50,7 +48,7 @@ public class DynamicRCE extends RCE implements RCEInterface{
 	public FindPathResponse findPath(FindPath request) throws RCEFaultMessageException {
 		FindPathResponse response = new FindPathResponse();
         FindPathResponseContent responseContent = new FindPathResponseContent();
-        Path33 path = new Path33();
+        Path path = new Path();
         HopList hops = new HopList();
         App2TERCERequest terceRequest;
         
@@ -81,37 +79,31 @@ public class DynamicRCE extends RCE implements RCEInterface{
 						IPv4PrefixSubobject sub = (IPv4PrefixSubobject)ero.get(i);
 						d.setId(sub.getIp().getHostAddress());
 						n.setId(sub.getIp().getHostAddress());
-						Nodeid_type13 nid = new Nodeid_type13();
-						nid.setType("ipv4");
-						nid.setValue(sub.getIp().getHostAddress());
+						CtrlPlaneAddressContent nid = new CtrlPlaneAddressContent();
+						nid.setString(sub.getIp().getHostAddress());
 						n.setNodeid(nid);
 						p.setId(sub.getIp().getHostAddress());
 						l.setId(sub.getIp().getHostAddress());
-						p.setLink(l);
-						n.addNodePort(p);
+						p.addLink(l);
+						n.addPort(p);
 						d.addNode(n);
 						hops.addDomain(d);
 					}else if(ero.get(i).getType() == EROSubobject.UNUM_IF_SUBOBJ){
 						UnumInterfaceSubobject sub = (UnumInterfaceSubobject)ero.get(i);
 						d.setId(sub.getIp().getHostAddress());
-						CtrlPlaneDomainSignatureContent dsc = new CtrlPlaneDomainSignatureContent();
-						dsc.setDomainId(sub.getIp().getHostAddress());
-						d.setDomainSignature(dsc);
 						
 						n.setId(sub.getIp().getHostAddress());
-						Nodeid_type13 nid = new Nodeid_type13();
-						nid.setType("ipv4");
-						nid.setValue(sub.getIp().getHostAddress());
-						NodeAddress_type14 nadd = new NodeAddress_type14();
-						nadd.setType("ipv4");
-						nadd.setValue(sub.getIp().getHostAddress());
+						CtrlPlaneAddressContent nid = new CtrlPlaneAddressContent();
+						nid.setString(sub.getIp().getHostAddress());
+						CtrlPlaneAddressContent nadd = new CtrlPlaneAddressContent();
+						nadd.setString(sub.getIp().getHostAddress());
 						n.setNodeAddress(nadd);
 						n.setNodeid(nid);
 						
 						p.setId(sub.getIp().getHostAddress());
 						l.setId(sub.getIp().getHostAddress());
-						p.setLink(l);
-						n.addNodePort(p);
+						p.addLink(l);
+						n.addPort(p);
 						d.addNode(n);
 						hops.addDomain(d);
 					}
