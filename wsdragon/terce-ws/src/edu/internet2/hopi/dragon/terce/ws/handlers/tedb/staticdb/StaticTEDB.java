@@ -48,7 +48,15 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		// TODO ANDY WILL IMPLEMENT
 		return null;
 	}
-
+	
+	/**
+	 * Used by the selectNetworkTopology web service to obtain topology information.
+	 * This implementation reads and XML file from disk and returns the data as an 
+	 * object useable by Axis2.
+	 * 
+	 * @param selectRequest an Axis2 selectNetworkTopology web service request
+	 * @param an Axis2 response to a selectNetworkTopology request
+	 */
 	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException {
 		PropertyReader props = TERCEHandler.createPropertyReader();
 		SelectNetworkTopologyResponse response = new SelectNetworkTopologyResponse();
@@ -73,14 +81,11 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 				}
 			}
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw this.generateTEDBException("Parser Config Exception: " + e.getMessage());
 		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw this.generateTEDBException("SAX Exception: " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw this.generateTEDBException("IO Exception: " + e.getMessage());
 		}
 		
 		response.setSelectNetworkTopologyResponse(responseContent);
@@ -88,6 +93,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return response;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;topology&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the topology element to parse
+	 * @return the topology information in the format needed by Axis2
+	 */
 	private CtrlPlaneTopologyContent parseTopology(Node elem){
 		CtrlPlaneTopologyContent topology = new CtrlPlaneTopologyContent();
 		NamedNodeMap attrs = elem.getAttributes();
@@ -113,6 +125,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return topology;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;domain&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the &lt;domain&gt; element to parse
+	 * @return the domain information in the format needed by Axis2
+	 */
 	private CtrlPlaneDomainContent parseDomain(Node elem){
 		CtrlPlaneDomainContent domain = new CtrlPlaneDomainContent();
 		NamedNodeMap attrs = elem.getAttributes();
@@ -145,6 +164,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return domain;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;node&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the &lt;node&gt; element to parse
+	 * @return the node information in the format needed by Axis2
+	 */
 	private CtrlPlaneNodeContent parseNode(Node elem){
 		CtrlPlaneNodeContent node = new CtrlPlaneNodeContent();
 		NamedNodeMap attrs = elem.getAttributes();
@@ -173,6 +199,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return node;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;port&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the &lt;port&gt; element to parse
+	 * @return the port information in the format needed by Axis2
+	 */
 	private CtrlPlanePortContent parsePort(Node elem){
 		CtrlPlanePortContent port = new CtrlPlanePortContent();
 		NamedNodeMap attrs = elem.getAttributes();
@@ -209,6 +242,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return port;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;link&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the &lt;link&gt; element to parse
+	 * @return the link information in the format needed by Axis2
+	 */
 	private CtrlPlaneLinkContent parseLink(Node elem){
 		CtrlPlaneLinkContent link = new CtrlPlaneLinkContent();
 		NamedNodeMap attrs = elem.getAttributes();
@@ -256,6 +296,12 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return link;
 	}
 	
+	/**
+	 * Utility function for creating an address object.
+	 * 
+	 * @param the element with data that has to be mapped to an address type
+	 * @return the data in control plane address object
+	 */
 	private CtrlPlaneAddressContent parseAddress(Node elem){
 		//TODO: add suport for type and value
 		CtrlPlaneAddressContent addr = new CtrlPlaneAddressContent();
@@ -264,6 +310,13 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return addr;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;administrativeGroups&gt; element information
+	 * in the topology file and converting it to an Axis2 topology object.
+	 * 
+	 * @param elem the &lt;administrativeGroups&gt; element to parse
+	 * @return the administrativeGroups information in the format needed by Axis2
+	 */
 	private CtrlPlaneAdministrativeGroup parseAdministrativeGroup(Node elem){
 		CtrlPlaneAdministrativeGroup group = new CtrlPlaneAdministrativeGroup();
 		NodeList children = elem.getChildNodes();
@@ -285,6 +338,14 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return group;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;SwitchingCapabilityDescriptors&gt; 
+	 * element information in the topology file and converting it to an Axis2 
+	 * topology object.
+	 * 
+	 * @param elem the &lt;SwitchingCapabilityDescriptors&gt; element to parse
+	 * @return the SwitchingCapabilityDescriptors information in the format needed by Axis2
+	 */
 	private CtrlPlaneSwcapContent parseSwcapDescriptors(Node elem){
 		CtrlPlaneSwcapContent swcap = new CtrlPlaneSwcapContent();
 		NodeList children = elem.getChildNodes();
@@ -308,6 +369,14 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return swcap;
 	}
 	
+	/**
+	 * Utility function for parsing the &lt;switchingCapabilitySpecficInfo&gt; 
+	 * element information in the topology file and converting it to an Axis2 
+	 * topology object.
+	 * 
+	 * @param elem the &lt;switchingCapabilitySpecficInfo&gt; element to parse
+	 * @return the switchingCapabilitySpecficInfo information in the format needed by Axis2
+	 */
 	private CtrlPlaneSwitchingCapabilitySpecficInfo parseSwcapSpecInfo(Node elem){
 		CtrlPlaneSwitchingCapabilitySpecficInfo specInfo = new CtrlPlaneSwitchingCapabilitySpecficInfo();
 		NodeList children = elem.getChildNodes();
@@ -330,6 +399,12 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 		return specInfo;
 	}
 	
+	/**
+	 * Utility function for extracting the id atrribute from an element
+	 * 
+	 * @param attrs a list of an element's attributes
+	 * @return the value of the id attribute
+	 */
 	private String getIdAttribute(NamedNodeMap attrs){
 		Node attrId = attrs.getNamedItem("id");
 		if(attrId != null){

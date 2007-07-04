@@ -7,7 +7,12 @@ import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault;
-
+/**
+ * This class contains static utility methods used by TERCE components. 
+ * 
+ * @author Andrew Lake
+ *
+ */
 public class TERCEHandler {
 	/**
 	 * Reads the properties file at $TERCEWS_HOME/terce-ws.properties

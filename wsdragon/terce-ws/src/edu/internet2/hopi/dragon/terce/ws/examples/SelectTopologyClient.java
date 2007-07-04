@@ -14,6 +14,13 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyConten
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectTypes;
 
+/**
+ * Example client making a selectTopology query to the TERCE-WS.
+ * It accepts the URL of the service as an argument
+ * 
+ * @author Andrew Lake (alake@internet2.edu)
+ * 
+ */
 public class SelectTopologyClient {
 	public static void main(String[] args){
 		try {

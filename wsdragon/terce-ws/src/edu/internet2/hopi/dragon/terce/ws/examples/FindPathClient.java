@@ -14,7 +14,7 @@ import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 
 /**
- * Test program for querying TERCE-WS accepts a source and destination then requests 
+ * Test program for querying a TERCE-WS path calculation. Accepts a source and destination then requests 
  * a path calculation
  * 
  * @author Andrew Lake(alake@internet2.edu)
