@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<staticPathDatabase xmlns="http://hopi.internet2.edu/DRAGON/TERCE/RCE/STATICPATHS" id="anna-topo-1">
+    <staticPathEntry id="path1">
+        <srcEndpoint>
+            <domainId>anna-293</domainId>
+            <nodeId>ann-vlsr1</nodeId>
+            <portId>13</portId>
+        </srcEndpoint>
+        
+        <destEndpoint>
+            <domainId>anna-293</domainId>
+            <nodeId>ann-vlsr2</nodeId>
+            <portId>13</portId>
+        </destEndpoint>
+        
+        <path>
+            <hop>
+                <domainId>anna-293</domainId>
+                <nodeId>ann-vlsr1</nodeId>
+                <portId>13</portId>
+            </hop>
+            
+            <hop>
+                <domainId>anna-293</domainId>
+                <nodeId>ann-vlsr1</nodeId>
+                <portId>21</portId>
+            </hop>
+            
+            <hop>
+                <domainId>anna-293</domainId>
+                <nodeId>ann-vlsr2</nodeId>
+                <portId>21</portId>
+            </hop>
+            
+            <hop>
+                <domainId>anna-293</domainId>
+                <nodeId>ann-vlsr2</nodeId>
+                <portId>13</portId>
+            </hop>
+        </path>
+    </staticPathEntry>
+</staticPathDatabase>

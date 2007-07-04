@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topology xmlns="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" id="anna-topo-1">
+    <idcId>http://127.0.0.1/axis2/services/TERCE</idcId>
+    <domain id="anna-293">
+        <node id="anna-vlsr-1">
+            <nodeId>anna-vlsr-1</nodeId>
+            <nodeAddress>207.75.164.204</nodeAddress>
+            <port id="13">
+                <link id="13" />
+            </port>
+            <port id="15">
+                <link id="15" />
+            </port>
+        </node>
+        
+        <node id="anna-vlsr-2">
+            <nodeId>anna-vlsr-2</nodeId>
+            <nodeAddress>207.75.164.207</nodeAddress>
+            <port id="13">
+                <link id="13" />
+            </port>
+            <port id="15">
+                <link id="15" />
+            </port>
+        </node>
+    </domain>
+</topology>
