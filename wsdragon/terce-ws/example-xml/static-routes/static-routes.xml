@@ -24,12 +24,14 @@
                 <domainId>anna-293</domainId>
                 <nodeId>ann-vlsr1</nodeId>
                 <portId>21</portId>
+                <linkId>21</linkId>
             </hop>
             
             <hop>
                 <domainId>anna-293</domainId>
                 <nodeId>ann-vlsr2</nodeId>
                 <portId>21</portId>
+                <linkId>21</linkId>
             </hop>
             
             <hop>
