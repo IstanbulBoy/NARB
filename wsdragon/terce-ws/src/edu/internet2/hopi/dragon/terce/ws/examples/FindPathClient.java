@@ -1,3 +1,5 @@
+package edu.internet2.hopi.dragon.terce.ws.examples;
+
 import java.rmi.RemoteException;
 
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
@@ -18,9 +20,7 @@ import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
  * @author Andrew Lake(alake@internet2.edu)
  *
  */
-
-
-public class TERCETest {
+public class FindPathClient {
 	public static void main(String[] args){
 		try {
 			TERCEStub terce = null;
