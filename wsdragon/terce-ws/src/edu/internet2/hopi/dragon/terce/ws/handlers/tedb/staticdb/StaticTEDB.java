@@ -29,6 +29,7 @@ import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDBInterface;
 import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponseContent;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponseContent;
@@ -43,10 +44,25 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyRespon
  * *
  */
 public class StaticTEDB extends TEDB implements TEDBInterface {
-
+	
+	/**
+	 * Mimics an the inertNetworkTopology call of a dynamic database. Since the database in the implementation
+	 * is static (the topology does not change) this call does not do anything with the given topology. It set
+	 * the result code to 0 (SUCCESS) and a message indicating this.
+	 * 
+	 * @param insertRequest an Axis2 object representation of an insertNetworkTopology request
+	 * @return an Axis2 representation of a successful response to an insertNetworkTopology request
+	 */
 	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessageException{
-		// TODO ANDY WILL IMPLEMENT
-		return null;
+		InsertNetworkTopologyResponse response = new InsertNetworkTopologyResponse();
+		InsertNetworkTopologyResponseContent responseContent = new InsertNetworkTopologyResponseContent();
+		
+		responseContent.setResultCode(0);
+		responseContent.setResultMessage("Request successful. " +
+				"NOTE: The underlying database is static so this topology was ignored");
+		response.setInsertNetworkTopologyResponse(responseContent);
+		
+		return response;
 	}
 	
 	/**

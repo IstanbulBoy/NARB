@@ -57,7 +57,11 @@ public class TERCESkeleton{
 	 */
 	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertNetworkTopology)
 		throws TEDBFaultMessageException{
-		//Todo fill this with the necessary business logic
-		throw new  java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#insertNetworkTopology");
+		PropertyReader props = TERCEHandler.createPropertyReader();
+		TEDBFactory factory = new TEDBFactory();
+		TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
+		InsertNetworkTopologyResponse response = tedb.insertNetworkTopology(insertNetworkTopology);
+		
+		return response;
 	}
 }
