@@ -140,8 +140,12 @@ public class DynamicRCE extends RCE implements RCEInterface{
      	App2TERCERequest terceRequest;
      	
      	/* Get source and destination */
-     	String srcHost = soapRequest.getSrcHost();
-     	String dstHost = soapRequest.getDstHost();
+     	/* THIS IS WRONG SINCE THE NARB SHOULD TAKE domain:node:port:link
+     	 * This assumes nodeId is an address for the time-being so it compiles
+     	 * until changes complete to the NARB
+     	 */
+     	String srcHost = soapRequest.getSrcEndpoint().getNodeId();
+     	String dstHost = soapRequest.getDestEndpoint().getNodeId();
      	
      	/* get bandwidth */
      	float bandwidth = soapRequest.getBandwidth();
