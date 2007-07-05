@@ -22,20 +22,20 @@
             
 
                         /**
-                        * field for Domain
+                        * field for Hop
                         * This was an Array!
                         */
 
                         
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] localDomain ;
+                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[] localHop ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[]
+                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[]
                            */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] getDomain(){
-                               return localDomain;
+                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[] getHop(){
+                               return localHop;
                            }
 
                            
@@ -44,9 +44,9 @@
 
                                
                               /**
-                               * validate the array for Domain
+                               * validate the array for Hop
                                */
-                              protected void validateDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] param){
+                              protected void validateHop(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[] param){
                              
                               if ((param != null) && (param.length < 1)){
                                 throw new java.lang.RuntimeException();
@@ -57,35 +57,35 @@
 
                              /**
                               * Auto generated setter method
-                              * @param param Domain
+                              * @param param Hop
                               */
-                              public void setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[] param){
+                              public void setHop(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[] param){
                               
-                                   validateDomain(param);
+                                   validateHop(param);
 
                                
-                                      this.localDomain=param;
+                                      this.localHop=param;
                               }
 
                                
                              
                              /**
                              * Auto generated add method for the array for convenience
-                             * @param param org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent
+                             * @param param edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent
                              */
-                             public void addDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent param){
-                                   if (localDomain == null){
-                                   localDomain = new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[]{};
+                             public void addHop(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent param){
+                                   if (localHop == null){
+                                   localHop = new edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[]{};
                                    }
 
                             
 
                                java.util.List list =
-                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localDomain);
+                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localHop);
                                list.add(param);
-                               this.localDomain =
-                             (org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[])list.toArray(
-                            new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[list.size()]);
+                               this.localHop =
+                             (edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[])list.toArray(
+                            new edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[list.size()]);
 
                              }
                              
@@ -160,21 +160,21 @@
 
                 
                
-                             if (localDomain!=null){
-                                    for (int i = 0;i < localDomain.length;i++){
-                                        if (localDomain[i] != null){
-                                         localDomain[i].serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain"),
+                             if (localHop!=null){
+                                    for (int i = 0;i < localHop.length;i++){
+                                        if (localHop[i] != null){
+                                         localHop[i].serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","hop"),
                                                    factory,xmlWriter);
                                         } else {
                                            
-                                                   throw new RuntimeException("domain cannot be null!!");
+                                                   throw new RuntimeException("hop cannot be null!!");
                                             
                                         }
 
                                     }
                              } else {
                                 
-                                       throw new RuntimeException("domain cannot be null!!");
+                                       throw new RuntimeException("hop cannot be null!!");
                                 
                             }
                         
@@ -303,23 +303,23 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                             if (localDomain!=null) {
-                                 for (int i = 0;i < localDomain.length;i++){
+                             if (localHop!=null) {
+                                 for (int i = 0;i < localHop.length;i++){
 
-                                    if (localDomain[i] != null){
-                                         elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                          "domain"));
-                                         elementList.add(localDomain[i]);
+                                    if (localHop[i] != null){
+                                         elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                                                                          "hop"));
+                                         elementList.add(localHop[i]);
                                     } else {
                                         
-                                               throw new RuntimeException("domain cannot be null !!");
+                                               throw new RuntimeException("hop cannot be null !!");
                                             
                                     }
 
                                  }
                              } else {
                                  
-                                        throw new RuntimeException("domain cannot be null!!");
+                                        throw new RuntimeException("hop cannot be null!!");
                                     
                              }
 
@@ -401,12 +401,12 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","hop").equals(reader.getName())){
                                 
                                     
                                     
                                     // Process the array and step past its final element's end.
-                                    list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
+                                    list1.add(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader));
                                             
                                             //loop until we find a start element that is not part of this array
                                             boolean loopDone1 = false;
@@ -423,8 +423,8 @@
                                                     //two continuous end elements means we are exiting the xml structure
                                                     loopDone1 = true;
                                                 } else {
-                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
-                                                        list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
+                                                    if (new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","hop").equals(reader.getName())){
+                                                        list1.add(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader));
                                                         
                                                     }else{
                                                         loopDone1 = true;
@@ -433,9 +433,9 @@
                                             }
                                             // call the converter utility  to convert and set the array
                                             
-                                            object.setDomain((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent[])
+                                            object.setHop((edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent[])
                                                 org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.class,
+                                                    edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.class,
                                                     list1));
                                                 
                               }  // End of if for expected property start element

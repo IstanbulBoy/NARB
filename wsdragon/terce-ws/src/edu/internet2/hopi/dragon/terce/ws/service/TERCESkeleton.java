@@ -7,6 +7,8 @@
  */
 package edu.internet2.hopi.dragon.terce.ws.service;
 
+import java.io.IOException;
+
 import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEFactory;
@@ -30,10 +32,19 @@ public class TERCESkeleton{
 	 * @param findPath
 	 */
 	public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessageException{
-		RCEFactory factory = new RCEFactory();
-		RCEInterface rce = factory.createRCE("dynamic");
-		FindPathResponse response = rce.findPath(findPath);
+		PropertyReader props = null;
+		/* Open properties file */
+		try {
+			props = TERCEHandler.createPropertyReader();
+		} catch (IOException e) {
+			throw TERCEHandler.generateRCEException("IO Exception: " + e.getMessage());
+		}
 		
+		/* Contact underlying RCE module */
+		RCEFactory factory = new RCEFactory();
+		RCEInterface rce = factory.createRCE(props.getProperty("rce.type"));
+		FindPathResponse response = rce.findPath(findPath);
+		System.out.println("RCE DONE");
 		return response;
 	}
 
@@ -43,7 +54,16 @@ public class TERCESkeleton{
 	 */
 	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectNetworkTopology)
 		throws TEDBFaultMessageException{
-		PropertyReader props = TERCEHandler.createPropertyReader();
+		PropertyReader props = null;
+		
+		/* Open properties file */
+		try {
+			props = TERCEHandler.createPropertyReader();
+		} catch (IOException e) {
+			TERCEHandler.generateTEDBException("IO Exception: " + e.getMessage());
+		}
+		
+		/* Select topology from underlying module */
 		TEDBFactory factory = new TEDBFactory();
 		TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
 		SelectNetworkTopologyResponse response = tedb.selectNetworkTopology(selectNetworkTopology);
@@ -57,7 +77,17 @@ public class TERCESkeleton{
 	 */
 	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertNetworkTopology)
 		throws TEDBFaultMessageException{
-		PropertyReader props = TERCEHandler.createPropertyReader();
+		PropertyReader props = null;
+		
+		/* Open properties file */
+		try {
+			props = TERCEHandler.createPropertyReader();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		/* Insert topology into underlyig database */
 		TEDBFactory factory = new TEDBFactory();
 		TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
 		InsertNetworkTopologyResponse response = tedb.insertNetworkTopology(insertNetworkTopology);

@@ -42,10 +42,7 @@
 	
 	<xsd:complexType name="endpointContent">
         <xsd:sequence>
-            <xsd:element name="domainId" type="xsd:string" />
-            <xsd:element name="nodeId" type="xsd:string" />
-            <xsd:element name="portId" type="xsd:string" />
-            <xsd:element name="linkId" type="xsd:string" maxOccurs="1" minOccurs="0" />
+            <xsd:element ref="ctrlp:domain"/>
         </xsd:sequence>
     </xsd:complexType>
 	
@@ -64,7 +61,7 @@
 	
 	<xsd:complexType name="hopList">
 		<xsd:sequence>
-			<xsd:element ref="ctrlp:domain" minOccurs="1" maxOccurs="unbounded"/>
+			<xsd:element name="hop" type="tns:endpointContent" minOccurs="1" maxOccurs="unbounded"/>
 		</xsd:sequence>
 	</xsd:complexType>
 	

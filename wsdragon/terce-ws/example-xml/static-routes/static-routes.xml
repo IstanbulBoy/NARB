@@ -1,44 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <staticPathDatabase xmlns="http://hopi.internet2.edu/DRAGON/TERCE/RCE/STATICPATHS" id="anna-topo-1">
+    
     <staticPathEntry id="path1">
+    
         <srcEndpoint>
-            <domainId>anna-293</domainId>
-            <nodeId>ann-vlsr1</nodeId>
-            <portId>13</portId>
+            <domain id="anna-293">
+                <node id="anna-vlsr1">
+                    <port id="13" />
+                </node>
+            </domain>
         </srcEndpoint>
         
         <destEndpoint>
-            <domainId>anna-293</domainId>
-            <nodeId>ann-vlsr2</nodeId>
-            <portId>13</portId>
+            <domain id="anna-293">
+                <node id="anna-vlsr2">
+                    <port id="13" />
+                </node>
+            </domain>
         </destEndpoint>
         
         <path>
             <hop>
-                <domainId>anna-293</domainId>
-                <nodeId>ann-vlsr1</nodeId>
-                <portId>13</portId>
+                <domain id="anna-293">
+                    <node id="anna-vlsr1">
+                        <port id="13" />
+                    </node>
+                </domain>
             </hop>
             
             <hop>
-                <domainId>anna-293</domainId>
-                <nodeId>ann-vlsr1</nodeId>
-                <portId>21</portId>
-                <linkId>21</linkId>
+                <domain id="anna-293">
+                    <node id="anna-vlsr1">
+                        <port id="21">
+                            <link id="21" />
+                        </port>
+                    </node>
+                </domain>
             </hop>
             
             <hop>
-                <domainId>anna-293</domainId>
-                <nodeId>ann-vlsr2</nodeId>
-                <portId>21</portId>
-                <linkId>21</linkId>
+                <domain id="anna-293">
+                    <node id="anna-vlsr2">
+                        <port id="21">
+                            <link id="21" />
+                        </port>
+                    </node>
+                </domain>
             </hop>
             
             <hop>
-                <domainId>anna-293</domainId>
-                <nodeId>ann-vlsr2</nodeId>
-                <portId>13</portId>
+                <domain id="anna-293">
+                    <node id="anna-vlsr2">
+                        <port id="13" />
+                    </node>
+                </domain>
             </hop>
         </path>
+        
+        <availableVtags>610-620, 3000-3010, 3050</availableVtags>
+        
     </staticPathEntry>
+    
 </staticPathDatabase>

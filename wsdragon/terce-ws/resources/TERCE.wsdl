@@ -7,7 +7,7 @@
   <wsdl:types>
     <xsd:schema elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE" xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="xsd0.xsd"/>
-			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="xsd6.xsd"/>
+			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="xsd2.xsd"/>
 		</xsd:schema>
   </wsdl:types>
   <wsdl:message name="selectNetworkTopologyResponse">

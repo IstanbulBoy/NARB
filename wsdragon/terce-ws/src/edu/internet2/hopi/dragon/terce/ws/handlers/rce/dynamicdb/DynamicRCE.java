@@ -21,6 +21,7 @@ import edu.internet2.hopi.dragon.terce.api.UnumInterfaceSubobject;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCE;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
 import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.Exclude;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
@@ -65,6 +66,7 @@ public class DynamicRCE extends RCE implements RCEInterface{
 				/* Parse ERO subobjects */
 				ArrayList<EROSubobject> ero = reply.getERO();
 				for(int i = 0; i < ero.size(); i++){
+					EndpointContent ep = new EndpointContent();
 					CtrlPlaneDomainContent d = new CtrlPlaneDomainContent();
 					CtrlPlaneNodeContent n = new CtrlPlaneNodeContent();
 					CtrlPlanePortContent p = new CtrlPlanePortContent();
@@ -84,7 +86,8 @@ public class DynamicRCE extends RCE implements RCEInterface{
 						p.addLink(l);
 						n.addPort(p);
 						d.addNode(n);
-						hops.addDomain(d);
+						ep.setDomain(d);
+						hops.addHop(ep);
 					}else if(ero.get(i).getType() == EROSubobject.UNUM_IF_SUBOBJ){
 						UnumInterfaceSubobject sub = (UnumInterfaceSubobject)ero.get(i);
 						d.setId(sub.getIp().getHostAddress());
@@ -99,7 +102,8 @@ public class DynamicRCE extends RCE implements RCEInterface{
 						p.addLink(l);
 						n.addPort(p);
 						d.addNode(n);
-						hops.addDomain(d);
+						ep.setDomain(d);
+						hops.addHop(ep);
 					}
 				}
 				
@@ -141,11 +145,11 @@ public class DynamicRCE extends RCE implements RCEInterface{
      	
      	/* Get source and destination */
      	/* THIS IS WRONG SINCE THE NARB SHOULD TAKE domain:node:port:link
-     	 * This assumes nodeId is an address for the time-being so it compiles
+     	 * This assumes domainId is an address for the time-being so it compiles
      	 * until changes complete to the NARB
      	 */
-     	String srcHost = soapRequest.getSrcEndpoint().getNodeId();
-     	String dstHost = soapRequest.getDestEndpoint().getNodeId();
+     	String srcHost = soapRequest.getSrcEndpoint().getDomain().getId();
+     	String dstHost = soapRequest.getDestEndpoint().getDomain().getId();
      	
      	/* get bandwidth */
      	float bandwidth = soapRequest.getBandwidth();

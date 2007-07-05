@@ -22,134 +22,30 @@
             
 
                         /**
-                        * field for DomainId
+                        * field for Domain
                         */
 
                         
-                            protected java.lang.String localDomainId ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent localDomain ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return java.lang.String
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent
                            */
-                           public  java.lang.String getDomainId(){
-                               return localDomainId;
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent getDomain(){
+                               return localDomain;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param DomainId
+                               * @param param Domain
                                */
-                               public void setDomainId(java.lang.String param){
+                               public void setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent param){
                             
-                                            this.localDomainId=param;
-                                    
-
-                               }
-                            
-
-                        /**
-                        * field for NodeId
-                        */
-
-                        
-                            protected java.lang.String localNodeId ;
-                        
-
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getNodeId(){
-                               return localNodeId;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param NodeId
-                               */
-                               public void setNodeId(java.lang.String param){
-                            
-                                            this.localNodeId=param;
-                                    
-
-                               }
-                            
-
-                        /**
-                        * field for PortId
-                        */
-
-                        
-                            protected java.lang.String localPortId ;
-                        
-
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getPortId(){
-                               return localPortId;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param PortId
-                               */
-                               public void setPortId(java.lang.String param){
-                            
-                                            this.localPortId=param;
-                                    
-
-                               }
-                            
-
-                        /**
-                        * field for LinkId
-                        */
-
-                        
-                            protected java.lang.String localLinkId ;
-                        
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localLinkIdTracker = false ;
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getLinkId(){
-                               return localLinkId;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param LinkId
-                               */
-                               public void setLinkId(java.lang.String param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localLinkIdTracker = true;
-                                       } else {
-                                          localLinkIdTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localLinkId=param;
+                                            this.localDomain=param;
                                     
 
                                }
@@ -225,142 +121,12 @@
 
                 
                
-                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"domainId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"domainId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("domainId");
+                                    if (localDomain==null){
+                                         throw new RuntimeException("domain cannot be null!!");
                                     }
+                                   localDomain.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain"),
+                                       factory,xmlWriter);
                                 
-
-                                          if (localDomainId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("domainId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localDomainId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"nodeId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"nodeId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("nodeId");
-                                    }
-                                
-
-                                          if (localNodeId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("nodeId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localNodeId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"portId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"portId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("portId");
-                                    }
-                                
-
-                                          if (localPortId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("portId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localPortId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                              if (localLinkIdTracker){
-                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"linkId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"linkId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("linkId");
-                                    }
-                                
-
-                                          if (localLinkId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("linkId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localLinkId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             }
                    
                xmlWriter.writeEndElement();
             
@@ -486,42 +252,15 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
-                                                                      "domainId"));
+                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "domain"));
                             
-                                        if (localDomainId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDomainId));
-                                        } else {
-                                           throw new RuntimeException("domainId cannot be null!!");
-                                        }
-                                    
-                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
-                                                                      "nodeId"));
                             
-                                        if (localNodeId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNodeId));
-                                        } else {
-                                           throw new RuntimeException("nodeId cannot be null!!");
-                                        }
-                                    
-                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
-                                                                      "portId"));
-                            
-                                        if (localPortId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPortId));
-                                        } else {
-                                           throw new RuntimeException("portId cannot be null!!");
-                                        }
-                                     if (localLinkIdTracker){
-                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
-                                                                      "linkId"));
-                            
-                                        if (localLinkId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localLinkId));
-                                        } else {
-                                           throw new RuntimeException("linkId cannot be null!!");
-                                        }
+                                    if (localDomain==null){
+                                         throw new RuntimeException("domain cannot be null!!");
                                     }
+                                    elementList.add(localDomain);
+                                
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -597,13 +336,10 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","domainId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
                                 
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setDomainId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
+                                        object.setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
+                                      
                                         reader.next();
                                     
                               }  // End of if for expected property start element
@@ -612,63 +348,7 @@
                                     // A start element we are not expecting indicates an invalid parameter was passed
                                     throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
                                 }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","nodeId").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setNodeId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","portId").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setPortId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","linkId").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setLinkId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                  
+                              
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             if (reader.isStartElement())
