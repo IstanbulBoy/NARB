@@ -17,14 +17,12 @@ public class TERCEHandler {
 	/**
 	 * Reads the properties file at $TERCEWS_HOME/terce-ws.properties
 	 * @return PropertyReader object with properties from file
+	 * @throws IOException 
 	 */
-	public static PropertyReader createPropertyReader() throws TEDBFaultMessageException{
+	public static PropertyReader createPropertyReader() throws IOException{
 		PropertyReader props = null;
-		try {
-			props = new PropertyReader(System.getenv("TERCEWS_HOME") + "/terce-ws.properties");	
-		} catch (IOException e) {
-			throw TERCEHandler.generateTEDBException("IO Exception reading properties file: " + e.getMessage());
-		}
+
+		props = new PropertyReader(System.getenv("TERCEWS_HOME") + "/terce-ws.properties");	
 		
 		return props;
 	}

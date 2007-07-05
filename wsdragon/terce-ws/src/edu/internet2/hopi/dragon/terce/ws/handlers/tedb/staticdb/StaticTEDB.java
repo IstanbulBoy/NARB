@@ -74,11 +74,12 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	 * @param an Axis2 response to a selectNetworkTopology request
 	 */
 	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException {
-		PropertyReader props = TERCEHandler.createPropertyReader();
+		PropertyReader props = null;
 		SelectNetworkTopologyResponse response = new SelectNetworkTopologyResponse();
 		SelectNetworkTopologyResponseContent responseContent = new SelectNetworkTopologyResponseContent();
 		
 		try {
+			props = TERCEHandler.createPropertyReader();
 			File fin = new File(props.getProperty("tedb.static.file"));
 			DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder docBuilder = null;
