@@ -29,7 +29,6 @@ import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponseContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.HopList;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.Path;
-import edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList;
 
 /**
  * RCE implementation that talks to a dynamic TERCE database (formerly the NARB) via its API.
@@ -110,9 +109,12 @@ public class DynamicRCE extends RCE implements RCEInterface{
 				/* Get vlan tag list */
 				ArrayList<Integer> availVTags = reply.getVtagList();
 				if(!availVTags.isEmpty()){
-					VtagList vtags = new VtagList();
+					String vtags = "";
 					for(int i = 0; i < availVTags.size(); i++){
-						vtags.addVtag(availVTags.get(i).toString());
+						if(i != 0){
+								vtags += ",";
+						}
+						vtags += (availVTags.get(i));
 					}
 					path.setAvailableVtags(vtags);
 				}

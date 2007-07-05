@@ -56,7 +56,7 @@
                         */
 
                         
-                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList localAvailableVtags ;
+                            protected java.lang.String localAvailableVtags ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
@@ -67,9 +67,9 @@
 
                            /**
                            * Auto generated getter method
-                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList
+                           * @return java.lang.String
                            */
-                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList getAvailableVtags(){
+                           public  java.lang.String getAvailableVtags(){
                                return localAvailableVtags;
                            }
 
@@ -79,7 +79,7 @@
                                * Auto generated setter method
                                * @param param AvailableVtags
                                */
-                               public void setAvailableVtags(edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList param){
+                               public void setAvailableVtags(java.lang.String param){
                             
                                        if (param != null){
                                           //update the setting tracker
@@ -171,12 +171,40 @@
                                    localHops.serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","hops"),
                                        factory,xmlWriter);
                                  if (localAvailableVtagsTracker){
-                                    if (localAvailableVtags==null){
-                                         throw new RuntimeException("availableVtags cannot be null!!");
+                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"availableVtags", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"availableVtags");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("availableVtags");
                                     }
-                                   localAvailableVtags.serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","availableVtags"),
-                                       factory,xmlWriter);
-                                }
+                                
+
+                                          if (localAvailableVtags==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("availableVtags cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localAvailableVtags);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             }
                    
                xmlWriter.writeEndElement();
             
@@ -311,15 +339,15 @@
                                     }
                                     elementList.add(localHops);
                                  if (localAvailableVtagsTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                                                                       "availableVtags"));
                             
-                            
-                                    if (localAvailableVtags==null){
-                                         throw new RuntimeException("availableVtags cannot be null!!");
+                                        if (localAvailableVtags != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAvailableVtags));
+                                        } else {
+                                           throw new RuntimeException("availableVtags cannot be null!!");
+                                        }
                                     }
-                                    elementList.add(localAvailableVtags);
-                                }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -413,8 +441,11 @@
                                 
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","availableVtags").equals(reader.getName())){
                                 
-                                        object.setAvailableVtags(edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList.Factory.parse(reader));
-                                      
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setAvailableVtags(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
                                         reader.next();
                                     
                               }  // End of if for expected property start element

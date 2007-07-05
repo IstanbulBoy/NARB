@@ -12,6 +12,7 @@ import edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
+import edu.internet2.hopi.dragon.terce.ws.types.rce.Path;
 import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
 import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 
@@ -54,7 +55,8 @@ public class FindPathClient {
 			fp.setFindPath(request);
 			FindPathResponse response;
 			response = terce.findPath(fp);
-			EndpointContent[] hops = response.getFindPathResponse().getPath().getHops().getHop();
+			Path path = response.getFindPathResponse().getPath();
+			EndpointContent[] hops = path.getHops().getHop();
 			
 			/* Output path in response */
 			System.out.println("Path: ");
@@ -71,7 +73,7 @@ public class FindPathClient {
 				}
 				System.out.println();
 			}
-				
+			System.out.println("Available VLAN tags: " + path.getAvailableVtags());
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (RCEFaultMessageException e) {

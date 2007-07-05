@@ -67,7 +67,8 @@ public class StaticRCE extends RCE implements RCEInterface{
 				String nodeName = child.getNodeName();
 				if(nodeName != null && nodeName.equalsIgnoreCase("staticPathDatabase")){
 					FindPathResponseContent responseContent = this.parseStaticPathDatabase(child, 
-							requestContent.getSrcEndpoint(), requestContent.getDestEndpoint());
+							requestContent.getSrcEndpoint(), requestContent.getDestEndpoint(),
+							request.getFindPath().getAllvtags());
 					response.setFindPathResponse(responseContent);
 				}
 			}
@@ -92,10 +93,11 @@ public class StaticRCE extends RCE implements RCEInterface{
 	 * 
 	 * @param elem the staticPathDatabase element to parse
 	 * @param src the source endpoint of the request
+	 * @param returnVtags boolean value that is set to true if available vlan tags should be included in response
 	 * @param dest the destination endpoint of the request
 	 * @return the findPath  response including the path in the format needed by Axis2
 	 */
-	private FindPathResponseContent parseStaticPathDatabase(Node elem, EndpointContent src, EndpointContent dest){
+	private FindPathResponseContent parseStaticPathDatabase(Node elem, EndpointContent src, EndpointContent dest, boolean returnVtags){
 		FindPathResponseContent responseContent = null;
 		NodeList children = elem.getChildNodes();
 		
@@ -107,7 +109,7 @@ public class StaticRCE extends RCE implements RCEInterface{
 			if(nodeName == null){
 				continue;
 			}else if(nodeName.equalsIgnoreCase("staticPathEntry")){
-				responseContent = this.lookupPath(child, src, dest);
+				responseContent = this.lookupPath(child, src, dest, returnVtags);
 			}
 		}
 		return responseContent;
@@ -122,12 +124,13 @@ public class StaticRCE extends RCE implements RCEInterface{
 	 * @param dest the destination endpoint of the request
 	 * @return the findPath  response including the path in the format needed by Axis2
 	 */
-	private FindPathResponseContent lookupPath(Node elem, EndpointContent requestSrc, EndpointContent requestDest){
+	private FindPathResponseContent lookupPath(Node elem, EndpointContent requestSrc, EndpointContent requestDest, boolean returnVtags){
 		FindPathResponseContent responseContent = null;
 		NodeList children = elem.getChildNodes();
 		EndpointContent entrySrc = null;
 		EndpointContent entryDest = null;
 		Path entryRoute = null;
+		String entryVtags = null;
 		
 		/* Parse elements */
 		for(int i = 0; i < children.getLength(); i++){
@@ -142,13 +145,23 @@ public class StaticRCE extends RCE implements RCEInterface{
 				entryDest = this.parseEndpoint(child);
 			}else if(nodeName.equalsIgnoreCase("path")){
 				entryRoute = this.parsePath(child);
+			}else if(nodeName.equalsIgnoreCase("availableVtags")){
+				entryVtags = child.getTextContent();
 			}
 		}
 		
 		/* check source and destination */
 		if(this.endpointsAreEqual(requestSrc, entrySrc) && 
 				this.endpointsAreEqual(requestDest, entryDest)){
+			/* Initialize response */
 			responseContent = new FindPathResponseContent();
+			
+			/* Check if vlan range should be returned */
+			if(returnVtags){
+				entryRoute.setAvailableVtags(entryVtags);
+			}
+			
+			/* Set path in response */
 			responseContent.setPath(entryRoute);
 		}
 		

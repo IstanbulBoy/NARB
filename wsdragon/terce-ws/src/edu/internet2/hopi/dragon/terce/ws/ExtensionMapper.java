@@ -29,16 +29,6 @@
 
               
                   if (
-                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE".equals(namespaceURI) &&
-                  "vtagList".equals(typeName)){
-                   
-                            return  edu.internet2.hopi.dragon.terce.ws.types.rce.VtagList.Factory.parse(reader);
-                        
-
-                  }
-
-              
-                  if (
                   "http://ogf.org/schema/network/topology/ctrlPlane/20070626/".equals(namespaceURI) &&
                   "CtrlPlaneDomainContent".equals(typeName)){
                    
@@ -193,6 +183,16 @@
                   "exclude".equals(typeName)){
                    
                             return  edu.internet2.hopi.dragon.terce.ws.types.rce.Exclude.Factory.parse(reader);
+                        
+
+                  }
+
+              
+                  if (
+                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE".equals(namespaceURI) &&
+                  "endpointContent".equals(typeName)){
+                   
+                            return  edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader);
                         
 
                   }
