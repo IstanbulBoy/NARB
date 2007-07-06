@@ -40,6 +40,9 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyRespon
  * be used for testing and allows a domain to share
  * topology even when they cannot receive it from others.
  * 
+ * Two databases can be selected from: interdomain and intradomain. If
+ * neither is specified in a selectNetworkTopology request interdomain is used.
+ * 
  * @author Andrew Lake(alake@internet2.edu)
  * *
  */
@@ -68,19 +71,32 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	/**
 	 * Used by the selectNetworkTopology web service to obtain topology information.
 	 * This implementation reads and XML file from disk and returns the data as an 
-	 * object useable by Axis2.
+	 * object useable by Axis2. Data can be selected from two database: interdomain
+	 * and intradomain. If no database is specified, interdomain is used.
 	 * 
 	 * @param selectRequest an Axis2 selectNetworkTopology web service request
-	 * @param an Axis2 response to a selectNetworkTopology request
+	 * @return an Axis2 response to a selectNetworkTopology request
 	 */
 	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException {
 		PropertyReader props = null;
 		SelectNetworkTopologyResponse response = new SelectNetworkTopologyResponse();
 		SelectNetworkTopologyResponseContent responseContent = new SelectNetworkTopologyResponseContent();
+		String database = selectRequest.getSelectNetworkTopology().getDatabase();
 		
 		try {
 			props = TERCEHandler.createPropertyReader();
-			File fin = new File(props.getProperty("tedb.static.file"));
+			File fin = null;
+			
+			/* Load database file */
+			if(database == null || database.equalsIgnoreCase("interdomain")){
+				fin = new File(props.getProperty("tedb.static.db.interdomain"));
+			}else if(database.equalsIgnoreCase("intradomain")){
+				fin = new File(props.getProperty("tedb.static.db.intradomain"));
+			}else{
+				throw this.generateTEDBException("Specified database not found");
+			}
+			
+			/* Parse file */
 			DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder docBuilder = null;
 			Document topologyXMLDoc = null;
@@ -316,7 +332,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	/**
 	 * Utility function for creating an address object.
 	 * 
-	 * @param the element with data that has to be mapped to an address type
+	 * @param elem the element with data that has to be mapped to an address type
 	 * @return the data in control plane address object
 	 */
 	private CtrlPlaneAddressContent parseAddress(Node elem){

@@ -27,17 +27,23 @@ public class SelectTopologyClient {
 			TERCEStub terce = null;
 			SelectNetworkTopology selectTopology = new SelectNetworkTopology();
 			SelectNetworkTopologyContent request = new SelectNetworkTopologyContent();
+			String database = null;
 			
 			/* Get arguments */
-			if(args.length == 1){
+			if(args.length == 1 || args.length == 2){
 				terce = new TERCEStub(args[0]);
+				if(args.length == 2)
+					database = args[1];
 			}else{
-				System.out.println("Must provide TERCE URL as argument");
+				System.out.println("Must provide TERCE URL as argument (and optionaly the database)");
 				System.exit(0);
 			}
 			
 			/* Format Request */
 			request.setFrom(SelectTypes.all);
+			if(database != null){
+				request.setDatabase(database);
+			}
 			
 			/* Send request and get response*/
 			selectTopology.setSelectNetworkTopology(request);
