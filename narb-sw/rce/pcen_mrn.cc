@@ -816,64 +816,8 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         }
     }
 
-/* @@@@ The old logic only tries to find a home VLSR path with a single link
 
-    // inserting subnet vlsr_route subobjects ...
-    PCENLink* vlsr_link = NULL;
-    if (ero_transit.size() >= 2)
-    {
-        int i;
-        //looking for routerId using the ero_transit.front() and ero_transit.back();
-        u_int32_t addr_lcl = 0, addr_rmt = 0;
-        for (i = 0; i < links.size(); i++)
-        {
-            if (links[i]->link->lclIfAddr == ero_transit.front().addr.s_addr)
-                addr_lcl = links[i]->lcl_end->router->id;
-
-            // $$$$ to handle more than one hop (front--back) in future....
-
-            if (links[i]->link->rmtIfAddr == ero_transit.back().addr.s_addr)
-                addr_rmt = links[i]->rmt_end->router->id;
-        }
-
-        //looking for home VLSR using the routerId.
-        if (addr_lcl == 0 || addr_rmt == 0)
-            return;
-        u_int32_t vlsr_lcl = SystemConfig::FindHomeVlsrByRouterId(addr_lcl);
-        if (vlsr_lcl == 0)
-            return;
-        u_int32_t vlsr_rmt = SystemConfig::FindHomeVlsrByRouterId(addr_rmt);
-        if (vlsr_rmt == 0)
-            return;
-
-        // looking for the link between two home VLSRs.
-        for (i = 0; i < links.size(); i++)
-        {
-            if (links[i]->link->advRtId == vlsr_lcl && links[i]->link->id == vlsr_rmt)
-            {
-                vlsr_link = links[i];
-                break;
-            }
-        }
-
-    }
-    if (vlsr_link == NULL)
-        return;
-    ero_subobj subobj1, subobj2;
-    memset(&subobj1, 0, sizeof(ero_subobj));
-    subobj1.hop_type = ERO_TYPE_STRICT_HOP;
-    subobj1.prefix_len = 32;
-    subobj1.addr.s_addr = vlsr_link->link->lclIfAddr;
-    ero_track.insert(uni_dest, subobj1);
-
-    memset(&subobj2, 0, sizeof(ero_subobj));
-    subobj2.hop_type = ERO_TYPE_STRICT_HOP;
-    subobj2.prefix_len = 32;
-    subobj2.addr.s_addr = vlsr_link->link->rmtIfAddr;
-    ero_track.insert(uni_dest, subobj2);    
-
-*/ /* The below is the new logic that handles arbitrary number of transit vlsrs*/
-
+    // handling arbitrary number of transit home vlsrs baed on the size of ero_transit
     while (ero_transit.size() >= 2)
     {
         int i;
