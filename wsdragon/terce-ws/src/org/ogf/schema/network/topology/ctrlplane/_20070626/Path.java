@@ -1,6 +1,6 @@
 
             /**
-            * LocalPortId.java
+            * Path.java
             *
             * This file was auto-generated from WSDL
             * by the Apache Axis2 version: #axisVersion# #today#
@@ -8,45 +8,45 @@
 
             package org.ogf.schema.network.topology.ctrlplane._20070626;
             /**
-            *  LocalPortId bean class
+            *  Path bean class
             */
         
 
-        public  class LocalPortId
+        public  class Path
         implements org.apache.axis2.databinding.ADBBean{
         
                 public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName(
                 "http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                "localPortId",
+                "path",
                 "ns1");
 
             
 
                         /**
-                        * field for LocalPortId
+                        * field for Path
                         */
 
                         
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent localLocalPortId ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent localPath ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent
                            */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent getLocalPortId(){
-                               return localLocalPortId;
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent getPath(){
+                               return localPath;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param LocalPortId
+                               * @param param Path
                                */
-                               public void setLocalPortId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent param){
+                               public void setPath(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent param){
                             
-                                            this.localLocalPortId=param;
+                                            this.localPath=param;
                                     
 
                                }
@@ -84,7 +84,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,MY_QNAME){
 
                  public void serialize(javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       LocalPortId.this.serialize(MY_QNAME,factory,xmlWriter);
+                       Path.this.serialize(MY_QNAME,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -101,10 +101,10 @@
                 
                 //We can safely assume an element has only one type associated with it
                 
-                                 if (localLocalPortId==null){
+                                 if (localPath==null){
                                    throw new RuntimeException("Property cannot be null!");
                                  }
-                                 localLocalPortId.serialize(MY_QNAME,factory,xmlWriter);
+                                 localPath.serialize(MY_QNAME,factory,xmlWriter);
                             
 
         }
@@ -225,7 +225,7 @@
         
                 
                 //We can safely assume an element has only one type associated with it
-                return localLocalPortId.getPullParser(MY_QNAME);
+                return localPath.getPullParser(MY_QNAME);
 
         }
 
@@ -246,8 +246,8 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static LocalPortId parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            LocalPortId object = new LocalPortId();
+        public static Path parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            Path object = new Path();
 
             int event;
             java.lang.String nillableValue = null;
@@ -270,9 +270,9 @@
                 while(!reader.isEndElement()) {
                     if (reader.isStartElement() ){
                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","localPortId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","path").equals(reader.getName())){
                                 
-                                        object.setLocalPortId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent.Factory.parse(reader));
+                                        object.setPath(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent.Factory.parse(reader));
                                     
                               }  // End of if for expected property start element
                                 

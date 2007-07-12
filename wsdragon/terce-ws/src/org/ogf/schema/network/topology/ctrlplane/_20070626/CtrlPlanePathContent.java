@@ -1,51 +1,134 @@
 
             /**
-            * EndpointContent.java
+            * CtrlPlanePathContent.java
             *
             * This file was auto-generated from WSDL
             * by the Apache Axis2 version: #axisVersion# #today#
             */
 
-            package edu.internet2.hopi.dragon.terce.ws.types.rce;
+            package org.ogf.schema.network.topology.ctrlplane._20070626;
             /**
-            *  EndpointContent bean class
+            *  CtrlPlanePathContent bean class
             */
         
 
-        public  class EndpointContent
+        public  class CtrlPlanePathContent
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
-                name = endpointContent
-                Namespace URI = http://hopi.internet2.edu/DRAGON/TERCE/RCE
-                Namespace Prefix = ns2
+                name = CtrlPlanePathContent
+                Namespace URI = http://ogf.org/schema/network/topology/ctrlPlane/20070626/
+                Namespace Prefix = ns1
                 */
             
 
                         /**
-                        * field for Domain
+                        * field for Hop
+                        * This was an Array!
                         */
 
                         
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent localDomain ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[] localHop ;
+                        
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localHopTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[]
+                           */
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[] getHop(){
+                               return localHop;
+                           }
+
+                           
+                        
+
+
+                               
+                              /**
+                               * validate the array for Hop
+                               */
+                              protected void validateHop(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[] param){
+                             
+                              }
+
+
+                             /**
+                              * Auto generated setter method
+                              * @param param Hop
+                              */
+                              public void setHop(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[] param){
+                              
+                                   validateHop(param);
+
+                               
+                                          if (param != null){
+                                             //update the setting tracker
+                                             localHopTracker = true;
+                                          } else {
+                                             localHopTracker = false;
+                                                 
+                                          }
+                                      
+                                      this.localHop=param;
+                              }
+
+                               
+                             
+                             /**
+                             * Auto generated add method for the array for convenience
+                             * @param param org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent
+                             */
+                             public void addHop(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent param){
+                                   if (localHop == null){
+                                   localHop = new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[]{};
+                                   }
+
+                            
+                                 //update the setting tracker
+                                localHopTracker = true;
+                            
+
+                               java.util.List list =
+                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localHop);
+                               list.add(param);
+                               this.localHop =
+                             (org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[])list.toArray(
+                            new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[list.size()]);
+
+                             }
+                             
+
+                        /**
+                        * field for Id
+                        * This was an Attribute!
+                        */
+
+                        
+                            protected java.lang.String localId ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent
+                           * @return java.lang.String
                            */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent getDomain(){
-                               return localDomain;
+                           public  java.lang.String getId(){
+                               return localId;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param Domain
+                               * @param param Id
                                */
-                               public void setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent param){
+                               public void setId(java.lang.String param){
                             
-                                            this.localDomain=param;
+                                            this.localId=param;
                                     
 
                                }
@@ -83,7 +166,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
 
                  public void serialize(javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       EndpointContent.this.serialize(parentQName,factory,xmlWriter);
+                       CtrlPlanePathContent.this.serialize(parentQName,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -121,12 +204,35 @@
 
                 
                
-                                    if (localDomain==null){
-                                         throw new RuntimeException("domain cannot be null!!");
+                                            if (localId != null){
+                                        
+                                        writeAttribute("",
+                                                  "id",
+                                                  org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localId), xmlWriter);
                                     }
-                                   localDomain.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain"),
-                                       factory,xmlWriter);
+                                    
+                                      else {
+                                          throw new RuntimeException("required attribute localId is null");
+                                      }
+                                     if (localHopTracker){
+                             if (localHop!=null){
+                                    for (int i = 0;i < localHop.length;i++){
+                                        if (localHop[i] != null){
+                                         localHop[i].serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","hop"),
+                                                   factory,xmlWriter);
+                                        } else {
+                                           
+                                                // we don't have to do any thing since minOccures is zero
+                                            
+                                        }
+
+                                    }
+                             } else {
                                 
+                                       throw new RuntimeException("hop cannot be null!!");
+                                
+                            }
+                        }
                    
                xmlWriter.writeEndElement();
             
@@ -251,15 +357,32 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                
-                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "domain"));
-                            
-                            
-                                    if (localDomain==null){
-                                         throw new RuntimeException("domain cannot be null!!");
+                 if (localHopTracker){
+                             if (localHop!=null) {
+                                 for (int i = 0;i < localHop.length;i++){
+
+                                    if (localHop[i] != null){
+                                         elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                          "hop"));
+                                         elementList.add(localHop[i]);
+                                    } else {
+                                        
+                                                // nothing to do
+                                            
                                     }
-                                    elementList.add(localDomain);
+
+                                 }
+                             } else {
+                                 
+                                        throw new RuntimeException("hop cannot be null!!");
+                                    
+                             }
+
+                        }
+                            attribList.add(
+                            new javax.xml.namespace.QName("","id"));
+                            
+                                      attribList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localId));
                                 
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
@@ -285,8 +408,8 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static EndpointContent parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            EndpointContent object = new EndpointContent();
+        public static CtrlPlanePathContent parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            CtrlPlanePathContent object = new CtrlPlanePathContent();
 
             int event;
             java.lang.String nillableValue = null;
@@ -310,10 +433,10 @@
 
                     java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":")+1);
                     
-                            if (!"endpointContent".equals(type)){
+                            if (!"CtrlPlanePathContent".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (EndpointContent)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
+                                return (CtrlPlanePathContent)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         
@@ -330,25 +453,73 @@
                 
 
                  
+                    // handle attribute "id"
+                    java.lang.String tempAttribid =
+                      reader.getAttributeValue("","id");
+                   if (tempAttribid!=null){
+                         java.lang.String content = tempAttribid;
+                        
+                                                 object.setId(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(tempAttribid));
+                                            
+                    } else {
+                       
+                               throw new RuntimeException("Required attribute id is missing");
+                           
+                    }
+                    handledAttributes.add("id");
+                    
                     
                     reader.next();
                 
+                        java.util.ArrayList list1 = new java.util.ArrayList();
+                    
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domain").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","hop").equals(reader.getName())){
                                 
-                                        object.setDomain(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent.Factory.parse(reader));
-                                      
-                                        reader.next();
                                     
+                                    
+                                    // Process the array and step past its final element's end.
+                                    list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent.Factory.parse(reader));
+                                            
+                                            //loop until we find a start element that is not part of this array
+                                            boolean loopDone1 = false;
+                                            while(!loopDone1){
+                                                // We should be at the end element, but make sure
+                                                while (!reader.isEndElement())
+                                                    reader.next();
+                                                // Step out of this element
+                                                reader.next();
+                                                // Step to next element event.
+                                                while (!reader.isStartElement() && !reader.isEndElement())
+                                                    reader.next();
+                                                if (reader.isEndElement()){
+                                                    //two continuous end elements means we are exiting the xml structure
+                                                    loopDone1 = true;
+                                                } else {
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","hop").equals(reader.getName())){
+                                                        list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent.Factory.parse(reader));
+                                                        
+                                                    }else{
+                                                        loopDone1 = true;
+                                                    }
+                                                }
+                                            }
+                                            // call the converter utility  to convert and set the array
+                                            
+                                            object.setHop((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent[])
+                                                org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
+                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent.class,
+                                                    list1));
+                                                
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
+                                    else {
+                                        
+                                    }
+                                  
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             if (reader.isStartElement())

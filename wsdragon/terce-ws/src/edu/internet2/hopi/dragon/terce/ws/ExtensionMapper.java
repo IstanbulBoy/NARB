@@ -60,6 +60,16 @@
               
                   if (
                   "http://ogf.org/schema/network/topology/ctrlPlane/20070626/".equals(namespaceURI) &&
+                  "CtrlPlanePathContent".equals(typeName)){
+                   
+                            return  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent.Factory.parse(reader);
+                        
+
+                  }
+
+              
+                  if (
+                  "http://ogf.org/schema/network/topology/ctrlPlane/20070626/".equals(namespaceURI) &&
                   "CtrlPlaneDomainSignatureContent".equals(typeName)){
                    
                             return  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent.Factory.parse(reader);
@@ -69,20 +79,10 @@
 
               
                   if (
-                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE".equals(namespaceURI) &&
-                  "path".equals(typeName)){
+                  "http://ogf.org/schema/network/topology/ctrlPlane/20070626/".equals(namespaceURI) &&
+                  "CtrlPlaneHopContent".equals(typeName)){
                    
-                            return  edu.internet2.hopi.dragon.terce.ws.types.rce.Path.Factory.parse(reader);
-                        
-
-                  }
-
-              
-                  if (
-                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE".equals(namespaceURI) &&
-                  "hopList".equals(typeName)){
-                   
-                            return  edu.internet2.hopi.dragon.terce.ws.types.rce.HopList.Factory.parse(reader);
+                            return  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneHopContent.Factory.parse(reader);
                         
 
                   }
@@ -183,16 +183,6 @@
                   "exclude".equals(typeName)){
                    
                             return  edu.internet2.hopi.dragon.terce.ws.types.rce.Exclude.Factory.parse(reader);
-                        
-
-                  }
-
-              
-                  if (
-                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE".equals(namespaceURI) &&
-                  "endpointContent".equals(typeName)){
-                   
-                            return  edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader);
                         
 
                   }

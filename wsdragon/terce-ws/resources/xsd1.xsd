@@ -2,21 +2,15 @@
 <xs:element name="topology" type="CtrlPlane:CtrlPlaneTopologyContent"/>
 <xs:complexType name="CtrlPlaneTopologyContent">
 <xs:sequence>
-<xs:element minOccurs="0" ref="CtrlPlane:idcId"/>
+<xs:element name="idcId" type="xs:string"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:domain"/>
-<xs:element minOccurs="0" ref="CtrlPlane:domainSignature"/>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="domainSignature" type="CtrlPlane:CtrlPlaneDomainSignatureContent"/>
 </xs:sequence>
 <xs:attribute name="id" type="xs:string" use="required"/>
 </xs:complexType>
-<xs:element name="idcId" type="xs:string"/>
 <xs:element name="domain" type="CtrlPlane:CtrlPlaneDomainContent"/>
-<xs:element name="domainSignature" type="CtrlPlane:CtrlPlaneDomainSignatureContent"/>
-<xs:complexType name="CtrlPlaneDomainSignatureContent">
-<xs:attribute name="domainId" type="xs:string" use="required"/>
-</xs:complexType>
 <xs:complexType name="CtrlPlaneDomainContent">
 <xs:sequence>
-<xs:element minOccurs="0" name="domainId" type="xs:string"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:node"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:port"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:link"/>
@@ -26,46 +20,60 @@
 <xs:element name="node" type="CtrlPlane:CtrlPlaneNodeContent"/>
 <xs:complexType name="CtrlPlaneNodeContent">
 <xs:sequence>
-<xs:element minOccurs="0" ref="CtrlPlane:nodeid"/>
-<xs:element minOccurs="0" ref="CtrlPlane:nodeAddress"/>
+<xs:element minOccurs="0" name="address" type="CtrlPlane:CtrlPlaneAddressContent"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:port"/>
 </xs:sequence>
 <xs:attribute name="id" type="xs:string" use="required"/>
 </xs:complexType>
-<xs:element name="nodeid" type="CtrlPlane:CtrlPlaneAddressContent"/>
-<xs:element name="nodeAddress" type="CtrlPlane:CtrlPlaneAddressContent"/>
 <xs:element name="port" type="CtrlPlane:CtrlPlanePortContent"/>
 <xs:complexType name="CtrlPlanePortContent">
 <xs:sequence>
-<xs:element minOccurs="0" ref="CtrlPlane:portid"/>
-<xs:element minOccurs="0" ref="CtrlPlane:capacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:maximumReservableCapacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:minimumReservableCapacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:granularity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:unreservedCapacity"/>
+<xs:element minOccurs="0" name="capacity" type="xs:string"/>
+<xs:element minOccurs="0" name="maximumReservableCapacity" type="xs:string"/>
+<xs:element minOccurs="0" name="minimumReservableCapacity" type="xs:string"/>
+<xs:element minOccurs="0" name="granularity" type="xs:string"/>
+<xs:element minOccurs="0" name="unreservedCapacity" type="xs:string"/>
 <xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:link"/>
 </xs:sequence>
 <xs:attribute name="id" type="xs:string" use="required"/>
 </xs:complexType>
-<xs:element name="portid" type="CtrlPlane:CtrlPlaneAddressContent"/>
 <xs:element name="link" type="CtrlPlane:CtrlPlaneLinkContent"/>
 <xs:complexType name="CtrlPlaneLinkContent">
 <xs:sequence>
-<xs:element minOccurs="0" ref="CtrlPlane:localPortId"/>
-<xs:element minOccurs="0" ref="CtrlPlane:remotePortId"/>
-<xs:element minOccurs="0" ref="CtrlPlane:remoteNodeId"/>
-<xs:element minOccurs="0" ref="CtrlPlane:remoteDomainId"/>
-<xs:element minOccurs="0" ref="CtrlPlane:trafficEngineeringMetric"/>
-<xs:element minOccurs="0" ref="CtrlPlane:linkProtectionTypes"/>
-<xs:element minOccurs="0" ref="CtrlPlane:capacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:maximumReservableCapacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:minimumReservableCapacity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:granularity"/>
-<xs:element minOccurs="0" ref="CtrlPlane:unreservedCapacity"/>
-<xs:element maxOccurs="unbounded" minOccurs="0" ref="CtrlPlane:administrativeGroups"/>
-<xs:element minOccurs="0" ref="CtrlPlane:SwitchingCapabilityDescriptors"/>
+<xs:element minOccurs="0" name="remoteLinkId" type="CtrlPlane:CtrlPlaneAddressContent"/>
+<xs:element minOccurs="0" name="remotePortId" type="CtrlPlane:CtrlPlaneAddressContent"/>
+<xs:element minOccurs="0" name="remoteNodeId" type="CtrlPlane:CtrlPlaneAddressContent"/>
+<xs:element minOccurs="0" name="remoteDomainId" type="CtrlPlane:CtrlPlaneAddressContent"/>
+<xs:element minOccurs="0" name="trafficEngineeringMetric" type="xs:string"/>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="linkProtectionTypes" type="xs:string"/>
+<xs:element minOccurs="0" name="capacity" type="xs:string"/>
+<xs:element minOccurs="0" name="maximumReservableCapacity" type="xs:string"/>
+<xs:element minOccurs="0" name="minimumReservableCapacity" type="xs:string"/>
+<xs:element minOccurs="0" name="granularity" type="xs:string"/>
+<xs:element minOccurs="0" name="unreservedCapacity" type="xs:string"/>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="administrativeGroups" type="CtrlPlane:CtrlPlaneAdministrativeGroup"/>
+<xs:element minOccurs="0" name="SwitchingCapabilityDescriptors" type="CtrlPlane:CtrlPlaneSwcapContent"/>
 </xs:sequence>
 <xs:attribute name="id" type="xs:string" use="required"/>
+</xs:complexType>
+<xs:element name="path" type="CtrlPlane:CtrlPlanePathContent"/>
+<xs:complexType name="CtrlPlanePathContent">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="hop" type="CtrlPlane:CtrlPlaneHopContent"/>
+</xs:sequence>
+<xs:attribute name="id" type="xs:string" use="required"/>
+</xs:complexType>
+<xs:complexType name="CtrlPlaneHopContent">
+<xs:sequence>
+<xs:element minOccurs="0" name="domainIdRef" type="xs:string"/>
+<xs:element minOccurs="0" name="nodeIdRef" type="xs:string"/>
+<xs:element minOccurs="0" name="portIdRef" type="xs:string"/>
+<xs:element minOccurs="0" name="linkIdRef" type="xs:string"/>
+</xs:sequence>
+<xs:attribute name="id" type="xs:string" use="required"/>
+</xs:complexType>
+<xs:complexType name="CtrlPlaneDomainSignatureContent">
+<xs:attribute name="domainId" type="xs:string" use="required"/>
 </xs:complexType>
 <xs:complexType name="CtrlPlaneAddressContent">
 <xs:simpleContent>
@@ -75,14 +83,6 @@
 </xs:extension>
 </xs:simpleContent>
 </xs:complexType>
-<xs:element name="localPortId" type="CtrlPlane:CtrlPlaneAddressContent"/>
-<xs:element name="remotePortId" type="CtrlPlane:CtrlPlaneAddressContent"/>
-<xs:element name="remoteNodeId" type="CtrlPlane:CtrlPlaneAddressContent"/>
-<xs:element name="remoteDomainId" type="CtrlPlane:CtrlPlaneAddressContent"/>
-<xs:element name="trafficEngineeringMetric" type="xs:string"/>
-<xs:element name="linkProtectionTypes" type="xs:string"/>
-<xs:element name="administrativeGroups" type="CtrlPlane:CtrlPlaneAdministrativeGroup"/>
-<xs:element name="SwitchingCapabilityDescriptors" type="CtrlPlane:CtrlPlaneSwcapContent"/>
 <xs:complexType name="CtrlPlaneSwcapContent">
 <xs:sequence>
 <xs:element name="switchingcapType" type="xs:string"/>
@@ -92,23 +92,15 @@
 </xs:complexType>
 <xs:complexType name="CtrlPlaneAdministrativeGroup">
 <xs:sequence>
-<xs:element ref="CtrlPlane:group"/>
-<xs:element ref="CtrlPlane:groupID"/>
+<xs:element name="group" type="xs:int"/>
+<xs:element minOccurs="0" name="groupID" type="xs:string"/>
 </xs:sequence>
 </xs:complexType>
-<xs:element name="group" type="xs:int"/>
-<xs:element name="groupID" type="xs:string"/>
 <xs:complexType name="CtrlPlaneSwitchingCapabilitySpecficInfo">
 <xs:sequence>
-<xs:element minOccurs="0" ref="CtrlPlane:capability"/>
-<xs:element minOccurs="0" name="interfaceMTU" type="xs:int"/>
+<xs:element minOccurs="0" name="capability" type="xs:string"/>
+<xs:element name="interfaceMTU" type="xs:int"/>
 <xs:element minOccurs="0" name="vlanRangeAvailability" type="xs:string"/>
 </xs:sequence>
 </xs:complexType>
-<xs:element name="capability" type="xs:string"/>
-<xs:element name="capacity" type="xs:string"/>
-<xs:element name="maximumReservableCapacity" type="xs:string"/>
-<xs:element name="minimumReservableCapacity" type="xs:string"/>
-<xs:element name="granularity" type="xs:string"/>
-<xs:element name="unreservedCapacity" type="xs:string"/>
 </xs:schema>

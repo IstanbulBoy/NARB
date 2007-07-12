@@ -26,14 +26,14 @@
                         */
 
                         
-                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent localSrcEndpoint ;
+                            protected java.lang.String localSrcEndpoint ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent
+                           * @return java.lang.String
                            */
-                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent getSrcEndpoint(){
+                           public  java.lang.String getSrcEndpoint(){
                                return localSrcEndpoint;
                            }
 
@@ -43,7 +43,7 @@
                                * Auto generated setter method
                                * @param param SrcEndpoint
                                */
-                               public void setSrcEndpoint(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent param){
+                               public void setSrcEndpoint(java.lang.String param){
                             
                                             this.localSrcEndpoint=param;
                                     
@@ -56,14 +56,14 @@
                         */
 
                         
-                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent localDestEndpoint ;
+                            protected java.lang.String localDestEndpoint ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent
+                           * @return java.lang.String
                            */
-                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent getDestEndpoint(){
+                           public  java.lang.String getDestEndpoint(){
                                return localDestEndpoint;
                            }
 
@@ -73,7 +73,7 @@
                                * Auto generated setter method
                                * @param param DestEndpoint
                                */
-                               public void setDestEndpoint(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent param){
+                               public void setDestEndpoint(java.lang.String param){
                             
                                             this.localDestEndpoint=param;
                                     
@@ -720,18 +720,74 @@
                                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAllwaves), xmlWriter);
                                     }
                                     
-                                    if (localSrcEndpoint==null){
-                                         throw new RuntimeException("srcEndpoint cannot be null!!");
+                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"srcEndpoint", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"srcEndpoint");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("srcEndpoint");
                                     }
-                                   localSrcEndpoint.serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","srcEndpoint"),
-                                       factory,xmlWriter);
                                 
-                                    if (localDestEndpoint==null){
-                                         throw new RuntimeException("destEndpoint cannot be null!!");
+
+                                          if (localSrcEndpoint==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("srcEndpoint cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localSrcEndpoint);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             
+                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"destEndpoint", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"destEndpoint");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("destEndpoint");
                                     }
-                                   localDestEndpoint.serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","destEndpoint"),
-                                       factory,xmlWriter);
-                                 if (localBandwidthTracker){
+                                
+
+                                          if (localDestEndpoint==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("destEndpoint cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localDestEndpoint);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                              if (localBandwidthTracker){
                                     namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -1040,24 +1096,24 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                            elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                                                                       "srcEndpoint"));
                             
-                            
-                                    if (localSrcEndpoint==null){
-                                         throw new RuntimeException("srcEndpoint cannot be null!!");
-                                    }
-                                    elementList.add(localSrcEndpoint);
-                                
-                            elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                                        if (localSrcEndpoint != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localSrcEndpoint));
+                                        } else {
+                                           throw new RuntimeException("srcEndpoint cannot be null!!");
+                                        }
+                                    
+                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                                                                       "destEndpoint"));
                             
-                            
-                                    if (localDestEndpoint==null){
-                                         throw new RuntimeException("destEndpoint cannot be null!!");
-                                    }
-                                    elementList.add(localDestEndpoint);
-                                 if (localBandwidthTracker){
+                                        if (localDestEndpoint != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDestEndpoint));
+                                        } else {
+                                           throw new RuntimeException("destEndpoint cannot be null!!");
+                                        }
+                                     if (localBandwidthTracker){
                              elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                                                                       "bandwidth"));
                             
@@ -1333,8 +1389,11 @@
                 
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","srcEndpoint").equals(reader.getName())){
                                 
-                                        object.setSrcEndpoint(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader));
-                                      
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setSrcEndpoint(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
                                         reader.next();
                                     
                               }  // End of if for expected property start element
@@ -1343,8 +1402,11 @@
                                     
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","destEndpoint").equals(reader.getName())){
                                 
-                                        object.setDestEndpoint(edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent.Factory.parse(reader));
-                                      
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setDestEndpoint(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
                                         reader.next();
                                     
                               }  // End of if for expected property start element

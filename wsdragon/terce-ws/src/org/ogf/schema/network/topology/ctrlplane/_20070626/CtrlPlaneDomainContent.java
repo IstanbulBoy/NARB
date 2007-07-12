@@ -22,50 +22,6 @@
             
 
                         /**
-                        * field for DomainId
-                        */
-
-                        
-                            protected java.lang.String localDomainId ;
-                        
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localDomainIdTracker = false ;
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getDomainId(){
-                               return localDomainId;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param DomainId
-                               */
-                               public void setDomainId(java.lang.String param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localDomainIdTracker = true;
-                                       } else {
-                                          localDomainIdTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localDomainId=param;
-                                    
-
-                               }
-                            
-
-                        /**
                         * field for Node
                         * This was an Array!
                         */
@@ -422,41 +378,7 @@
                                       else {
                                           throw new RuntimeException("required attribute localId is null");
                                       }
-                                     if (localDomainIdTracker){
-                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"domainId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"domainId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("domainId");
-                                    }
-                                
-
-                                          if (localDomainId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("domainId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localDomainId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             } if (localNodeTracker){
+                                     if (localNodeTracker){
                              if (localNode!=null){
                                     for (int i = 0;i < localNode.length;i++){
                                         if (localNode[i] != null){
@@ -635,16 +557,7 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localDomainIdTracker){
-                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "domainId"));
-                            
-                                        if (localDomainId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDomainId));
-                                        } else {
-                                           throw new RuntimeException("domainId cannot be null!!");
-                                        }
-                                    } if (localNodeTracker){
+                 if (localNodeTracker){
                              if (localNode!=null) {
                                  for (int i = 0;i < localNode.length;i++){
 
@@ -801,24 +714,52 @@
                     
                     reader.next();
                 
+                        java.util.ArrayList list1 = new java.util.ArrayList();
+                    
                         java.util.ArrayList list2 = new java.util.ArrayList();
                     
                         java.util.ArrayList list3 = new java.util.ArrayList();
                     
-                        java.util.ArrayList list4 = new java.util.ArrayList();
-                    
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","node").equals(reader.getName())){
                                 
-                                    java.lang.String content = reader.getElementText();
                                     
-                                              object.setDomainId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
                                     
+                                    // Process the array and step past its final element's end.
+                                    list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.Factory.parse(reader));
+                                            
+                                            //loop until we find a start element that is not part of this array
+                                            boolean loopDone1 = false;
+                                            while(!loopDone1){
+                                                // We should be at the end element, but make sure
+                                                while (!reader.isEndElement())
+                                                    reader.next();
+                                                // Step out of this element
+                                                reader.next();
+                                                // Step to next element event.
+                                                while (!reader.isStartElement() && !reader.isEndElement())
+                                                    reader.next();
+                                                if (reader.isEndElement()){
+                                                    //two continuous end elements means we are exiting the xml structure
+                                                    loopDone1 = true;
+                                                } else {
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","node").equals(reader.getName())){
+                                                        list1.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.Factory.parse(reader));
+                                                        
+                                                    }else{
+                                                        loopDone1 = true;
+                                                    }
+                                                }
+                                            }
+                                            // call the converter utility  to convert and set the array
+                                            
+                                            object.setNode((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent[])
+                                                org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
+                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.class,
+                                                    list1));
+                                                
                               }  // End of if for expected property start element
                                 
                                     else {
@@ -828,12 +769,12 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","node").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","port").equals(reader.getName())){
                                 
                                     
                                     
                                     // Process the array and step past its final element's end.
-                                    list2.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.Factory.parse(reader));
+                                    list2.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.Factory.parse(reader));
                                             
                                             //loop until we find a start element that is not part of this array
                                             boolean loopDone2 = false;
@@ -850,8 +791,8 @@
                                                     //two continuous end elements means we are exiting the xml structure
                                                     loopDone2 = true;
                                                 } else {
-                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","node").equals(reader.getName())){
-                                                        list2.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.Factory.parse(reader));
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","port").equals(reader.getName())){
+                                                        list2.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.Factory.parse(reader));
                                                         
                                                     }else{
                                                         loopDone2 = true;
@@ -860,9 +801,9 @@
                                             }
                                             // call the converter utility  to convert and set the array
                                             
-                                            object.setNode((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent[])
+                                            object.setPort((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent[])
                                                 org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent.class,
+                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.class,
                                                     list2));
                                                 
                               }  // End of if for expected property start element
@@ -874,12 +815,12 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","port").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","link").equals(reader.getName())){
                                 
                                     
                                     
                                     // Process the array and step past its final element's end.
-                                    list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.Factory.parse(reader));
+                                    list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
                                             
                                             //loop until we find a start element that is not part of this array
                                             boolean loopDone3 = false;
@@ -896,8 +837,8 @@
                                                     //two continuous end elements means we are exiting the xml structure
                                                     loopDone3 = true;
                                                 } else {
-                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","port").equals(reader.getName())){
-                                                        list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.Factory.parse(reader));
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","link").equals(reader.getName())){
+                                                        list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
                                                         
                                                     }else{
                                                         loopDone3 = true;
@@ -906,56 +847,10 @@
                                             }
                                             // call the converter utility  to convert and set the array
                                             
-                                            object.setPort((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent[])
-                                                org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent.class,
-                                                    list3));
-                                                
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","link").equals(reader.getName())){
-                                
-                                    
-                                    
-                                    // Process the array and step past its final element's end.
-                                    list4.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
-                                            
-                                            //loop until we find a start element that is not part of this array
-                                            boolean loopDone4 = false;
-                                            while(!loopDone4){
-                                                // We should be at the end element, but make sure
-                                                while (!reader.isEndElement())
-                                                    reader.next();
-                                                // Step out of this element
-                                                reader.next();
-                                                // Step to next element event.
-                                                while (!reader.isStartElement() && !reader.isEndElement())
-                                                    reader.next();
-                                                if (reader.isEndElement()){
-                                                    //two continuous end elements means we are exiting the xml structure
-                                                    loopDone4 = true;
-                                                } else {
-                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","link").equals(reader.getName())){
-                                                        list4.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
-                                                        
-                                                    }else{
-                                                        loopDone4 = true;
-                                                    }
-                                                }
-                                            }
-                                            // call the converter utility  to convert and set the array
-                                            
                                             object.setLink((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent[])
                                                 org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
                                                     org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.class,
-                                                    list4));
+                                                    list3));
                                                 
                               }  // End of if for expected property start element
                                 

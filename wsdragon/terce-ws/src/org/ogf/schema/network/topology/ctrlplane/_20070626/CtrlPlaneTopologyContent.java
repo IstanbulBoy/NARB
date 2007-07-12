@@ -28,12 +28,6 @@
                         
                             protected java.lang.String localIdcId ;
                         
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localIdcIdTracker = false ;
-                           
 
                            /**
                            * Auto generated getter method
@@ -51,14 +45,6 @@
                                */
                                public void setIdcId(java.lang.String param){
                             
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localIdcIdTracker = true;
-                                       } else {
-                                          localIdcIdTracker = false;
-                                              
-                                       }
-                                   
                                             this.localIdcId=param;
                                     
 
@@ -149,10 +135,11 @@
 
                         /**
                         * field for DomainSignature
+                        * This was an Array!
                         */
 
                         
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent localDomainSignature ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[] localDomainSignature ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
@@ -163,33 +150,70 @@
 
                            /**
                            * Auto generated getter method
-                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[]
                            */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent getDomainSignature(){
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[] getDomainSignature(){
                                return localDomainSignature;
                            }
 
                            
                         
-                            /**
-                               * Auto generated setter method
-                               * @param param DomainSignature
-                               */
-                               public void setDomainSignature(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localDomainSignatureTracker = true;
-                                       } else {
-                                          localDomainSignatureTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localDomainSignature=param;
-                                    
 
-                               }
+
+                               
+                              /**
+                               * validate the array for DomainSignature
+                               */
+                              protected void validateDomainSignature(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[] param){
+                             
+                              }
+
+
+                             /**
+                              * Auto generated setter method
+                              * @param param DomainSignature
+                              */
+                              public void setDomainSignature(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[] param){
+                              
+                                   validateDomainSignature(param);
+
+                               
+                                          if (param != null){
+                                             //update the setting tracker
+                                             localDomainSignatureTracker = true;
+                                          } else {
+                                             localDomainSignatureTracker = false;
+                                                 
+                                          }
+                                      
+                                      this.localDomainSignature=param;
+                              }
+
+                               
+                             
+                             /**
+                             * Auto generated add method for the array for convenience
+                             * @param param org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent
+                             */
+                             public void addDomainSignature(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent param){
+                                   if (localDomainSignature == null){
+                                   localDomainSignature = new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[]{};
+                                   }
+
                             
+                                 //update the setting tracker
+                                localDomainSignatureTracker = true;
+                            
+
+                               java.util.List list =
+                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localDomainSignature);
+                               list.add(param);
+                               this.localDomainSignature =
+                             (org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[])list.toArray(
+                            new org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[list.size()]);
+
+                             }
+                             
 
                         /**
                         * field for Id
@@ -302,7 +326,7 @@
                                       else {
                                           throw new RuntimeException("required attribute localId is null");
                                       }
-                                     if (localIdcIdTracker){
+                                    
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -336,7 +360,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             } if (localDomainTracker){
+                              if (localDomainTracker){
                              if (localDomain!=null){
                                     for (int i = 0;i < localDomain.length;i++){
                                         if (localDomain[i] != null){
@@ -355,12 +379,24 @@
                                 
                             }
                         } if (localDomainSignatureTracker){
-                                    if (localDomainSignature==null){
-                                         throw new RuntimeException("domainSignature cannot be null!!");
+                             if (localDomainSignature!=null){
+                                    for (int i = 0;i < localDomainSignature.length;i++){
+                                        if (localDomainSignature[i] != null){
+                                         localDomainSignature[i].serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainSignature"),
+                                                   factory,xmlWriter);
+                                        } else {
+                                           
+                                                // we don't have to do any thing since minOccures is zero
+                                            
+                                        }
+
                                     }
-                                   localDomainSignature.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainSignature"),
-                                       factory,xmlWriter);
-                                }
+                             } else {
+                                
+                                       throw new RuntimeException("domainSignature cannot be null!!");
+                                
+                            }
+                        }
                    
                xmlWriter.writeEndElement();
             
@@ -485,7 +521,7 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localIdcIdTracker){
+                
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "idcId"));
                             
@@ -494,7 +530,7 @@
                                         } else {
                                            throw new RuntimeException("idcId cannot be null!!");
                                         }
-                                    } if (localDomainTracker){
+                                     if (localDomainTracker){
                              if (localDomain!=null) {
                                  for (int i = 0;i < localDomain.length;i++){
 
@@ -516,15 +552,27 @@
                              }
 
                         } if (localDomainSignatureTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "domainSignature"));
-                            
-                            
-                                    if (localDomainSignature==null){
-                                         throw new RuntimeException("domainSignature cannot be null!!");
+                             if (localDomainSignature!=null) {
+                                 for (int i = 0;i < localDomainSignature.length;i++){
+
+                                    if (localDomainSignature[i] != null){
+                                         elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                          "domainSignature"));
+                                         elementList.add(localDomainSignature[i]);
+                                    } else {
+                                        
+                                                // nothing to do
+                                            
                                     }
-                                    elementList.add(localDomainSignature);
-                                }
+
+                                 }
+                             } else {
+                                 
+                                        throw new RuntimeException("domainSignature cannot be null!!");
+                                    
+                             }
+
+                        }
                             attribList.add(
                             new javax.xml.namespace.QName("","id"));
                             
@@ -620,6 +668,8 @@
                 
                         java.util.ArrayList list2 = new java.util.ArrayList();
                     
+                        java.util.ArrayList list3 = new java.util.ArrayList();
+                    
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -634,10 +684,11 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                    else {
-                                        
-                                    }
-                                
+                                else{
+                                    // A start element we are not expecting indicates an invalid parameter was passed
+                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
+                                }
+                            
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -689,10 +740,41 @@
                                 
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainSignature").equals(reader.getName())){
                                 
-                                        object.setDomainSignature(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent.Factory.parse(reader));
-                                      
-                                        reader.next();
                                     
+                                    
+                                    // Process the array and step past its final element's end.
+                                    list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent.Factory.parse(reader));
+                                            
+                                            //loop until we find a start element that is not part of this array
+                                            boolean loopDone3 = false;
+                                            while(!loopDone3){
+                                                // We should be at the end element, but make sure
+                                                while (!reader.isEndElement())
+                                                    reader.next();
+                                                // Step out of this element
+                                                reader.next();
+                                                // Step to next element event.
+                                                while (!reader.isStartElement() && !reader.isEndElement())
+                                                    reader.next();
+                                                if (reader.isEndElement()){
+                                                    //two continuous end elements means we are exiting the xml structure
+                                                    loopDone3 = true;
+                                                } else {
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainSignature").equals(reader.getName())){
+                                                        list3.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent.Factory.parse(reader));
+                                                        
+                                                    }else{
+                                                        loopDone3 = true;
+                                                    }
+                                                }
+                                            }
+                                            // call the converter utility  to convert and set the array
+                                            
+                                            object.setDomainSignature((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent[])
+                                                org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
+                                                    org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainSignatureContent.class,
+                                                    list3));
+                                                
                               }  // End of if for expected property start element
                                 
                                     else {

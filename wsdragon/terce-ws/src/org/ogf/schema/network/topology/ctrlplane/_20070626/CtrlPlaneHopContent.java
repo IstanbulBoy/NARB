@@ -1,6 +1,6 @@
 
             /**
-            * CtrlPlaneSwitchingCapabilitySpecficInfo.java
+            * CtrlPlaneHopContent.java
             *
             * This file was auto-generated from WSDL
             * by the Apache Axis2 version: #axisVersion# #today#
@@ -8,132 +8,221 @@
 
             package org.ogf.schema.network.topology.ctrlplane._20070626;
             /**
-            *  CtrlPlaneSwitchingCapabilitySpecficInfo bean class
+            *  CtrlPlaneHopContent bean class
             */
         
 
-        public  class CtrlPlaneSwitchingCapabilitySpecficInfo
+        public  class CtrlPlaneHopContent
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
-                name = CtrlPlaneSwitchingCapabilitySpecficInfo
+                name = CtrlPlaneHopContent
                 Namespace URI = http://ogf.org/schema/network/topology/ctrlPlane/20070626/
                 Namespace Prefix = ns1
                 */
             
 
                         /**
-                        * field for Capability
+                        * field for DomainIdRef
                         */
 
                         
-                            protected java.lang.String localCapability ;
+                            protected java.lang.String localDomainIdRef ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
                            *   in the serialized XML
                            */
-                           protected boolean localCapabilityTracker = false ;
+                           protected boolean localDomainIdRefTracker = false ;
                            
 
                            /**
                            * Auto generated getter method
                            * @return java.lang.String
                            */
-                           public  java.lang.String getCapability(){
-                               return localCapability;
+                           public  java.lang.String getDomainIdRef(){
+                               return localDomainIdRef;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param Capability
+                               * @param param DomainIdRef
                                */
-                               public void setCapability(java.lang.String param){
+                               public void setDomainIdRef(java.lang.String param){
                             
                                        if (param != null){
                                           //update the setting tracker
-                                          localCapabilityTracker = true;
+                                          localDomainIdRefTracker = true;
                                        } else {
-                                          localCapabilityTracker = false;
+                                          localDomainIdRefTracker = false;
                                               
                                        }
                                    
-                                            this.localCapability=param;
+                                            this.localDomainIdRef=param;
                                     
 
                                }
                             
 
                         /**
-                        * field for InterfaceMTU
+                        * field for NodeIdRef
                         */
 
                         
-                            protected int localInterfaceMTU ;
-                        
-
-                           /**
-                           * Auto generated getter method
-                           * @return int
-                           */
-                           public  int getInterfaceMTU(){
-                               return localInterfaceMTU;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param InterfaceMTU
-                               */
-                               public void setInterfaceMTU(int param){
-                            
-                                            this.localInterfaceMTU=param;
-                                    
-
-                               }
-                            
-
-                        /**
-                        * field for VlanRangeAvailability
-                        */
-
-                        
-                            protected java.lang.String localVlanRangeAvailability ;
+                            protected java.lang.String localNodeIdRef ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
                            *   in the serialized XML
                            */
-                           protected boolean localVlanRangeAvailabilityTracker = false ;
+                           protected boolean localNodeIdRefTracker = false ;
                            
 
                            /**
                            * Auto generated getter method
                            * @return java.lang.String
                            */
-                           public  java.lang.String getVlanRangeAvailability(){
-                               return localVlanRangeAvailability;
+                           public  java.lang.String getNodeIdRef(){
+                               return localNodeIdRef;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param VlanRangeAvailability
+                               * @param param NodeIdRef
                                */
-                               public void setVlanRangeAvailability(java.lang.String param){
+                               public void setNodeIdRef(java.lang.String param){
                             
                                        if (param != null){
                                           //update the setting tracker
-                                          localVlanRangeAvailabilityTracker = true;
+                                          localNodeIdRefTracker = true;
                                        } else {
-                                          localVlanRangeAvailabilityTracker = false;
+                                          localNodeIdRefTracker = false;
                                               
                                        }
                                    
-                                            this.localVlanRangeAvailability=param;
+                                            this.localNodeIdRef=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for PortIdRef
+                        */
+
+                        
+                            protected java.lang.String localPortIdRef ;
+                        
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localPortIdRefTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getPortIdRef(){
+                               return localPortIdRef;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param PortIdRef
+                               */
+                               public void setPortIdRef(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localPortIdRefTracker = true;
+                                       } else {
+                                          localPortIdRefTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localPortIdRef=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for LinkIdRef
+                        */
+
+                        
+                            protected java.lang.String localLinkIdRef ;
+                        
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localLinkIdRefTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getLinkIdRef(){
+                               return localLinkIdRef;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param LinkIdRef
+                               */
+                               public void setLinkIdRef(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localLinkIdRefTracker = true;
+                                       } else {
+                                          localLinkIdRefTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localLinkIdRef=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for Id
+                        * This was an Attribute!
+                        */
+
+                        
+                            protected java.lang.String localId ;
+                        
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getId(){
+                               return localId;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param Id
+                               */
+                               public void setId(java.lang.String param){
+                            
+                                            this.localId=param;
                                     
 
                                }
@@ -171,7 +260,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
 
                  public void serialize(javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       CtrlPlaneSwitchingCapabilitySpecficInfo.this.serialize(parentQName,factory,xmlWriter);
+                       CtrlPlaneHopContent.this.serialize(parentQName,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -208,7 +297,18 @@
                 }
 
                 
-                if (localCapabilityTracker){
+               
+                                            if (localId != null){
+                                        
+                                        writeAttribute("",
+                                                  "id",
+                                                  org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localId), xmlWriter);
+                                    }
+                                    
+                                      else {
+                                          throw new RuntimeException("required attribute localId is null");
+                                      }
+                                     if (localDomainIdRefTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -216,33 +316,33 @@
                                         if (prefix == null) {
                                             prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
 
-                                            xmlWriter.writeStartElement(prefix,"capability", namespace);
+                                            xmlWriter.writeStartElement(prefix,"domainIdRef", namespace);
                                             xmlWriter.writeNamespace(prefix, namespace);
                                             xmlWriter.setPrefix(prefix, namespace);
 
                                         } else {
-                                            xmlWriter.writeStartElement(namespace,"capability");
+                                            xmlWriter.writeStartElement(namespace,"domainIdRef");
                                         }
 
                                     } else {
-                                        xmlWriter.writeStartElement("capability");
+                                        xmlWriter.writeStartElement("domainIdRef");
                                     }
                                 
 
-                                          if (localCapability==null){
+                                          if (localDomainIdRef==null){
                                               // write the nil attribute
                                               
-                                                     throw new RuntimeException("capability cannot be null!!");
+                                                     throw new RuntimeException("domainIdRef cannot be null!!");
                                                   
                                           }else{
 
                                         
-                                                   xmlWriter.writeCharacters(localCapability);
+                                                   xmlWriter.writeCharacters(localDomainIdRef);
                                             
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             }
+                             } if (localNodeIdRefTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -250,57 +350,96 @@
                                         if (prefix == null) {
                                             prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
 
-                                            xmlWriter.writeStartElement(prefix,"interfaceMTU", namespace);
+                                            xmlWriter.writeStartElement(prefix,"nodeIdRef", namespace);
                                             xmlWriter.writeNamespace(prefix, namespace);
                                             xmlWriter.setPrefix(prefix, namespace);
 
                                         } else {
-                                            xmlWriter.writeStartElement(namespace,"interfaceMTU");
+                                            xmlWriter.writeStartElement(namespace,"nodeIdRef");
                                         }
 
                                     } else {
-                                        xmlWriter.writeStartElement("interfaceMTU");
-                                    }
-                                
-                                               if (localInterfaceMTU==java.lang.Integer.MIN_VALUE) {
-                                           
-                                                         throw new RuntimeException("interfaceMTU cannot be null!!");
-                                                      
-                                               } else {
-                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInterfaceMTU));
-                                               }
-                                    
-                                   xmlWriter.writeEndElement();
-                              if (localVlanRangeAvailabilityTracker){
-                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"vlanRangeAvailability", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"vlanRangeAvailability");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("vlanRangeAvailability");
+                                        xmlWriter.writeStartElement("nodeIdRef");
                                     }
                                 
 
-                                          if (localVlanRangeAvailability==null){
+                                          if (localNodeIdRef==null){
                                               // write the nil attribute
                                               
-                                                     throw new RuntimeException("vlanRangeAvailability cannot be null!!");
+                                                     throw new RuntimeException("nodeIdRef cannot be null!!");
                                                   
                                           }else{
 
                                         
-                                                   xmlWriter.writeCharacters(localVlanRangeAvailability);
+                                                   xmlWriter.writeCharacters(localNodeIdRef);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localPortIdRefTracker){
+                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"portIdRef", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"portIdRef");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("portIdRef");
+                                    }
+                                
+
+                                          if (localPortIdRef==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("portIdRef cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localPortIdRef);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localLinkIdRefTracker){
+                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"linkIdRef", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"linkIdRef");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("linkIdRef");
+                                    }
+                                
+
+                                          if (localLinkIdRef==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("linkIdRef cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localLinkIdRef);
                                             
                                           }
                                     
@@ -430,31 +569,48 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localCapabilityTracker){
+                 if (localDomainIdRefTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "capability"));
+                                                                      "domainIdRef"));
                             
-                                        if (localCapability != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localCapability));
+                                        if (localDomainIdRef != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDomainIdRef));
                                         } else {
-                                           throw new RuntimeException("capability cannot be null!!");
+                                           throw new RuntimeException("domainIdRef cannot be null!!");
+                                        }
+                                    } if (localNodeIdRefTracker){
+                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "nodeIdRef"));
+                            
+                                        if (localNodeIdRef != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNodeIdRef));
+                                        } else {
+                                           throw new RuntimeException("nodeIdRef cannot be null!!");
+                                        }
+                                    } if (localPortIdRefTracker){
+                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "portIdRef"));
+                            
+                                        if (localPortIdRef != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPortIdRef));
+                                        } else {
+                                           throw new RuntimeException("portIdRef cannot be null!!");
+                                        }
+                                    } if (localLinkIdRefTracker){
+                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                      "linkIdRef"));
+                            
+                                        if (localLinkIdRef != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localLinkIdRef));
+                                        } else {
+                                           throw new RuntimeException("linkIdRef cannot be null!!");
                                         }
                                     }
-                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "interfaceMTU"));
+                            attribList.add(
+                            new javax.xml.namespace.QName("","id"));
                             
-                                elementList.add(
-                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInterfaceMTU));
-                             if (localVlanRangeAvailabilityTracker){
-                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "vlanRangeAvailability"));
-                            
-                                        if (localVlanRangeAvailability != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localVlanRangeAvailability));
-                                        } else {
-                                           throw new RuntimeException("vlanRangeAvailability cannot be null!!");
-                                        }
-                                    }
+                                      attribList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localId));
+                                
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -479,8 +635,8 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static CtrlPlaneSwitchingCapabilitySpecficInfo parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            CtrlPlaneSwitchingCapabilitySpecficInfo object = new CtrlPlaneSwitchingCapabilitySpecficInfo();
+        public static CtrlPlaneHopContent parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            CtrlPlaneHopContent object = new CtrlPlaneHopContent();
 
             int event;
             java.lang.String nillableValue = null;
@@ -504,10 +660,10 @@
 
                     java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":")+1);
                     
-                            if (!"CtrlPlaneSwitchingCapabilitySpecficInfo".equals(type)){
+                            if (!"CtrlPlaneHopContent".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CtrlPlaneSwitchingCapabilitySpecficInfo)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
+                                return (CtrlPlaneHopContent)edu.internet2.hopi.dragon.terce.ws.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         
@@ -524,17 +680,33 @@
                 
 
                  
+                    // handle attribute "id"
+                    java.lang.String tempAttribid =
+                      reader.getAttributeValue("","id");
+                   if (tempAttribid!=null){
+                         java.lang.String content = tempAttribid;
+                        
+                                                 object.setId(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(tempAttribid));
+                                            
+                    } else {
+                       
+                               throw new RuntimeException("Required attribute id is missing");
+                           
+                    }
+                    handledAttributes.add("id");
+                    
                     
                     reader.next();
                 
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","capability").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","domainIdRef").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
-                                              object.setCapability(
+                                              object.setDomainIdRef(
                                                     org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
                                               
                                         reader.next();
@@ -548,30 +720,47 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","interfaceMTU").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","nodeIdRef").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
-                                              object.setInterfaceMTU(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToInt(content));
+                                              object.setNodeIdRef(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
                                               
                                         reader.next();
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","vlanRangeAvailability").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","portIdRef").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
-                                              object.setVlanRangeAvailability(
+                                              object.setPortIdRef(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","linkIdRef").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setLinkIdRef(
                                                     org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
                                               
                                         reader.next();

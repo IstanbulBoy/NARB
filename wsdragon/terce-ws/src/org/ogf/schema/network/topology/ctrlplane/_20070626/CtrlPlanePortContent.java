@@ -22,50 +22,6 @@
             
 
                         /**
-                        * field for Portid
-                        */
-
-                        
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent localPortid ;
-                        
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localPortidTracker = false ;
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent
-                           */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent getPortid(){
-                               return localPortid;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Portid
-                               */
-                               public void setPortid(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localPortidTracker = true;
-                                       } else {
-                                          localPortidTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localPortid=param;
-                                    
-
-                               }
-                            
-
-                        /**
                         * field for Capacity
                         */
 
@@ -478,13 +434,7 @@
                                       else {
                                           throw new RuntimeException("required attribute localId is null");
                                       }
-                                     if (localPortidTracker){
-                                    if (localPortid==null){
-                                         throw new RuntimeException("portid cannot be null!!");
-                                    }
-                                   localPortid.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","portid"),
-                                       factory,xmlWriter);
-                                } if (localCapacityTracker){
+                                     if (localCapacityTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -797,16 +747,7 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localPortidTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "portid"));
-                            
-                            
-                                    if (localPortid==null){
-                                         throw new RuntimeException("portid cannot be null!!");
-                                    }
-                                    elementList.add(localPortid);
-                                } if (localCapacityTracker){
+                 if (localCapacityTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "capacity"));
                             
@@ -966,23 +907,8 @@
                     
                     reader.next();
                 
-                        java.util.ArrayList list7 = new java.util.ArrayList();
+                        java.util.ArrayList list6 = new java.util.ArrayList();
                     
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","portid").equals(reader.getName())){
-                                
-                                        object.setPortid(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent.Factory.parse(reader));
-                                      
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -1081,11 +1007,11 @@
                                     
                                     
                                     // Process the array and step past its final element's end.
-                                    list7.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
+                                    list6.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
                                             
                                             //loop until we find a start element that is not part of this array
-                                            boolean loopDone7 = false;
-                                            while(!loopDone7){
+                                            boolean loopDone6 = false;
+                                            while(!loopDone6){
                                                 // We should be at the end element, but make sure
                                                 while (!reader.isEndElement())
                                                     reader.next();
@@ -1096,13 +1022,13 @@
                                                     reader.next();
                                                 if (reader.isEndElement()){
                                                     //two continuous end elements means we are exiting the xml structure
-                                                    loopDone7 = true;
+                                                    loopDone6 = true;
                                                 } else {
                                                     if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","link").equals(reader.getName())){
-                                                        list7.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
+                                                        list6.add(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.Factory.parse(reader));
                                                         
                                                     }else{
-                                                        loopDone7 = true;
+                                                        loopDone6 = true;
                                                     }
                                                 }
                                             }
@@ -1111,7 +1037,7 @@
                                             object.setLink((org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent[])
                                                 org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
                                                     org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent.class,
-                                                    list7));
+                                                    list6));
                                                 
                               }  // End of if for expected property start element
                                 

@@ -62,8 +62,10 @@ public class SelectTopologyClient {
 					for(CtrlPlanePortContent p : ports){
 						System.out.println("\t\tPort: " + p.getId());
 						CtrlPlaneLinkContent[] links = p.getLink();
-						for(CtrlPlaneLinkContent l : links){
-							System.out.println("\t\t\tLink:" + l.getId());
+						if(links != null){
+							for(CtrlPlaneLinkContent l : links){
+								System.out.println("\t\t\tLink:" + l.getId());
+							}
 						}
 					}
 				}
@@ -75,7 +77,7 @@ public class SelectTopologyClient {
 			e.printStackTrace();
 		} catch (TEDBFaultMessageException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getFaultMessage().getMsg());
 		}
 	}
 }

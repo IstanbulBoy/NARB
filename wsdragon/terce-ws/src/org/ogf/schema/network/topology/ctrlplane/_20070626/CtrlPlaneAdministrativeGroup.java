@@ -58,6 +58,12 @@
                         
                             protected java.lang.String localGroupID ;
                         
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localGroupIDTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -75,6 +81,14 @@
                                */
                                public void setGroupID(java.lang.String param){
                             
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localGroupIDTracker = true;
+                                       } else {
+                                          localGroupIDTracker = false;
+                                              
+                                       }
+                                   
                                             this.localGroupID=param;
                                     
 
@@ -179,7 +193,7 @@
                                                }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                              if (localGroupIDTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -213,7 +227,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             }
                    
                xmlWriter.writeEndElement();
             
@@ -344,7 +358,7 @@
                             
                                 elementList.add(
                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localGroup));
-                            
+                             if (localGroupIDTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "groupID"));
                             
@@ -353,7 +367,7 @@
                                         } else {
                                            throw new RuntimeException("groupID cannot be null!!");
                                         }
-                                    
+                                    }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -459,11 +473,10 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new java.lang.RuntimeException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
+                                    else {
+                                        
+                                    }
+                                  
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             if (reader.isStartElement())

@@ -180,8 +180,6 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			
 			if(nodeName == null){
 				continue;
-			}else if(nodeName.equalsIgnoreCase("domainId")){
-				domain.setDomainId(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("node")){
 				CtrlPlaneNodeContent node = this.parseNode(child);
 				domain.addNode(node);
@@ -219,10 +217,8 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			
 			if(nodeName == null){
 				continue;
-			}else if(nodeName.equalsIgnoreCase("nodeId")){
-				node.setNodeid(this.parseAddress(child));
-			}else if(nodeName.equalsIgnoreCase("nodeAddress")){
-				node.setNodeAddress(this.parseAddress(child));
+			}else if(nodeName.equalsIgnoreCase("address")){
+				node.setAddress(this.parseAddress(child));
 			}else if(nodeName.equalsIgnoreCase("port")){
 				CtrlPlanePortContent port = this.parsePort(child);
 				node.addPort(port);
@@ -254,8 +250,6 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			
 			if(nodeName == null){
 				continue;
-			}else if(nodeName.equalsIgnoreCase("portId")){
-				port.setPortid(this.parseAddress(child));
 			}else if(nodeName.equalsIgnoreCase("capacity")){
 				port.setCapacity(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("maximumReservableCapacity")){
@@ -308,7 +302,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			}else if(nodeName.equalsIgnoreCase("trafficEngineeringMetric")){
 				link.setTrafficEngineeringMetric(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("linkProtectionTypes")){
-				link.setLinkProtectionTypes(child.getTextContent());
+				link.addLinkProtectionTypes(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("capacity")){
 				link.setCapacity(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("maximumReservableCapacity")){

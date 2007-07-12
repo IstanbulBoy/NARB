@@ -2,33 +2,21 @@ package edu.internet2.hopi.dragon.terce.ws.handlers.rce.dynamicdb;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent;
 
 import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.TERCEClient;
 import edu.internet2.hopi.dragon.terce.api.App2TERCERequest;
-import edu.internet2.hopi.dragon.terce.api.EROSubobject;
-import edu.internet2.hopi.dragon.terce.api.IPv4PrefixSubobject;
 import edu.internet2.hopi.dragon.terce.api.TERCEMessageHeader;
 import edu.internet2.hopi.dragon.terce.api.TERCEReply;
-import edu.internet2.hopi.dragon.terce.api.UnumInterfaceSubobject;
+
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCE;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
 import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
-import edu.internet2.hopi.dragon.terce.ws.types.rce.EndpointContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.Exclude;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponseContent;
-import edu.internet2.hopi.dragon.terce.ws.types.rce.HopList;
-import edu.internet2.hopi.dragon.terce.ws.types.rce.Path;
 
 /**
  * RCE implementation that talks to a dynamic TERCE database (formerly the NARB) via its API.
@@ -48,8 +36,6 @@ public class DynamicRCE extends RCE implements RCEInterface{
 	public FindPathResponse findPath(FindPath request) throws RCEFaultMessageException {
 		FindPathResponse response = new FindPathResponse();
         FindPathResponseContent responseContent = new FindPathResponseContent();
-        Path path = new Path();
-        HopList hops = new HopList();
         App2TERCERequest terceRequest;
         
         /* Contact TERCE */
@@ -61,68 +47,9 @@ public class DynamicRCE extends RCE implements RCEInterface{
 								);
 
 			TERCEReply reply = client.sendRequest(terceRequest);
-			if(reply.getType() == TERCEReply.TLV_TYPE_TERCE_ERO){
-				/* Parse ERO subobjects */
-				ArrayList<EROSubobject> ero = reply.getERO();
-				for(int i = 0; i < ero.size(); i++){
-					EndpointContent ep = new EndpointContent();
-					CtrlPlaneDomainContent d = new CtrlPlaneDomainContent();
-					CtrlPlaneNodeContent n = new CtrlPlaneNodeContent();
-					CtrlPlanePortContent p = new CtrlPlanePortContent();
-					CtrlPlaneLinkContent l = new CtrlPlaneLinkContent();
-					
-					/* Right now this just sets the ip address as the domain:node:port:link
-					 * values. This is really just a test to see how the topology types map.
-					 * I need to manually fix some of the types to make them look better.
-					 * Jarda will modify the NARB to return domain:node:port:link info.
-					 */
-					if(ero.get(i).getType() == EROSubobject.IPV4_PREFIX_SUBOBJ){
-						IPv4PrefixSubobject sub = (IPv4PrefixSubobject)ero.get(i);
-						d.setId(sub.getIp().getHostAddress());
-						n.setId(sub.getIp().getHostAddress());
-						p.setId(sub.getIp().getHostAddress());
-						l.setId(sub.getIp().getHostAddress());
-						p.addLink(l);
-						n.addPort(p);
-						d.addNode(n);
-						ep.setDomain(d);
-						hops.addHop(ep);
-					}else if(ero.get(i).getType() == EROSubobject.UNUM_IF_SUBOBJ){
-						UnumInterfaceSubobject sub = (UnumInterfaceSubobject)ero.get(i);
-						d.setId(sub.getIp().getHostAddress());
-						
-						n.setId(sub.getIp().getHostAddress());
-						CtrlPlaneAddressContent nadd = new CtrlPlaneAddressContent();
-						nadd.setString(sub.getIp().getHostAddress());
-						n.setNodeAddress(nadd);
-						
-						p.setId(sub.getIp().getHostAddress());
-						l.setId(sub.getIp().getHostAddress());
-						p.addLink(l);
-						n.addPort(p);
-						d.addNode(n);
-						ep.setDomain(d);
-						hops.addHop(ep);
-					}
-				}
-				
-				/* Get vlan tag list */
-				ArrayList<Integer> availVTags = reply.getVtagList();
-				if(!availVTags.isEmpty()){
-					String vtags = "";
-					for(int i = 0; i < availVTags.size(); i++){
-						if(i != 0){
-								vtags += ",";
-						}
-						vtags += (availVTags.get(i));
-					}
-					path.setAvailableVtags(vtags);
-				}
-			}else if(reply.getType() == TERCEReply.TLV_TYPE_TERCE_ERROR_CODE){
-				throw this.generateRCEException("TERCE returned error type " + reply.getErrorCode());
-			}else{
-				throw this.generateRCEException("Unknown reply type from TERCE server");
-			}
+			
+			/* TODO: PARSE REPLY HERE */
+			
 		} catch (UnknownHostException e) {
 			throw this.generateRCEException("Invalid IP address in request");
 		} catch (IOException e) {
@@ -130,8 +57,6 @@ public class DynamicRCE extends RCE implements RCEInterface{
 		}
         
 		/* add hops to path and path to response*/
-        path.setHops(hops);
-        responseContent.setPath(path);
         response.setFindPathResponse(responseContent);
         return response;
 	}
@@ -150,8 +75,8 @@ public class DynamicRCE extends RCE implements RCEInterface{
      	 * This assumes domainId is an address for the time-being so it compiles
      	 * until changes complete to the NARB
      	 */
-     	String srcHost = soapRequest.getSrcEndpoint().getDomain().getId();
-     	String dstHost = soapRequest.getDestEndpoint().getDomain().getId();
+     	String srcHost = soapRequest.getSrcEndpoint();
+     	String dstHost = soapRequest.getDestEndpoint();
      	
      	/* get bandwidth */
      	float bandwidth = soapRequest.getBandwidth();

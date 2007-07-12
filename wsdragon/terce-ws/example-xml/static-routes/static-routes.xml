@@ -3,57 +3,25 @@
     
     <staticPathEntry id="path1">
     
-        <srcEndpoint>
-            <domain id="anna-293">
-                <node id="anna-vlsr1">
-                    <port id="13" />
-                </node>
-            </domain>
-        </srcEndpoint>
+        <srcEndpoint>urn:ogf:network:anna-11537:anna-vlsr1:1-1-1</srcEndpoint>
         
-        <destEndpoint>
-            <domain id="anna-293">
-                <node id="anna-vlsr2">
-                    <port id="13" />
-                </node>
-            </domain>
-        </destEndpoint>
+        <destEndpoint>urn:ogf:network:anna-11537:anna-vlsr2:1-1-1</destEndpoint>
         
-        <path>
-            <hop>
-                <domain id="anna-293">
-                    <node id="anna-vlsr1">
-                        <port id="13" />
-                    </node>
-                </domain>
+        <path id="vlsr1-vlsr2-1">
+            <hop id="1">
+                <portIdRef>urn:ogf:network:anna-11537:anna-vlsr1:1-1-1</portIdRef>
             </hop>
             
-            <hop>
-                <domain id="anna-293">
-                    <node id="anna-vlsr1">
-                        <port id="21">
-                            <link id="21" />
-                        </port>
-                    </node>
-                </domain>
+            <hop id="2">
+                <linkIdRef>urn:ogf:network:anna-11537:anna-vlsr1:1-1-12:1</linkIdRef>
             </hop>
             
-            <hop>
-                <domain id="anna-293">
-                    <node id="anna-vlsr2">
-                        <port id="21">
-                            <link id="21" />
-                        </port>
-                    </node>
-                </domain>
+            <hop id="3">
+                <linkIdRef>urn:ogf:network:anna-11537:anna-vlsr2:1-1-12:1</linkIdRef>
             </hop>
             
-            <hop>
-                <domain id="anna-293">
-                    <node id="anna-vlsr2">
-                        <port id="13" />
-                    </node>
-                </domain>
+            <hop id="4">
+                <portIdRef>urn:ogf:network:anna-11537:anna-vlsr2:1-1-1</portIdRef>
             </hop>
         </path>
         

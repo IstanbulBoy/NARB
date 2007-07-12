@@ -26,14 +26,14 @@
                         */
 
                         
-                            protected edu.internet2.hopi.dragon.terce.ws.types.rce.Path localPath ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent localPath ;
                         
 
                            /**
                            * Auto generated getter method
-                           * @return edu.internet2.hopi.dragon.terce.ws.types.rce.Path
+                           * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent
                            */
-                           public  edu.internet2.hopi.dragon.terce.ws.types.rce.Path getPath(){
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent getPath(){
                                return localPath;
                            }
 
@@ -43,9 +43,53 @@
                                * Auto generated setter method
                                * @param param Path
                                */
-                               public void setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path param){
+                               public void setPath(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent param){
                             
                                             this.localPath=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for AvailableVtags
+                        */
+
+                        
+                            protected java.lang.String localAvailableVtags ;
+                        
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localAvailableVtagsTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getAvailableVtags(){
+                               return localAvailableVtags;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param AvailableVtags
+                               */
+                               public void setAvailableVtags(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localAvailableVtagsTracker = true;
+                                       } else {
+                                          localAvailableVtagsTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localAvailableVtags=param;
                                     
 
                                }
@@ -124,9 +168,43 @@
                                     if (localPath==null){
                                          throw new RuntimeException("path cannot be null!!");
                                     }
-                                   localPath.serialize(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","path"),
+                                   localPath.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","path"),
                                        factory,xmlWriter);
+                                 if (localAvailableVtagsTracker){
+                                    namespace = "http://hopi.internet2.edu/DRAGON/TERCE/RCE";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                            xmlWriter.writeStartElement(prefix,"availableVtags", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"availableVtags");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("availableVtags");
+                                    }
                                 
+
+                                          if (localAvailableVtags==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new RuntimeException("availableVtags cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localAvailableVtags);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             }
                    
                xmlWriter.writeEndElement();
             
@@ -252,7 +330,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                            elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                            elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "path"));
                             
                             
@@ -260,7 +338,16 @@
                                          throw new RuntimeException("path cannot be null!!");
                                     }
                                     elementList.add(localPath);
-                                
+                                 if (localAvailableVtagsTracker){
+                             elementList.add(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE",
+                                                                      "availableVtags"));
+                            
+                                        if (localAvailableVtags != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAvailableVtags));
+                                        } else {
+                                           throw new RuntimeException("availableVtags cannot be null!!");
+                                        }
+                                    }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -336,10 +423,23 @@
                 while(!reader.isEndElement()) {
                     if (reader.isStartElement() ){
                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","path").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","path").equals(reader.getName())){
                                 
-                                        object.setPath(edu.internet2.hopi.dragon.terce.ws.types.rce.Path.Factory.parse(reader));
+                                        object.setPath(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent.Factory.parse(reader));
                                       
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/RCE","availableVtags").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setAvailableVtags(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
                                         reader.next();
                                     
                               }  // End of if for expected property start element

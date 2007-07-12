@@ -22,44 +22,44 @@
             
 
                         /**
-                        * field for LocalPortId
+                        * field for RemoteLinkId
                         */
 
                         
-                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent localLocalPortId ;
+                            protected org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent localRemoteLinkId ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
                            *   in the serialized XML
                            */
-                           protected boolean localLocalPortIdTracker = false ;
+                           protected boolean localRemoteLinkIdTracker = false ;
                            
 
                            /**
                            * Auto generated getter method
                            * @return org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent
                            */
-                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent getLocalPortId(){
-                               return localLocalPortId;
+                           public  org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent getRemoteLinkId(){
+                               return localRemoteLinkId;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param LocalPortId
+                               * @param param RemoteLinkId
                                */
-                               public void setLocalPortId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent param){
+                               public void setRemoteLinkId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent param){
                             
                                        if (param != null){
                                           //update the setting tracker
-                                          localLocalPortIdTracker = true;
+                                          localRemoteLinkIdTracker = true;
                                        } else {
-                                          localLocalPortIdTracker = false;
+                                          localRemoteLinkIdTracker = false;
                                               
                                        }
                                    
-                                            this.localLocalPortId=param;
+                                            this.localRemoteLinkId=param;
                                     
 
                                }
@@ -243,10 +243,11 @@
 
                         /**
                         * field for LinkProtectionTypes
+                        * This was an Array!
                         */
 
                         
-                            protected java.lang.String localLinkProtectionTypes ;
+                            protected java.lang.String[] localLinkProtectionTypes ;
                         
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
@@ -257,33 +258,70 @@
 
                            /**
                            * Auto generated getter method
-                           * @return java.lang.String
+                           * @return java.lang.String[]
                            */
-                           public  java.lang.String getLinkProtectionTypes(){
+                           public  java.lang.String[] getLinkProtectionTypes(){
                                return localLinkProtectionTypes;
                            }
 
                            
                         
-                            /**
-                               * Auto generated setter method
-                               * @param param LinkProtectionTypes
-                               */
-                               public void setLinkProtectionTypes(java.lang.String param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localLinkProtectionTypesTracker = true;
-                                       } else {
-                                          localLinkProtectionTypesTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localLinkProtectionTypes=param;
-                                    
 
-                               }
+
+                               
+                              /**
+                               * validate the array for LinkProtectionTypes
+                               */
+                              protected void validateLinkProtectionTypes(java.lang.String[] param){
+                             
+                              }
+
+
+                             /**
+                              * Auto generated setter method
+                              * @param param LinkProtectionTypes
+                              */
+                              public void setLinkProtectionTypes(java.lang.String[] param){
+                              
+                                   validateLinkProtectionTypes(param);
+
+                               
+                                          if (param != null){
+                                             //update the setting tracker
+                                             localLinkProtectionTypesTracker = true;
+                                          } else {
+                                             localLinkProtectionTypesTracker = false;
+                                                 
+                                          }
+                                      
+                                      this.localLinkProtectionTypes=param;
+                              }
+
+                               
+                             
+                             /**
+                             * Auto generated add method for the array for convenience
+                             * @param param java.lang.String
+                             */
+                             public void addLinkProtectionTypes(java.lang.String param){
+                                   if (localLinkProtectionTypes == null){
+                                   localLinkProtectionTypes = new java.lang.String[]{};
+                                   }
+
                             
+                                 //update the setting tracker
+                                localLinkProtectionTypesTracker = true;
+                            
+
+                               java.util.List list =
+                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localLinkProtectionTypes);
+                               list.add(param);
+                               this.localLinkProtectionTypes =
+                             (java.lang.String[])list.toArray(
+                            new java.lang.String[list.size()]);
+
+                             }
+                             
 
                         /**
                         * field for Capacity
@@ -742,11 +780,11 @@
                                       else {
                                           throw new RuntimeException("required attribute localId is null");
                                       }
-                                     if (localLocalPortIdTracker){
-                                    if (localLocalPortId==null){
-                                         throw new RuntimeException("localPortId cannot be null!!");
+                                     if (localRemoteLinkIdTracker){
+                                    if (localRemoteLinkId==null){
+                                         throw new RuntimeException("remoteLinkId cannot be null!!");
                                     }
-                                   localLocalPortId.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","localPortId"),
+                                   localRemoteLinkId.serialize(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","remoteLinkId"),
                                        factory,xmlWriter);
                                 } if (localRemotePortIdTracker){
                                     if (localRemotePortId==null){
@@ -801,40 +839,49 @@
                                     
                                    xmlWriter.writeEndElement();
                              } if (localLinkProtectionTypesTracker){
-                                    namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-
-                                            xmlWriter.writeStartElement(prefix,"linkProtectionTypes", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"linkProtectionTypes");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("linkProtectionTypes");
-                                    }
-                                
-
-                                          if (localLinkProtectionTypes==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new RuntimeException("linkProtectionTypes cannot be null!!");
-                                                  
-                                          }else{
-
+                             if (localLinkProtectionTypes!=null) {
+                                   namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
+                                   boolean emptyNamespace = namespace == null || namespace.length() == 0;
+                                   prefix =  emptyNamespace ? null : xmlWriter.getPrefix(namespace);
+                                   for (int i = 0;i < localLinkProtectionTypes.length;i++){
                                         
-                                                   xmlWriter.writeCharacters(localLinkProtectionTypes);
+                                            if (localLinkProtectionTypes[i] != null){
+                                        
+                                                if (!emptyNamespace) {
+                                                    if (prefix == null) {
+                                                        java.lang.String prefix2 = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+
+                                                        xmlWriter.writeStartElement(prefix2,"linkProtectionTypes", namespace);
+                                                        xmlWriter.writeNamespace(prefix2, namespace);
+                                                        xmlWriter.setPrefix(prefix2, namespace);
+
+                                                    } else {
+                                                        xmlWriter.writeStartElement(namespace,"linkProtectionTypes");
+                                                    }
+
+                                                } else {
+                                                    xmlWriter.writeStartElement("linkProtectionTypes");
+                                                }
+
                                             
-                                          }
+                                                        xmlWriter.writeCharacters(localLinkProtectionTypes[i]);
+                                                    
+                                                xmlWriter.writeEndElement();
+                                              
+                                                } else {
+                                                   
+                                                           // we have to do nothing since minOccurs is zero
+                                                       
+                                                }
+
+                                   }
+                             } else {
+                                 
+                                         throw new RuntimeException("linkProtectionTypes cannot be null!!");
                                     
-                                   xmlWriter.writeEndElement();
-                             } if (localCapacityTracker){
+                             }
+
+                        } if (localCapacityTracker){
                                     namespace = "http://ogf.org/schema/network/topology/ctrlPlane/20070626/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
@@ -1153,15 +1200,15 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localLocalPortIdTracker){
+                 if (localRemoteLinkIdTracker){
                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "localPortId"));
+                                                                      "remoteLinkId"));
                             
                             
-                                    if (localLocalPortId==null){
-                                         throw new RuntimeException("localPortId cannot be null!!");
+                                    if (localRemoteLinkId==null){
+                                         throw new RuntimeException("remoteLinkId cannot be null!!");
                                     }
-                                    elementList.add(localLocalPortId);
+                                    elementList.add(localRemoteLinkId);
                                 } if (localRemotePortIdTracker){
                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "remotePortId"));
@@ -1199,15 +1246,29 @@
                                            throw new RuntimeException("trafficEngineeringMetric cannot be null!!");
                                         }
                                     } if (localLinkProtectionTypesTracker){
-                             elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
-                                                                      "linkProtectionTypes"));
-                            
-                                        if (localLinkProtectionTypes != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localLinkProtectionTypes));
-                                        } else {
-                                           throw new RuntimeException("linkProtectionTypes cannot be null!!");
-                                        }
-                                    } if (localCapacityTracker){
+                            if (localLinkProtectionTypes!=null){
+                                  for (int i = 0;i < localLinkProtectionTypes.length;i++){
+                                      
+                                         if (localLinkProtectionTypes[i] != null){
+                                          elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
+                                                                              "linkProtectionTypes"));
+                                          elementList.add(
+                                          org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localLinkProtectionTypes[i]));
+                                          } else {
+                                             
+                                                    // have to do nothing
+                                                
+                                          }
+                                      
+
+                                  }
+                            } else {
+                              
+                                    throw new RuntimeException("linkProtectionTypes cannot be null!!");
+                                
+                            }
+
+                        } if (localCapacityTracker){
                              elementList.add(new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/",
                                                                       "capacity"));
                             
@@ -1376,14 +1437,16 @@
                     
                     reader.next();
                 
+                        java.util.ArrayList list6 = new java.util.ArrayList();
+                    
                         java.util.ArrayList list12 = new java.util.ArrayList();
                     
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","localPortId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","remoteLinkId").equals(reader.getName())){
                                 
-                                        object.setLocalPortId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent.Factory.parse(reader));
+                                        object.setRemoteLinkId(org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent.Factory.parse(reader));
                                       
                                         reader.next();
                                     
@@ -1461,13 +1524,40 @@
                                 
                                     if (reader.isStartElement() && new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","linkProtectionTypes").equals(reader.getName())){
                                 
-                                    java.lang.String content = reader.getElementText();
                                     
-                                              object.setLinkProtectionTypes(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
                                     
+                                    // Process the array and step past its final element's end.
+                                    list6.add(reader.getElementText());
+                                            
+                                            //loop until we find a start element that is not part of this array
+                                            boolean loopDone6 = false;
+                                            while(!loopDone6){
+                                                // Ensure we are at the EndElement
+                                                while (!reader.isEndElement()){
+                                                    reader.next();
+                                                }
+                                                // Step out of this element
+                                                reader.next();
+                                                // Step to next element event.
+                                                while (!reader.isStartElement() && !reader.isEndElement())
+                                                    reader.next();
+                                                if (reader.isEndElement()){
+                                                    //two continuous end elements means we are exiting the xml structure
+                                                    loopDone6 = true;
+                                                } else {
+                                                    if (new javax.xml.namespace.QName("http://ogf.org/schema/network/topology/ctrlPlane/20070626/","linkProtectionTypes").equals(reader.getName())){
+                                                         list6.add(reader.getElementText());
+                                                        
+                                                    }else{
+                                                        loopDone6 = true;
+                                                    }
+                                                }
+                                            }
+                                            // call the converter utility  to convert and set the array
+                                            
+                                                    object.setLinkProtectionTypes((java.lang.String[])
+                                                        list6.toArray(new java.lang.String[list6.size()]));
+                                                
                               }  // End of if for expected property start element
                                 
                                     else {

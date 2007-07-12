@@ -1,27 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<topology xmlns="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" id="anna-topo-1">
-    <idcId>http://127.0.0.1/axis2/services/TERCE</idcId>
-    <domain id="anna-293">
-        <node id="anna-vlsr-1">
-            <nodeId>anna-vlsr-1</nodeId>
+<topology 
+    xmlns="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" 
+    id="anna-1184078048">
+    
+    <idcId>http://hopiuclp1.internet2.edu/axis2/services/OSCARS</idcId>
+    
+    <domain id="anna-11537">
+    
+        <node id="anna-vlsr1">
             <nodeAddress>207.75.164.204</nodeAddress>
-            <port id="13">
-                <link id="13" />
+            
+            <port id="1-1-1">
+                <capacity>1Gbps</capacity>
+                <maximumReservableCapacity>1Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
             </port>
-            <port id="15">
-                <link id="15" />
+            
+            <port id="1-1-12">
+                <capacity>1Gbps</capacity>
+                <maximumReservableCapacity>1Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
+                
+                <link id="1">
+                    <remoteLinkId>urn:ogf:network:anna-11537:anna-vlsr2:1-1-12:1</remoteLinkId>
+                    <SwitchingCapabilityDescriptors>
+                        <switchingcapType>l2sc</switchingcapType>
+                        <encodingType>ethernet</encodingType>
+                        <switchingCapabilitySpecficInfo>
+                            <interfaceMTU>9000</interfaceMTU>
+                            <vlanRangeAvailability>610-619,3000-3001,3120-3121</vlanRangeAvailability>
+                        </switchingCapabilitySpecficInfo>
+                    </SwitchingCapabilityDescriptors>
+                </link>
             </port>
         </node>
         
-        <node id="anna-vlsr-2">
-            <nodeId>anna-vlsr-2</nodeId>
+        <node id="anna-vlsr2">
             <nodeAddress>207.75.164.207</nodeAddress>
-            <port id="13">
-                <link id="13" />
+            <port id="1-1-1">
+                <capacity>1Gbps</capacity>
+                <maximumReservableCapacity>1Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
             </port>
-            <port id="15">
-                <link id="15" />
+            
+            <port id="1-1-3">
+                <capacity>1Gbps</capacity>
+                <maximumReservableCapacity>1Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
+            </port>
+            
+            <port id="1-1-12">
+                <capacity>1Gbps</capacity>
+                <maximumReservableCapacity>1Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
+                
+                <link id="1">
+                    <remoteLinkId>urn:ogf:network:anna-11537:anna-vlsr2:1-1-12:1</remoteLinkId>
+                    <SwitchingCapabilityDescriptors>
+                        <switchingcapType>l2sc</switchingcapType>
+                        <encodingType>ethernet</encodingType>
+                        <switchingCapabilitySpecficInfo>
+                            <interfaceMTU>9000</interfaceMTU>
+                            <vlanRangeAvailability>610-619,3000-3001,3120-3121</vlanRangeAvailability>
+                        </switchingCapabilitySpecficInfo>
+                    </SwitchingCapabilityDescriptors>
+                </link>
+            </port>
+            
+            <port id="0-1-1">
+                <capacity>10Gbps</capacity>
+                <maximumReservableCapacity>10Gbps</maximumReservableCapacity>
+                <minimumReservableCapacity>100Mbps</minimumReservableCapacity>
+                <granularity>100Mbps</granularity>
+                
+                <link id="1">
+                    <!-- assumes HOPI topology exists and Ann Arbor connects at port 10 -->
+                    <remoteLinkId>urn:ogf:network:hopi-11537:hopi-chin:10:1</remoteLinkId>
+                    <SwitchingCapabilityDescriptors>
+                        <switchingcapType>l2sc</switchingcapType>
+                        <encodingType>ethernet</encodingType>
+                        <switchingCapabilitySpecficInfo>
+                            <interfaceMTU>9000</interfaceMTU>
+                            <vlanRangeAvailability>610-619,3000-3001,3120-3121</vlanRangeAvailability>
+                        </switchingCapabilitySpecficInfo>
+                    </SwitchingCapabilityDescriptors>
+                </link>
             </port>
         </node>
     </domain>
+    
 </topology>
