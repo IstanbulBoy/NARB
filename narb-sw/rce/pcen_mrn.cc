@@ -891,7 +891,7 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 
         for (i = 0; i < links.size(); i++)
         {
-            if (links[i]->link->lclIfAddr == subnet_link_lcl && links[i]->link->lclIfAddr == subnet_link_rmt)
+            if (links[i]->link->lclIfAddr == subnet_link_lcl && links[i]->link->rmtIfAddr == subnet_link_rmt)
             {
                 subnet_node_lcl = links[i]->lcl_end->router->id;
                 subnet_node_rmt = links[i]->rmt_end->router->id;
