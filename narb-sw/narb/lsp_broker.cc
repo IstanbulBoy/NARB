@@ -1822,7 +1822,7 @@ void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
 u_int32_t LSP_Broker::get_unique_lspb_id()
 {
     static u_int32_t id = htonl(NarbDomainInfo.domain_id);
-    return id++;
+    return (++id);
 }
 
 ConfirmationIDIndxedEROWithTimer* LSP_Broker::StoreEROWithConfirmationID(list<ero_subobj*>& ero, u_int32_t ucid, u_int32_t seqnum, u_int32_t src_id)

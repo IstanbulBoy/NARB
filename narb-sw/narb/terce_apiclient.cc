@@ -51,14 +51,14 @@ void TerceApiTopoSync::InitNarbTerceComm()
     //$$$$ TBD
     u_int32_t ucid = domain_id;
     api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, 0, NULL, ucid, get_narb_seqnum());
-    amsg->header.tag = NARB_TERCE_SYNC_PORT+1;
+    amsg->header.tag = NARB_TERCE_SYNC_PORT+1; //a.k.a. amsg->header.msgtag[1]; amsg->header.msgtag[0] is for domain_mask
     writer->WriteMessage(amsg);
 
     api_msg* rmsg = reader->ReadSyncMessage();
     if (rmsg->header.action == ACT_ACK)
-        api_alive = true;
+        api_ready = true;
     else // error code?
-        api_alive = false;
+        api_ready = false;
 } 
 
 void TerceApiTopoSync::KeepAlive()
@@ -262,10 +262,10 @@ void TerceApiTopoSync::Run ()
     }
 
     //Check if the API is ready
-    if (!api_alive)
+    if (!api_ready)
     {
         InitNarbTerceComm();
-        if (!api_alive)
+        if (!api_ready)
             return;
     }
 

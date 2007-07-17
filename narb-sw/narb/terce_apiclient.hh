@@ -65,20 +65,21 @@ private:
     int async_fd;
     char* terce_host;
     int terce_port;
-    u_int32_t domain_id; //a.k.a. domain mask
     int attempt;
-    bool api_alive;
+    u_int32_t domain_id;
+    u_int32_t domain_mask;
+    bool api_ready;
 
 public:
     TerceApiTopoSync(char* host, int port, u_int32_t dmid, int sync_interval): Timer(sync_interval, 0, FOREVER), 
-        sync_fd(-1), async_fd(-1), reader(NULL), writer(NULL), terce_host(host), terce_port(port), domain_id(dmid), attempt(0), api_alive(false) { }
+        sync_fd(-1), async_fd(-1), reader(NULL), writer(NULL), terce_host(host), terce_port(port), attempt(0), 
+        domain_id(dmid), domain_mask(DOMAIN_MASK_GLOBAL), api_ready(false) { }
     virtual ~TerceApiTopoSync();
 
     int Connect (char *host, int syncport, int remote_port);
     int Connect() { return Connect(terce_host, NARB_TERCE_SYNC_PORT, terce_port); }
-    bool TerceAlive() { extern int module_connectable(char * host, int port); 
-        return module_connectable (terce_host, terce_port); }
-    bool NarbTerceApiAlive() { return api_alive; }
+    bool Alive() { extern int module_connectable(char * host, int port); 
+            return module_connectable (terce_host, terce_port); }
     TerceApiTopoReader * GetReader() {  return reader;}
     TerceApiTopoWriter * GetWriter() {  return writer;}
     void SetReader(TerceApiTopoReader *reader_ptr) {  reader = reader_ptr;}
@@ -87,10 +88,6 @@ public:
     void SetAsyncFd(int x) { async_fd = x; }
     void SetAttemptNum(int x) { attempt = x; }
     u_int32_t DomainId()  { return domain_id; }
-
-    void InitNarbTerceComm();
-    void KeepAlive();
-    virtual void Run();
     void Stop()
         {
             if (sync_fd > 0)
@@ -98,6 +95,11 @@ public:
             if (async_fd > 0)
                 close(async_fd);
         }
+
+    virtual void Run();
+    void KeepAlive();
+    void InitNarbTerceComm();
+    bool NarbTerceApiReady() { return api_ready; }
 };
 
 class TerceApiTopoReader: public Reader

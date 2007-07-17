@@ -178,6 +178,7 @@ private:
     u_int32_t domain_mask;
     u_int32_t neighbors;
     int attempt;
+
 public:
     ZebraOspfSync(char* host, int port, u_int32_t dmask, int sync_interval): Timer(sync_interval, 0, FOREVER), 
             sync_fd(-1), async_fd(-1), reader(NULL), writer(NULL), ospfd_host(host), ospfd_port(port), domain_mask(dmask),
@@ -196,8 +197,7 @@ public:
     void SetSyncFd(int x) { sync_fd = x; }
     void SetAsyncFd(int x) { async_fd = x; }
     void SetAttemptNum(int x) { attempt = x; }
-
-    virtual void Run();
+    u_int32_t DomainMask()  { return domain_mask; }
     void Stop()
         {
             if (sync_fd > 0)
@@ -205,12 +205,11 @@ public:
             if (async_fd > 0)
                 close(async_fd);
         }
-    int RunWithoutSyncLsdb ();
 
+    virtual void Run();
+    int RunWithoutSyncLsdb ();
     u_int32_t NeighborCount() {return neighbors; }
     void SetNeighborCount(u_int32_t count) { neighbors = count; }
-
-    u_int32_t DomainMask()  { return domain_mask; }
 };
 
 class ZebraOspfReader: public Reader
@@ -248,6 +247,7 @@ public:
     int DeleteLsa(in_addr adv_id, in_addr area, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id);
     int UpdateLsa(in_addr ori_if, in_addr adv_id, in_addr area, u_char lsa_type, 
         u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
+
     int GetOrigianteInterfaceStatus(in_addr ifaddr);
     int RegisterOpqaueType(u_char ltype, u_char otype);
 };
