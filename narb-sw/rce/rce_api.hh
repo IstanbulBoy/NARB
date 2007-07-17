@@ -63,6 +63,8 @@ enum api_action
     ACT_ERROR = 0x07,
     ACT_CONFIRM = 0x08,
     //extensions:
+    ACT_INIT = 0x0A,
+    ACT_ALIVE = 0x0B,
     ACT_QUERY_MRN = 0x10
 };
 

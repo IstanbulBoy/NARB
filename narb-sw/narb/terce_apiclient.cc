@@ -274,6 +274,7 @@ void TerceApiTopoSync::Run ()
     //@@@@ NARB IP ?
     u_int32_t ucid = domain_id;
     api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_QUERY, 0, NULL, ucid, get_narb_seqnum());
+    amsg->header.msgtag[1] = htonl(DOMAIN_MASK_GLOBAL);
     writer->PostMessage(amsg);
 }
 
@@ -486,11 +487,10 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
 void TerceApiTopoReader::HandleMessage (api_msg *msg)
 {
     LSAHandler * lsaEvent;
-    u_int32_t ack_id = 0x0f;
 
     switch (msg->header.type)
     {
-    case MSG_TERCE_TOPO_SYNC: //Only handling 
+    case MSG_TERCE_TOPO_SYNC: 
         LOG("Unexpected MSG_TERCE_TOPO_SYNC terce messsage: action=" << (int)msg->header.action << endl
             << "TerceApiTopoReader::HandleMessage only supposes to receive asychronous messages..." << endl);
         api_msg_delete(msg);
@@ -501,19 +501,28 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
         {
          case ACT_INSERT:
          case ACT_UPDATE:
-            break;
-
          case ACT_DELETE:
+            msg->header.msgtag[0] = DOMAIN_MASK_GLOBAL;
+            lsaEvent = new LSAHandler;
+            lsaEvent->Load(msg);
+            if (lsaEvent->Parse())
+            {
+                lsaEvent->SetAutoDelete(true);
+                eventMaster.Schedule(lsaEvent);
+            }
+            else
+                delete lsaEvent;
             break;
 
          case ACT_ALIVE:
+            //$$$$TODO
             //update keep-alive timer...
             break;
         }
         break;
 
     default:
-        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)msg->header.type 
+        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->header.type)
             << ", action=" << (int)msg->header.action << ")." << endl);
         api_msg_delete(msg);
     }    
