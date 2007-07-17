@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2005
+ * Copyright (c) 2007
  * DRAGON Project.
  * University of Southern California/Information Sciences Institute.
  * All rights reserved.
  *
- * Created by Xi Yang 2004-2006
+ * Created by Xi Yang 2004-2007
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -87,10 +87,7 @@ Copyright 2003-2005 the Dragon Team.\r\n\
     cli_writer->InitTerminal();
     eventMaster.Schedule(cli_reader);
 
-    char addr[20];
-    LOGF("Accepted CLI connection from %s port %d on socket %d\n",
-         inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
-         ntohs(sa_in.sin_port), new_sock);
+    LOG_DEBUG("Accepted a CLI connection on socket(" <<new_sock <<")" << endl);
 }
 
 CLIReader::CLIReader(int fd, CLIServer *server_ptr):Reader(fd), server(server_ptr), timer(SystemConfig::cli_timeout, this)

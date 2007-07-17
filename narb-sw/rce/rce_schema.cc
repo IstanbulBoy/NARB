@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2005
+ * Copyright (c) 2007
  * DRAGON Project.
  * University of Southern California/Information Sciences Institute.
  * All rights reserved.
  *
- * Created by Xi Yang 2004-2006
+ * Created by Xi Yang 2004-2007
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

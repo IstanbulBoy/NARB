@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005
+ * Copyright (c) 2007
  * DRAGON Project.
  * University of Southern California/Information Sciences Institute.
  * All rights reserved.

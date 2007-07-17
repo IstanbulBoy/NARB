@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2005
+ * Copyright (c) 2007
  * DRAGON Project.
  * University of Southern California/Information Sciences Institute.
  * All rights reserved.
  *
- * Created by Xi Yang 2004-2006
+ * Created by Xi Yang 2004-2007
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -64,7 +64,7 @@ const u_char bit[] =  {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 #define prefix_word(P, N) (((P).prefix)[N])
 
 
-// This [refix matches p2 iff it contains p2's prefix.
+// This prefix matches p2 iff it contains p2's prefix.
 extern inline bool operator<=(const Prefix& p1, const Prefix& p2)
 {
   int offset;
