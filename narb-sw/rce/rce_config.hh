@@ -64,6 +64,10 @@ public:
     static int ospfd_intra_port;
     static int ospfd_intra_port_local;
 
+    static string terce_host;
+    static int terce_port;
+    static int terce_port_local;
+
     static int ospf_sync_interval;
     static int max_ospf_sync_attempts;
 

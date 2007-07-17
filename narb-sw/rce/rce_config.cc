@@ -32,6 +32,7 @@
  */
 #include "rce_types.hh"
 #include "rce_config.hh"
+#include "terce_apiclient.hh"
 
 string SystemConfig::config_file("rce.conf");
 string SystemConfig::schema_file("schema_combo.rsd");
@@ -43,6 +44,11 @@ int SystemConfig::ospfd_inter_port_local = 4607;
 string SystemConfig::ospfd_intra_host("localhost");
 int SystemConfig::ospfd_intra_port = 2617;
 int SystemConfig::ospfd_intra_port_local = 4617;
+
+//To be configured from CLI ?
+string SystemConfig::terce_host("localhost");
+int SystemConfig::terce_port = TERCE_API_SERVER_PORT;
+int SystemConfig::terce_port_local = RCE_TERCE_SYNC_PORT;
 
 int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;

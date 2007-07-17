@@ -37,6 +37,7 @@
 #include "rce_api.hh"
 #include "rce_apiserver.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 #include "rce_schema.hh"
 #include "rce_subnet.hh"
 #include "rce_cli.hh"
@@ -70,6 +71,7 @@ void usage()
 
 ZebraOspfSync *zebra_client_inter = NULL;
 ZebraOspfSync *zebra_client_intra = NULL;
+TerceApiTopoSync *terce_client = NULL;
 
 int main( int argc, char* argv[])
 {
@@ -134,13 +136,23 @@ int main( int argc, char* argv[])
     ZebraOspfSync ospfSyncIntra((char*)SystemConfig::ospfd_intra_host.c_str(), SystemConfig::ospfd_intra_port, 
             DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);
     zebra_client_intra = &ospfSyncIntra;
-    eventMaster.Schedule(&ospfSyncIntra);
-    ospfSyncIntra.Run();
+    eventMaster.Schedule(zebra_client_intra);
+    zebra_client_intra->Run();
+
     ZebraOspfSync ospfSyncInter((char*)SystemConfig::ospfd_inter_host.c_str(), SystemConfig::ospfd_inter_port, 
             DOMAIN_MASK_GLOBAL, SystemConfig::ospf_sync_interval);
     zebra_client_inter = &ospfSyncInter;
-    eventMaster.Schedule(&ospfSyncInter);
-    ospfSyncInter.Run();
+    eventMaster.Schedule(zebra_client_inter);
+    zebra_client_inter->Run();
+
+    if (SystemConfig::terce_host.size() > 0 && SystemConfig::terce_port > 0)
+    {
+        TerceApiTopoSync terceSync((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, 
+            DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);
+        terce_client = &terceSync;
+        eventMaster.Schedule(terce_client);
+        terce_client->Run();
+    }
 
     APIServer server(SystemConfig::api_port);
     server.Start();

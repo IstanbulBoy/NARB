@@ -36,6 +36,7 @@
 #include "resource.hh"
 #include "rce_apiclient.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 #include "narb_apiserver.hh"
 #include "narb_apiclient.hh"
 #include "narb_xmlserver.hh"
@@ -63,6 +64,7 @@ struct option longopts[] =
 };
 
 ZebraOspfSync * zebra_client = NULL;
+TerceApiTopoSync * terce_client = NULL;
 DomainTopologyOriginator* dts_originator = NULL;
 
 // SIGINT handler.
@@ -161,6 +163,19 @@ int main( int argc, char* argv[])
     NARB_XMLServer xml_server(NARB_XML_PORT);
     xml_server.Start();
 
+    if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port != 0)
+    {
+        LOG("Initiating NARB-TERCE API connection......" <<endl);
+        //Start TERCE APIClient
+        terce_client = new TerceApiTopoSync(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, DOMAIN_MASK_GLOBAL, 0);
+        eventMaster.Schedule(terce_client);
+        terce_client->Run();
+        if (!terce_client->NarbTerceApiReady())
+        {
+            LOGF("TerceApiTopoSync failure: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        }
+    }
+
     if (NarbDomainInfo.ospfd_inter.addr[0] == 0 || NarbDomainInfo.ospfd_inter.port == 0)
     {
         LOG("Running without connection to OSPFd......" <<endl);
@@ -168,11 +183,12 @@ int main( int argc, char* argv[])
     }
     else
     {
+        LOG("Initiating NARB Zebra OSPF API client......" <<endl);
         //Start Zebra OSPF APIClient
         zebra_client = new ZebraOspfSync(NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port, DOMAIN_MASK_GLOBAL, 0);
         if (zebra_client->RunWithoutSyncLsdb() < 0)
         {
-            LOGF("communication error with OSPFd %s:%d....\n", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port);
+            LOGF("Communication error with OSPFd %s:%d....\n", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port);
             exit(1);
         }
         ZebraOspfWriter* ospf_apiwriter = zebra_client->GetWriter();

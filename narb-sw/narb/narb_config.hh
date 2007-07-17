@@ -141,8 +141,9 @@ class SystemConfig
 // definitions of codes for configuration blocks
 enum config_code {
   CONFIG_END = 0,
-  CONFIG_INTER_DOMAIN_ODPFD = 1,
-  CONFIG_INTRA_DOMAIN_ODPFD,
+  CONFIG_INTER_DOMAIN_OSPFD = 1,
+  CONFIG_INTRA_DOMAIN_OSPFD,
+  CONFIG_TERCE,
   CONFIG_ROUTER,
   CONFIG_LINK,
   CONFIG_TE_PROFILE,

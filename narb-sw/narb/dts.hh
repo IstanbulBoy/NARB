@@ -61,6 +61,21 @@ public:
         }
 };
 
+class terce_info 
+{
+public:
+    char addr[MAX_ADDR_LEN];
+    int port;
+    int localport;
+
+    terce_info()
+        {
+            addr[0] = 0;
+            port = 0;
+            localport = 0;
+        }
+};
+
 // definitions for router_id_info::type and link_info::type
 #define RT_TYPE_DEFAULT 0x0
 #define RT_TYPE_HOST 0x01
@@ -171,6 +186,9 @@ public:
     ospfd_info ospfd_intra;
     // info of intra-domain OSPFd
     ospfd_info ospfd_inter;
+    // info of inter-domain TERCE
+    ospfd_info terce;
+
     // the domain identifier (other than the area id)
     u_int32_t domain_id;
 

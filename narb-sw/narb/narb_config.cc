@@ -34,6 +34,7 @@
 #include "narb_config.hh"
 #include "cli.hh"
 #include <arpa/inet.h>
+#include "terce_apiclient.hh"
 
 string SystemConfig::config_file = NARB_DEFAULT_CONFIG_FILE;
 narb_routing_mode SystemConfig::routing_mode  = RT_MODE_MIXED_ALLOWED;
@@ -141,9 +142,11 @@ static int blk_code (char *buf)
     if (strstr(buf, "domain-id"))
         return CONFIG_DOMAIN_ID;
     else if (strstr(buf, "inter-domain-ospfd"))
-        return CONFIG_INTER_DOMAIN_ODPFD;
+        return CONFIG_INTER_DOMAIN_OSPFD;
     else if (strstr(buf, "intra-domain-ospfd"))
-        return CONFIG_INTRA_DOMAIN_ODPFD;
+        return CONFIG_INTRA_DOMAIN_OSPFD;
+    else if (strstr(buf, "terce-server"))
+        return CONFIG_TERCE;
     else if (strstr(buf, "router"))
         return CONFIG_ROUTER;
     else if (strstr(buf, "inter-domain-te-link"))
@@ -214,7 +217,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               }
           }
           break;
-        case  CONFIG_INTER_DOMAIN_ODPFD:
+        case  CONFIG_INTER_DOMAIN_OSPFD:
           {
               char address[MAX_ADDR_LEN];
               int port;
@@ -270,7 +273,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               }
           }
           break;
-        case  CONFIG_INTRA_DOMAIN_ODPFD:
+        case  CONFIG_INTRA_DOMAIN_OSPFD:
           {
               char address[MAX_ADDR_LEN];
               int port;
@@ -323,6 +326,44 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               else
               {
                   LOG("ReadConfigParameter failed on intra-domain-ospfd : area" <<endl);
+              }
+          }
+          break;
+        case  CONFIG_TERCE:
+          {
+              char address[MAX_ADDR_LEN];
+              int port;
+  
+              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              {
+                  strcpy(domain_info.terce.addr, address);
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE  : address" << endl);
+                  strcpy(domain_info.terce.addr, "127.0.0.1");
+                  LOG("TERCE address has been set to 127.0.0.1 (localhost)" << endl);
+              }
+  
+              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              {
+                  domain_info.terce.localport = port;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE : localport" << endl);
+                  domain_info.terce.localport =  NARB_TERCE_SYNC_PORT;
+              }
+              
+              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              {
+                  domain_info.ospfd_inter.port = port;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE : port" << endl);
+                  domain_info.ospfd_inter.port = TERCE_API_SERVER_PORT;
+                  LOGF("TERCE server port has been set to %d \n",  TERCE_API_SERVER_PORT);
               }
           }
           break;
