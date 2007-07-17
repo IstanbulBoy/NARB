@@ -91,11 +91,11 @@ INSTALL_SDATA = @INSTALL@ -m 600
 sbin_PROGRAMS = narb narb_test
 
 narb_SOURCES = \
-	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc narb_xmlserver.cc narb_main.cc
+	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc narb_xmlserver.cc terce_apiclient.cc narb_main.cc
 
 
 narb_test_SOURCES = \
-	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc narb_test.cc
+	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc terce_apiclient.cc narb_test.cc
 
 
 narb_LDADD = -lc -lstdc++ -lxml2 -lz
@@ -117,7 +117,8 @@ am_narb_OBJECTS = event.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
 	toolbox.$(OBJEXT) lsp_broker.$(OBJEXT) \
 	zebra_ospfclient.$(OBJEXT) clicmd.$(OBJEXT) cmdtree.$(OBJEXT) \
 	cli.$(OBJEXT) narb_config.$(OBJEXT) dts.$(OBJEXT) \
-	narb_xmlserver.$(OBJEXT) narb_main.$(OBJEXT)
+	narb_xmlserver.$(OBJEXT) terce_apiclient.$(OBJEXT) \
+	narb_main.$(OBJEXT)
 narb_OBJECTS = $(am_narb_OBJECTS)
 narb_DEPENDENCIES =
 narb_LDFLAGS =
@@ -127,7 +128,7 @@ am_narb_test_OBJECTS = event.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
 	toolbox.$(OBJEXT) lsp_broker.$(OBJEXT) \
 	zebra_ospfclient.$(OBJEXT) clicmd.$(OBJEXT) cmdtree.$(OBJEXT) \
 	cli.$(OBJEXT) narb_config.$(OBJEXT) dts.$(OBJEXT) \
-	narb_test.$(OBJEXT)
+	terce_apiclient.$(OBJEXT) narb_test.$(OBJEXT)
 narb_test_OBJECTS = $(am_narb_test_OBJECTS)
 narb_test_DEPENDENCIES =
 narb_test_LDFLAGS =
@@ -149,7 +150,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/narb_test.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/narb_xmlserver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_apiclient.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/resource.Po ./$(DEPDIR)/toolbox.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/resource.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/terce_apiclient.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/toolbox.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/zebra_ospfclient.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -258,6 +261,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/narb_xmlserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_apiclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resource.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/terce_apiclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toolbox.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zebra_ospfclient.Po@am__quote@
 
