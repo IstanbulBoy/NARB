@@ -41,7 +41,7 @@ void TerceApiTopoSync::InitRceTerceComm()
 {
     if (sync_fd < 0)
     {
-        LOGF("Sync-comm socket to TERCE %s:%d does not exist\n", terce_host, terce_port);
+        LOGF("Sync-comm socket to TERCE (server %s:%d) does not exist\n", terce_host, terce_port);
         return;
     }
 
@@ -49,13 +49,23 @@ void TerceApiTopoSync::InitRceTerceComm()
     u_int32_t ucid = domain_id;
     api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, NULL, ucid, get_rce_seqnum(), 0);
     amsg->hdr.tag = RCE_TERCE_SYNC_PORT+1; //a.k.a. amsg->hdr.msgtag[1]; amsg->hdr.msgtag[0] is for domain_mask
-    writer->WriteMessage(amsg);
-
+    if (writer->WriteMessage(amsg) < 0)
+    {
+        LOGF("Sync-comm socket to TERCE (server %s:%d) failed to send InitComm message\n", terce_host, terce_port);
+        return;
+    }
+    assert(reader != NULL);
     api_msg* rmsg = reader->ReadSyncMessage();
+    if (!rmsg)
+    {
+        LOGF("Sync-comm socket to TERCE (server %s:%d) failed to receive Init response message\n", terce_host, terce_port);        
+        return;
+    }    
     if (rmsg->hdr.action == ACT_ACK)
         api_ready = true;
     else // error code?
         api_ready = false;
+    api_msg_delete(rmsg);
 } 
 
 void TerceApiTopoSync::KeepAlive()
@@ -272,7 +282,24 @@ void TerceApiTopoSync::Run ()
     u_int32_t ucid = domain_id;
     api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_QUERY, NULL, ucid, get_rce_seqnum(), 0);
     amsg->hdr.msgtag[1] = htonl(DOMAIN_MASK_GLOBAL);
-    writer->PostMessage(amsg);
+    if (writer->WriteMessage(amsg) < 0)
+    {
+        LOGF("Sync-comm socket to TERCE (server %s:%d) failed to send SyncQuery message\n", terce_host, terce_port);
+        return;
+    }
+    assert(reader != NULL);
+    api_msg* rmsg = reader->ReadSyncMessage();
+    if (!rmsg)
+    {
+        LOGF("Sync-comm socket to TERCE (server %s:%d) failed to receive SyncQuery response message\n", terce_host, terce_port);
+        return;
+    }
+    if (rmsg->hdr.action == ACT_ERROR)
+    {
+        LOGF("NARB-TerceApiTopoSync MSG_TERCE_TOPO_SYNC Query failed, ErrorCode=%d...\n", htonl(rmsg->hdr.tag));
+    }
+    api_msg_delete(rmsg);
+    return;
 }
 
 TerceApiTopoSync::~TerceApiTopoSync ()
