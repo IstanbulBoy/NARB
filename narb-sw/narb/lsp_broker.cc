@@ -340,8 +340,18 @@ int LSPQ::ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_int
     do
     {
         assert(*node_inter != NULL);
-        //removing duplicates
-        if (ero_intra.begin() != ero_intra.end() && (*node_inter)->addr.s_addr == (*ero_intra.begin())->addr.s_addr)
+
+        //removing duplicate ero_subobject
+        node_intra = ero_intra.begin();
+        for (; node_intra != ero_intra.end(); node_intra++)
+        {
+        
+            if ((*node_inter)->addr.s_addr == (*node_intra)->addr.s_addr)
+            {
+                break; //dupliate found
+            }
+        }
+        if (node_intra != ero_intra.end()) //dupliate found
         {
             node_inter++;
             continue;
