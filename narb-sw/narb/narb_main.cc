@@ -168,11 +168,9 @@ int main( int argc, char* argv[])
         LOG("Initiating NARB-TERCE API connection......" <<endl);
         //Start TERCE APIClient
         terce_client = new TerceApiTopoSync(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, DOMAIN_MASK_GLOBAL, 0);
-        eventMaster.Schedule(terce_client);
-        terce_client->Run();
-        if (!terce_client->NarbTerceApiReady())
+        if (terce_client->RunWithoutSyncTopology() < 0)
         {
-            LOGF("TerceApiTopoSync failure: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
     }
 

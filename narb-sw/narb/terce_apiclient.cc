@@ -232,6 +232,45 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     return 0;
 }
 
+int TerceApiTopoSync::RunWithoutSyncTopology ()
+{
+    if (sync_fd < 0)
+    {
+        if (Connect(terce_host, NARB_TERCE_SYNC_PORT, terce_port) < 0)
+        {
+            LOGF("NARB-TerceApiTopoSync connection failed : Check TERCE server %s:%d\n", terce_host, terce_port);
+            SetObsolete(true);
+            SetRepeats(0);
+            return -1;
+        }
+        assert(sync_fd > 0 && async_fd > 0);
+    }
+    if (reader == NULL)
+    {
+        reader = new TerceApiTopoReader(async_fd, this);
+        reader->SetRepeats(FOREVER);
+        reader->SetAutoDelete(true);
+        reader->SetSyncSocket(sync_fd);
+        eventMaster.Schedule(reader);
+    }
+    if (writer == NULL)
+    {
+        writer = new TerceApiTopoWriter(sync_fd, this);
+        writer->SetRepeats(0);
+        writer->SetAutoDelete(false);
+    }
+
+    //Check if the API is ready
+    if (!api_ready)
+    {
+        InitNarbTerceComm();
+        if (!api_ready)
+            return -2;
+    }
+
+    return 0;
+}
+
 void TerceApiTopoSync::Run ()
 {
     if (sync_fd < 0)
@@ -243,7 +282,7 @@ void TerceApiTopoSync::Run ()
         }
         if (Connect(terce_host, NARB_TERCE_SYNC_PORT, terce_port) < 0)
         {
-            LOGF("Attempt %d/3 ### Check TERCE status %s:%d ###\n", attempt, terce_host, terce_port);
+            LOGF("NARB-TerceApiTopoSync connection attempt %d/3 ### Check TERCE server status %s:%d ###\n", attempt, terce_host, terce_port);
             return;
         }
     }

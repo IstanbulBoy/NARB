@@ -97,6 +97,7 @@ public:
                 close(async_fd);
         }
 
+    virtual int RunWithoutSyncTopology();
     virtual void Run();
     void KeepAlive();
     void InitNarbTerceComm();

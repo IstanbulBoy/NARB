@@ -240,7 +240,7 @@ void TerceApiTopoSync::Run ()
         }
         if (Connect(terce_host, RCE_TERCE_SYNC_PORT, terce_port) < 0)
         {
-            LOGF("Attempt %d/3 ### Check TERCE status %s:%d ###\n", attempt, terce_host, terce_port);
+            LOGF("RCE-TerceApiTopoSync connection attempt %d/3 ### Check TERCE server status %s:%d ###\n", attempt, terce_host, terce_port);
             return;
         }
     }
