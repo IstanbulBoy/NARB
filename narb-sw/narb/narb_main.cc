@@ -163,17 +163,6 @@ int main( int argc, char* argv[])
     NARB_XMLServer xml_server(NARB_XML_PORT);
     xml_server.Start();
 
-    if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port != 0)
-    {
-        LOG("Initiating NARB-TERCE API connection......" <<endl);
-        //Start TERCE APIClient
-        terce_client = new TerceApiTopoSync(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, DOMAIN_MASK_GLOBAL, 0);
-        if (terce_client->RunWithoutSyncTopology() < 0)
-        {
-            LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
-        }
-    }
-
     if (NarbDomainInfo.ospfd_inter.addr[0] == 0 || NarbDomainInfo.ospfd_inter.port == 0)
     {
         LOG("Running without connection to OSPFd......" <<endl);
@@ -209,13 +198,45 @@ int main( int argc, char* argv[])
             LOGF("Inter-domain OSPF interface 0x%x is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
             sleep(10);
         }
-        //Start abstract domain topology origination    
+        //Start abstract domain topology origination via Zebra OSPFd   
         NarbDomainInfo.OriginateTopology(ospf_apiwriter);
         dts_originator= new DomainTopologyOriginator(SystemConfig::topology_refresh_interval);
         dts_originator->SetRepeats(FOREVER);
         dts_originator->SetAutoDelete(true);
         dts_originator->SetOspfClient(zebra_client);
         eventMaster.Schedule(dts_originator);
+    }
+
+    if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port != 0)
+    {
+        LOG("Initiating NARB-TERCE API connection......" <<endl);
+        //Start TERCE APIClient
+        terce_client = new TerceApiTopoSync(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, DOMAIN_MASK_GLOBAL, 0);
+        if (terce_client->RunWithoutSyncTopology() < 0)
+        {
+            LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        }
+
+        // Polling for OSPF ajdacency (waiting for the origination interface up and in full adjacency with a neighbor)
+        while (!terce_client->NarbTerceApiReady())
+        {
+            LOGF("TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            sleep(10);
+        }
+        //Start abstract domain topology origination via TERCE
+        TerceApiTopoWriter* terce_apiwriter = terce_client->GetWriter();
+        NarbDomainInfo.OriginateTopology(terce_apiwriter);
+        if (dts_originator == NULL)
+        {
+            dts_originator= new DomainTopologyOriginator(SystemConfig::topology_refresh_interval);
+            dts_originator->SetRepeats(FOREVER);
+            dts_originator->SetAutoDelete(true);
+        }
+        dts_originator->SetTerceClient(terce_client);
+        if (dts_originator == NULL)
+        {
+            eventMaster.Schedule(dts_originator);
+        }
     }
 
     //Run program as daemon
@@ -226,3 +247,4 @@ int main( int argc, char* argv[])
     eventMaster.Run();
     return 0;
 }
+

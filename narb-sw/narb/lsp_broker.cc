@@ -37,8 +37,10 @@
 #include "toolbox.hh"
 #include "narb_apiclient.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 
 extern ZebraOspfSync* zebra_client;
+extern TerceApiTopoSync* terce_client;
 
 list<struct ConfirmationIDIndxedEROWithTimer*> LSP_Broker::qconf_id_indexed_ero_list;
 
@@ -1167,7 +1169,8 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
             {
                 vtag = lsp_vtag;
             }
-            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0
+                || terce_client && terce_client->NarbTerceApiReady())
             {
                 for (int i = 0; i < 8; i++)
                 {
@@ -1186,7 +1189,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
                 // update the link to inter-domain topology if the narb working mode is dynamic
                 if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
                 {
-                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                    NarbDomainInfo.UpdateTeLink(link1);
                 }
             }
             link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
@@ -1321,7 +1324,8 @@ int LSPQ::HandleResvRelease(api_msg* msg)
             {
                 vtag = lsp_vtag;
             }
-            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+            if(zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0
+                || terce_client && terce_client->NarbTerceApiReady())
             {
                 for (int i = 0; i < 8; i++)
                 {
@@ -1340,7 +1344,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 // update the link to inter-domain topology if the narb working mode is dynamic
                 if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
                 {
-                    NarbDomainInfo.UpdateTeLink(zebra_client->GetWriter(), link1);
+                    NarbDomainInfo.UpdateTeLink(link1);
                 }
             }
             link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);

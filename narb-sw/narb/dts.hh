@@ -179,6 +179,7 @@ public:
 
 // a super data structure that summarzes the domain
 class ZebraOspfWriter;
+class TerceApiTopoWriter;
 class DomainInfo
 {
 public:
@@ -241,31 +242,47 @@ public:
     void ClearLinks();
 
     inline void* BuildTeLinkOpaqueData(link_info* link);
-    int OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router);
-    int OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
-    int UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
-    bool IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer);
-    int OriginateTopology (ZebraOspfWriter* oc_writer);
-    int DeleteTopology (ZebraOspfWriter* oc_writer);
-    void HideTopology ();
-    void ExposeTopology ();
     link_info* ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_link, router_id_info *router);
     void ProbeAutoLinks();
     void CleanupAutoLinks();
-};
+    void HideTopology ();
+    void ExposeTopology ();
 
+    //Zebra OSPFd API
+    bool IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer);
+    int OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router);
+    int OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
+    int UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link);
+    int OriginateTopology (ZebraOspfWriter* oc_writer);
+    int DeleteTopology (ZebraOspfWriter* oc_writer);
+
+    //TERCE Topo API
+    int OriginateRouterId (TerceApiTopoWriter* tc_writer, router_id_info* router);
+    int OriginateTeLink (TerceApiTopoWriter* tc_writer, link_info* link);
+    int UpdateTeLink (TerceApiTopoWriter* tc_writer, link_info* link);
+    int OriginateTopology (TerceApiTopoWriter* tc_writer);
+    int DeleteTopology (TerceApiTopoWriter* tc_writer);
+
+    //Combined (Zebra+Terce) topology operations
+    int OriginateRouterId(router_id_info* router);
+    int OriginateTeLink (link_info* link);
+    int UpdateTeLink (link_info* link);
+};
+    
 class ZebraOspfSync;
+class TerceApiTopoSync;
 class DomainTopologyOriginator: public Timer
 {
 private:
     ZebraOspfSync * ospf_client;
+    TerceApiTopoSync * terce_client;
 public:
-    DomainTopologyOriginator(int interval): Timer(interval, 0) { ospf_client = NULL;}
+    DomainTopologyOriginator(int interval): Timer(interval, 0), ospf_client(NULL), terce_client(NULL) { }
     virtual ~DomainTopologyOriginator() { }
     void SetOspfClient(ZebraOspfSync* oc) { ospf_client = oc; }
+    void SetTerceClient(TerceApiTopoSync* tc) { terce_client = tc; }
     virtual void Run();
 };
-
     
 #endif
  

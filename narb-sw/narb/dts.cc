@@ -33,8 +33,13 @@
 #include "types.hh"
 #include "resource.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 #include "narb_config.hh"
 #include "dts.hh"
+
+// topology exchange API clients
+extern ZebraOspfSync* zebra_client;
+extern TerceApiTopoSync* terce_client;
 
 DomainInfo::~DomainInfo()
 {
@@ -481,6 +486,14 @@ void DomainInfo::ClearLinks()
 //  Timer function to originate domain summary LSA's periodically
 void DomainTopologyOriginator::Run()
 {
+    //TERCE Server
+    if (terce_client && terce_client->NarbTerceApiReady())
+    {
+        NarbDomainInfo.DeleteTopology(terce_client->GetWriter()); //??
+        NarbDomainInfo.OriginateTopology(terce_client->GetWriter());
+    }
+
+    //Zebra OSPFd
     if (!ospf_client || !ospf_client->Alive())
         return;
     if (!ospf_client->GetReader() || !!ospf_client->GetWriter())
@@ -491,35 +504,6 @@ void DomainTopologyOriginator::Run()
 
     NarbDomainInfo.DeleteTopology(ospf_client->GetWriter());
     NarbDomainInfo.OriginateTopology(ospf_client->GetWriter());
-}
-
-
-// Function originating Router ID TE LSA
-int DomainInfo::OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router)
-{
-  int ret = 0;
-  void *opaquedata;
-  int opaquelen;
-  u_char lsa_type = 10;
-  u_char opaque_type = 1;
-
-  opaquedata = (void *)ospf_te_router_addr_tlv_alloc(*(in_addr*)&router->id); 
-  opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
-                + sizeof (struct te_tlv_header);
-
-  router->opaque_id = narb_ospf_opaque_id();
-  ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
-                *(in_addr*)&router->advRtId, //$$$$ hacked
-                NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
-                router->opaque_id, opaquedata, opaquelen);
-
-  free(opaquedata);
-  
-  LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d] opaque-id[%d]) originated through OSPFd at %s.\n", 
-     lsa_type, opaque_type, router->opaque_id, NarbDomainInfo.ospfd_inter.addr);
-  LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router->id, router->advRtId, ret);
-
-  return ret;
 }
 
 void* DomainInfo::BuildTeLinkOpaqueData(link_info* link)
@@ -578,6 +562,35 @@ void* DomainInfo::BuildTeLinkOpaqueData(link_info* link)
   return opaquedata;
 }
 
+// Function originating Router ID TE LSA
+int DomainInfo::OriginateRouterId (ZebraOspfWriter* oc_writer, router_id_info* router)
+{
+  int ret = 0;
+  void *opaquedata;
+  int opaquelen;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
+
+  opaquedata = (void *)ospf_te_router_addr_tlv_alloc(*(in_addr*)&router->id); 
+  opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                + sizeof (struct te_tlv_header);
+
+  router->opaque_id = narb_ospf_opaque_id();
+  ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
+                *(in_addr*)&(router->advRtId), //$$$$ hacked
+                NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
+                router->opaque_id, opaquedata, opaquelen);
+
+  free(opaquedata);
+  
+  LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d] opaque-id[%d]) originated through OSPFd at %s.\n", 
+     lsa_type, opaque_type, router->opaque_id, NarbDomainInfo.ospfd_inter.addr);
+  LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router->id, router->advRtId, ret);
+
+  return ret;
+}
+
+
 // Function originating Link TE LSA
 int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 {
@@ -591,7 +604,7 @@ int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 
   link->opaque_id = narb_ospf_opaque_id();
   ret = oc_writer->OriginateLsa(NarbDomainInfo.ospfd_inter.ori_if,
-                *(in_addr*)&link->advRtId, //$$$$ DRAGON
+                *(in_addr*)&(link->advRtId), //$$$$ DRAGON
                 NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
                 link->opaque_id, opaquedata, opaquelen);
   
@@ -604,11 +617,12 @@ int DomainInfo::OriginateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
   return ret;
 }
 
+
 // Function updating Link TE LSA
 int DomainInfo::UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
 {
    /*
-    oc_writer->DeleteLsa(*(in_addr*)&link->advRtId, //$$$$ DRAGON
+    oc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), //$$$$ DRAGON
                     NarbDomainInfo.ospfd_inter.area, 10, 1, link->opaque_id);    
     return OriginateTeLink(oc_writer, link);
     */
@@ -621,7 +635,7 @@ int DomainInfo::UpdateTeLink (ZebraOspfWriter* oc_writer, link_info* link)
                     + sizeof (struct te_tlv_header);
 
   ret = oc_writer->UpdateLsa(NarbDomainInfo.ospfd_inter.ori_if,
-                *(in_addr*)&link->advRtId, //$$$$ DRAGON
+                *(in_addr*)&(link->advRtId), //$$$$ DRAGON
                 NarbDomainInfo.ospfd_inter.area, lsa_type, opaque_type, 
                 link->opaque_id, opaquedata, opaquelen);
   
@@ -713,7 +727,7 @@ int DomainInfo::DeleteTopology (ZebraOspfWriter* oc_writer)
     {
         if (!link->hide)
         {
-            ret = oc_writer->DeleteLsa(*(in_addr*)&link->advRtId, /* $$$$ hacked */
+            ret = oc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), /* $$$$ hacked */
                             NarbDomainInfo.ospfd_inter.area, lsa_type,  
                             opaque_type, link->opaque_id);
             
@@ -928,5 +942,174 @@ void DomainInfo::CleanupAutoLinks()
         }
         link = NarbDomainInfo.NextLink();
     }
+}
+
+
+/////////////////////////////////////////
+// TERCE related domain topology operations //
+////////////////////////////////////////
+
+int DomainInfo::OriginateRouterId (TerceApiTopoWriter* tc_writer, router_id_info* router)
+{
+  int ret = 0;
+  void *opaquedata;
+  int opaquelen;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
+
+  opaquedata = (void *)ospf_te_router_addr_tlv_alloc(*(in_addr*)&router->id); 
+  opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                + sizeof (struct te_tlv_header);
+
+  router->opaque_id = narb_ospf_opaque_id();
+  ret = tc_writer->OriginateLsa(*(in_addr*)&(router->advRtId), lsa_type, opaque_type, router->opaque_id, opaquedata, opaquelen);
+
+  free(opaquedata);
+  
+  LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d] opaque-id[%d]) originated through NARB-TERCE API at %s.\n", 
+     lsa_type, opaque_type, router->opaque_id, NarbDomainInfo.terce.addr);
+  LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router->id, router->advRtId, ret);
+
+  return ret;
+}
+
+int DomainInfo::OriginateTeLink (TerceApiTopoWriter* tc_writer, link_info* link)
+{
+  int ret = 0;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
+  
+  void *opaquedata = BuildTeLinkOpaqueData(link);
+  int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                    + sizeof (struct te_tlv_header);
+
+  link->opaque_id = narb_ospf_opaque_id();
+  ret = tc_writer->OriginateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id, opaquedata, opaquelen);
+  
+  free(opaquedata);
+  
+  LOGF("TE_LINK (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) originated through NARB-TERCE API at %s.\n", 
+     lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
+  LOGF("\t ID = %X, TYPE = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->type, link->advRtId, ret);
+
+  return ret;
+}
+
+int DomainInfo::UpdateTeLink (TerceApiTopoWriter* tc_writer, link_info* link)
+{
+  int ret = 0;
+  u_char lsa_type = 10;
+  u_char opaque_type = 1;
+  
+  void *opaquedata = BuildTeLinkOpaqueData(link);
+  int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                    + sizeof (struct te_tlv_header);
+
+  ret = tc_writer->UpdateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id, opaquedata, opaquelen);
+  
+  free(opaquedata);
+  
+  LOGF("TE_LINK (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) updated through NARB-TERCE API at %s.\n", 
+     lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
+  LOGF("\t ID = %X, TYPE = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->type, link->advRtId, ret);
+
+  return ret;
+}
+
+int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
+{
+    int ret = 0;
+    
+    //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
+    //NarbDomainInfo.CleanupAutoLinks();
+    NarbDomainInfo.ProbeAutoLinks();
+
+    // originate router-id LSA's
+    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
+    while (router_id)
+    {
+        if (!router_id->hide)
+        {
+            this->OriginateRouterId(tc_writer, router_id);
+         }
+        router_id = NarbDomainInfo.NextRouterId();
+    }
+
+    // originate  te-link LSA's
+    link_info * link = NarbDomainInfo.FirstLink();
+    while (link)
+    {
+        if (!link->hide)
+        {
+            this->OriginateTeLink(tc_writer, link);
+        }
+        link = NarbDomainInfo.NextLink();
+    }
+
+    return ret;
+}
+
+int DomainInfo::DeleteTopology (TerceApiTopoWriter* tc_writer)
+{
+    int ret = 0;
+  
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+  
+    // delete router-id LSA's
+    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
+    while (router_id)
+    {
+        if (!router_id->hide)
+        {
+            ret = tc_writer->DeleteLsa(*(in_addr*)&router_id->advRtId, lsa_type, opaque_type, router_id->opaque_id);
+            
+            LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
+               lsa_type, opaque_type, router_id->opaque_id, NarbDomainInfo.terce.addr);
+            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router_id->id, router_id->advRtId, ret);
+        }
+        router_id = NarbDomainInfo.NextRouterId();
+    }
+
+    // delete  te-link LSA's
+    link_info * link = NarbDomainInfo.FirstLink();
+    while (link)
+    {
+        if (!link->hide)
+        {
+            ret = tc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id);
+            
+            LOGF("LINK_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
+               lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
+            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->advRtId, ret);
+        }
+        link = NarbDomainInfo.NextLink();
+    }
+
+    return ret;
+}
+
+int DomainInfo::OriginateRouterId(router_id_info* router)
+{
+    if (zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+        OriginateRouterId(zebra_client->GetWriter(), router);
+    if (terce_client && terce_client->NarbTerceApiReady())
+        OriginateRouterId(terce_client->GetWriter(), router);
+}
+
+int DomainInfo::OriginateTeLink (link_info* link)
+{
+    if (zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+        OriginateTeLink(zebra_client->GetWriter(), link);
+    if (terce_client && terce_client->NarbTerceApiReady())
+        OriginateTeLink(terce_client->GetWriter(), link);
+}
+
+int DomainInfo::UpdateTeLink (link_info* link)
+{
+    if (zebra_client && zebra_client->GetWriter() && zebra_client->GetWriter()->Socket() > 0)
+        UpdateTeLink(zebra_client->GetWriter(), link);
+    if (terce_client && terce_client->NarbTerceApiReady())
+        UpdateTeLink(terce_client->GetWriter(), link);
 }
 

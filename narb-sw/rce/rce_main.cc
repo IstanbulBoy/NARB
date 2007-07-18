@@ -122,7 +122,9 @@ int main( int argc, char* argv[])
     sprintf(log_file, "/var/log/rce.log");    
     Log::Init(LOG_ALL, log_file);
     Log::SetDebug(true);
-    LOG("DRAGON RCE Started..."<<endl);
+    LOG(endl<<endl<<"#####################"<<endl
+        <<"DRAGON RCE Started..."<<endl
+        <<"#####################"<<endl<<endl);
 
     ResourceSchema rsd(0);
     rsd.Init((char*)SystemConfig::schema_file.c_str());

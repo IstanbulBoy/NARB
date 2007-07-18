@@ -369,6 +369,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
 }
 
 ZebraOspfSync * zebra_client = NULL;
+TerceApiTopoSync * terce_client = NULL;
 DomainTopologyOriginator * dts_originator = NULL;
 ConfigFile configMaster;
 
