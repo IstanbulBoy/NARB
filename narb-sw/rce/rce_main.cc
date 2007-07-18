@@ -147,9 +147,8 @@ int main( int argc, char* argv[])
 
     if (SystemConfig::terce_host.size() > 0 && SystemConfig::terce_port > 0)
     {
-        TerceApiTopoSync terceSync((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, 
+        terce_client = new TerceApiTopoSync((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, 
             DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);
-        terce_client = &terceSync;
         eventMaster.Schedule(terce_client);
         terce_client->Run();
     }
