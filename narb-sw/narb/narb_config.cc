@@ -145,7 +145,7 @@ static int blk_code (char *buf)
         return CONFIG_INTER_DOMAIN_OSPFD;
     else if (strstr(buf, "intra-domain-ospfd"))
         return CONFIG_INTRA_DOMAIN_OSPFD;
-    else if (strstr(buf, "terce-server"))
+    else if (strstr(buf, "terce"))
         return CONFIG_TERCE;
     else if (strstr(buf, "router"))
         return CONFIG_ROUTER;
@@ -351,18 +351,18 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               }
               else
               {
-                  LOG("ReadConfigParameter failed on TERCE : localport" << endl);
+                  LOG("ReadConfigParameter failed on TERCE : localport --> set to default: " << NARB_TERCE_SYNC_PORT << endl);
                   domain_info.terce.localport =  NARB_TERCE_SYNC_PORT;
               }
               
               if (ReadConfigParameter(blk_body, "port", "%d", &port))
               {
-                  domain_info.ospfd_inter.port = port;
+                  domain_info.terce.port = port;
               }
               else
               {
                   LOG("ReadConfigParameter failed on TERCE : port" << endl);
-                  domain_info.ospfd_inter.port = TERCE_API_SERVER_PORT;
+                  domain_info.terce.port = TERCE_API_SERVER_PORT;
                   LOGF("TERCE server port has been set to %d \n",  TERCE_API_SERVER_PORT);
               }
           }
