@@ -211,6 +211,17 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               {
                   domain_info.domain_id = strtoul(domain_id, NULL, 10);
               }
+              else if  (ReadConfigParameter(blk_body, "asn", "%s", domain_id))
+              {
+                  u_int32_t asn1, asn2;
+                  int ret = sscanf(domain_id, "%u.%u", &asn1, &asn2);
+                  if (ret == 1)
+                      domain_info.domain_id = (asn1&0xffff);
+                  else if (ret == 2)
+                      domain_info.domain_id = ((asn1 << 16) | (asn2&0xffff));
+                  else
+                      LOG("DomainID in asn (AS Number) format should be x or x.x, where x is a short integer."<<endl);
+              }
               else
               {
                   LOG("ReadConfigParameter failed on domain-id"<<endl);
