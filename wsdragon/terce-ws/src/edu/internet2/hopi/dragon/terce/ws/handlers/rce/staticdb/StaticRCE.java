@@ -19,7 +19,7 @@ import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCE;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
@@ -40,7 +40,7 @@ public class StaticRCE extends RCE implements RCEInterface{
 	 * @param request the SOAP request that contains the path computation parameters
 	 * @return The result of a path computation in a SOAP format
 	 */
-	public FindPathResponse findPath(FindPath request) throws RCEFaultMessageException{
+	public FindPathResponse findPath(FindPath request) throws RCEFaultMessage{
 		PropertyReader props = null;
 		FindPathResponse response = new FindPathResponse();
 		FindPathContent requestContent = request.getFindPath();

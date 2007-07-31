@@ -31,7 +31,7 @@ public class TERCESkeleton{
 	 * Auto generated method signature
 	 * @param findPath
 	 */
-	public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessageException{
+	public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessage{
 		PropertyReader props = null;
 		/* Open properties file */
 		try {
@@ -53,7 +53,7 @@ public class TERCESkeleton{
 	 * @param selectNetworkTopology
 	 */
 	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectNetworkTopology)
-		throws TEDBFaultMessageException{
+		throws TEDBFaultMessage{
 		PropertyReader props = null;
 		
 		/* Open properties file */
@@ -76,7 +76,7 @@ public class TERCESkeleton{
 	 * @param insertNetworkTopology
 	 */
 	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertNetworkTopology)
-		throws TEDBFaultMessageException{
+		throws TEDBFaultMessage{
 		PropertyReader props = null;
 		
 		/* Open properties file */

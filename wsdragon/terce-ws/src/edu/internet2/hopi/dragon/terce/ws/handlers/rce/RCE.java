@@ -1,6 +1,6 @@
 package edu.internet2.hopi.dragon.terce.ws.handlers.rce;
 
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault;
 
 /**
@@ -12,14 +12,14 @@ import edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault;
 public abstract class RCE {
 	
 	/**
-	 * Sets fault message and returns an RCEFaultMessageException
+	 * Sets fault message and returns an RCEFaultMessage
 	 * @param msg fault message to set in exception
 	 * @return the generated exception
 	 */
-    protected RCEFaultMessageException generateRCEException(String msg){
+    protected RCEFaultMessage generateRCEException(String msg){
    	 TerceRceFault fault = new TerceRceFault();
    	 fault.setMsg(msg);
-   	 RCEFaultMessageException e = new RCEFaultMessageException();
+   	 RCEFaultMessage e = new RCEFaultMessage();
    	 e.setFaultMessage(fault);
 			
    	 return e;

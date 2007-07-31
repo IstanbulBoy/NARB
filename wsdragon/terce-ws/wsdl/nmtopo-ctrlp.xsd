@@ -36,7 +36,7 @@
   
   <xs:complexType name="CtrlPlaneNodeContent">
       <xs:sequence>
-        <xs:element minOccurs="0" name="address" type="CtrlPlaneAddressContent" />
+        <xs:element minOccurs="0" name="address" type="xs:string" />
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="CtrlPlane:port"/>
       </xs:sequence>
       <xs:attribute name="id" use="required" type="xs:string"/>
@@ -65,10 +65,10 @@
   
   <xs:complexType name="CtrlPlaneLinkContent">
       <xs:sequence>
-        <xs:element minOccurs="0" name="remoteLinkId" type="CtrlPlaneAddressContent" />
-        <xs:element minOccurs="0" name="remotePortId" type="CtrlPlaneAddressContent" />
-        <xs:element minOccurs="0" name="remoteNodeId" type="CtrlPlaneAddressContent" />
-        <xs:element minOccurs="0" name="remoteDomainId" type="CtrlPlaneAddressContent" />
+        <xs:element minOccurs="0" name="remoteLinkId" type="xs:string" />
+        <xs:element minOccurs="0" name="remotePortId" type="xs:string" />
+        <xs:element minOccurs="0" name="remoteNodeId" type="xs:string" />
+        <xs:element minOccurs="0" name="remoteDomainId" type="xs:string" />
         <xs:element minOccurs="0" name="trafficEngineeringMetric" type="xs:string"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" 
             name="linkProtectionTypes" type="xs:string"/>

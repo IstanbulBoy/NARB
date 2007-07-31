@@ -26,7 +26,7 @@ import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDB;
 import edu.internet2.hopi.dragon.terce.ws.handlers.tedb.TEDBInterface;
-import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponseContent;
@@ -56,7 +56,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	 * @param insertRequest an Axis2 object representation of an insertNetworkTopology request
 	 * @return an Axis2 representation of a successful response to an insertNetworkTopology request
 	 */
-	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessageException{
+	public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessage{
 		InsertNetworkTopologyResponse response = new InsertNetworkTopologyResponse();
 		InsertNetworkTopologyResponseContent responseContent = new InsertNetworkTopologyResponseContent();
 		
@@ -77,7 +77,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	 * @param selectRequest an Axis2 selectNetworkTopology web service request
 	 * @return an Axis2 response to a selectNetworkTopology request
 	 */
-	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException {
+	public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessage {
 		PropertyReader props = null;
 		SelectNetworkTopologyResponse response = new SelectNetworkTopologyResponse();
 		SelectNetworkTopologyResponseContent responseContent = new SelectNetworkTopologyResponseContent();
@@ -218,7 +218,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			if(nodeName == null){
 				continue;
 			}else if(nodeName.equalsIgnoreCase("address")){
-				node.setAddress(this.parseAddress(child));
+				node.setAddress(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("port")){
 				CtrlPlanePortContent port = this.parsePort(child);
 				node.addPort(port);
@@ -291,14 +291,14 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			
 			if(nodeName == null){
 				continue;
-			}else if(nodeName.equalsIgnoreCase("localPortId")){
-				link.setCapacity(child.getTextContent());
+			}else if(nodeName.equalsIgnoreCase("remoteLinkId")){
+				link.setRemoteLinkId(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("remotePortId")){
-				link.setRemotePortId(this.parseAddress(child));
+				link.setRemotePortId(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("remoteNodeId")){
-				link.setRemoteNodeId(this.parseAddress(child));
+				link.setRemoteNodeId(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("remoteDomainId")){
-				link.setRemoteDomainId(this.parseAddress(child));
+				link.setRemoteDomainId(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("trafficEngineeringMetric")){
 				link.setTrafficEngineeringMetric(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("linkProtectionTypes")){

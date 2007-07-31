@@ -1,10 +1,10 @@
 
-        /**
-        * TERCEStub.java
-        *
-        * This file was auto-generated from WSDL
-        * by the Apache Axis2 version: 1.2 Apr 27, 2007 (04:35:37 IST)
-        */
+/**
+ * TERCEStub.java
+ *
+ * This file was auto-generated from WSDL
+ * by the Apache Axis2 version: 1.3-RC2  Built on : Jul 20, 2007 (04:21:49 LKT)
+ */
         package edu.internet2.hopi.dragon.terce.ws.service;
 
         
@@ -28,22 +28,19 @@
 
      //creating the Service with a unique name
      _service = new org.apache.axis2.description.AxisService("TERCE" + this.hashCode());
-     
-    
 
         //creating the operations
         org.apache.axis2.description.AxisOperation __operation;
-    
-
 
         _operations = new org.apache.axis2.description.AxisOperation[3];
         
                    __operation = new org.apache.axis2.description.OutInAxisOperation();
                 
 
-            __operation.setName(new javax.xml.namespace.QName("", "findPath"));
+            __operation.setName(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS", "findPath"));
 	    _service.addOperation(__operation);
 	    
+
 	    
 	    
             _operations[0]=__operation;
@@ -52,9 +49,10 @@
                    __operation = new org.apache.axis2.description.OutInAxisOperation();
                 
 
-            __operation.setName(new javax.xml.namespace.QName("", "selectNetworkTopology"));
+            __operation.setName(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS", "selectNetworkTopology"));
 	    _service.addOperation(__operation);
 	    
+
 	    
 	    
             _operations[1]=__operation;
@@ -63,9 +61,10 @@
                    __operation = new org.apache.axis2.description.OutInAxisOperation();
                 
 
-            __operation.setName(new javax.xml.namespace.QName("", "insertNetworkTopology"));
+            __operation.setName(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS", "insertNetworkTopology"));
 	    _service.addOperation(__operation);
 	    
+
 	    
 	    
             _operations[2]=__operation;
@@ -79,12 +78,12 @@
               faultExceptionNameMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                  "TerceRceFault"),
-                 "edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException"
+                 "edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage"
                );
               faultExceptionClassNameMap.put(new javax.xml.namespace.QName(
                 "http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                 "TerceRceFault"),
-                "edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException");
+                "edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage");
                faultMessageMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/RCE",
                  "TerceRceFault"),
@@ -94,12 +93,12 @@
               faultExceptionNameMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                  "TerceTedbFault"),
-                 "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException"
+                 "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage"
                );
               faultExceptionClassNameMap.put(new javax.xml.namespace.QName(
                 "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                 "TerceTedbFault"),
-                "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException");
+                "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage");
                faultMessageMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                  "TerceTedbFault"),
@@ -109,12 +108,12 @@
               faultExceptionNameMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                  "TerceTedbFault"),
-                 "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException"
+                 "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage"
                );
               faultExceptionClassNameMap.put(new javax.xml.namespace.QName(
                 "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                 "TerceTedbFault"),
-                "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException");
+                "edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage");
                faultMessageMap.put( new javax.xml.namespace.QName(
                  "http://hopi.internet2.edu/DRAGON/TERCE/TEDB",
                  "TerceTedbFault"),
@@ -125,11 +124,22 @@
 
     }
 
+    /**
+      *Constructor that takes in a configContext
+      */
+
+    public TERCEStub(org.apache.axis2.context.ConfigurationContext configurationContext,
+       java.lang.String targetEndpoint)
+       throws org.apache.axis2.AxisFault {
+         this(configurationContext,targetEndpoint,false);
+   }
+
+
    /**
-    Constructor that takes in a configContext
-    */
+     * Constructor that takes in a configContext  and useseperate listner
+     */
    public TERCEStub(org.apache.axis2.context.ConfigurationContext configurationContext,
-        java.lang.String targetEndpoint)
+        java.lang.String targetEndpoint, boolean useSeparateListener)
         throws org.apache.axis2.AxisFault {
          //To populate AxisService
          populateAxisService();
@@ -142,11 +152,21 @@
 
         _serviceClient.getOptions().setTo(new org.apache.axis2.addressing.EndpointReference(
                 targetEndpoint));
+        _serviceClient.getOptions().setUseSeparateListener(useSeparateListener);
         
             //Set the soap version
             _serviceClient.getOptions().setSoapVersionURI(org.apache.axiom.soap.SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI);
         
     
+    }
+
+    /**
+     * Default Constructor
+     */
+    public TERCEStub(org.apache.axis2.context.ConfigurationContext configurationContext) throws org.apache.axis2.AxisFault {
+        
+                    this(configurationContext,"https://hopi.internet2.edu/axis2/services/DRAGON/TERCE" );
+                
     }
 
     /**
@@ -169,11 +189,11 @@
 
         
                     /**
-                    * Auto generated method signature
-                    * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#findPath
-                        * @param findPath36
+                     * Auto generated method signature
+                     * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#findPath
+                     * @param findPath36
                     
-                    */
+                     */
 
                     
                             public  edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse findPath(
@@ -184,7 +204,7 @@
                     throws java.rmi.RemoteException
                     
                     
-                        ,edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException{
+                        ,edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage{
 
               try{
                org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[0].getName());
@@ -207,7 +227,7 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     findPath36,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "findPath")));
                                                 
         //adding SOAP soap_headers
@@ -227,14 +247,14 @@
                 org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
                 
                 
-                           java.lang.Object object = fromOM(
-                                        _returnEnv.getBody().getFirstElement() ,
-                                        edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.class,
-                                         getEnvelopeNamespaces(_returnEnv));
-                           _messageContext.getTransportOut().getSender().cleanup(_messageContext);
-                          
-                                   return (edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse)object;
-                              
+                                java.lang.Object object = fromOM(
+                                             _returnEnv.getBody().getFirstElement() ,
+                                             edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.class,
+                                              getEnvelopeNamespaces(_returnEnv));
+                                _messageContext.getTransportOut().getSender().cleanup(_messageContext);
+                               
+                                        return (edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse)object;
+                                   
          }catch(org.apache.axis2.AxisFault f){
 
             org.apache.axiom.om.OMElement faultElt = f.getDetail();
@@ -254,8 +274,8 @@
                                    new java.lang.Class[]{messageClass});
                         m.invoke(ex,new java.lang.Object[]{messageObject});
                         
-                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException){
-                          throw (edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException)ex;
+                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage){
+                          throw (edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage)ex;
                         }
                         
 
@@ -311,7 +331,6 @@
                   addPropertyToOperationClient(_operationClient,org.apache.axis2.description.WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR,"&");
               
 
-          
 
               // create SOAP envelope with that payload
               org.apache.axiom.soap.SOAPEnvelope env=null;
@@ -323,36 +342,47 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     findPath36,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "findPath")));
                                                 
-        //adding SOAP soap_headers
+        // adding SOAP soap_headers
          _serviceClient.addHeadersToEnvelope(env);
         // create message context with that soap envelope
         _messageContext.setEnvelope(env);
 
-        // add the message contxt to the operation client
+        // add the message context to the operation client
         _operationClient.addMessageContext(_messageContext);
 
 
                     
-                           _operationClient.setCallback(new org.apache.axis2.client.async.Callback() {
-                    public void onComplete(
-                            org.apache.axis2.client.async.AsyncResult result) {
-                        java.lang.Object object = fromOM(result.getResponseEnvelope().getBody().getFirstElement(),
-                               edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.class,
-                               getEnvelopeNamespaces(result.getResponseEnvelope())
-                            );
-                        callback.receiveResultfindPath(
-                            
-                                   (edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse)object);
+                        _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+                            public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
+                            try {
+                                org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
                                 
+                                        java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(),
+                                                                         edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.class,
+                                                                         getEnvelopeNamespaces(resultEnv));
+                                        callback.receiveResultfindPath(
+                                        (edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse)object);
+                                        
+                            } catch (org.apache.axis2.AxisFault e) {
+                                callback.receiveErrorfindPath(e);
+                            }
+                            }
 
-                    }
+                            public void onError(java.lang.Exception e) {
+                                callback.receiveErrorfindPath(e);
+                            }
 
-                    public void onError(java.lang.Exception e) {
-                        callback.receiveErrorfindPath(e);
-                    }
+                            public void onFault(org.apache.axis2.context.MessageContext faultContext) {
+                                org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
+                                onError(fault);
+                            }
+
+                            public void onComplete() {
+                                // Do nothing by default
+                            }
                 });
                         
 
@@ -369,11 +399,11 @@
                     }
                 
                     /**
-                    * Auto generated method signature
-                    * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#selectNetworkTopology
-                        * @param selectNetworkTopology38
+                     * Auto generated method signature
+                     * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#selectNetworkTopology
+                     * @param selectNetworkTopology38
                     
-                    */
+                     */
 
                     
                             public  edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse selectNetworkTopology(
@@ -384,7 +414,7 @@
                     throws java.rmi.RemoteException
                     
                     
-                        ,edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException{
+                        ,edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage{
 
               try{
                org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[1].getName());
@@ -407,7 +437,7 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     selectNetworkTopology38,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "selectNetworkTopology")));
                                                 
         //adding SOAP soap_headers
@@ -427,14 +457,14 @@
                 org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
                 
                 
-                           java.lang.Object object = fromOM(
-                                        _returnEnv.getBody().getFirstElement() ,
-                                        edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.class,
-                                         getEnvelopeNamespaces(_returnEnv));
-                           _messageContext.getTransportOut().getSender().cleanup(_messageContext);
-                          
-                                   return (edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse)object;
-                              
+                                java.lang.Object object = fromOM(
+                                             _returnEnv.getBody().getFirstElement() ,
+                                             edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.class,
+                                              getEnvelopeNamespaces(_returnEnv));
+                                _messageContext.getTransportOut().getSender().cleanup(_messageContext);
+                               
+                                        return (edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse)object;
+                                   
          }catch(org.apache.axis2.AxisFault f){
 
             org.apache.axiom.om.OMElement faultElt = f.getDetail();
@@ -454,8 +484,8 @@
                                    new java.lang.Class[]{messageClass});
                         m.invoke(ex,new java.lang.Object[]{messageObject});
                         
-                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException){
-                          throw (edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException)ex;
+                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage){
+                          throw (edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage)ex;
                         }
                         
 
@@ -511,7 +541,6 @@
                   addPropertyToOperationClient(_operationClient,org.apache.axis2.description.WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR,"&");
               
 
-          
 
               // create SOAP envelope with that payload
               org.apache.axiom.soap.SOAPEnvelope env=null;
@@ -523,36 +552,47 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     selectNetworkTopology38,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "selectNetworkTopology")));
                                                 
-        //adding SOAP soap_headers
+        // adding SOAP soap_headers
          _serviceClient.addHeadersToEnvelope(env);
         // create message context with that soap envelope
         _messageContext.setEnvelope(env);
 
-        // add the message contxt to the operation client
+        // add the message context to the operation client
         _operationClient.addMessageContext(_messageContext);
 
 
                     
-                           _operationClient.setCallback(new org.apache.axis2.client.async.Callback() {
-                    public void onComplete(
-                            org.apache.axis2.client.async.AsyncResult result) {
-                        java.lang.Object object = fromOM(result.getResponseEnvelope().getBody().getFirstElement(),
-                               edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.class,
-                               getEnvelopeNamespaces(result.getResponseEnvelope())
-                            );
-                        callback.receiveResultselectNetworkTopology(
-                            
-                                   (edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse)object);
+                        _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+                            public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
+                            try {
+                                org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
                                 
+                                        java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(),
+                                                                         edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.class,
+                                                                         getEnvelopeNamespaces(resultEnv));
+                                        callback.receiveResultselectNetworkTopology(
+                                        (edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse)object);
+                                        
+                            } catch (org.apache.axis2.AxisFault e) {
+                                callback.receiveErrorselectNetworkTopology(e);
+                            }
+                            }
 
-                    }
+                            public void onError(java.lang.Exception e) {
+                                callback.receiveErrorselectNetworkTopology(e);
+                            }
 
-                    public void onError(java.lang.Exception e) {
-                        callback.receiveErrorselectNetworkTopology(e);
-                    }
+                            public void onFault(org.apache.axis2.context.MessageContext faultContext) {
+                                org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
+                                onError(fault);
+                            }
+
+                            public void onComplete() {
+                                // Do nothing by default
+                            }
                 });
                         
 
@@ -569,11 +609,11 @@
                     }
                 
                     /**
-                    * Auto generated method signature
-                    * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#insertNetworkTopology
-                        * @param insertNetworkTopology40
+                     * Auto generated method signature
+                     * @see edu.internet2.hopi.dragon.terce.ws.service.TERCE#insertNetworkTopology
+                     * @param insertNetworkTopology40
                     
-                    */
+                     */
 
                     
                             public  edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse insertNetworkTopology(
@@ -584,7 +624,7 @@
                     throws java.rmi.RemoteException
                     
                     
-                        ,edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException{
+                        ,edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage{
 
               try{
                org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[2].getName());
@@ -607,7 +647,7 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     insertNetworkTopology40,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "insertNetworkTopology")));
                                                 
         //adding SOAP soap_headers
@@ -627,14 +667,14 @@
                 org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
                 
                 
-                           java.lang.Object object = fromOM(
-                                        _returnEnv.getBody().getFirstElement() ,
-                                        edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class,
-                                         getEnvelopeNamespaces(_returnEnv));
-                           _messageContext.getTransportOut().getSender().cleanup(_messageContext);
-                          
-                                   return (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse)object;
-                              
+                                java.lang.Object object = fromOM(
+                                             _returnEnv.getBody().getFirstElement() ,
+                                             edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class,
+                                              getEnvelopeNamespaces(_returnEnv));
+                                _messageContext.getTransportOut().getSender().cleanup(_messageContext);
+                               
+                                        return (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse)object;
+                                   
          }catch(org.apache.axis2.AxisFault f){
 
             org.apache.axiom.om.OMElement faultElt = f.getDetail();
@@ -654,8 +694,8 @@
                                    new java.lang.Class[]{messageClass});
                         m.invoke(ex,new java.lang.Object[]{messageObject});
                         
-                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException){
-                          throw (edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException)ex;
+                        if (ex instanceof edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage){
+                          throw (edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage)ex;
                         }
                         
 
@@ -711,7 +751,6 @@
                   addPropertyToOperationClient(_operationClient,org.apache.axis2.description.WSDL2Constants.ATTR_WHTTP_QUERY_PARAMETER_SEPARATOR,"&");
               
 
-          
 
               // create SOAP envelope with that payload
               org.apache.axiom.soap.SOAPEnvelope env=null;
@@ -723,36 +762,47 @@
                                                     
                                                     env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()),
                                                     insertNetworkTopology40,
-                                                    optimizeContent(new javax.xml.namespace.QName("",
+                                                    optimizeContent(new javax.xml.namespace.QName("http://hopi.internet2.edu/DRAGON/TERCE/WS",
                                                     "insertNetworkTopology")));
                                                 
-        //adding SOAP soap_headers
+        // adding SOAP soap_headers
          _serviceClient.addHeadersToEnvelope(env);
         // create message context with that soap envelope
         _messageContext.setEnvelope(env);
 
-        // add the message contxt to the operation client
+        // add the message context to the operation client
         _operationClient.addMessageContext(_messageContext);
 
 
                     
-                           _operationClient.setCallback(new org.apache.axis2.client.async.Callback() {
-                    public void onComplete(
-                            org.apache.axis2.client.async.AsyncResult result) {
-                        java.lang.Object object = fromOM(result.getResponseEnvelope().getBody().getFirstElement(),
-                               edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class,
-                               getEnvelopeNamespaces(result.getResponseEnvelope())
-                            );
-                        callback.receiveResultinsertNetworkTopology(
-                            
-                                   (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse)object);
+                        _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+                            public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
+                            try {
+                                org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
                                 
+                                        java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(),
+                                                                         edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class,
+                                                                         getEnvelopeNamespaces(resultEnv));
+                                        callback.receiveResultinsertNetworkTopology(
+                                        (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse)object);
+                                        
+                            } catch (org.apache.axis2.AxisFault e) {
+                                callback.receiveErrorinsertNetworkTopology(e);
+                            }
+                            }
 
-                    }
+                            public void onError(java.lang.Exception e) {
+                                callback.receiveErrorinsertNetworkTopology(e);
+                            }
 
-                    public void onError(java.lang.Exception e) {
-                        callback.receiveErrorinsertNetworkTopology(e);
-                    }
+                            public void onFault(org.apache.axis2.context.MessageContext faultContext) {
+                                org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
+                                onError(fault);
+                            }
+
+                            public void onComplete() {
+                                // Do nothing by default
+                            }
                 });
                         
 
@@ -800,77 +850,133 @@
         return false;
     }
      //https://hopi.internet2.edu/axis2/services/DRAGON/TERCE
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
-            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse param, boolean optimizeContent){
+            private  org.apache.axiom.om.OMElement  toOM(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse param, boolean optimizeContent)
+            throws org.apache.axis2.AxisFault {
+
             
-                     return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.MY_QNAME,
-                                  org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        try{
+                             return param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse.MY_QNAME,
+                                          org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+                        } catch(org.apache.axis2.databinding.ADBException e){
+                            throw org.apache.axis2.AxisFault.makeFault(e);
+                        }
                     
 
             }
         
                             
-                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath param, boolean optimizeContent){
-                            org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology param, boolean optimizeContent)
+                            throws org.apache.axis2.AxisFault{
+
                                  
-                                        emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.MY_QNAME,factory));
+                                        try{
+
+                                                org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                                                emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.MY_QNAME,factory));
+                                                return emptyEnvelope;
+                                            } catch(org.apache.axis2.databinding.ADBException e){
+                                                throw org.apache.axis2.AxisFault.makeFault(e);
+                                            }
                                     
-                             return emptyEnvelope;
+
                             }
 
                              
@@ -878,12 +984,20 @@
 
                              
                             
-                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology param, boolean optimizeContent){
-                            org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath param, boolean optimizeContent)
+                            throws org.apache.axis2.AxisFault{
+
                                  
-                                        emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology.MY_QNAME,factory));
+                                        try{
+
+                                                org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                                                emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.MY_QNAME,factory));
+                                                return emptyEnvelope;
+                                            } catch(org.apache.axis2.databinding.ADBException e){
+                                                throw org.apache.axis2.AxisFault.makeFault(e);
+                                            }
                                     
-                             return emptyEnvelope;
+
                             }
 
                              
@@ -891,12 +1005,20 @@
 
                              
                             
-                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology param, boolean optimizeContent){
-                            org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                            private  org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology param, boolean optimizeContent)
+                            throws org.apache.axis2.AxisFault{
+
                                  
-                                        emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.MY_QNAME,factory));
+                                        try{
+
+                                                org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
+                                                emptyEnvelope.getBody().addChild(param.getOMElement(edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology.MY_QNAME,factory));
+                                                return emptyEnvelope;
+                                            } catch(org.apache.axis2.databinding.ADBException e){
+                                                throw org.apache.axis2.AxisFault.makeFault(e);
+                                            }
                                     
-                             return emptyEnvelope;
+
                             }
 
                              
@@ -916,10 +1038,31 @@
         private  java.lang.Object fromOM(
         org.apache.axiom.om.OMElement param,
         java.lang.Class type,
-        java.util.Map extraNamespaces){
+        java.util.Map extraNamespaces) throws org.apache.axis2.AxisFault{
 
         try {
         
+                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.class.equals(type)){
+                
+                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+                    
+
+                }
+           
+                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class.equals(type)){
+                
+                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+                    
+
+                }
+           
+                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.class.equals(type)){
+                
+                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.Factory.parse(param.getXMLStreamReaderWithoutCaching());
+                    
+
+                }
+           
                 if (edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.class.equals(type)){
                 
                            return edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath.Factory.parse(param.getXMLStreamReaderWithoutCaching());
@@ -962,29 +1105,8 @@
 
                 }
            
-                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.class.equals(type)){
-                
-                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology.Factory.parse(param.getXMLStreamReaderWithoutCaching());
-                    
-
-                }
-           
-                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.class.equals(type)){
-                
-                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse.Factory.parse(param.getXMLStreamReaderWithoutCaching());
-                    
-
-                }
-           
-                if (edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.class.equals(type)){
-                
-                           return edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault.Factory.parse(param.getXMLStreamReaderWithoutCaching());
-                    
-
-                }
-           
-        } catch (Exception e) {
-        throw new RuntimeException(e);
+        } catch (java.lang.Exception e) {
+        throw org.apache.axis2.AxisFault.makeFault(e);
         }
            return null;
         }
@@ -992,9 +1114,5 @@
 
 
     
-            private void setOpNameArray(){
-            opNameArray = null;
-            }
-           
    }
    

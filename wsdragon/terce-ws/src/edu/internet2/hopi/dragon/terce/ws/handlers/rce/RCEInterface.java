@@ -1,6 +1,6 @@
 package edu.internet2.hopi.dragon.terce.ws.handlers.rce;
 
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
 
@@ -12,5 +12,5 @@ import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
  *
  */
 public interface RCEInterface {
-	FindPathResponse findPath(FindPath request) throws RCEFaultMessageException;
+	FindPathResponse findPath(FindPath request) throws RCEFaultMessage;
 }

@@ -9,8 +9,8 @@ import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent;
 
 import edu.internet2.hopi.dragon.PropertyReader;
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
-import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.TerceRceFault;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault;
 /**
@@ -85,10 +85,10 @@ public class TERCEHandler {
 	 * @param msg fault message to set in exception
 	 * @return the generated exception
 	 */
-	public static RCEFaultMessageException generateRCEException(String msg){
+	public static RCEFaultMessage generateRCEException(String msg){
    	 TerceRceFault fault = new TerceRceFault();
    	 fault.setMsg(msg);
-   	 RCEFaultMessageException e = new RCEFaultMessageException();
+   	 RCEFaultMessage e = new RCEFaultMessage();
    	 e.setFaultMessage(fault);
 			
    	 return e;
@@ -99,10 +99,10 @@ public class TERCEHandler {
 	 * @param msg fault message to set in exception
 	 * @return the generated exception
 	 */
-	public static TEDBFaultMessageException generateTEDBException(String msg){
+	public static TEDBFaultMessage generateTEDBException(String msg){
    	 TerceTedbFault fault = new TerceTedbFault();
    	 fault.setMsg(msg);
-   	 TEDBFaultMessageException e = new TEDBFaultMessageException();
+   	 TEDBFaultMessage e = new TEDBFaultMessage();
    	 e.setFaultMessage(fault);
 			
    	 return e;

@@ -1,10 +1,11 @@
 
-    /**
-     * TERCECallbackHandler.java
-     *
-     * This file was auto-generated from WSDL
-     * by the Apache Axis2 version: 1.2 Apr 27, 2007 (04:35:37 IST)
-     */
+/**
+ * TERCECallbackHandler.java
+ *
+ * This file was auto-generated from WSDL
+ * by the Apache Axis2 version: 1.3-RC2  Built on : Jul 20, 2007 (04:21:49 LKT)
+ */
+
     package edu.internet2.hopi.dragon.terce.ws.service;
 
     /**

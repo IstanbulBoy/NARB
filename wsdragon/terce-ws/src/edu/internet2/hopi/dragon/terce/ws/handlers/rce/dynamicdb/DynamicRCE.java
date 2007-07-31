@@ -11,7 +11,7 @@ import edu.internet2.hopi.dragon.terce.api.TERCEReply;
 
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCE;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.Exclude;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
@@ -33,7 +33,7 @@ public class DynamicRCE extends RCE implements RCEInterface{
 	 * @param request the SOAP request that contains the path computation parameters
 	 * @return The result of a path computation in a SOAP format
 	 */
-	public FindPathResponse findPath(FindPath request) throws RCEFaultMessageException {
+	public FindPathResponse findPath(FindPath request) throws RCEFaultMessage {
 		FindPathResponse response = new FindPathResponse();
         FindPathResponseContent responseContent = new FindPathResponseContent();
         App2TERCERequest terceRequest;

@@ -1,6 +1,6 @@
 package edu.internet2.hopi.dragon.terce.ws.handlers.tedb;
 
-import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault;
 
 /**
@@ -12,14 +12,14 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault;
  */
 public abstract class TEDB {
 	/**
-	 * Sets fault message and returns an TEDBFaultMessageException
+	 * Sets fault message and returns an TEDBFaultMessage
 	 * @param msg fault message to set in exception
 	 * @return the generated exception
 	 */
-    protected TEDBFaultMessageException generateTEDBException(String msg){
+    protected TEDBFaultMessage generateTEDBException(String msg){
    	 TerceTedbFault fault = new TerceTedbFault();
    	 fault.setMsg(msg);
-   	 TEDBFaultMessageException e = new TEDBFaultMessageException();
+   	 TEDBFaultMessage e = new TEDBFaultMessage();
    	 e.setFaultMessage(fault);
 			
    	 return e;

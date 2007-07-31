@@ -8,7 +8,7 @@ import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPath;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathContent;
 import edu.internet2.hopi.dragon.terce.ws.types.rce.FindPathResponse;
-import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.RCEFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 
 /**
@@ -73,7 +73,7 @@ public class FindPathClient {
 			System.out.println("Available VLAN tags: " + response.getFindPathResponse().getAvailableVtags());
 		} catch (RemoteException e) {
 			e.printStackTrace();
-		} catch (RCEFaultMessageException e) {
+		} catch (RCEFaultMessage e) {
 			System.err.println(e.getFaultMessage().getMsg());
 			e.printStackTrace();
 		}

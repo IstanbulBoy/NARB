@@ -1,25 +1,26 @@
 
 /**
- * TEDBFaultMessageException.java
+ * TEDBFaultMessage.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.2 Apr 27, 2007 (04:35:37 IST)
+ * by the Apache Axis2 version: 1.3-RC2  Built on : Jul 20, 2007 (04:21:49 LKT)
  */
+
 package edu.internet2.hopi.dragon.terce.ws.service;
 
-public class TEDBFaultMessageException extends java.lang.Exception{
+public class TEDBFaultMessage extends java.lang.Exception{
     
     private edu.internet2.hopi.dragon.terce.ws.types.tedb.TerceTedbFault faultMessage;
     
-    public TEDBFaultMessageException() {
-        super("TEDBFaultMessageException");
+    public TEDBFaultMessage() {
+        super("TEDBFaultMessage");
     }
            
-    public TEDBFaultMessageException(java.lang.String s) {
+    public TEDBFaultMessage(java.lang.String s) {
        super(s);
     }
     
-    public TEDBFaultMessageException(java.lang.String s, java.lang.Throwable ex) {
+    public TEDBFaultMessage(java.lang.String s, java.lang.Throwable ex) {
       super(s, ex);
     }
     

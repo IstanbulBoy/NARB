@@ -7,7 +7,7 @@ import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlanePortContent;
 
-import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.service.TERCEStub;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyContent;
@@ -75,7 +75,7 @@ public class SelectTopologyClient {
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (TEDBFaultMessageException e) {
+		} catch (TEDBFaultMessage e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getFaultMessage().getMsg());
 		}

@@ -1,6 +1,6 @@
 package edu.internet2.hopi.dragon.terce.ws.handlers.tedb;
 
-import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessageException;
+import edu.internet2.hopi.dragon.terce.ws.service.TEDBFaultMessage;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
@@ -13,6 +13,6 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyRespon
  *
  */
 public interface TEDBInterface {
-	InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessageException;
-	SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessageException;
+	InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertRequest) throws TEDBFaultMessage;
+	SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectRequest) throws TEDBFaultMessage;
 }
