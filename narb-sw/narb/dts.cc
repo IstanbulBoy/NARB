@@ -289,9 +289,9 @@ link_info* DomainInfo::LookupInterdomainLinkByRmtIf(in_addr id)
 
 void DomainInfo::SearchAndProcessInterdomainLink(list<ero_subobj*>&ero)
 {
-    list<ero_subobj*>::iterator it;
+    list<ero_subobj*>::reverse_iterator it;
  
-    for (it = ero.begin(); it != ero.end(); it++)
+    for (it = ero.rbegin(); it != ero.rend(); it++)
     {
         if ((*it) && (*it)->hop_type == ERO_TYPE_LOOSE_HOP)
         {
@@ -299,7 +299,7 @@ void DomainInfo::SearchAndProcessInterdomainLink(list<ero_subobj*>&ero)
             {
                 (*it)->hop_type = ERO_TYPE_STRICT_HOP;
                 it++;
-                assert(it != ero.end());
+                assert(it != ero.rend());
                 (*it)->hop_type = ERO_TYPE_STRICT_HOP;
             }
             return;
