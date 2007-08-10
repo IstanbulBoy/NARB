@@ -66,7 +66,7 @@ struct option longopts[] =
 void usage()
 {
     cout<<"RCE  Usage:"<<endl;
-    cout<<"\t rce [-d] (daemon)  [-f config_file] [-s schema_file] [-p CLI port] [-P API port] [-h] (help)" <<endl;
+    cout<<"\t rce [-d] (daemon)  [-f config_file] [-p CLI port] [-P API port] [-h] (help)" <<endl;
 }
 
 ZebraOspfSync *zebra_client_inter = NULL;
@@ -82,7 +82,7 @@ int main( int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "ds:f:p:P:h", longopts, 0);
+        opt = getopt_long (argc, argv, "df:p:P:h", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -91,9 +91,6 @@ int main( int argc, char* argv[])
         case 'f':
             SystemConfig::config_file = optarg;
             has_config_file = true;
-            break;
-        case 's':
-            SystemConfig::schema_file = optarg;
             break;
         case 'd':
             is_daemon = true;
@@ -123,13 +120,16 @@ int main( int argc, char* argv[])
         <<"DRAGON RCE Started..."<<endl
         <<"#####################"<<endl<<endl);
 
-    ResourceSchema rsd(0);
-    rsd.Init((char*)SystemConfig::schema_file.c_str());
-
     if (has_config_file)
     {
         SystemConfig systemConfigFileHandler(SystemConfig::config_file);
         systemConfigFileHandler.Init();
+    }
+
+    if (SystemConfig::schema_file.size() > 0)
+    {
+        ResourceSchema rsd(0);
+        rsd.Init((char*)SystemConfig::schema_file.c_str());
     }
 
     if (SystemConfig::subnet_file.size() > 0)

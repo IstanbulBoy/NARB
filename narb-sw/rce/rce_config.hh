@@ -53,6 +53,7 @@ enum config_code {
   CONFIG_LINK,
   CONFIG_DOMAIN_ID,
   CONFIG_SUBNET,
+  CONFIG_SCHEMA,
   CONFIG_UNKNOWN
 };
 

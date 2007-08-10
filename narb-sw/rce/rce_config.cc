@@ -34,8 +34,8 @@
 #include "rce_config.hh"
 #include "terce_apiclient.hh"
 
-string SystemConfig::config_file("rce.conf");
-string SystemConfig::schema_file("schema_combo.rsd");
+string SystemConfig::config_file;
+string SystemConfig::schema_file;
 
 string SystemConfig::ospfd_inter_host("localhost");
 int SystemConfig::ospfd_inter_port = 2607;
@@ -247,6 +247,16 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case CONFIG_SCHEMA:
+          {
+              char filename[MAXPATHLEN];
+              if (ReadConfigParameter(blk_body, "path", "%s", filename))
+              {
+                  schema_file = filename;
+              }
+          }
+          break;
+
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s} for SystemConfig::ConfigFromFile()\n", blk_header, blk_body);
@@ -259,8 +269,10 @@ int SystemConfig::blk_code (char *buf)
 {
     if (strstr(buf, "domain-id"))
         return CONFIG_DOMAIN_ID;
-    else if (strstr(buf, "include-subnet-config"))
+    else if (strstr(buf, "include-subnet-topology"))
         return CONFIG_SUBNET;
+    else if (strstr(buf, "include-tedb-schema"))
+        return CONFIG_SCHEMA;
     else if (strstr(buf, "router"))
         return CONFIG_ROUTER;
     else if (strstr(buf, "link"))
