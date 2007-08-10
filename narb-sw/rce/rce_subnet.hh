@@ -108,14 +108,12 @@ protected:
     void InternalInit() {
         routerType = RTYPE_LOC_RTID;
         linkType = RTYPE_LOC_PHY_LNK;
-        domainId = 0;
         SystemConfig::should_incorporate_subnet = true; 
     }
     string subnetDescription;
 
     ResourceType routerType;
     ResourceType linkType;
-    u_int32_t domainId;
     vector<router_id_info*> routerVector;
     vector<link_info*> linkVector;
 };
@@ -126,38 +124,15 @@ protected:
 ///////////////////////////////////////////////////////
 #define SUBNET_CURRENT_CONFIG_FILE "subnet_ciena.conf"
 #define SUBNET_DEFAULT_CONFIG_FILE "/usr/local/dragon/etc/subnet_ciena.conf"
-#define SUBNET_BUFSIZ 0x10000
-#define SUBNET_BLKSIZ 0x1000
-#define SUBNET_LINESIZ 0x800
-#define MAXADDRLEN 60
-#define MAXPATHLEN 256
 
-
-// definitions of codes for configuration blocks
-enum config_code {
-  CONFIG_END = 0,
-  CONFIG_ROUTER,
-  CONFIG_LINK,
-  CONFIG_DOMAIN_ID,
-  CONFIG_UNKNOWN
-};
-
-
-class Subnet_ConfigFile: public Subnet
+class Subnet_ConfigFile: public SystemConfig, Subnet
 {
 public:
-    Subnet_ConfigFile(string& fileName):configFile(fileName), Subnet("Subnet-PreconfigedFromFile") {}
+    Subnet_ConfigFile(string& fileName):SystemConfig(fileName), Subnet("Subnet-PreconfigedFromFile") {}
     virtual ~Subnet_ConfigFile() { }
 
-    void Init(const char* fileName= NULL);
-    void ReadConfig(char *config_file, char *config_current_dir,	char *config_default_dir);
-    void ConfigFromFile(ifstream &ifs);
-    int ReadConfigBlock(char *buf, char * header, char * body, char ** next);
-    int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
-    //int ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask);
-
-private:
-    string configFile;
+    virtual void Init(const char* fileName= NULL);
+    virtual void ConfigFromFile(ifstream &ifs);
 };
 
 #endif

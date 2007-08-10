@@ -66,7 +66,7 @@ struct option longopts[] =
 void usage()
 {
     cout<<"RCE  Usage:"<<endl;
-    cout<<"\t rce [-d] (daemon)  [-f config_file] [-s schema_file] [-c subnet_topology_file]  [-p CLI port] [-P API port] [-h] (help)" <<endl;
+    cout<<"\t rce [-d] (daemon)  [-f config_file] [-s schema_file] [-p CLI port] [-P API port] [-h] (help)" <<endl;
 }
 
 ZebraOspfSync *zebra_client_inter = NULL;
@@ -76,13 +76,13 @@ TerceApiTopoSync *terce_client = NULL;
 int main( int argc, char* argv[])
 {
     bool is_daemon = false;
-    bool enable_subnet = false;
+    bool has_config_file = false;
 
     while (1)
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "ds:f:c:p:P:h", longopts, 0);
+        opt = getopt_long (argc, argv, "ds:f:p:P:h", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -90,13 +90,10 @@ int main( int argc, char* argv[])
         {
         case 'f':
             SystemConfig::config_file = optarg;
+            has_config_file = true;
             break;
         case 's':
             SystemConfig::schema_file = optarg;
-            break;
-        case 'c':
-            SystemConfig::subnet_file = optarg;
-            enable_subnet = true;
             break;
         case 'd':
             is_daemon = true;
@@ -129,7 +126,13 @@ int main( int argc, char* argv[])
     ResourceSchema rsd(0);
     rsd.Init((char*)SystemConfig::schema_file.c_str());
 
-    if (enable_subnet)
+    if (has_config_file)
+    {
+        SystemConfig systemConfigFileHandler(SystemConfig::config_file);
+        systemConfigFileHandler.Init();
+    }
+
+    if (SystemConfig::subnet_file.size() > 0)
     {
         Subnet_ConfigFile subnetTopoIntra(SystemConfig::subnet_file);
         subnetTopoIntra.Init();

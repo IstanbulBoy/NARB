@@ -262,7 +262,8 @@ Resource* LSAHandler::Parse()
                                     r2d_conv->domain_id = link->domainId;
                                     RDB.routerToDomainDirectory.push_back(r2d_conv);
                                 }
-                                //@@@@ reverting 'link->metric += SystemConfig::metric_interdomain_nice_incremental'
+                                //reverting 'link->metric += SystemConfig::metric_interdomain_nice_incremental'
+                                //The Metric TLV has been added with metric_interdomain_nice_incremental, now revert those from other domains.
                                 if (ntohl(link->domainId) != SystemConfig::domainId && link->metric > SystemConfig::metric_interdomain_nice_incremental)
                                     link->metric -= SystemConfig::metric_interdomain_nice_incremental;
                             }  

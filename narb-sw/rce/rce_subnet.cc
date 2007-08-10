@@ -129,84 +129,16 @@ void Subnet::ClearTopology()
 
 void Subnet_ConfigFile::Init(const char* fileName)
 {
-    ReadConfig(fileName? (char*)fileName : (char*)configFile.c_str(), (char*)SUBNET_CURRENT_CONFIG_FILE, (char*)SUBNET_DEFAULT_CONFIG_FILE);
-    //TODO: configure domainId directly from '-f configFile' instead of '-c subnet.conf'
-    if (SystemConfig::domainId == 0)
-        SystemConfig::domainId = this->domainId;
-}
-
-// Read up configuration file from subnet_file. 
-void Subnet_ConfigFile::ReadConfig (char *config_file, char *config_current_dir, char *config_default_dir)
-{
-    char *cwd;
-    ifstream inFile;
-    string fullpath ;
-  
-    if (config_file != NULL)
-    {
-        if (config_file[0] != '/')
-        {
-            cwd = getcwd (NULL, MAXPATHLEN);
-            fullpath = cwd;;
-            fullpath += '/';
-            fullpath +=  config_file;
-        }
-        else
-            fullpath = config_file;
-
-        inFile.open (fullpath.c_str(), ifstream::in);
-
-        if (!inFile  || inFile.bad()) 
-        {
-            LOG_CERR << "Failed to open the config file: " << fullpath << endl;
-            return;
-        }
-    }
-    else // config_file not specified in comand line
-    {
-        // Relative path configuration file open. 
-        if (config_current_dir)
-        {
-            inFile.open (config_current_dir, ifstream::in);
-          // If there is no relative path exists, open system default file.
-        }
-
-        if (!inFile  || inFile.bad()) 
-        {
-            inFile.open (config_default_dir, ifstream::in);
-            if (!inFile  || inFile.bad()) 
-            {
-                LOG_CERR << "Failed to open the config file: " << config_default_dir << endl;
-                return;
-            }
-            else
-            {
-                fullpath = config_default_dir;
-            }
-        }
-        else
-        {
-            // Rleative path configuration file. 
-            cwd = getcwd (NULL, MAXPATHLEN);
-            fullpath = cwd;
-            fullpath += '/';
-            fullpath += config_current_dir;
-        }  
-    }
-  
-    ConfigFromFile(inFile);
- 
-    inFile.close();
-    return;
+    ReadConfig(fileName? (char*)fileName : (char*)SystemConfig::subnet_file.c_str(), (char*)SUBNET_CURRENT_CONFIG_FILE, (char*)SUBNET_DEFAULT_CONFIG_FILE);
 }
 
 // Subnet topology is created from here.
 void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
 {
-    char buf[SUBNET_BUFSIZ];
+    char buf[CONFIG_BUFSIZ];
     string line;
-    char blk_header[SUBNET_LINESIZ];
-    char blk_body[SUBNET_BLKSIZ];
+    char blk_header[CONFIG_LINESIZ];
+    char blk_body[CONFIG_BLKSIZ];
   
     int len;
     int config_code;
@@ -230,38 +162,9 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
         // each block is identified by the config_code
         switch(config_code) 
         {
-        case CONFIG_DOMAIN_ID:
-          {
-              char domain_id[MAXADDRLEN];
-              if (ReadConfigParameter(blk_body, "ip", "%s", domain_id))
-              {
-                  inet_aton(domain_id, (struct in_addr*)(&domainId));
-              }
-              else if  (ReadConfigParameter(blk_body, "id", "%s", domain_id))
-              {
-                  domainId = strtoul(domain_id, NULL, 10);
-              }
-              else if  (ReadConfigParameter(blk_body, "asn", "%s", domain_id))
-              {
-                  u_int32_t asn1, asn2;
-                  int ret = sscanf(domain_id, "%u.%u", &asn1, &asn2);
-                  if (ret == 1)
-                      domainId = (asn1&0xffff);
-                  else if (ret == 2)
-                      domainId = ((asn1 << 16) | (asn2&0xffff));
-                  else
-                      LOG("DomainID in asn (AS Number) format should be x or x.x, where x is a short integer."<<endl);
-              }
-              else
-              {
-                  LOG("ReadConfigParameter failed on domain-id"<<endl);
-              }
-          }
-          break;
-
         case  CONFIG_ROUTER:
           {
-              char link_header[SUBNET_LINESIZ], link_body[SUBNET_BLKSIZ];
+              char link_header[CONFIG_LINESIZ], link_body[CONFIG_BLKSIZ];
               char * link_blk, *p_str;
               int ret;
               char router_id[MAXADDRLEN];
@@ -393,12 +296,6 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
-/*
-                  if (ReadConfigVlanTagSet(link_body, "vlan_tags", link->vtagBitMask))
-                  {
-                      SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
-                  }
-*/
                   AddLink(link);
                 }
           }
@@ -406,130 +303,9 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
 
       case  CONFIG_UNKNOWN:
       default:
-         LOGF("Unknow configration block: %s {%s}\n", blk_header, blk_body);
+         LOGF("Unknow configration block: %s {%s} for Subnet_ConfigFile::ConfigFromFile()\n", blk_header, blk_body);
       }
     }
 
 }
 
-// recognizing a configuration block
-static int blk_code (char *buf)
-{
-    if (strstr(buf, "router"))
-        return CONFIG_ROUTER;
-    else if (strstr(buf, "link"))
-        return CONFIG_LINK;
-    else if (strstr(buf, "domain-id"))
-        return CONFIG_DOMAIN_ID;
-    else
-        return CONFIG_UNKNOWN;
-}
-
-// reading config block inside {}, note that the block may contain sub-level {}
-int Subnet_ConfigFile::ReadConfigBlock(char *buf, char * header, char * body, char ** next)
-{
-  int i = 0, j = 0, n = 0;
-  int ret = CONFIG_UNKNOWN;
-
-  while (buf[j++] !='{') 
-    {
-      if (!buf[j-1])
-         return CONFIG_END;
-    }
-  
-  if (j)
-    {
-      n++;
-      i = j;
-      strncpy(header, buf, i-1);
-      header[i] = 0;
-      ret = blk_code(header);
-
-      while (n > 0)
-        {
-          if (!buf[j])
-            return CONFIG_END;
-   
-          if (buf[j] == '{')
-            n++;
-          else if (buf[j] == '}')
-            n--;
-
-          j++;
-        }
-      
-      strncpy(body, buf+i, j-i-1);
-      body[j-i-1] = 0;
-      *next = buf + j;
-    }
-
-  return ret;
-}
-
-
-// reading a parameter from a config block (char *buf). Each parameter is 
-// specified in 'id = value' format. fmt describes it data type. The value is 
-// returned in the buffer (void * parameter)
-int Subnet_ConfigFile::ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter)
-{
-    char *str;
-  
-    str = strstr(buf, id);
-    if (!str)
-        return 0;
-  
-    // return 1 if successful, otherwise 0
-    return sscanf(str + strlen(id) + 1, fmt, parameter);
-}
-
-// reading a parameter of list<u_int32_t> type from a config block (char *buf).
-/*
-int Subnet_ConfigFile::ReadConfigVlanTagSet(char * buf, char * id, u_char* vtagMask)
-{
-    char *str;
-    static char buf_para[256];
-    u_int32_t vlan;
-    int n, range;
-
-    str = strstr(buf, id);
-    if (!str)
-        return 0;
-
-    str += (strlen(id)+1);
-
-    int i=0;
-    while (str[i] != ']' && str[i] != ')')
-    {
-        buf_para[i] = *(str+i);
-        i++;
-        if (i >= 256 || i > strlen(buf) -strlen(id))
-            return 0;
-    }
-    buf_para[i] = 0;
-    str = strtok(buf_para, " \t,;[]()|");
-    if (!str)
-        return 0;
-
-    while (str)
-    {
-	 n = sscanf(str, "%d:%d", &vlan, &range);
-
-        if (n == 1) {
-		vtagMask[vlan/8] = vtagMask[vlan/8] | (0x80 >> ((vlan-1)%8));
-        } 
-        else if (n == 2) {
-		range += vlan;
-		if (range > MAX_VLAN_NUM)
-			return 0;
-		for (; vlan < range; vlan++) {
-			vtagMask[vlan/8] = vtagMask[vlan/8] |(0x80 >> ((vlan-1)%8));
-		}
-	 }
-        else
-            return 0;
-        str = strtok(NULL, " \t,;[]()|");
-    }
-
-    return 1;
-}
-*/

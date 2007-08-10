@@ -38,9 +38,23 @@ using namespace std;
 #include <string>
 #include <list>
 
-#ifndef MAXPATHLEN
+#define CURRENT_CONFIG_FILE "rce.conf"
+#define DEFAULT_CONFIG_FILE "/usr/local/dragon/etc/rce.conf"
+#define CONFIG_BUFSIZ 0x10000
+#define CONFIG_BLKSIZ 0x1000
+#define CONFIG_LINESIZ 0x800
+#define MAXADDRLEN 60
 #define MAXPATHLEN 256
-#endif
+
+// definitions of codes for configuration blocks
+enum config_code {
+  CONFIG_END = 0,
+  CONFIG_ROUTER,
+  CONFIG_LINK,
+  CONFIG_DOMAIN_ID,
+  CONFIG_SUBNET,
+  CONFIG_UNKNOWN
+};
 
 typedef struct HomeVlsrRouterPair_type
 {
@@ -96,6 +110,18 @@ public:
 
     static void AddHomeVlsrRouterIdPair(u_int32_t home_vlsr, u_int32_t router_id);
     static u_int32_t FindHomeVlsrByRouterId(u_int32_t router_id);
+
+public:
+    SystemConfig(string& fileName) { config_file = fileName; }
+    virtual ~SystemConfig() { }
+
+    virtual void Init(const char* fileName= NULL);
+    virtual void ReadConfig(char *config_file, char *config_current_dir,	char *config_default_dir);
+    virtual void ConfigFromFile(ifstream &ifs);
+    virtual int ReadConfigBlock(char *buf, char * header, char * body, char ** next);
+    virtual int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
+    virtual int blk_code (char *buf);
+
 };
 
 #endif
