@@ -1,0 +1,7 @@
+!
+domain-id {ip 10.100.0.0}
+!
+include-tedb-schema {path /usr/local/dragon/etc/schema_combo.rsd}
+!
+!include-subnet-topology {path /usr/local/dragon/etc/subnet_ciena.conf}
+!

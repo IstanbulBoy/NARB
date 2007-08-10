@@ -21,7 +21,7 @@ narb_test_SOURCES = \
 narb_LDADD = -lc -lstdc++ -lxml2 -lz
 narb_test_LDADD = -lc -lstdc++ -lxml2 -lz
 
-sysconf_DATA = narb.conf.sample ospfd-intra.conf.sample ospfd-inter.conf.sample
+sysconf_DATA = narb.conf.sample rce.conf.sample ospfd-intra.conf.sample ospfd-inter.conf.sample
 RC_SCRIPT = run_narb.sh
 
 install-sysconfDATA: $(sysconf_DATA)
