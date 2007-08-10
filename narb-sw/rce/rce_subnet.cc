@@ -130,6 +130,9 @@ void Subnet::ClearTopology()
 void Subnet_ConfigFile::Init(const char* fileName)
 {
     ReadConfig(fileName? (char*)fileName : (char*)configFile.c_str(), (char*)SUBNET_CURRENT_CONFIG_FILE, (char*)SUBNET_DEFAULT_CONFIG_FILE);
+    //TODO: configure domainId directly from '-f configFile' instead of '-c subnet.conf'
+    if (SystemConfig::domainId == 0)
+        SystemConfig::domainId = this->domainId;
 }
 
 // Read up configuration file from subnet_file. 

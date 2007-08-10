@@ -242,6 +242,7 @@ Resource* LSAHandler::Parse()
         			link->domainId = (domain_mask & ntohl(((struct te_link_subtlv_domain_id *)sub_tlvh)->value));
                             if (domain_mask == DOMAIN_MASK_GLOBAL && link->domainId != 0)
                             {
+                                //adding to RDB.routerToDomainDirectory
                                 list<RouterId2DomainId*>::iterator iter;
                                 RouterId2DomainId* r2d_conv;
                                 bool found = false;
@@ -261,6 +262,9 @@ Resource* LSAHandler::Parse()
                                     r2d_conv->domain_id = link->domainId;
                                     RDB.routerToDomainDirectory.push_back(r2d_conv);
                                 }
+                                //@@@@ reverting 'link->metric += SystemConfig::metric_interdomain_nice_incremental'
+                                if (link->domainId != SystemConfig::domainId && link->metric > SystemConfig::metric_interdomain_nice_incremental)
+                                    link->metric -= SystemConfig::metric_interdomain_nice_incremental;
                             }  
 
         		       #ifdef HAVE_EXT_ATTR
