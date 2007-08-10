@@ -14,17 +14,6 @@ if test ! -f $PREFIX/bin/dragon.sh; then
     exit 1
 fi
 
-if test -f $PREFIX/etc/schema_combo.rsd; then
-    SCHEMA_FILE=$PREFIX/etc/schema_combo.rsd
-elif test -f $PREFIX2/etc/schema_combo.rsd; then
-    SCHEMA_FILE=$PREFIX2/etc/schema_combo.rsd
-elif test -f ./rce/schema_combo.rsd; then
-    SCHEMA_FILE=./rce/schema_combo.rsd
-else
-    echo 'narb-sw: RCE needs schema_combo.rsd!  -- refer to rce/schema_combo.rsd.sample...'
-    exit 1
-fi 
-
 if test -f $PREFIX/etc/narb.conf; then
     NARB_CONF=$PREFIX/etc/narb.conf
 elif test -f $PREFIX2/etc/narb.conf; then
@@ -33,6 +22,17 @@ elif test -f ./narb/narb.conf; then
     NARB_CONF=./narb/narb.conf
 else
     echo 'narb-sw: NARB needs narb.conf!  -- refer to narb/narb.conf.sample...'
+    exit 1
+fi      
+
+if test -f $PREFIX/etc/rce.conf; then
+    RCE_CONF=$PREFIX/etc/rce.conf
+elif test -f $PREFIX2/etc/rce.conf; then
+    RCE_CONF=$PREFIX2/etc/rce.conf
+elif test -f ./rce/rce.conf; then
+    RCE_CONF=./rce/rce.conf
+else
+    echo 'narb-sw: RCE needs rce.conf!  -- refer to rce/rce.conf.sample...'
     exit 1
 fi      
 
@@ -50,15 +50,15 @@ fi
 if test -f $PREFIX/sbin/rce; then
     killall -9 rce
     sleep 3
-    $PREFIX/sbin/rce -d -s $SCHEMA_FILE 
+    $PREFIX/sbin/rce -d -f $RCE_CONF
 elif test -f $PREFIX2/sbin/rce; then
     killall -9 rce
     sleep 3
-    $PREFIX2/sbin/rce -d -s $SCHEMA_FILE 
+    $PREFIX2/sbin/rce -d -f $RCE_CONF
 elif test -f ./rce/rce; then
     killall -9 rce
     sleep 3
-    ./rce/rce -d -s $SCHEMA_FILE 
+    ./rce/rce -d -f $RCE_CONF
 else
     echo '******* ERROR: RCE executable does not exist *******'
     exit 1

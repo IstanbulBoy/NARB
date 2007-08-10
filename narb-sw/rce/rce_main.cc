@@ -82,7 +82,7 @@ int main( int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "df:p:P:h", longopts, 0);
+        opt = getopt_long (argc, argv, "ds:f:p:P:h", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -90,6 +90,10 @@ int main( int argc, char* argv[])
         {
         case 'f':
             SystemConfig::config_file = optarg;
+            has_config_file = true;
+            break;
+        case 's':
+            SystemConfig::schema_file = optarg;
             has_config_file = true;
             break;
         case 'd':
@@ -126,11 +130,10 @@ int main( int argc, char* argv[])
         systemConfigFileHandler.Init();
     }
 
-    if (SystemConfig::schema_file.size() > 0)
-    {
-        ResourceSchema rsd(0);
-        rsd.Init((char*)SystemConfig::schema_file.c_str());
-    }
+    if (SystemConfig::schema_file.size() == 0)
+        LOG(endl<<"#### TEDB schema file must be present (configured with -s cmdline option or in 'rce.conf')...  "<<endl);
+    ResourceSchema rsd(0);
+    rsd.Init((char*)SystemConfig::schema_file.c_str());
 
     if (SystemConfig::subnet_file.size() > 0)
     {
