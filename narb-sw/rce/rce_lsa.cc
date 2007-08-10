@@ -263,7 +263,7 @@ Resource* LSAHandler::Parse()
                                     RDB.routerToDomainDirectory.push_back(r2d_conv);
                                 }
                                 //@@@@ reverting 'link->metric += SystemConfig::metric_interdomain_nice_incremental'
-                                if (link->domainId != SystemConfig::domainId && link->metric > SystemConfig::metric_interdomain_nice_incremental)
+                                if (ntohl(link->domainId) != SystemConfig::domainId && link->metric > SystemConfig::metric_interdomain_nice_incremental)
                                     link->metric -= SystemConfig::metric_interdomain_nice_incremental;
                             }  
 
