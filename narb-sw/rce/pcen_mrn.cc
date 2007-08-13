@@ -61,6 +61,7 @@ void PCEN_MRN::PostBuildTopology()
     ISCD* iscd;
     list<PCENLink*>::iterator link_iter;
     RadixNode<Resource> *node;
+    bool hop_back_attaching_to_source_verified = (hop_back == 0 ? true : false);
 
     int rNum = routers.size(); 
     int lNum = links.size();
@@ -74,11 +75,18 @@ void PCEN_MRN::PostBuildTopology()
         pcen_node->tspec.Bandwidth = bandwidth_ingress;
     }
 
+
     //Init reverseLink
     for (i = 0; i < lNum; i++)
     {
         pcen_link = links[i];
         assert(pcen_link);
+
+        //verifying that the hop_back address is a localIfAddr of the source node...
+        if (hop_back != 0 && pcen_link->link->LclIfAddr() == hop_back && pcen_link->link->AdvRtId() == source.s_addr)
+        {
+            hop_back_attaching_to_source_verified = true;
+        }
 
         pcen_node = pcen_link->rmt_end;
         if (!pcen_node)
@@ -96,8 +104,15 @@ void PCEN_MRN::PostBuildTopology()
         }
     }
 
-    
+    if (!hop_back_attaching_to_source_verified)
+    {
+        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that the hopback interface (0x%x) is attaching to the source router(0x%x)\n", hop_back, source.s_addr);
+        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+        return;
+    }
+
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
+    u_int32_t new_source = 0;
     if (SystemConfig::should_incorporate_subnet)
     {
         //  special handling for hop back
@@ -115,11 +130,11 @@ void PCEN_MRN::PostBuildTopology()
             //Moving source one hop back!!
             if (hopBackInterdomainPcenLink && hopBackInterdomainPcenLink->rmt_end && hopBackInterdomainPcenLink->rmt_end->router)
             {
-                source.s_addr = hopBackInterdomainPcenLink->rmt_end->router->id;
+                new_source = hopBackInterdomainPcenLink->rmt_end->router->id;
             }
             else
             {
-                LOGF("Warning: PCEN_MRN::PostBuildTopology cannot change source address based on the hop_back interface 0x%x\n", hop_back);
+                LOGF("Note: PCEN_MRN::PostBuildTopology did not change source address based on the hop_back interface 0x%x\n", hop_back);
             }
         }
 
@@ -139,6 +154,12 @@ void PCEN_MRN::PostBuildTopology()
                     pcen_link = links[i];
                     if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
                     {
+                        //hop_back verified against the attaching-to subnet_vlsr, change source node now
+                        if ( new_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
+                        {
+                            source.s_addr = new_source;
+                        }
+                        //record the found hop back link candidate
                         hopBackInterdomainPcenLink = pcen_link;
                     }
                 }
