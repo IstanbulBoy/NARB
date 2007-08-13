@@ -45,10 +45,9 @@ string SystemConfig::ospfd_intra_host("localhost");
 int SystemConfig::ospfd_intra_port = 2617;
 int SystemConfig::ospfd_intra_port_local = 4617;
 
-//To be configured from CLI ?
-string SystemConfig::terce_host("localhost");
-int SystemConfig::terce_port = TERCE_API_SERVER_PORT;
-int SystemConfig::terce_port_local = RCE_TERCE_SYNC_PORT;
+string SystemConfig::terce_host;
+int SystemConfig::terce_port = 0;
+int SystemConfig::terce_port_local = 0;
 
 int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;
@@ -257,6 +256,45 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case  CONFIG_TERCE:
+          {
+              char address[MAXADDRLEN];
+              int port;
+  
+              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              {
+                  SystemConfig::terce_host = address;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE  : address" << endl);
+                  SystemConfig::terce_host = "localhost";
+                  LOG("TERCE address has been set to 127.0.0.1 (localhost)" << endl);
+              }
+  
+              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              {
+                  SystemConfig::terce_port_local = port;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE : localport --> set to default: " << RCE_TERCE_SYNC_PORT << endl);
+                  SystemConfig::terce_port_local = RCE_TERCE_SYNC_PORT;
+              }
+              
+              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              {
+                  SystemConfig::terce_port = port;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE : port" << endl);
+                  SystemConfig::terce_port  = TERCE_API_SERVER_PORT;
+                  LOG("TERCE server port has been set to " << TERCE_API_SERVER_PORT << endl);
+              }
+          }
+          break;
+
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s} for SystemConfig::ConfigFromFile()\n", blk_header, blk_body);
@@ -273,6 +311,8 @@ int SystemConfig::blk_code (char *buf)
         return CONFIG_SUBNET;
     else if (strstr(buf, "include-tedb-schema"))
         return CONFIG_SCHEMA;
+    else if (strstr(buf, "terce"))
+        return CONFIG_TERCE;
     else if (strstr(buf, "router"))
         return CONFIG_ROUTER;
     else if (strstr(buf, "link"))
