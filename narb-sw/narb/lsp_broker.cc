@@ -610,7 +610,8 @@ int LSPQ::HandleRCEReply(api_msg *msg)
             //if the source node is a border node
             list<ero_subobj*>::iterator it = ero.begin();
             it++;
-            assert (it != ero.end());
+            if (it == ero.end())
+                return HandleErrorCode(NARB_ERROR_NO_ROUTE);
             if_narb_info *narb = NarbDomainInfo.LookupNarbByRmtIf((*it)->addr);
             if (narb)
                 return HandlePartialERO();
