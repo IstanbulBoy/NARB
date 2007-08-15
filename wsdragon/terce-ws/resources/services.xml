@@ -1,7 +1,7 @@
 <!-- This file was auto-generated from WSDL -->
 <!-- by the Apache Axis2 version: #axisVersion# #today# -->
 <serviceGroup>
-<service name="TERCE">
+<service name="TERCE" scope="application">
 <messageReceivers>
 <messageReceiver mep="http://www.w3.org/ns/wsdl/in-out" class="edu.internet2.hopi.dragon.terce.ws.service.TERCEMessageReceiverInOut"/>
 </messageReceivers>
