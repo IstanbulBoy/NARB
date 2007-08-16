@@ -916,7 +916,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
 
     if (is_recursive_req && state != STATE_STORED_ERO_WITH_CONFIRMATION_ID) // confirmation ID only (w/o ERO TLV)
     {
-        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum, req_spec.src.s_addr);
+        ConfirmationIDIndxedEROWithTimer *qConfEROTimer = LSP_Broker::StoreEROWithConfirmationID(ero, req_ucid, app_seqnum, mrn_spec.src.s_addr);
         if (qConfEROTimer)
         {
             eventMaster.Schedule(qConfEROTimer);
