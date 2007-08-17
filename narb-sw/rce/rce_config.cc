@@ -413,7 +413,7 @@ int SystemConfig::ReadConfigEosMap(char * buf, EosMapList &eos_map)
 
     eos_map.clear();
 
-    str = strtok(buf, " \t\n,;|");
+    str = strtok(buf, "\t\n,;|");
     if (!str)
         return 0;
 
@@ -426,7 +426,7 @@ int SystemConfig::ReadConfigEosMap(char * buf, EosMapList &eos_map)
             map_entry.num_timeslots = sonet_ts_num;
             eos_map.push_back(map_entry);
         }
-        str = strtok(NULL, " \t\n,;|");
+        str = strtok(NULL, "\t\n,;|");
     }
 
     return 1;
