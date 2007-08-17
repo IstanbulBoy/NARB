@@ -61,11 +61,25 @@ string SystemConfig::cli_password("dragon");
 string SystemConfig::cli_address("localhost");
 int SystemConfig::cli_timeout = 900; //CLI time out = 15 minutes
 
-bool SystemConfig::use_manual_ero = false;
-list<ero_subobj*> SystemConfig::manual_ero;
+IndexedEROList SystemConfig::indexed_static_ero_list;
 
 int SystemConfig::confirmed_ero_expire_secs = 10;
 int SystemConfig::confirmed_ero_trash_secs = 30;
+
+void SystemConfig::AddStaticERO(indexed_ero* p_ero)
+{
+
+}
+
+indexed_ero* SystemConfig::LookupStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
+{
+    return NULL;
+}
+
+indexed_ero* SystemConfig::RemoveStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
+{
+    return NULL;
+}
 
 /////////////////// Config File Processing //////////////////////
 
@@ -810,4 +824,5 @@ int ConfigFile::ReadCliCommands(char * buf, const char* quote, list<string>& cmd
 
     return ret;
 }
+
 

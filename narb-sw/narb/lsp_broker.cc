@@ -450,6 +450,8 @@ int LSPQ::HandleLSPQRequest()
     }
 
     //return manual/static ERO based on CLI configuration
+    //@@@@TODO
+    /*
     if (SystemConfig::use_manual_ero && SystemConfig::manual_ero.size() > 0)
     {
         ero.clear();
@@ -463,7 +465,8 @@ int LSPQ::HandleLSPQRequest()
         }
         return HandleCompleteERO();
     }
-
+    */
+    
     msg_narb_cspf_request cspf_req;
     cspf_req.app_req_data = req_spec;
     cspf_req.app_seqnum = app_seqnum;

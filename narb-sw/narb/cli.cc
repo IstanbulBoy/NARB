@@ -1759,6 +1759,23 @@ static link_info* link_to_update = NULL;
     }   
 
 
+#define SHOW_ERO_SUBOBJECTS(P)       char ip_addr[20], if_id[20]; \
+    list<ero_subobj*>::iterator it = P->ero.begin(); \
+    for (int num=1; it != P->ero.end(); num++, it++) \
+    { \
+        strcpy(ip_addr, inet_ntoa((*it)->addr)); \
+        if ((*it)->if_id == 0) \
+        { \
+            strcpy(if_id, "IPv4"); \
+        } \
+        else \
+        { \
+            sprintf(if_id, "Unum ifID=0x%x", ntohl((*it)->if_id)); \
+        } \
+        CLI_OUT("    >> ERO-SubObj(%2-d): (%s-hop)  %s %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
+    }
+
+
 COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
     "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
@@ -2106,67 +2123,103 @@ COMMAND(cmd_delete_intradomain_topology, "delete intradomain topology",
     cli_node->ShowPrompt();
 }
 
-
-COMMAND(cmd_set_manual_ero, "set manual_ero {on|off}",
-       "Set manual ERO\n cont...\nEnable \nDisable")
+COMMAND(cmd_set_static_ero, "set static_ero source IP destination IP {enabled|disabled}",
+       "Set manual ERO\n cont...\nSource IP\nIP\nDestination IP\nIP\nEnable \nDisable")
 {
-    if (argv[0] == "on") {
-	    SystemConfig::use_manual_ero = true;
+    in_addr src, dest;
+    inet_aton(argv[0].c_str(), &src);
+    inet_aton(argv[1].c_str(), &dest);
+    indexed_ero* p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+
+    CLI_OUT("\t static ERO configuration for source(%s)--destination(%s)", argv[0].c_str(), argv[1].c_str());
+    if (p_ero == NULL)
+    {
+        CLI_OUT(" unvailable...%s",  cli_cstr_newline);
+    }
+    else if (argv[2] == "enabled") {
+        p_ero->enabled = true;
+        CLI_OUT(" enabled...%s",  cli_cstr_newline);
     }
     else {
-	    SystemConfig::use_manual_ero = false;
+        p_ero->enabled = false;
+        CLI_OUT(" disabled...%s",  cli_cstr_newline);
     }
-    CLI_OUT("Manual/Static ERO configuration: *%s*%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_manual_ero, "show manual_ero",
-       "Show manual ERO configuration\n cont...")
+COMMAND(cmd_show_static_ero, "show static_ero INDEX",
+       "Show manual ERO configuration\n cont...\nERO index")
 {
-    CLI_OUT("NARB currently has manual/static ERO configuration: *%s*%s%s", SystemConfig::use_manual_ero? "enabled" : "disabled", cli_cstr_newline, cli_cstr_newline);
+    char str[40], *pstr;
+    in_addr src, dest;
+    strcpy(str, argv[0].c_str());
 
-    char ip_addr[20], if_id[20];
-    list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
-    if (SystemConfig::use_manual_ero)
+    if (argv[0] == "all" || argv[0] == "ALL")
     {
-        for (int num=1; it != SystemConfig::manual_ero.end(); num++, it++)
+        IndexedEROList::iterator it = SystemConfig::indexed_static_ero_list.begin();
+        for (; it != SystemConfig::indexed_static_ero_list.end(); it++)
         {
-            strcpy(ip_addr, inet_ntoa((*it)->addr));
-            if ((*it)->if_id == 0)
-            {
-                strcpy(if_id, "IPv4");
-            }
-            else
-            {
-                sprintf(if_id, "Unum ifID=0x%x", ntohl((*it)->if_id));
-            }
-            CLI_OUT("       ERO-SubObj(%d): %s %s (%s-hop)%s", num, ip_addr, if_id, (*it)->hop_type == 0 ? "strict" : "loose", cli_cstr_newline);
+            pstr = str+20;
+            src.s_addr = (*it)->src_ip;
+            dest.s_addr = (*it)->dest_ip;
+            strcpy(str, inet_ntoa(src));
+            strcpy(pstr, inet_ntoa(dest));
+            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
         }
     }
+    else if ((pstr=strstr(str, "-")) != NULL)
+    {
+        *pstr = 0;
+        pstr++;
+        inet_aton(str, &src);
+        inet_aton(pstr, &dest);
+        indexed_ero* p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+        if (p_ero == NULL)
+        {
+            CLI_OUT(" static ERO configuration for source(%s)--destination(%s) unvailable...%s", str, pstr,  cli_cstr_newline);
+        }
+        else
+        {
+            pstr = str+20;
+            src.s_addr = p_ero->src_ip;
+            dest.s_addr = p_ero->dest_ip;
+            strcpy(str, inet_ntoa(src));
+            strcpy(pstr, inet_ntoa(dest));
+            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+
+            SHOW_ERO_SUBOBJECTS(p_ero);
+        }
+    }
+    else
+    {
+        CLI_OUT("  %s: unrecognized 'SrcIP-DestIP' formatted index for ERO configuration retrieval%s", str,  cli_cstr_newline);        
+    }
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_delete_manual_ero, "delete manual_ero",
-       "Delete manual ERO configuration\n cont...")
+COMMAND(cmd_delete_static_ero, "delete static_ero source IP destination IP {enabled|disabled}",
+       "Delete manual ERO configuration\n cont...\nSource IP\nIP\nDestination IP\nIP\nEnable \nDisable")
 {
-    list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
-    if (SystemConfig::use_manual_ero)
-        delete (*it);
-    SystemConfig::manual_ero.clear();
-    CLI_OUT("Manual/static ERO configuration is deleted (empty ERO list now).%s", cli_cstr_newline);
+    in_addr src, dest;
+    inet_aton(argv[0].c_str(), &src);
+    inet_aton(argv[1].c_str(), &dest);
+    indexed_ero* p_ero = SystemConfig::RemoveStaticERO(src.s_addr, dest.s_addr);
+    if (p_ero == NULL)
+    {
+        CLI_OUT(" #### static ERO configuration for source(%s)--destination(%s) unvailable...%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+    }
+    else {
+        CLI_OUT(" #### static ERO configuration for source(%s)--destination(%s) removed...%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        delete p_ero;
+    }
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_add_manual_ero, "add manual_ero IP interface_id NUM {strict|loose}",
-       "Add subobject to manual ERO \n cont ... \nIP address\ninterface_id\nInterface ID number\nstrict hop\nloose hop")
+
+//@@@@ TO BE REVISED ! edit_static_ero !
+COMMAND(cmd_edit_static_ero, "edit static_ero source IP destination IP",
+       "Edit manual/static ERO \n cont ... \nSource IP\nIP address\nDestination IP\nIP Address")
 {
-    ero_subobj *subobj = new (struct ero_subobj);
-    memset(subobj, 0, sizeof(ero_subobj));
-    inet_aton(argv[0].c_str(), &subobj->addr);
-    sscanf(argv[1].c_str(), "%d", &subobj->if_id);
-    subobj->if_id = htonl(subobj->if_id);
-    subobj->hop_type = (argv[2] == "strict"  ? 0 : 1);
-    SystemConfig::manual_ero.push_back(subobj);
     cli_node->ShowPrompt();
 }
 
@@ -2239,10 +2292,10 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_link_instance);
     node->AddCommand(&cmd_edit_link_instance);
     node->AddCommand(&cmd_configure_exit_instance);
-    node->AddCommand(&cmd_set_manual_ero_instance);
-    node->AddCommand(&cmd_show_manual_ero_instance);
-    node->AddCommand(&cmd_delete_manual_ero_instance);
-    node->AddCommand(&cmd_add_manual_ero_instance);
+    node->AddCommand(&cmd_set_static_ero_instance);
+    node->AddCommand(&cmd_show_static_ero_instance);
+    node->AddCommand(&cmd_delete_static_ero_instance);
+    node->AddCommand(&cmd_edit_static_ero_instance);
     node = node->MakeChild("edit-link-node");
     //Update-link level under the cofigure level
     node->SetPrompt("narb:cli#");

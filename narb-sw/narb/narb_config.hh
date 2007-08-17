@@ -87,6 +87,18 @@ enum narb_working_mode {
 #define LSP_OPT_QUERY_HOLD  ((u_int32_t)(0x0100 << 16)) //holding resource upon query for a short period of time to resolve contention
 #define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
 
+struct indexed_ero
+{
+    bool enabled;
+    u_int32_t src_ip;
+    u_int32_t dest_ip;
+    list<ero_subobj*> ero;
+    indexed_ero(): enabled(false), src_ip(0), dest_ip(0) {}
+    //~indexed_ero() { } // free ero_subobj in the list...
+};
+
+typedef list<indexed_ero*> IndexedEROList;
+
 class SystemConfig
 {
  public:
@@ -114,11 +126,14 @@ class SystemConfig
     static string cli_address;
     static int cli_timeout;
 
-    static bool use_manual_ero;
-    static list<ero_subobj*> manual_ero;
+    static IndexedEROList indexed_static_ero_list;
 
     static int confirmed_ero_expire_secs;
     static int confirmed_ero_trash_secs;
+
+    static void AddStaticERO(indexed_ero* p_ero);
+    static indexed_ero* LookupStaticERO(u_int32_t src_ip, u_int32_t dest_ip);
+    static indexed_ero* RemoveStaticERO(u_int32_t src_ip, u_int32_t dest_ip);
 };
 
 #define NarbDomainInfo (SystemConfig::narb_domain_info)
