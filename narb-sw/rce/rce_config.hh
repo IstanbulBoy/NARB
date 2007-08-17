@@ -55,6 +55,7 @@ enum config_code {
   CONFIG_SUBNET,
   CONFIG_SCHEMA,
   CONFIG_TERCE,
+  CONFIG_EOS_MAP,
   CONFIG_UNKNOWN
 };
 
@@ -63,8 +64,14 @@ typedef struct HomeVlsrRouterPair_type
     u_int32_t home_vlsr;
     u_int32_t router_id;
 } HomeVlsrRouterPair;
-
 typedef list<HomeVlsrRouterPair> HomeVlsrRouterPairList;
+
+typedef struct eos_map_entry
+{
+    float ethernet_bw;
+    int num_timeslots;
+} EosMapEntry;
+typedef list<EosMapEntry> EosMapList;
 
 class SystemConfig
 {
@@ -110,8 +117,11 @@ public:
 
     static HomeVlsrRouterPairList home_vlsr_search_list;
 
+    static EosMapList eos_mapping_list;
+
     static void AddHomeVlsrRouterIdPair(u_int32_t home_vlsr, u_int32_t router_id);
     static u_int32_t FindHomeVlsrByRouterId(u_int32_t router_id);
+    static int MapBandwidthToNumberOfTimeslots(float bandwidth);
 
 public:
     SystemConfig(string& fileName) { config_file = fileName; }
@@ -124,6 +134,7 @@ public:
     virtual int ReadConfigParameter(char * buf, char * id, char * fmt, void * parameter);
     virtual int blk_code (char *buf);
 
+    int ReadConfigEosMap(char * buf, EosMapList &eos_map);
 };
 
 #endif

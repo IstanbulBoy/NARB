@@ -75,6 +75,8 @@ bool  SystemConfig::should_incorporate_subnet = false;
 
 HomeVlsrRouterPairList SystemConfig::home_vlsr_search_list;
 
+EosMapList SystemConfig::eos_mapping_list;
+
 void SystemConfig::AddHomeVlsrRouterIdPair(u_int32_t home_vlsr, u_int32_t router_id)
 {
     HomeVlsrRouterPair pair;
@@ -101,6 +103,18 @@ u_int32_t SystemConfig::FindHomeVlsrByRouterId(u_int32_t router_id)
     }
 
     return 0;
+}
+
+int SystemConfig::MapBandwidthToNumberOfTimeslots(float bandwidth)
+{
+    EosMapList::iterator it = eos_mapping_list.begin();
+    for (; it != eos_mapping_list.end(); ++it) {
+        if ((*it).ethernet_bw == bandwidth) {
+            return (*it).num_timeslots;
+        }
+    }
+
+    return (int)(bandwidth/50.0);
 }
 
 /////////////////////////////////////////////////////
@@ -295,6 +309,15 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case  CONFIG_EOS_MAP:
+          {
+              if (!ReadConfigEosMap(blk_body, eos_mapping_list))
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_EOS_MAP" << endl);
+              }
+          }
+          break;
+
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s} for SystemConfig::ConfigFromFile()\n", blk_header, blk_body);
@@ -313,6 +336,8 @@ int SystemConfig::blk_code (char *buf)
         return CONFIG_SCHEMA;
     else if (strstr(buf, "terce"))
         return CONFIG_TERCE;
+    else if (strstr(buf, "ethernet-bandwidth-to-sonet-timeslots-mapping"))
+        return CONFIG_EOS_MAP;
     else if (strstr(buf, "router"))
         return CONFIG_ROUTER;
     else if (strstr(buf, "link"))
@@ -376,6 +401,35 @@ int SystemConfig::ReadConfigParameter(char * buf, char * id, char * fmt, void * 
   
     // return 1 if successful, otherwise 0
     return sscanf(str + strlen(id) + 1, fmt, parameter);
+}
+
+// reading a parameter of list<eos_map_entry> type from a config block (char *buf).
+int SystemConfig::ReadConfigEosMap(char * buf, EosMapList &eos_map)
+{
+    char *str;
+    float ethernet_bw;
+    int n, sonet_ts_num;
+    eos_map_entry map_entry;
+
+    eos_map.clear();
+
+    str = strtok(buf, " \t\n,;|");
+    if (!str)
+        return 0;
+
+    while (str)
+    {
+        n = sscanf(str, "map %f to %d", &ethernet_bw, &sonet_ts_num);
+
+        if (n == 2) {
+            map_entry.ethernet_bw = ethernet_bw;
+            map_entry.num_timeslots = sonet_ts_num;
+            eos_map.push_back(map_entry);
+        }
+        str = strtok(NULL, " \t\n,;|");
+    }
+
+    return 1;
 }
 
 

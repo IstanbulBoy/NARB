@@ -580,7 +580,7 @@ bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
             ts_num++;
         else
             ts_num = 0;
-        if (ts_num >= bandwidth/50.0) //50Mbps per timeslot
+        if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(bandwidth))
             return true;
     }
 
@@ -685,7 +685,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             {
                 ts_num = 0;
             }
-            if (ts_num >= pcen_link->rmt_end->tspec.Bandwidth/50.0) //50Mbps per timeslot
+            if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->rmt_end->tspec.Bandwidth))
             {
                 break;
             }
@@ -716,7 +716,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
             {
                 ts_num = 0;
             }
-            if (ts_num >= pcen_link->lcl_end->tspec.Bandwidth/50.0) //50Mbps per timeslot
+            if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->lcl_end->tspec.Bandwidth))
             {
                 break;
             }
