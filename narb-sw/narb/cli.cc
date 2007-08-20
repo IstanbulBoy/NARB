@@ -2377,6 +2377,7 @@ static void insert_subobject_with_cursor(indexed_ero* p_ero, ero_subobj* subobj)
         if (num == p_ero->cursor)
         {
             p_ero->ero.insert(it, subobj);
+            p_ero->cursor++;
             return;
         }
     }    
@@ -2661,6 +2662,7 @@ void CLIReader::InitSession()
     node_level2->AddCommand(&cmd_ero_disable_instance);
     node_level2->AddCommand(&cmd_ero_clear_instance);
     node_level2->AddCommand(&cmd_ero_insert_instance);
+    node_level2->AddCommand(&cmd_ero_append_instance);
     node_level2->AddCommand(&cmd_ero_delete_instance);
     node_level2->AddCommand(&cmd_set_subobject_ipv4_instance);
     node_level2->AddCommand(&cmd_set_subobject_unum_ifid_instance);
