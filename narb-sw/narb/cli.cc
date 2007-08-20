@@ -1772,7 +1772,7 @@ static link_info* link_to_update = NULL;
         { \
             sprintf(if_id, "Unum ifID=0x%x", ntohl((*it)->if_id)); \
         } \
-        CLI_OUT("    >>%2-d: (%s-hop)  %s %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
+        CLI_OUT("    >>%-2d: (%s-hop) -- %s -- %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
     }
 
 
@@ -2164,7 +2164,7 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
     if (argv.size() == 0 || argv[0] == "all" || argv[0] == "ALL")
     {
         IndexedEROList::iterator it = SystemConfig::indexed_static_ero_list.begin();
-        CLI_OUT(" Showing a total of %d ERO's >>%s", SystemConfig::indexed_static_ero_list.size(), cli_cstr_newline);
+        CLI_OUT(" #### Showing a total of %d ERO's >>%s", SystemConfig::indexed_static_ero_list.size(), cli_cstr_newline);
         for (; it != SystemConfig::indexed_static_ero_list.end(); it++)
         {
             pstr = str+20;
@@ -2277,7 +2277,7 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
 COMMAND(cmd_ero_show, "show config",
        "Show subobjects \n cont ... ")
 {
-    CLI_OUT(" ## showing ERO (status '%s') subobjects >> %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT(" ## showing %d ERO (status '%s') subobjects >> %s",  current_static_ero->ero.size(), current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
     SHOW_ERO_SUBOBJECTS(current_static_ero);
     cli_node->ShowPrompt();
 }
@@ -2289,7 +2289,7 @@ COMMAND(cmd_ero_clear, "clear",
     for (; it != current_static_ero->ero.end(); it++)
         delete (*it);
     current_static_ero->ero.clear();
-    CLI_OUT(" ## ERO %s, number of subobjects = 0 %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT(" ## number of ERO (status '%s') subobjects = 0 %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
@@ -2504,33 +2504,34 @@ COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {sourc
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_lcl_id, "set subobject local-id-type {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
+COMMAND(cmd_set_subobject_lcl_id, "set subobject {stric|loose} local-id-type {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
        "Set/Add subobject n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
 {
-    bool is_loose = false;
+    bool is_loose = (argv[0] == "loose" ? true : false);
+
     u_int32_t lcl_id_type = 0;
-    if (argv[0] == "port")
+    if (argv[1] == "port")
         lcl_id_type = LOCAL_ID_TYPE_PORT;
-    else if (argv[0] == "group")    
+    else if (argv[1] == "group")    
         lcl_id_type = LOCAL_ID_TYPE_GROUP;
-    else if (argv[0] == "tagged-group")    
+    else if (argv[1] == "tagged-group")    
         lcl_id_type = LOCAL_ID_TYPE_TAGGED_GROUP;
-    else if (argv[0] == "subnet-interface")    
+    else if (argv[1] == "subnet-interface")    
         lcl_id_type = LOCAL_ID_TYPE_SUBNET_INTERFACE;
     in_addr ipv4; ipv4.s_addr = 0;
-    inet_aton(argv[1].c_str(), &ipv4);
+    inet_aton(argv[2].c_str(), &ipv4);
     if (ipv4.s_addr == 0)
     {
-        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[1].c_str(), cli_cstr_newline);
+        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[2].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
         return;
     }
     u_int32_t lcl_id = 0;
-    if (sscanf(argv[2].c_str(), "%d", &lcl_id) != 1)
-        sscanf(argv[2].c_str(), "%x", &lcl_id);
+    if (sscanf(argv[3].c_str(), "%d", &lcl_id) != 1)
+        sscanf(argv[3].c_str(), "%x", &lcl_id);
     if (lcl_id == 0 || lcl_id> 0xffff)
     {
-        CLI_OUT(" ## Wrong LocalID Value : %s is not in [1, 0xffff]%s", argv[2].c_str(), cli_cstr_newline);
+        CLI_OUT(" ## Wrong LocalID Value : %s is not in [1, 0xffff]%s", argv[3].c_str(), cli_cstr_newline);
         cli_node->ShowPrompt();
         return;
     }
