@@ -457,8 +457,11 @@ public:
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 
+#define LOCAL_ID_TYPE_PORT (u_int16_t)0x1
+#define LOCAL_ID_TYPE_GROUP (u_int16_t)0x2
 #define LOCAL_ID_TYPE_TAGGED_GROUP (u_int16_t)0x3
 #define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
+#define LOCAL_ID_TYPE_SUBNET_INTERFACE (u_int16_t)0x5
 #define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10
 #define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11
 

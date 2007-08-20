@@ -1772,7 +1772,7 @@ static link_info* link_to_update = NULL;
         { \
             sprintf(if_id, "Unum ifID=0x%x", ntohl((*it)->if_id)); \
         } \
-        CLI_OUT("    >> ERO-SubObj(%2-d): (%s-hop)  %s %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
+        CLI_OUT("    >>%2-d: (%s-hop)  %s %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
     }
 
 
@@ -2185,7 +2185,7 @@ COMMAND(cmd_show_static_ero, "show static_ero INDEX",
             dest.s_addr = p_ero->dest_ip;
             strcpy(str, inet_ntoa(src));
             strcpy(pstr, inet_ntoa(dest));
-            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s, showing subobjects >>%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
 
             SHOW_ERO_SUBOBJECTS(p_ero);
         }
@@ -2215,19 +2215,308 @@ COMMAND(cmd_delete_static_ero, "delete static_ero source IP destination IP {enab
     cli_node->ShowPrompt();
 }
 
+// edit_static_ero
+static indexed_ero* current_static_ero = NULL;
 
-//@@@@ TO BE REVISED ! edit_static_ero !
 COMMAND(cmd_edit_static_ero, "edit static_ero source IP destination IP",
        "Edit manual/static ERO \n cont ... \nSource IP\nIP address\nDestination IP\nIP Address")
 {
+    in_addr src_addr, dest_addr;
+    inet_aton(argv[0].c_str(), &src_addr);
+    inet_aton(argv[1].c_str(), &dest_addr);
+    current_static_ero = SystemConfig::LookupStaticERO(src_addr.s_addr, dest_addr.s_addr);
+
+    if (current_static_ero == NULL)
+    {
+        current_static_ero = new indexed_ero;
+        current_static_ero->src_ip = src_addr.s_addr;
+        current_static_ero->dest_ip = dest_addr.s_addr;
+        SystemConfig::indexed_static_ero_list.push_back(current_static_ero);
+    }
+    
+    cli_node->Reader()->GoDown("edit-static-ero");
+    string prompt = cli_node->Prompt(); 
+    prompt += '(';
+    prompt += argv[0];
+    prompt +='-';
+    prompt += argv[1];
+    prompt +=')';
+    cli_node->Reader()->CurrentNode()->SetPrompt(prompt);
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
+
+COMMAND(cmd_ero_show, "show config",
+       "Show subobjects \n cont ... ")
+{
+    CLI_OUT(" ## ERO %s, showing subobjects ## %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    SHOW_ERO_SUBOBJECTS(current_static_ero);
     cli_node->ShowPrompt();
 }
+
+COMMAND(cmd_ero_clear, "clear",
+       "Clear all subobjects")
+{
+    list<ero_subobj*>::iterator it = current_static_ero->ero.begin();
+    for (; it != current_static_ero->ero.end(); it++)
+        delete (*it);
+    current_static_ero->ero.clear();
+    CLI_OUT(" ## ERO %s, number of subobjects = 0 %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_ero_insert, "insert {before|after} NUM",
+       "Insert subobject \n before \n after \n the referred subobject number")
+{
+    bool insert_before = (argv[0] == "before" ? true : false);
+    int cursor = 0;
+    sscanf(argv[1].c_str(), "%d", &cursor);
+
+    if (cursor > 0 && cursor <= current_static_ero->ero.size())
+    {
+        CLI_OUT(" >>> new subobject to be added %s the currebt suboject #%d <<< %s", insert_before ? "Before" : "After", cursor, cli_cstr_newline);
+        current_static_ero->cursor = cursor - (insert_before ? 1 : 0);
+    }
+    else
+    {
+        CLI_OUT(" >>> Wrong cursor number %s <<< %s", argv[1].c_str(), cli_cstr_newline);
+    }
+    CLI_OUT(" ## Current ERO with %d subobjects >> %s", current_static_ero->ero.size(), cli_cstr_newline);
+    SHOW_ERO_SUBOBJECTS(current_static_ero);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_ero_delete, "delete NUM",
+       "Delete subobject \n the referred subobject number")
+{
+    int cursor = -1;
+    sscanf(argv[1].c_str(), "%d", &cursor);
+
+    if (cursor > 0 && cursor <= current_static_ero->ero.size())
+    {
+        list<ero_subobj*>::iterator it = current_static_ero->ero.begin();
+        for (int num = 1; it != current_static_ero->ero.end(); it++, num++)
+        {
+            if (num == cursor)
+            {
+                current_static_ero->ero.erase(it);
+                CLI_OUT(" >>> the current suboject #%d has been removed <<< %s", cursor, cli_cstr_newline);
+                cli_node->ShowPrompt();
+                return;
+            }
+        }
+    }
+    CLI_OUT(" >>> the suboject #%s does not exist <<< %s", argv[0].c_str(), cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+static void insert_subobject_with_cursor(indexed_ero* p_ero, ero_subobj* subobj)
+{
+    assert(p_ero);
+    if (p_ero->cursor < 0 || p_ero->cursor >= p_ero->ero.size())
+    {
+        p_ero->ero.push_back(subobj);
+        return;
+    }
+
+    list<ero_subobj*>::iterator it = p_ero->ero.begin();
+    for (int num = 0; it != p_ero->ero.end(); it++, num++)
+    {
+        if (num == p_ero->cursor)
+        {
+            p_ero->ero.insert(it, subobj);
+            return;
+        }
+    }    
+}
+    
+COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
+       "Set/Add subobject \n Strict hop \n Loose hop \n type IPv4 \n IP address")
+{
+    bool is_loose = (argv[0] == "loose" ? true : false);
+    in_addr ipv4; ipv4.s_addr = 0;
+    inet_aton(argv[1].c_str(), &ipv4);
+    if (ipv4.s_addr == 0)
+    {
+        CLI_OUT(" ## Wrong  IPv4 IP address: %s %s", argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    ero_subobj* subobj = new ero_subobj;
+    memset(subobj, 0, sizeof(ero_subobj));
+    subobj->hop_type = (is_loose? 1 : 0);
+    subobj->addr = ipv4;
+
+    insert_subobject_with_cursor(current_static_ero, subobj);
+    cli_node->ShowPrompt();
+}
+
+
+COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unum interface-ipv4 IP id ID",
+       "Set/Add subobject \n Strict hop \n Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
+{
+    bool is_loose = (argv[0] == "loose" ? true : false);
+    in_addr ipv4; ipv4.s_addr = 0;
+    inet_aton(argv[1].c_str(), &ipv4);
+    if (ipv4.s_addr == 0)
+    {
+        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+    u_int32_t id = 0;
+    sscanf(argv[2].c_str(), "%d", &id);
+    if (id == 0)
+    {
+        CLI_OUT(" ## Wrong  interface ID (unsigned number): %s %s", argv[2].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    ero_subobj* subobj = new ero_subobj;
+    memset(subobj, 0, sizeof(ero_subobj));
+    subobj->hop_type = (is_loose? 1 : 0);
+    subobj->addr = ipv4;
+    subobj->if_id = id;
+    insert_subobject_with_cursor(current_static_ero, subobj);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} interface-ipv4 IP vtag ID",
+       "Set/Add subobject \n Strict hop \n Loose hop \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+{
+    bool is_loose = (argv[0] == "loose" ? true : false);
+    in_addr ipv4; ipv4.s_addr = 0;
+    inet_aton(argv[1].c_str(), &ipv4);
+    if (ipv4.s_addr == 0)
+    {
+        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+    u_int32_t vtag = 0;
+    sscanf(argv[2].c_str(), "%d", &vtag);
+    if (vtag == 0 || vtag >= MAX_VLAN_NUM)
+    {
+        CLI_OUT(" ## Wrong  VTAG Number : %s is not in [1, 4095]%s", argv[2].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    ero_subobj* subobj = new ero_subobj;
+    memset(subobj, 0, sizeof(ero_subobj));
+    subobj->hop_type = (is_loose? 1 : 0);
+    subobj->addr = ipv4;
+    subobj->if_id = htonl((LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL<<16) | (vtag&0xffff));
+    subobj->sw_type = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+    subobj->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+    subobj->l2sc_vlantag = (u_int16_t)vtag;
+    insert_subobject_with_cursor(current_static_ero, subobj);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {source|destination} interface-ipv4 IP id ID first-timeslot TS",
+       "Set/Add subobject \n Strict hop \n Loose hop \n type Subnet Interface ... \n Source \n Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
+{
+    bool is_loose = (argv[0] == "loose" ? true : false);
+    u_int32_t subnet_if_type = (argv[1] == "source" ? 0x10 : 0x11);
+    in_addr ipv4; ipv4.s_addr = 0;
+    inet_aton(argv[2].c_str(), &ipv4);
+    if (ipv4.s_addr == 0)
+    {
+        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[2].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+    u_int32_t id = 0, ts = 0; 
+    sscanf(argv[3].c_str(), "%d", &id);
+    if (id == 0 || id > 0xff)
+    {
+        CLI_OUT(" ## Wrong Subnet ID number : %s is not in [1, 255]%s", argv[3].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    if (argv[4] == "any" || argv[4] == "ANY")
+    {
+        ts = 0xff;
+    }
+    else 
+    {
+        sscanf(argv[4].c_str(), "%d", &ts);
+        if (ts == 0 || ts > 192)
+        {
+            CLI_OUT(" ## Wrong  First Availalable Timeslot number : %s is not in [1, 192]%s", argv[4].c_str(), cli_cstr_newline);
+            cli_node->ShowPrompt();
+            return;
+        }
+    }
+
+    ero_subobj* subobj = new ero_subobj;
+    memset(subobj, 0, sizeof(ero_subobj));
+    subobj->hop_type = (is_loose? 1 : 0);
+    subobj->addr = ipv4;
+    subobj->if_id = htonl((subnet_if_type<<16) | ((id&0xff)<<8) | (ts&0xff));
+    insert_subobject_with_cursor(current_static_ero, subobj);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_set_subobject_lcl_id, "set subobject local-id-type {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
+       "Set/Add subobject n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+{
+    bool is_loose = false;
+    u_int32_t lcl_id_type = 0;
+    if (argv[0] == "port")
+        lcl_id_type = LOCAL_ID_TYPE_PORT;
+    else if (argv[0] == "group")    
+        lcl_id_type = LOCAL_ID_TYPE_GROUP;
+    else if (argv[0] == "tagged-group")    
+        lcl_id_type = LOCAL_ID_TYPE_TAGGED_GROUP;
+    else if (argv[0] == "subnet-interface")    
+        lcl_id_type = LOCAL_ID_TYPE_SUBNET_INTERFACE;
+    in_addr ipv4; ipv4.s_addr = 0;
+    inet_aton(argv[1].c_str(), &ipv4);
+    if (ipv4.s_addr == 0)
+    {
+        CLI_OUT(" ## Wrong  interface (IPv4) address: %s %s", argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+    u_int32_t lcl_id = 0;
+    if (sscanf(argv[2].c_str(), "%d", &lcl_id) != 1)
+        sscanf(argv[2].c_str(), "%x", &lcl_id);
+    if (lcl_id == 0 || lcl_id> 0xffff)
+    {
+        CLI_OUT(" ## Wrong LocalID Value : %s is not in [1, 0xffff]%s", argv[2].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    ero_subobj* subobj = new ero_subobj;
+    memset(subobj, 0, sizeof(ero_subobj));
+    subobj->hop_type = (is_loose? 1 : 0);
+    subobj->addr = ipv4;
+    subobj->if_id = htonl((lcl_id_type<<16) | (lcl_id&0xffff));
+    insert_subobject_with_cursor(current_static_ero, subobj);
+    cli_node->ShowPrompt();
+}
+
+
+COMMAND(cmd_ero_exit, "exit",
+       "Exit static ERO editing\n")
+{
+    current_static_ero = NULL;
+    cli_node->Reader()->GoUp();
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 
 /////////////////////////////////////////////////////////////
 void CLIReader::InitSession()
 {
     cli_root = new CLINode(this, cli_writer);
-    CLINode* node, *node_test;
+    CLINode* node, *node_test, *node_level2;
     string s;
     if (SystemConfig::cli_password.size() > 0)
     {
@@ -2296,18 +2585,31 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_show_static_ero_instance);
     node->AddCommand(&cmd_delete_static_ero_instance);
     node->AddCommand(&cmd_edit_static_ero_instance);
-    node = node->MakeChild("edit-link-node");
-    //Update-link level under the cofigure level
-    node->SetPrompt("narb:cli#");
-    node->AddCommand(&cmd_set_link_instance);
-    node->AddCommand(&cmd_set_link_swcap_instance);
-    node->AddCommand(&cmd_set_link_bandwidth_instance);
-    node->AddCommand(&cmd_set_link_vlan_instance);
-    node->AddCommand(&cmd_set_link_vlan_range_instance);
-    node->AddCommand(&cmd_edit_link_show_instance);
-    node->AddCommand(&cmd_edit_link_cancel_instance);
-    node->AddCommand(&cmd_edit_link_exit_instance);
-    node->AddCommand(&cmd_edit_link_commit_instance);
+    node_level2 = node->MakeChild("edit-link-node");
+    ///////Edit/Update-link level under the cofigure level/////
+    //node_level2->SetPrompt("narb:cli#");
+    node_level2->AddCommand(&cmd_set_link_instance);
+    node_level2->AddCommand(&cmd_set_link_swcap_instance);
+    node_level2->AddCommand(&cmd_set_link_bandwidth_instance);
+    node_level2->AddCommand(&cmd_set_link_vlan_instance);
+    node_level2->AddCommand(&cmd_set_link_vlan_range_instance);
+    node_level2->AddCommand(&cmd_edit_link_show_instance);
+    node_level2->AddCommand(&cmd_edit_link_cancel_instance);
+    node_level2->AddCommand(&cmd_edit_link_exit_instance);
+    node_level2->AddCommand(&cmd_edit_link_commit_instance);
+    //////////////// End /////////////////
+    node_level2 = node->MakeChild("edit-static-ero");
+    ///////Edit-Static-ERO level under the cofigure level/////
+    node_level2->AddCommand(&cmd_ero_show_instance);
+    node_level2->AddCommand(&cmd_ero_clear_instance);
+    node_level2->AddCommand(&cmd_ero_insert_instance);
+    node_level2->AddCommand(&cmd_ero_delete_instance);
+    node_level2->AddCommand(&cmd_set_subobject_ipv4_instance);
+    node_level2->AddCommand(&cmd_set_subobject_unum_ifid_instance);
+    node_level2->AddCommand(&cmd_set_subobject_vlan_te_instance);
+    node_level2->AddCommand(&cmd_set_subobject_subobj_if_instance);
+    node_level2->AddCommand(&cmd_set_subobject_lcl_id_instance);
+    node_level2->AddCommand(&cmd_ero_exit_instance);
     //////////////// End /////////////////
 
     current_node = cli_root;

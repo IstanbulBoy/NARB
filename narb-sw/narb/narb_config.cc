@@ -68,17 +68,35 @@ int SystemConfig::confirmed_ero_trash_secs = 30;
 
 void SystemConfig::AddStaticERO(indexed_ero* p_ero)
 {
-
+    assert(p_ero != NULL);
+    indexed_static_ero_list.push_back(p_ero);
 }
 
 indexed_ero* SystemConfig::LookupStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
 {
+    IndexedEROList::iterator it = indexed_static_ero_list.begin();
+    for (; it != indexed_static_ero_list.end(); it++)
+    {
+        if ((*it)->src_ip == src_ip && (*it)->src_ip == dest_ip)
+            return (*it);
+    }
     return NULL;
 }
 
 indexed_ero* SystemConfig::RemoveStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
 {
-    return NULL;
+    indexed_ero* p_ero = NULL;
+    IndexedEROList::iterator it = indexed_static_ero_list.begin();
+    for (; it != indexed_static_ero_list.end(); it++)
+    {
+        if ((*it)->src_ip == src_ip && (*it)->src_ip == dest_ip)
+        {
+            p_ero = (*it);
+            indexed_static_ero_list.erase(it);
+            break;
+        }
+    }
+    return p_ero;
 }
 
 /////////////////// Config File Processing //////////////////////
