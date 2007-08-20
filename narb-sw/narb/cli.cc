@@ -2160,7 +2160,6 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
 {
     char str[40], *pstr;
     in_addr src, dest;
-    strcpy(str, argv[0].c_str());
 
     if (argv.size() == 0 || argv[0] == "all" || argv[0] == "ALL")
     {
@@ -2175,8 +2174,9 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
         }
     }
-    else if ((pstr=strstr(str, "-")) != NULL)
+    else if ((pstr=strstr(argv[0].c_str(), "-")) != NULL)
     {
+        strcpy(str, argv[0].c_str());
         *pstr = 0;
         pstr++;
         inet_aton(str, &src);
