@@ -2164,6 +2164,7 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
     if (argv.size() == 0 || argv[0] == "all" || argv[0] == "ALL")
     {
         IndexedEROList::iterator it = SystemConfig::indexed_static_ero_list.begin();
+        CLI_OUT(" Showing a total of %d ERO's >>%s", SystemConfig::indexed_static_ero_list.size(), cli_cstr_newline);
         for (; it != SystemConfig::indexed_static_ero_list.end(); it++)
         {
             pstr = str+20;
@@ -2171,7 +2172,7 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             dest.s_addr = (*it)->dest_ip;
             strcpy(str, inet_ntoa(src));
             strcpy(pstr, inet_ntoa(dest));
-            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
+            CLI_OUT(" ## ERO %s-%s with %d hops: status '%s'%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
         }
     }
     else if ((pstr=strstr(argv[0].c_str(), "-")) != NULL)
@@ -2184,7 +2185,7 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
         indexed_ero* p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
         if (p_ero == NULL)
         {
-            CLI_OUT(" ### static ERO configuration for source(%s)--destination(%s) unvailable...%s", str, pstr,  cli_cstr_newline);
+            CLI_OUT(" ### static ERO configuration for %s-%s unvailable...%s", str, pstr,  cli_cstr_newline);
         }
         else
         {
@@ -2193,14 +2194,14 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             dest.s_addr = p_ero->dest_ip;
             strcpy(str, inet_ntoa(src));
             strcpy(pstr, inet_ntoa(dest));
-            CLI_OUT(" ## ERO source IP %-15s destination %-15s: %d hops, %s, showing subobjects >>%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+            CLI_OUT(" ## ERO %s-%s with %d hops, status '%s', showing subobjects >>%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
 
             SHOW_ERO_SUBOBJECTS(p_ero);
         }
     }
     else
     {
-        CLI_OUT("  %s: unrecognized 'SrcIP-DestIP' formatted index for ERO configuration retrieval%s", str,  cli_cstr_newline);        
+        CLI_OUT("  %s: unrecognized 'Src-Dest IP pair' formatted index for ERO configuration retrieval%s", str,  cli_cstr_newline);        
     }
     
     cli_node->ShowPrompt();
@@ -2276,7 +2277,7 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
 COMMAND(cmd_ero_show, "show config",
        "Show subobjects \n cont ... ")
 {
-    CLI_OUT(" ## ERO %s, showing subobjects >> %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT(" ## showing ERO (status '%s') subobjects >> %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
     SHOW_ERO_SUBOBJECTS(current_static_ero);
     cli_node->ShowPrompt();
 }
