@@ -450,14 +450,13 @@ int LSPQ::HandleLSPQRequest()
     }
 
     //return manual/static ERO based on CLI configuration
-    //@@@@TODO
-    /*
-    if (SystemConfig::use_manual_ero && SystemConfig::manual_ero.size() > 0)
+    indexed_ero *preconfiged_static_ero = SystemConfig::LookupStaticERO(req_spec.src.s_addr, req_spec.dest.s_addr);
+    if (preconfiged_static_ero != NULL && preconfiged_static_ero->enabled)
     {
         ero.clear();
         ero_subobj* subobj;
-        list<ero_subobj*>::iterator it = SystemConfig::manual_ero.begin();
-        for ( ; it != SystemConfig::manual_ero.end(); it++)
+        list<ero_subobj*>::iterator it = preconfiged_static_ero->ero.begin();
+        for ( ; it != preconfiged_static_ero->ero.end(); it++)
         {
             subobj = new (struct ero_subobj);
             memcpy(subobj, *it, sizeof(struct ero_subobj));
@@ -465,7 +464,6 @@ int LSPQ::HandleLSPQRequest()
         }
         return HandleCompleteERO();
     }
-    */
     
     msg_narb_cspf_request cspf_req;
     cspf_req.app_req_data = req_spec;

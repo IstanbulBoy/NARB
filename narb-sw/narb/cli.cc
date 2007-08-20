@@ -2277,7 +2277,8 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
 COMMAND(cmd_ero_show, "show config",
        "Show subobjects \n cont ... ")
 {
-    CLI_OUT(" ## showing %d ERO (status '%s') subobjects >> %s",  current_static_ero->ero.size(), current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT(" ## showing %d ERO (status '%s') subobjects (cursor=%d) >> %s",  current_static_ero->ero.size(), 
+        current_static_ero->enabled ? "enabled" : "disabled", current_static_ero->cursor, cli_cstr_newline);
     SHOW_ERO_SUBOBJECTS(current_static_ero);
     cli_node->ShowPrompt();
 }
@@ -2316,7 +2317,7 @@ COMMAND(cmd_ero_insert, "insert {before|after} NUM",
 
     if (cursor > 0 && cursor <= current_static_ero->ero.size())
     {
-        CLI_OUT(" >>> new subobject to be added %s the currebt suboject #%d <<< %s", insert_before ? "Before" : "After", cursor, cli_cstr_newline);
+        CLI_OUT(" >>> new subobject to be added %s the current suboject #%d <<< %s", insert_before ? "Before" : "After", cursor, cli_cstr_newline);
         current_static_ero->cursor = cursor - (insert_before ? 1 : 0);
     }
     else
@@ -2328,11 +2329,20 @@ COMMAND(cmd_ero_insert, "insert {before|after} NUM",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_delete, "delete NUM",
-       "Delete subobject \n the referred subobject number")
+COMMAND(cmd_ero_append, "append",
+       "Append subobjects")
+{
+    current_static_ero->cursor = -1;
+    CLI_OUT(" ## Current ERO with %d subobjects >> %s", current_static_ero->ero.size(), cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+
+COMMAND(cmd_ero_delete, "delete subobject NUM",
+       "Delete subobject \n cont... \nthe referred subobject number")
 {
     int cursor = -1;
-    sscanf(argv[1].c_str(), "%d", &cursor);
+    sscanf(argv[0].c_str(), "%d", &cursor);
 
     if (cursor > 0 && cursor <= current_static_ero->ero.size())
     {
@@ -2373,7 +2383,7 @@ static void insert_subobject_with_cursor(indexed_ero* p_ero, ero_subobj* subobj)
 }
     
 COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
-       "Set/Add subobject \n Strict hop \n Loose hop \n type IPv4 \n IP address")
+       "Set/Add subobject \n Strict hop | Loose hop \n type IPv4 \n IP address")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2396,7 +2406,7 @@ COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
 
 
 COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unum interface-ipv4 IP id ID",
-       "Set/Add subobject \n Strict hop \n Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
+       "Set/Add subobject \n Strict hop | Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2426,7 +2436,7 @@ COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unum interfac
 }
 
 COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} interface-ipv4 IP vtag ID",
-       "Set/Add subobject \n Strict hop \n Loose hop \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+       "Set/Add subobject \n Strict hop | Loose hop \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2459,7 +2469,7 @@ COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} interface-ipv4 
 }
 
 COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {source|destination} interface-ipv4 IP id ID first-timeslot TS",
-       "Set/Add subobject \n Strict hop \n Loose hop \n type Subnet Interface ... \n Source \n Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
+       "Set/Add subobject \n Strict hop|Loose hop \n type Subnet Interface ... \n Source|Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     u_int32_t subnet_if_type = (argv[1] == "source" ? 0x10 : 0x11);
@@ -2505,7 +2515,7 @@ COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {sourc
 }
 
 COMMAND(cmd_set_subobject_lcl_id, "set subobject {stric|loose} local-id-type {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
-       "Set/Add subobject n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+       "Set/Add subobject \n Strict hop|Loose hop  \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
 
