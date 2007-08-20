@@ -77,7 +77,7 @@ indexed_ero* SystemConfig::LookupStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
     IndexedEROList::iterator it = indexed_static_ero_list.begin();
     for (; it != indexed_static_ero_list.end(); it++)
     {
-        if ((*it)->src_ip == src_ip && (*it)->src_ip == dest_ip)
+        if ((*it)->src_ip == src_ip && (*it)->dest_ip == dest_ip)
             return (*it);
     }
     return NULL;
@@ -89,7 +89,7 @@ indexed_ero* SystemConfig::RemoveStaticERO(u_int32_t src_ip, u_int32_t dest_ip)
     IndexedEROList::iterator it = indexed_static_ero_list.begin();
     for (; it != indexed_static_ero_list.end(); it++)
     {
-        if ((*it)->src_ip == src_ip && (*it)->src_ip == dest_ip)
+        if ((*it)->src_ip == src_ip && (*it)->dest_ip == dest_ip)
         {
             p_ero = (*it);
             indexed_static_ero_list.erase(it);
