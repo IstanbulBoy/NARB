@@ -2223,7 +2223,7 @@ COMMAND(cmd_delete_static_ero, "delete static_ero SRCDEST",
         pstr++;
         inet_aton(str, &src);
         inet_aton(pstr, &dest);
-        p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+        p_ero = SystemConfig::RemoveStaticERO(src.s_addr, dest.s_addr);
     }
 
     if (p_ero == NULL)
