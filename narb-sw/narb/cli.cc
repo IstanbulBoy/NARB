@@ -2197,6 +2197,10 @@ COMMAND(cmd_show_static_ero, "show static_ero INDEX",
     cli_node->ShowPrompt();
 }
 
+//Alias of "exit"
+cmd_show_static_ero cmd_show_static_ero_default("show static_ero all", "\nShow\nStatic/Manual ERO\ncont...");
+
+
 COMMAND(cmd_delete_static_ero, "delete static_ero source IP destination IP {enabled|disabled}",
        "Delete manual ERO configuration\n cont...\nSource IP\nIP\nDestination IP\nIP\nEnable \nDisable")
 {
@@ -2249,7 +2253,7 @@ COMMAND(cmd_edit_static_ero, "edit static_ero source IP destination IP",
 COMMAND(cmd_ero_show, "show config",
        "Show subobjects \n cont ... ")
 {
-    CLI_OUT(" ## ERO %s, showing subobjects ## %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    CLI_OUT(" ## ERO %s, showing subobjects >> %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
     SHOW_ERO_SUBOBJECTS(current_static_ero);
     cli_node->ShowPrompt();
 }
@@ -2262,6 +2266,20 @@ COMMAND(cmd_ero_clear, "clear",
         delete (*it);
     current_static_ero->ero.clear();
     CLI_OUT(" ## ERO %s, number of subobjects = 0 %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_ero_enable, "enable",
+       "Enable this ERO")
+{
+    current_static_ero->enabled = true;
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_ero_disable, "disable",
+       "Disable this ERO")
+{
+    current_static_ero->enabled = false;
     cli_node->ShowPrompt();
 }
 
@@ -2549,6 +2567,8 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_lsp_instance);
     cli_root->AddCommand(&cmd_show_lsp_alias1);
     cli_root->AddCommand(&cmd_show_link_instance);
+    cli_root->AddCommand(&cmd_show_static_ero_instance);
+    cli_root->AddCommand(&cmd_show_static_ero_default);
     node_test = cli_root->MakeChild("test-node");
     node = cli_root->MakeChild("configure-node");
     //Test level
@@ -2583,6 +2603,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_static_ero_instance);
     node->AddCommand(&cmd_show_static_ero_instance);
+    node->AddCommand(&cmd_show_static_ero_default);
     node->AddCommand(&cmd_delete_static_ero_instance);
     node->AddCommand(&cmd_edit_static_ero_instance);
     node_level2 = node->MakeChild("edit-link-node");
@@ -2601,6 +2622,8 @@ void CLIReader::InitSession()
     node_level2 = node->MakeChild("edit-static-ero");
     ///////Edit-Static-ERO level under the cofigure level/////
     node_level2->AddCommand(&cmd_ero_show_instance);
+    node_level2->AddCommand(&cmd_ero_enable_instance);
+    node_level2->AddCommand(&cmd_ero_disable_instance);
     node_level2->AddCommand(&cmd_ero_clear_instance);
     node_level2->AddCommand(&cmd_ero_insert_instance);
     node_level2->AddCommand(&cmd_ero_delete_instance);
