@@ -2123,20 +2123,28 @@ COMMAND(cmd_delete_intradomain_topology, "delete intradomain topology",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_static_ero, "set static_ero source IP destination IP {enabled|disabled}",
-       "Set manual ERO\n cont...\nSource IP\nIP\nDestination IP\nIP\nEnable \nDisable")
+COMMAND(cmd_set_static_ero, "set static_ero SRCDEST {enabled|disabled}",
+       "Set manual ERO\n cont...\nSource-destination IPs\nEnable \nDisable")
 {
+    char str[40], *pstr;
+    strcpy(str, argv[0].c_str());
     in_addr src, dest;
-    inet_aton(argv[0].c_str(), &src);
-    inet_aton(argv[1].c_str(), &dest);
-    indexed_ero* p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+    indexed_ero* p_ero = NULL;
+    if ((pstr=strstr(str, "-")) != NULL)
+    {
+        *pstr = 0;
+        pstr++;
+        inet_aton(str, &src);
+        inet_aton(pstr, &dest);
+        p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+    }
 
-    CLI_OUT("\t static ERO configuration for source(%s)--destination(%s)", argv[0].c_str(), argv[1].c_str());
+    CLI_OUT(" ### static ERO configuration for src-dest: %s", argv[0].c_str());
     if (p_ero == NULL)
     {
         CLI_OUT(" unvailable...%s",  cli_cstr_newline);
     }
-    else if (argv[2] == "enabled") {
+    else if (argv[1] == "enabled") {
         p_ero->enabled = true;
         CLI_OUT(" enabled...%s",  cli_cstr_newline);
     }
@@ -2147,14 +2155,14 @@ COMMAND(cmd_set_static_ero, "set static_ero source IP destination IP {enabled|di
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_static_ero, "show static_ero INDEX",
-       "Show manual ERO configuration\n cont...\nERO index")
+COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
+       "Show manual ERO configuration\n cont...\nERO Source-destination IPs")
 {
     char str[40], *pstr;
     in_addr src, dest;
     strcpy(str, argv[0].c_str());
 
-    if (argv[0] == "all" || argv[0] == "ALL")
+    if (argv.size() == 0 || argv[0] == "all" || argv[0] == "ALL")
     {
         IndexedEROList::iterator it = SystemConfig::indexed_static_ero_list.begin();
         for (; it != SystemConfig::indexed_static_ero_list.end(); it++)
@@ -2176,7 +2184,7 @@ COMMAND(cmd_show_static_ero, "show static_ero INDEX",
         indexed_ero* p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
         if (p_ero == NULL)
         {
-            CLI_OUT(" static ERO configuration for source(%s)--destination(%s) unvailable...%s", str, pstr,  cli_cstr_newline);
+            CLI_OUT(" ### static ERO configuration for source(%s)--destination(%s) unvailable...%s", str, pstr,  cli_cstr_newline);
         }
         else
         {
@@ -2194,26 +2202,35 @@ COMMAND(cmd_show_static_ero, "show static_ero INDEX",
     {
         CLI_OUT("  %s: unrecognized 'SrcIP-DestIP' formatted index for ERO configuration retrieval%s", str,  cli_cstr_newline);        
     }
+    
     cli_node->ShowPrompt();
 }
 
-//Alias of "exit"
-cmd_show_static_ero cmd_show_static_ero_default("show static_ero all", "\nShow\nStatic/Manual ERO\ncont...");
+//Alias
+cmd_show_static_ero cmd_show_static_ero_default("show static_ero", "\nShow\nStatic/Manual ERO\ncont...");
 
-
-COMMAND(cmd_delete_static_ero, "delete static_ero source IP destination IP {enabled|disabled}",
-       "Delete manual ERO configuration\n cont...\nSource IP\nIP\nDestination IP\nIP\nEnable \nDisable")
+COMMAND(cmd_delete_static_ero, "delete static_ero SRCDEST",
+       "Delete manual ERO configuration\n cont...\nSource-destination IPs")
 {
+    char str[40], *pstr;
+    strcpy(str, argv[0].c_str());
     in_addr src, dest;
-    inet_aton(argv[0].c_str(), &src);
-    inet_aton(argv[1].c_str(), &dest);
-    indexed_ero* p_ero = SystemConfig::RemoveStaticERO(src.s_addr, dest.s_addr);
+    indexed_ero* p_ero = NULL;
+    if ((pstr=strstr(str, "-")) != NULL)
+    {
+        *pstr = 0;
+        pstr++;
+        inet_aton(str, &src);
+        inet_aton(pstr, &dest);
+        p_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+    }
+
     if (p_ero == NULL)
     {
-        CLI_OUT(" #### static ERO configuration for source(%s)--destination(%s) unvailable...%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        CLI_OUT(" #### static ERO configuration for src-dest: %s unvailable...%s", argv[0].c_str(), cli_cstr_newline);
     }
     else {
-        CLI_OUT(" #### static ERO configuration for source(%s)--destination(%s) removed...%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        CLI_OUT(" #### static ERO configuration for src-dest: %s removed...%s", argv[0].c_str(), cli_cstr_newline);
         delete p_ero;
     }
     cli_node->ShowPrompt();
@@ -2222,19 +2239,27 @@ COMMAND(cmd_delete_static_ero, "delete static_ero source IP destination IP {enab
 // edit_static_ero
 static indexed_ero* current_static_ero = NULL;
 
-COMMAND(cmd_edit_static_ero, "edit static_ero source IP destination IP",
-       "Edit manual/static ERO \n cont ... \nSource IP\nIP address\nDestination IP\nIP Address")
+COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
+       "Edit manual/static ERO \n cont ... \nSource-Destination IPs")
 {
-    in_addr src_addr, dest_addr;
-    inet_aton(argv[0].c_str(), &src_addr);
-    inet_aton(argv[1].c_str(), &dest_addr);
-    current_static_ero = SystemConfig::LookupStaticERO(src_addr.s_addr, dest_addr.s_addr);
+    char str[40], *pstr;
+    strcpy(str, argv[0].c_str());
+    in_addr src, dest;
+    current_static_ero = NULL;
+    if ((pstr=strstr(str, "-")) != NULL)
+    {
+        *pstr = 0;
+        pstr++;
+        inet_aton(str, &src);
+        inet_aton(pstr, &dest);
+        current_static_ero = SystemConfig::LookupStaticERO(src.s_addr, dest.s_addr);
+    }
 
     if (current_static_ero == NULL)
     {
         current_static_ero = new indexed_ero;
-        current_static_ero->src_ip = src_addr.s_addr;
-        current_static_ero->dest_ip = dest_addr.s_addr;
+        current_static_ero->src_ip = src.s_addr;
+        current_static_ero->dest_ip = dest.s_addr;
         SystemConfig::indexed_static_ero_list.push_back(current_static_ero);
     }
     
