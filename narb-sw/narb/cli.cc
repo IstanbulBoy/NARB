@@ -2267,8 +2267,6 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
     string prompt = cli_node->Prompt(); 
     prompt += '(';
     prompt += argv[0];
-    prompt +='-';
-    prompt += argv[1];
     prompt +=')';
     cli_node->Reader()->CurrentNode()->SetPrompt(prompt);
     cli_node->Reader()->CurrentNode()->ShowPrompt();
