@@ -2160,6 +2160,8 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
 {
     char str[40], *pstr;
     in_addr src, dest;
+    if (argv.size() > 0)
+        strcpy(str, argv[0].c_str());
 
     if (argv.size() == 0 || argv[0] == "all" || argv[0] == "ALL")
     {
@@ -2175,9 +2177,8 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             CLI_OUT(" ## ERO %s-%s with %d hops: status '%s'%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
         }
     }
-    else if ((pstr=strstr(argv[0].c_str(), "-")) != NULL)
+    else if ((pstr=strstr(str, "-")) != NULL)
     {
-        strcpy(str, argv[0].c_str());
         *pstr = 0;
         pstr++;
         inet_aton(str, &src);
@@ -2384,7 +2385,7 @@ static void insert_subobject_with_cursor(indexed_ero* p_ero, ero_subobj* subobj)
 }
     
 COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
-       "Set/Add subobject \n Strict hop | Loose hop \n type IPv4 \n IP address")
+       "Set/Add subobject \ncont... \n Strict hop | Loose hop \n type IPv4 \n IP address")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2406,8 +2407,8 @@ COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
 }
 
 
-COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unum interface-ipv4 IP id ID",
-       "Set/Add subobject \n Strict hop | Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
+COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unnumbered interface-ipv4 IP id ID",
+       "Set/Add subobject \ncont...\n Strict hop | Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2431,13 +2432,13 @@ COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unum interfac
     memset(subobj, 0, sizeof(ero_subobj));
     subobj->hop_type = (is_loose? 1 : 0);
     subobj->addr = ipv4;
-    subobj->if_id = id;
+    subobj->if_id = htonl(id);
     insert_subobject_with_cursor(current_static_ero, subobj);
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} interface-ipv4 IP vtag ID",
-       "Set/Add subobject \n Strict hop | Loose hop \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} vlan-te interface-ipv4 IP vtag ID",
+       "Set/Add subobject \ncont...\n Strict hop | Loose hop \n type VLAN TE \n Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2470,7 +2471,7 @@ COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} interface-ipv4 
 }
 
 COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {source|destination} interface-ipv4 IP id ID first-timeslot TS",
-       "Set/Add subobject \n Strict hop|Loose hop \n type Subnet Interface ... \n Source|Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
+       "Set/Add subobject \ncont...\n Strict hop|Loose hop \n type Subnet Interface ... \n Source|Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     u_int32_t subnet_if_type = (argv[1] == "source" ? 0x10 : 0x11);
@@ -2515,8 +2516,8 @@ COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {sourc
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_lcl_id, "set subobject {stric|loose} local-id-type {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
-       "Set/Add subobject \n Strict hop|Loose hop  \n type Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+COMMAND(cmd_set_subobject_lcl_id, "set subobject {strict|loose} local-id {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
+       "Set/Add subobject \ncont...\n Strict hop|Loose hop  \n cont...\nPORT|UNTAGGED-GROUP|TAGGED-GROUP|SUBNET-INTERFACE\nInterface IPv4 Address ... \n IP \n LocalID value... \n ID value")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
 
