@@ -79,6 +79,8 @@ public:
 
     int Connect (char *host, int syncport, int remote_port);
     int Connect() { return Connect(terce_host, NARB_TERCE_SYNC_PORT, terce_port); }
+    int Accept (int syncport);
+    int Accept () { return Accept(NARB_TERCE_SYNC_PORT); }
     bool Alive() { extern int module_connectable(char * host, int port); 
             return module_connectable (terce_host, terce_port); }
     TerceApiTopoReader * GetReader() {  return reader;}

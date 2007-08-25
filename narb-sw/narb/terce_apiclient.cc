@@ -50,13 +50,32 @@ void TerceApiTopoSync::InitNarbTerceComm()
 
     //$$$$ TBD
     u_int32_t ucid = domain_id;
-    api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, 0, NULL, ucid, get_narb_seqnum());
-    amsg->header.tag = NARB_TERCE_SYNC_PORT+1; //a.k.a. amsg->header.msgtag[1]; amsg->header.msgtag[0] is for domain_mask
+    api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, 0, NULL, ucid, get_narb_seqnum(), NARB_TERCE_SYNC_PORT+1);
+
     if (writer->WriteMessage(amsg) < 0)
     {
         LOGF("Sync-comm socket to TERCE (server %s:%d) failed to send InitComm message\n", terce_host, terce_port);
         return;
     }
+
+    /* kick start the server */
+    if (Accept(NARB_TERCE_SYNC_PORT) < 0)
+    {
+	LOGF("NARB-TerceApiTopoSync async server failed.");
+	SetObsolete(true);
+	SetRepeats(0);
+	return;
+    }
+    assert(async_fd > 0);
+    if (reader == NULL)
+    {
+	reader = new TerceApiTopoReader(async_fd, this);
+	reader->SetRepeats(FOREVER);
+	reader->SetAutoDelete(true);
+	reader->SetSyncSocket(sync_fd);
+	eventMaster.Schedule(reader);
+    }
+
     assert(reader != NULL);
     api_msg* rmsg = reader->ReadSyncMessage();
     if (!rmsg)
@@ -88,10 +107,84 @@ void TerceApiTopoSync::KeepAlive()
 
 int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
 {
-    sockaddr_in myaddr_sync, myaddr_async, peeraddr;
+    sockaddr_in myaddr_sync;
+    int on = 1, ret;
+    hostent *hp;
+
+    // Make connection for synchronous requests and connect to server
+    // Resolve address of server
+    hp = gethostbyname (host);
+    if (!hp)
+    {
+      LOG_CERR<< "TerceApiTopoSync::Connect: no such host " << host <<endl;
+      return -1;
+    }
+
+    sync_fd = socket (AF_INET, SOCK_STREAM, 0);
+    if (sync_fd < 0)
+    {
+      LOG_CERR<<"TerceApiTopoSync::Connect: creating sync socket failed" <<endl;
+      return -1;
+    }
+
+    //Reuse addr and port
+    ret = setsockopt (sync_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &on, sizeof (on));
+    if (ret < 0)
+    {
+      LOG_CERR<< "TerceApiTopoSync::Connect: SO_REUSEADDR failed" <<endl;
+      close (sync_fd);
+      sync_fd = -1;
+      return -1;
+    }
+#ifdef SO_REUSEPORT
+    ret = setsockopt (sync_fd, SOL_SOCKET, SO_REUSEPORT, (void *) &on, sizeof (on));
+    if (ret < 0)
+    {
+      LOG_CERR<< "TerceApiTopoSync::Connect: SO_REUSEPORT failed" <<endl;
+      close (sync_fd);
+      sync_fd = -1;
+      return -1;
+    }
+#endif
+
+    /* Bind sync socket to address structure. This is needed since we
+     * want the sync port number on a fixed port number. The reverse
+     * async channel will be at this port+1 */
+    memset (&myaddr_sync, 0, sizeof (sockaddr_in));
+    myaddr_sync.sin_family = AF_INET;
+    myaddr_sync.sin_port = htons (syncport);
+
+    ret = bind (sync_fd, (sockaddr *) &myaddr_sync, sizeof (sockaddr_in));
+    if (ret < 0)
+    { 
+	LOG_CERR<<"TerceApiTopoSync::Connect: bind sync socket failed"<<endl;
+	close (sync_fd);
+	sync_fd = -1;
+	return -1;
+    }
+    //Prepare address structure for connect
+    memcpy (&myaddr_sync.sin_addr, hp->h_addr, hp->h_length);
+    myaddr_sync.sin_family = AF_INET;
+    myaddr_sync.sin_port = htons(remote_port);
+
+    ret = connect (sync_fd, (sockaddr *) &myaddr_sync, sizeof (sockaddr_in));
+    if (ret < 0)
+    {
+	LOG_CERR<<"TerceApiTopoSync::Connect: sync connect failed"<<endl;
+	close (sync_fd);
+	sync_fd = -1;
+	return -1;
+    } 
+
+    return 0;
+}
+
+int TerceApiTopoSync::Accept (int syncport)
+{
+    sockaddr_in myaddr_async, peeraddr;
     int size = 0, on = 1, sock_accept, ret;
     socklen_t peeraddrlen;
-    hostent *hp;
+
 
     /* There are two connections between the client and the server.
      First the client opens a connection for synchronous requests/replies 
@@ -100,7 +193,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     sock_accept = socket (AF_INET, SOCK_STREAM, 0);
     if (sock_accept < 0)
     {
-      LOG_CERR<< "TerceApiTopoSync::Connect: creating async socket failed\n" <<endl;
+      LOG_CERR<< "TerceApiTopoSync::Accept: creating async socket failed\n" <<endl;
       return -1;
     }
 
@@ -118,7 +211,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     	    SO_REUSEADDR, (void *) &on, sizeof (on));
     if (ret < 0)
     {
-      LOG_CERR<<"TerceApiTopoSync::Connect: SO_REUSEADDR failed\n"<<endl;
+      LOG_CERR<<"TerceApiTopoSync::Accept: SO_REUSEADDR failed\n"<<endl;
       close (sock_accept);
       return -1;
     }
@@ -127,7 +220,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     	    SO_REUSEPORT, (void *) &on, sizeof (on));
     if (ret < 0)
     {
-      LOG_CERR<<"TerceApiTopoSync::Connect: SO_REUSEPORT failed\n"<<endl;
+      LOG_CERR<<"TerceApiTopoSync::Accept: SO_REUSEPORT failed\n"<<endl;
       close (sock_accept);
       return -1;
     }
@@ -137,7 +230,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     ret = bind (sock_accept, (sockaddr *) &myaddr_async, size);
     if (ret < 0)
     {
-      LOG_CERR<<"TerceApiTopoSync::Connect: bind async socket failed\n"<<endl;
+      LOG_CERR<<"TerceApiTopoSync::Accept: bind async socket failed\n"<<endl;
       close (sock_accept);
       return -1;
     }
@@ -146,81 +239,8 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     ret = listen (sock_accept, 4);
     if (ret < 0)
     {
-      LOG_CERR<<"TerceApiTopoSync::Connect: listen :" << strerror (errno);
+      LOG_CERR<<"TerceApiTopoSync::Accept: listen :" << strerror (errno);
       close (sock_accept);
-      return -1;
-    }
-
-    // Make connection for synchronous requests and connect to server
-    // Resolve address of server
-    hp = gethostbyname (host);
-    if (!hp)
-    {
-      LOG_CERR<< "TerceApiTopoSync::Connect: no such host " << host <<endl;
-      close (sock_accept);
-      return -1;
-    }
-
-    sync_fd = socket (AF_INET, SOCK_STREAM, 0);
-    if (sync_fd < 0)
-    {
-      LOG_CERR<<"TerceApiTopoSync::Connect: creating sync socket failed" <<endl;
-      close (sock_accept);
-      return -1;
-    }
-
-    //Reuse addr and port
-    ret = setsockopt (sync_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &on, sizeof (on));
-    if (ret < 0)
-    {
-      LOG_CERR<< "TerceApiTopoSync::Connect: SO_REUSEADDR failed" <<endl;
-      close (sock_accept);
-      close (sync_fd);
-      sync_fd = -1;
-      return -1;
-    }
-#ifdef SO_REUSEPORT
-    ret = setsockopt (sync_fd, SOL_SOCKET, SO_REUSEPORT, (void *) &on, sizeof (on));
-    if (ret < 0)
-    {
-      LOG_CERR<< "TerceApiTopoSync::Connect: SO_REUSEPORT failed" <<endl;
-      close (sock_accept);
-      close (sync_fd);
-      sync_fd = -1;
-      return -1;
-    }
-#endif
-
-    /* Bind sync socket to address structure. This is needed since we
-     want the sync port number on a fixed port number. The reverse
-     async channel will be at this port+1 */
-    memset (&myaddr_sync, 0, sizeof (sockaddr_in));
-    myaddr_sync.sin_family = AF_INET;
-    myaddr_sync.sin_port = htons (syncport);
-
-    ret = bind (sync_fd, (sockaddr *) &myaddr_sync, size);
-    if (ret < 0)
-    {
-      LOG_CERR<<"TerceApiTopoSync::Connect: bind sync socket failed"<<endl;
-      close (sock_accept);
-      close (sync_fd);
-      sync_fd = -1;
-      return -1;
-    }
-
-    //Prepare address structure for connect
-    memcpy (&myaddr_sync.sin_addr, hp->h_addr, hp->h_length);
-    myaddr_sync.sin_family = AF_INET;
-    myaddr_sync.sin_port = htons(remote_port);
-
-    // Now establish synchronous channel with OSPF daemon
-    ret = connect (sync_fd, (sockaddr *) &myaddr_sync, sizeof (sockaddr_in));
-    if (ret < 0)
-    {
-      LOG_CERR<<"TerceApiTopoSync::Connect: sync connect failed"<<endl;
-      close (sock_accept);
-      close (sync_fd);
-      sync_fd = -1;
       return -1;
     }
 
@@ -230,7 +250,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     async_fd = accept (sock_accept, (sockaddr *) &peeraddr, &peeraddrlen);
     if (async_fd < 0)
     {
-      LOG_CERR<<"TerceApiTopoSync::Connect: accept async failed"<<endl;
+      LOG_CERR<<"TerceApiTopoSync::Accept: accept async failed"<<endl;
       close (sock_accept);
       close (sync_fd);
       sync_fd = -1;
@@ -254,15 +274,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
             SetRepeats(0);
             return -1;
         }
-        assert(sync_fd > 0 && async_fd > 0);
-    }
-    if (reader == NULL)
-    {
-        reader = new TerceApiTopoReader(async_fd, this);
-        reader->SetRepeats(FOREVER);
-        reader->SetAutoDelete(true);
-        reader->SetSyncSocket(sync_fd);
-        eventMaster.Schedule(reader);
+        assert(sync_fd > 0);
     }
     if (writer == NULL)
     {
@@ -275,8 +287,8 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
     if (!api_ready)
     {
         InitNarbTerceComm();
-        if (!api_ready)
-            return -2;
+	if (!api_ready)
+	    return -2;
     }
 
     return 0;
@@ -296,13 +308,6 @@ void TerceApiTopoSync::Run ()
             LOGF("NARB-TerceApiTopoSync connection attempt %d/3 ### Check TERCE server status %s:%d ###\n", attempt, terce_host, terce_port);
             return;
         }
-    }
-    if (reader == NULL)
-    {
-        reader = new TerceApiTopoReader(async_fd, this);
-        reader->SetRepeats(FOREVER);
-        reader->SetAutoDelete(true);
-        eventMaster.Schedule(reader);
     }
     if (writer == NULL)
     {
@@ -639,14 +644,14 @@ int TerceApiTopoWriter::WriteMessage (api_msg *msg)
     char buf[API_MAX_MSG_SIZE];
 
     assert (msg);
-    assert (msg->body);
 
     // Length of message including header
     int len = sizeof (api_msg_header) + ntohs (msg->header.length);
 
     // Make contiguous memory buffer for message
     memcpy (buf, &msg->header, sizeof (api_msg_header));
-    memcpy (buf + sizeof (api_msg_header), msg->body, ntohs (msg->header.length));
+    if(msg->body != NULL)
+	memcpy (buf + sizeof (api_msg_header), msg->body, ntohs (msg->header.length));
 
     api_msg_delete (msg);
 
