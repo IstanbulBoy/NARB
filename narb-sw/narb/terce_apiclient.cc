@@ -710,7 +710,7 @@ int TerceApiTopoWriter::OriginateLsa(in_addr adv_id, u_char lsa_type, u_char opa
     memcpy (((u_char *) lsah) + sizeof (lsa_header), opaquedata, opaquelen);
 
     u_int32_t ucid = server->DomainId();
-    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_QUERY, htons(lsah->length), lsah, ucid, get_narb_seqnum(), server->DomainId());
+    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INSERT, htons(lsah->length), lsah, ucid, get_narb_seqnum(), server->DomainId());
 
     if (!msg)
     {
