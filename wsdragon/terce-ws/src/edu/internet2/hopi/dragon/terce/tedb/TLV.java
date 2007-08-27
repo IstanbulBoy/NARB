@@ -7,6 +7,7 @@
 
 package edu.internet2.hopi.dragon.terce.tedb;
 
+import edu.internet2.hopi.dragon.terce.TERCEGlobals;
 import edu.internet2.hopi.dragon.terce.TERCELSAException;
 import edu.internet2.hopi.dragon.terce.TERCENetworkDataException;
 import edu.internet2.hopi.dragon.terce.TERCEUtilities;
@@ -63,7 +64,7 @@ public class TLV {
     private long teMetric;
     private float maxBW;
     private float maxRsvBW;
-    private float[] maxUnrsvBW = new float[8];
+    private float[] unrsvBW = new float[8];
     private long rsrcClsClr;
     private long[] lclRmtID = new long[2];
     private IFSWCap ifSWCap = null;
@@ -71,7 +72,34 @@ public class TLV {
     private long domainID;
     
     /** Creates a new instance of TLV */
+    public TLV() {
+        if(TERCEGlobals.tlvStrDescs == null) {
+            TERCEGlobals.tlvStrDescs = new TERCEGlobals.strDesc();
+            TERCEGlobals.tlvStrDescs.add("ROUTER_ADDR", TE_TLV_ROUTER_ADDR);
+            TERCEGlobals.tlvStrDescs.add("LINK", TE_TLV_LINK);
+        }
+        if(TERCEGlobals.stlvStrDescs == null) {
+            TERCEGlobals.stlvStrDescs = new TERCEGlobals.strDesc();
+            TERCEGlobals.stlvStrDescs.add("LINK_TYPE", TE_LINK_SUBTLV_LINK_TYPE);
+            TERCEGlobals.stlvStrDescs.add("LINK_ID", TE_LINK_SUBTLV_LINK_ID);
+            TERCEGlobals.stlvStrDescs.add("LCLIF_IPADDR", TE_LINK_SUBTLV_LCLIF_IPADDR);
+            TERCEGlobals.stlvStrDescs.add("RMTIF_IPADDR", TE_LINK_SUBTLV_RMTIF_IPADDR);
+            TERCEGlobals.stlvStrDescs.add("TE_METRIC", TE_LINK_SUBTLV_TE_METRIC);
+            TERCEGlobals.stlvStrDescs.add("MAX_BW", TE_LINK_SUBTLV_MAX_BW);
+            TERCEGlobals.stlvStrDescs.add("MAX_RSV_BW", TE_LINK_SUBTLV_MAX_RSV_BW);
+            TERCEGlobals.stlvStrDescs.add("UNRSV_BW", TE_LINK_SUBTLV_UNRSV_BW);
+            TERCEGlobals.stlvStrDescs.add("RSC_CLSCLR", TE_LINK_SUBTLV_RSC_CLSCLR);
+            TERCEGlobals.stlvStrDescs.add("LINK_LCRMT_ID", TE_LINK_SUBTLV_LINK_LCRMT_ID);
+            TERCEGlobals.stlvStrDescs.add("LINK_IFSWCAP", TE_LINK_SUBTLV_LINK_IFSWCAP);
+            TERCEGlobals.stlvStrDescs.add("RESV_SCHEDULE", TE_LINK_SUBTLV_RESV_SCHEDULE);
+            TERCEGlobals.stlvStrDescs.add("LINK_IFADCAP", TE_LINK_SUBTLV_LINK_IFADCAP);
+            TERCEGlobals.stlvStrDescs.add("DOMAIN_ID", TE_LINK_SUBTLV_DOMAIN_ID);
+        }
+    }
+    
+    /** Creates a new instance of TLV */
     public TLV(byte[] d, int o) throws TERCELSAException {
+        this();
         dataOff = o;
         type = TERCEUtilities.nDatatoh(d, dataOff, TYPE_F);
         length = TERCEUtilities.nDatatoh(d, dataOff, LENGTH_F);
@@ -100,6 +128,7 @@ public class TLV {
     
     /** Creates a new instance of TLV */
     public TLV(TLV t, byte[] d, int o) throws TERCELSAException {
+        this();
         int x = 0;
         parent = t;
         dataOff = o;
@@ -203,7 +232,7 @@ public class TLV {
             f[0] = i * 4;
             tmp = TERCEUtilities.nDatatoh(d, dataOff, f);
             bits = (int)(tmp & 0xffffffffL);
-            maxUnrsvBW[i] = Float.intBitsToFloat(bits);
+            unrsvBW[i] = Float.intBitsToFloat(bits);
         }
         return (f[0] + f[1]);
     }
@@ -231,7 +260,7 @@ public class TLV {
         ifSWCap = new IFSWCap();
         int[] f = new int[2];
         
-        f[0] = 0; f[1] = 1; //swcap 
+        f[0] = 0; f[1] = 1; //swcap
         ifSWCap.setSWCap(TERCEUtilities.nDatatoh(d, dataOff, f));
         f[0] = 1; f[1] = 1; //enc
         enc = TERCEUtilities.nDatatoh(d, dataOff, f);
@@ -313,7 +342,7 @@ public class TLV {
     private int parseDomainID(byte[] d) {
         int[] f = {0, 4};
         domainID = TERCEUtilities.nDatatoh(d, dataOff, f);
-        return (f[0] + f[1]);   
+        return (f[0] + f[1]);
     }
     
     public int getDataOff() {
@@ -324,12 +353,80 @@ public class TLV {
         return (type == TE_TLV_LINK);
     }
     
-    void addSTLV(TLV stlv) {
+    public void addSTLV(TLV stlv) {
         if(stlvs != null)
             stlvs.add(stlv);
     }
     
-    long getLength() {
+    public long getLength() {
         return length;
+    }
+    
+    public String toString() {
+        String s = "";
+        if(parent != null) {
+            s += "    SUB_TLV";
+            s += "(" + TERCEGlobals.stlvStrDescs.getStr(type) + ")";
+            if(type == TE_LINK_SUBTLV_LINK_TYPE) {
+                s += " link type: " + linkType;
+            } else if(type == TE_LINK_SUBTLV_LINK_ID) {
+                s += " link ID: 0x" + Long.toHexString(linkID);
+            } else if(type == TE_LINK_SUBTLV_LCLIF_IPADDR) {
+                s += " lclif IP: 0x" + Long.toHexString(lclIFAddr);
+            } else if(type == TE_LINK_SUBTLV_RMTIF_IPADDR) {
+                s += " rmtif IP: 0x" + Long.toHexString(rmtIFAddr);
+            } else if(type == TE_LINK_SUBTLV_TE_METRIC) {
+                s += " metric: " + teMetric;
+            } else if(type == TE_LINK_SUBTLV_MAX_BW) {
+                s += " max BW: " + maxBW;
+            } else if(type == TE_LINK_SUBTLV_MAX_RSV_BW) {
+                s += " max rsv. BW: " + maxRsvBW;
+            } else if(type == TE_LINK_SUBTLV_UNRSV_BW) {
+                s += " unrsv. BW: (";
+                for (int i = 0; i < 8; i++) {
+                    s += unrsvBW[i];
+                    if(i == 7)
+                        s += ")";
+                    else
+                        s += ", ";
+                }
+            } else if(type == TE_LINK_SUBTLV_RSC_CLSCLR) {
+                s += " class/color: " + rsrcClsClr;
+            } else if(type == TE_LINK_SUBTLV_LINK_LCRMT_ID) {
+                s += " lcl/rmt ID: (";
+                for (int i = 0; i < 2; i++) {
+                    s += lclRmtID[i];
+                    if(i == 1)
+                        s += ")";
+                    else
+                        s += ", ";
+                }
+                
+            } else if(type == TE_LINK_SUBTLV_LINK_IFSWCAP) {
+                s += " isswcap: (s:";
+                s += ifSWCap.getSWCap() + ", e:";
+                s += ifSWCap.getEnc() + ", data(";
+                s += ifSWCap.getVlanLength() + "))";
+            } else if(type == TE_LINK_SUBTLV_RESV_SCHEDULE) {
+                s += " resv. schedule: (hidden)";
+            } else if(type == TE_LINK_SUBTLV_DOMAIN_ID) {
+                s += " domain ID: 0x" + Long.toHexString(domainID);
+            }
+            
+            s += "\n";
+        } else {
+            s += "  TLV";
+            s += "(" + TERCEGlobals.stlvStrDescs.getStr(type) + ")";
+            if(type == TE_TLV_ROUTER_ADDR)
+                s += " rtr_addr: 0x" + Long.toHexString(rtr_addr & 0xffffffffL);
+            if(stlvs != null) {
+                s += "\n";
+                for (int i = 0; i < stlvs.size(); i++) {
+                    s += stlvs.get(i).toString();
+                }
+            }
+            s += "\n";
+        }
+        return s;
     }
 }

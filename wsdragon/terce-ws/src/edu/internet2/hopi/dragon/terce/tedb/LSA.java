@@ -123,6 +123,12 @@ public class LSA {
         s += ", chksum: 0x" + Long.toHexString(chksum);
         s += ", length: 0x" + Long.toHexString(length);
         s += "\n";
+        for (int i = 0; i < tlvs.size(); i++) {
+            s+= tlvs.get(i).toString();
+        }
+        
+        
+        s += "\n";
         return s;
     }
 }
