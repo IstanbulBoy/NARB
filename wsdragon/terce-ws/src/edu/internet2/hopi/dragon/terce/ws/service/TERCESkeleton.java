@@ -7,6 +7,7 @@
  */
 package edu.internet2.hopi.dragon.terce.ws.service;
 
+import edu.internet2.hopi.dragon.terce.TERCECore;
 import java.io.IOException;
 
 import edu.internet2.hopi.dragon.PropertyReader;
@@ -21,12 +22,26 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
+import org.apache.axis2.context.ServiceContext;
 
 /**
  *  TERCESkeleton java skeleton for the axisService
  */
 public class TERCESkeleton{
 
+    private Thread serverThread;
+    private TERCECore terceServer;
+    
+        public void init(ServiceContext serviceContext) {
+            terceServer = new TERCECore(2690);
+            serverThread = new Thread(terceServer);
+           serverThread.start();
+        }
+        
+        public void destroy(ServiceContext serviceContext) {
+            terceServer.stopServer();
+        }
+        
 	/**
 	 * Auto generated method signature
 	 * @param findPath
