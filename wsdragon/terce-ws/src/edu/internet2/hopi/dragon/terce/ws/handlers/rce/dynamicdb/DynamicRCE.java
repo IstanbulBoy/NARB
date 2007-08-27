@@ -125,10 +125,10 @@ public class DynamicRCE extends RCE implements RCEInterface{
      		vtag = TERCEMessageHeader.VTAG_NONE;
      	}else if(vtagString.toLowerCase().equals("any")){
      		vtag = TERCEMessageHeader.VTAG_ANY;
-     		header.addOption(TERCEMessageHeader.OPT_E2E_VTAG);
+     		header.setOption(TERCEMessageHeader.OPT_E2E_VTAG);
      	}else{
      		vtag = Integer.parseInt(vtagString);
-     		header.addOption(TERCEMessageHeader.OPT_E2E_VTAG);
+     		header.setOption(TERCEMessageHeader.OPT_E2E_VTAG);
      	}
      	header.setTag(vtag);
      	
@@ -138,44 +138,44 @@ public class DynamicRCE extends RCE implements RCEInterface{
 	        	for(int i = 0; i < excludeList.length; i++){
 	        		String layer = excludeList[i].getLayer();
 	        		if(layer.equals("1")){
-	        			header.addOption(TERCEMessageHeader.OPT_EXCLUDE_L1);
+	        			header.setOption(TERCEMessageHeader.OPT_EXCLUDE_L1);
 	        		}else if(layer.equals("2")){
-	        			header.addOption(TERCEMessageHeader.OPT_EXCLUDE_L2);
+	        			header.setOption(TERCEMessageHeader.OPT_EXCLUDE_L2);
 	        		}else if(layer.equals("3")){
-	        			header.addOption(TERCEMessageHeader.OPT_EXCLUDE_L3);
+	        			header.setOption(TERCEMessageHeader.OPT_EXCLUDE_L3);
 	        		}else if(layer.equals("TDM")){
-	        			header.addOption(TERCEMessageHeader.OPT_EXCLUDE_TDM);
+	        			header.setOption(TERCEMessageHeader.OPT_EXCLUDE_TDM);
 	        		}
 	        	}
      	}
      	
      	/* Set other options */
      	if(soapRequest.getAllvtags()){
-     		header.addOption(TERCEMessageHeader.OPT_REQ_ALL_VTAGS);
+     		header.setOption(TERCEMessageHeader.OPT_REQ_ALL_VTAGS);
      	}
      	
      	if(soapRequest.getAllwaves()){
-     		header.addOption(TERCEMessageHeader.OPT_REQ_ALL_WAVES);
+     		header.setOption(TERCEMessageHeader.OPT_REQ_ALL_WAVES);
      	}
      	
      	if(soapRequest.getBidirectional()){
-     		header.addOption(TERCEMessageHeader.OPT_BIDIRECTIONAL);
+     		header.setOption(TERCEMessageHeader.OPT_BIDIRECTIONAL);
      	}
      	
      	if(soapRequest.getMrn()){
-     		header.addOption(TERCEMessageHeader.OPT_MRN);
+     		header.setOption(TERCEMessageHeader.OPT_MRN);
      	}
      	
      	if(soapRequest.getPreferred()){
-     		header.addOption(TERCEMessageHeader.OPT_PREFERRED);
+     		header.setOption(TERCEMessageHeader.OPT_PREFERRED);
      	}
      	
      	if(soapRequest.getStrict()){
-     		header.addOption(TERCEMessageHeader.OPT_STRICT);
+     		header.setOption(TERCEMessageHeader.OPT_STRICT);
      	}
      	
      	if(soapRequest.getViamovaz()){
-     		header.addOption(TERCEMessageHeader.OPT_VIA_MOVAZ);
+     		header.setOption(TERCEMessageHeader.OPT_VIA_MOVAZ);
      	}
      }
 }
