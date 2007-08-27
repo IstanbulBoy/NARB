@@ -1,5 +1,6 @@
 package edu.internet2.hopi.dragon.terce.api;
 
+import edu.internet2.hopi.dragon.terce.TERCENetworkDataException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -80,8 +81,10 @@ public class App2TERCERequest {
 		length[0] = (byte) ((l & 65280) >> 2);
 		length[1] = (byte) (l & 255);
 
-		/* Create header */
-		header = new TERCEMessageHeader(TERCEMessageHeader.TYPE_LSPQ, bodyLength + 4, null, TERCEMessageHeader.VTAG_ANY);
+            /* Create header */
+            header = new TERCEMessageHeader(TERCEMessageHeader.TYPE_LSPQ, bodyLength + 4);
+
+                header.setTag(TERCEMessageHeader.VTAG_ANY);
 		
 		/* Sum total size of packet */
 		packetSize = bodyLength + TERCEMessageHeader.SIZE + 4;

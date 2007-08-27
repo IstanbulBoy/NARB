@@ -1,8 +1,10 @@
 package edu.internet2.hopi.dragon.terce.api;
 
+import edu.internet2.hopi.dragon.terce.TERCENetworkDataException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.zip.DataFormatException;
 
 /**
  * Represents a reply from the TERCE server. It can be generated 
@@ -60,8 +62,9 @@ public class TERCEReply {
 	 * @throws UnknownHostException thrown when ERO contains an IP address that is invalid
 	 */
 	public TERCEReply(byte[] packet) throws UnknownHostException{
-		header = new TERCEMessageHeader(packet);
-		
+
+            header = new TERCEMessageHeader(packet);
+       	
 		/* Set TLV type */
 		type = packet[TERCEMessageHeader.SIZE] << 8;
 		type += packet[TERCEMessageHeader.SIZE + 1];
@@ -71,7 +74,7 @@ public class TERCEReply {
 		length += packet[TERCEMessageHeader.SIZE + 3];
 		
 		/* Parse TLV subobject */
-		int msgType = header.getMessageType();
+		int msgType = (int)header.getMessageType();
 		if(msgType == TERCEMessageHeader.TYPE_REPLY_ERO){
 			/* read ERO TLVS */
 			if(type == TLV_TYPE_TERCE_ERO){
