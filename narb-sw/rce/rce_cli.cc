@@ -1569,11 +1569,11 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_topology_instance);
     cli_root->AddCommand(&cmd_show_link_instance);
-    cli_root->AddCommand(&cmd_load_config_instance);
     cli_root->AddCommand(&cmd_configure_instance);
     //Configure level
     node = cli_root->MakeChild("configure-node");
     node->SetPrompt("rce:cli#");
+    node->AddCommand(&cmd_load_config_instance);
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_ospfd_instance);

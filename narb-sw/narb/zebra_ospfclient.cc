@@ -1176,20 +1176,20 @@ te_tlv_header * ospf_te_link_subtlv_set_swcap_vlan(te_tlv_header * tlv_header, u
       z_compress(vlan_info.bitmask, vlan_data_len);
       vlan_info.version |= htons(IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z);
       vlan_info.length = htons(vlan_data_len + 4); // add length and version = 4 bytes
-      u_int32_t atual_len = vlan_data_len%4 == 0 ? vlan_data_len : (vlan_data_len/4 + 1)*4;
+      u_int32_t actual_len = (vlan_data_len%4 == 0 ? vlan_data_len : (vlan_data_len/4 + 1)*4);
 //  }
 //  else
 //  {
 //      vlan_info.length = htons(sizeof(link_ifswcap_specific_vlan_full));
 //  }
-    atual_len -= 4; // the extra bytes after 8 bytes of layer specific info
-    tlv_header_appended = (te_tlv_header*)malloc(tlv_size + atual_len); 
+    actual_len -= 4; // the extra bytes after 8 bytes of layer specific info
+    tlv_header_appended = (te_tlv_header*)malloc(tlv_size + actual_len); 
     memcpy((char*)tlv_header_appended, (char*)tlv_header, tlv_size);
-    tlv_header_appended->length = htons(ntohs(tlv_header->length) + atual_len);
+    tlv_header_appended->length = htons(ntohs(tlv_header->length) + actual_len);
     free(tlv_header);
     ifswcap_tlv = (te_link_subtlv_link_ifswcap*)((char*)tlv_header_appended + tlv_size - sub_tlv_size);
-    ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + atual_len);
-    memcpy (&ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan, &vlan_info, atual_len + 8);
+    ifswcap_tlv->header.length = htons(sub_tlv_size - TLV_HDR_SIZE + actual_len);
+    memcpy (&ifswcap_tlv->link_ifswcap_data.ifswcap_specific_info.ifswcap_specific_vlan, &vlan_info, actual_len + 8);
 
     return tlv_header_appended;
 }
