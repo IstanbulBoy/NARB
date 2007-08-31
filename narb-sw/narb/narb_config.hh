@@ -86,6 +86,7 @@ enum narb_working_mode {
 #define LSP_OPT_VTAG_MASK  ((u_int32_t)(0x0080 << 16)) //Privodes a 512 bytes vtag mask to constrain the available taggs
 #define LSP_OPT_QUERY_HOLD  ((u_int32_t)(0x0100 << 16)) //holding resource upon query for a short period of time to resolve contention
 #define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
+#define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
 
 struct indexed_ero
 {

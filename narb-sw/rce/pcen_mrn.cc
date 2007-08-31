@@ -804,8 +804,6 @@ void PCEN_MRN::HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
 
 void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 {
-    list<ero_subobj> ero_transit;
-
     if (ero_track.size() == 0)
         return;
 
@@ -828,18 +826,19 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         uni_dest = iter;
     }
 
+    subnet_ero.clear(); //optional TLV defiend in class rce_pcen.hh
     if (uni_src != ero_track.end() && uni_dest != ero_track.end())
     {
         if ((++uni_src) != uni_dest)
         {
-            ero_transit.assign(uni_src, uni_dest);
+            subnet_ero.assign(uni_src, uni_dest);
             ero_track.erase(uni_src, uni_dest);
         }
     }
 
-
-    // handling arbitrary number of transit home vlsrs baed on the size of ero_transit
-    while (ero_transit.size() >= 2)
+    // handling arbitrary number of subnet home vlsrs baed on the size of subnet_ero
+    iter = subnet_ero.begin();
+    while (iter != subnet_ero.end())
     {
         int i;
         u_int32_t subnet_node_lcl = 0;
@@ -849,10 +848,12 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         PCENLink* home_vlsr_link = NULL;
 
         // two ends of the link between CDs
-        u_int32_t subnet_link_lcl = ero_transit.front().addr.s_addr;
-        ero_transit.pop_front();
-        u_int32_t subnet_link_rmt = ero_transit.front().addr.s_addr;
-        ero_transit.pop_front();
+        u_int32_t subnet_link_lcl = (*iter).addr.s_addr;
+        iter++;
+        if (iter == subnet_ero.end())
+            break;
+        u_int32_t subnet_link_rmt = (*iter).addr.s_addr;
+        iter++;
 
         for (i = 0; i < links.size(); i++)
         {
@@ -897,8 +898,6 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
 
         }
     }
-
-    // assert (ero_transit.size() == 0);
 }
 
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)

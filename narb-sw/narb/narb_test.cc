@@ -77,7 +77,7 @@ u_int32_t opt_query_hold = 0;
 u_int32_t opt_query_with_confirmation = 0;
 in_addr hop_back;
 
-struct msg_app2narb_vtag_mask vtag_mask;
+struct msg_narb_vtag_mask vtag_mask;
 
 struct option longopts[] = 
 {
@@ -173,12 +173,12 @@ int narbapi_connect ()
     return fd;
 }
 
-int set_vtag_mask_from_cmdline(struct msg_app2narb_vtag_mask* vtag_mask, char* vtag_range)
+int set_vtag_mask_from_cmdline(struct msg_narb_vtag_mask* vtag_mask, char* vtag_range)
 {
 	int vlan1, vlan2;
 	vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
 	// TLV length = content length (for OSPF only)
-	vtag_mask->length = htons(sizeof(struct msg_app2narb_vtag_mask) - 4);
+	vtag_mask->length = htons(sizeof(struct msg_narb_vtag_mask) - 4);
 	if (sscanf(vtag_range, "%d-%d", &vlan1, &vlan2) != 2)
 	{
 		printf("Wrong -t option argument '%s': must be in the format of [vtag_low-vtag_high]\n", vtag_range);
@@ -336,17 +336,17 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
 
   if (vtag_mask.type != 0)
   {
-    memcpy(msgbody + bodylen, &vtag_mask, sizeof(msg_app2narb_vtag_mask));
-    bodylen += sizeof(msg_app2narb_vtag_mask);
+    memcpy(msgbody + bodylen, &vtag_mask, sizeof(msg_narb_vtag_mask));
+    bodylen += sizeof(msg_narb_vtag_mask);
   }
 
   if (hop_back.s_addr != 0)
   {
-    msg_app2narb_hop_back* hopback_tlv = (msg_app2narb_hop_back*)(msgbody + bodylen);
+    msg_narb_hop_back* hopback_tlv = (msg_narb_hop_back*)(msgbody + bodylen);
     hopback_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-    hopback_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
+    hopback_tlv->length = htons(sizeof(msg_narb_hop_back) - TLV_HDR_SIZE);
     hopback_tlv->ipv4 = hop_back.s_addr;
-    bodylen += sizeof (msg_app2narb_hop_back);
+    bodylen += sizeof (msg_narb_hop_back);
   }
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
 
     strcpy(host, "localhost");
     source.s_addr = destination.s_addr = hop_back.s_addr = 0;
-    memset(&vtag_mask, 0, sizeof(struct msg_app2narb_vtag_mask));
+    memset(&vtag_mask, 0, sizeof(struct msg_narb_vtag_mask));
     while (1)
     {
         int opt;
@@ -558,7 +558,7 @@ int main(int argc, char* argv[])
                 LOGF("E2E VLAN TAG [ %d ]\n", ntohl(narb_reply->header.tag));
             if (vtag == ANY_VTAG && opt_req_all_vtags != 0 && ntohs(narb_reply->header.length) > TLV_HDR_SIZE + ntohs(tlv->length))
             {
-                msg_app2narb_vtag_mask* vtagmask = (msg_app2narb_vtag_mask*) ((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
+                msg_narb_vtag_mask* vtagmask = (msg_narb_vtag_mask*) ((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
                 LOGF("ALL E2E VLAN TAGS:");
                 for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
                 {

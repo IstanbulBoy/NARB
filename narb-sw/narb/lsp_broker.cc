@@ -896,7 +896,8 @@ int LSPQ::HandleCompleteERO()
 
     assert(broker);
 
-    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req? previous_lspb_id : 0);
+    rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req? previous_lspb_id : 0,
+        (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero);
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
     rmsg->header.tag = htonl(req_vtag);
@@ -927,11 +928,11 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
         int mlen = 0;
         if (previous_lspb_id != 0)
         {
-            msg_app2narb_lspb_id *lspb_id_tlv = (msg_app2narb_lspb_id*)(buf + mlen);
+            msg_narb_lspb_id *lspb_id_tlv = (msg_narb_lspb_id*)(buf + mlen);
             lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-            lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+            lspb_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
             lspb_id_tlv->lspb_id = previous_lspb_id;
-            mlen += sizeof(msg_app2narb_lspb_id);
+            mlen += sizeof(msg_narb_lspb_id);
         }
         
         rmsg = api_msg_new (MSG_REPLY_CONFIRMATION_ID, mlen, buf, req_ucid, app_seqnum, req_vtag);
@@ -992,7 +993,8 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
             ero.push_front(subobj);
         }
 
-        rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req ? previous_lspb_id : 0);
+        rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req ? previous_lspb_id : 0,
+            (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
 
@@ -1118,7 +1120,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
 
     SetState(STATE_RESV_CONFIRM);
 
-    msg_app2narb_confirm* app_msg = (msg_app2narb_confirm*)msg->body;
+    msg_narb_confirm* app_msg = (msg_narb_confirm*)msg->body;
 
     list<ero_subobj*> ero_confirm;
     GetERO_RFCStandard(&app_msg->ero, ero_confirm);
@@ -1262,7 +1264,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     link_info *link1, *link2;
     link_info *reverse_link1, *reverse_link2;
     list<ero_subobj*> ero_confirm;
-    msg_app2narb_confirm* app_msg;
+    msg_narb_confirm* app_msg;
     in_addr narb_ip;
     bool is_forward_link = false;
     u_int32_t lsp_vtag = 0;
@@ -1280,7 +1282,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
 
     SetState(STATE_RESV_RELEASE);
 
-    app_msg = (msg_app2narb_confirm*)msg->body;
+    app_msg = (msg_narb_confirm*)msg->body;
 
     GetERO_RFCStandard(&app_msg->ero, ero_confirm);
 
@@ -1662,7 +1664,7 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
     int msg_len = ntohs(msg->header.length);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
     int tlv_len;
-    msg_app2narb_vtag_mask* vtagMask;
+    msg_narb_vtag_mask* vtagMask;
 
     if ((app_options & LSP_OPT_VTAG_MASK) == 0 && vtag_mask)
     {
@@ -1680,33 +1682,33 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             ; //do nothing
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
-            tlv_len = sizeof(msg_app2narb_vtag_mask);
-            vtagMask = (msg_app2narb_vtag_mask*)tlv;
+            tlv_len = sizeof(msg_narb_vtag_mask);
+            vtagMask = (msg_narb_vtag_mask*)tlv;
             if (ntohl(msg->header.options) & LSP_OPT_VTAG_MASK)
             {
                 if (!vtag_mask)
-                    vtag_mask = new (struct msg_app2narb_vtag_mask);
-                memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+                    vtag_mask = new (struct msg_narb_vtag_mask);
+                memcpy(vtag_mask, vtagMask, sizeof(msg_narb_vtag_mask));
             }
             break;
         case TLV_TYPE_NARB_HOP_BACK:
-            tlv_len = sizeof(msg_app2narb_hop_back);
-            hop_back = ((msg_app2narb_hop_back*)tlv)->ipv4;
+            tlv_len = sizeof(msg_narb_hop_back);
+            hop_back = ((msg_narb_hop_back*)tlv)->ipv4;
             if (hop_back == 0)
                 LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: hop_back_tlv->ipv4 == 0\n");
             break;
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
-            tlv_len = sizeof(msg_app2narb_suggested_vtag);
+            tlv_len = sizeof(msg_narb_suggested_vtag);
             if (!suggested_vtag)
-                suggested_vtag = new (struct msg_app2narb_suggested_vtag);
-            else if (suggested_vtag->suggested_vtag != ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag)
+                suggested_vtag = new (struct msg_narb_suggested_vtag);
+            else if (suggested_vtag->suggested_vtag != ((msg_narb_suggested_vtag*)tlv)->suggested_vtag)
                 LOGF("Warning: LSPQ::HandleOptionalRequestTLVs: existing suggested_vtag (%d) does not match the received (%d)\n",
-                    suggested_vtag->suggested_vtag, ((msg_app2narb_suggested_vtag*)tlv)->suggested_vtag);
-            memcpy(suggested_vtag, tlv, sizeof(msg_app2narb_suggested_vtag));
+                    suggested_vtag->suggested_vtag, ((msg_narb_suggested_vtag*)tlv)->suggested_vtag);
+            memcpy(suggested_vtag, tlv, sizeof(msg_narb_suggested_vtag));
             break;
         case TLV_TYPE_NARB_LSPB_ID:
-            tlv_len = sizeof(msg_app2narb_lspb_id);
-            previous_lspb_id = ((msg_app2narb_lspb_id*)tlv)->lspb_id;
+            tlv_len = sizeof(msg_narb_lspb_id);
+            previous_lspb_id = ((msg_narb_lspb_id*)tlv)->lspb_id;
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
@@ -1722,7 +1724,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
     int msg_len = ntohs(msg->header.length);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
     int tlv_len;
-    msg_app2narb_vtag_mask* vtagMask;
+    msg_narb_vtag_mask* vtagMask;
     bool hasVtagMask = false;
 
     while (msg_len > 0)
@@ -1739,21 +1741,28 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
             hasVtagMask = true;
-            tlv_len = sizeof(msg_app2narb_vtag_mask);
-            vtagMask = (msg_app2narb_vtag_mask*)tlv;
+            tlv_len = sizeof(msg_narb_vtag_mask);
+            vtagMask = (msg_narb_vtag_mask*)tlv;
             if (!vtag_mask)
-                vtag_mask = new (struct msg_app2narb_vtag_mask);
-            memcpy(vtag_mask, vtagMask, sizeof(msg_app2narb_vtag_mask));
+                vtag_mask = new (struct msg_narb_vtag_mask);
+            memcpy(vtag_mask, vtagMask, sizeof(msg_narb_vtag_mask));
             break;
         case TLV_TYPE_NARB_LSPB_ID:
-            tlv_len = sizeof(msg_app2narb_lspb_id);
-            returned_lspb_id = ((msg_app2narb_lspb_id*)tlv)->lspb_id;
+            tlv_len = sizeof(msg_narb_lspb_id);
+            returned_lspb_id = ((msg_narb_lspb_id*)tlv)->lspb_id;
+            break;
+        case TLV_TYPE_NARB_SUBNET_ERO:
+            if (state == STATE_RCE_REPLY)
+                GetERO(tlv, subnet_ero);
+            else if (state == STATE_NEXT_HOP_NARB_REPLY)
+                GetERO_RFCStandard(tlv, subnet_ero);
+            tlv_len = ntohs(tlv->length);
             break;
         /* RCE does not suggest vtag in the current implemention
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
             if (!suggested_vtag)
-                suggested_vtag = new (struct msg_app2narb_suggested_vtag);
-            memcpy(suggested_vtag, tlv, sizeof(msg_app2narb_suggested_vtag));
+                suggested_vtag = new (struct msg_narb_suggested_vtag);
+            memcpy(suggested_vtag, tlv, sizeof(msg_narb_suggested_vtag));
             break;
         */
         default:

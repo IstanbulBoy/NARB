@@ -319,25 +319,6 @@ api_msg* rceapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum, 
 #define  TLV_TYPE_NARB_ERO  0x03
 #define  TLV_TYPE_NARB_ERROR_CODE  0x04
 
-struct ero_subobj
-{
-    struct in_addr addr;
-    u_char hop_type;
-    u_char prefix_len;
-    u_char pad[2];
-    u_int32_t if_id;
-    //added parameters in the private, composite ERO sub-object
-    u_char sw_type;
-    u_char encoding;
-    union {
-        u_int16_t lsc_lambda;
-        u_char tdm_indication;
-        u_int16_t l2sc_vlantag;
-        u_int16_t psc_mtu;
-    };
-    float bandwidth;
-};
-
 static const char* err_cstrs[] = {
 	"Unrecognized Error Code",
 	"Unknown Source Address",

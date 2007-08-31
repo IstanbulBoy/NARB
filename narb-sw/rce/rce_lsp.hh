@@ -60,11 +60,39 @@
 #define LSP_OPT_QUERY_HOLD  ((u_int32_t)(0x0100 << 16)) //holding resource upon query for a short period of time to resolve contention
 // The below options are for NARB only
 //#define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
+#define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing
 
+// the internal data type defined for the sub-object of ERO
+struct ero_subobj
+{
+    struct in_addr addr;
+    u_char hop_type;
+    u_char prefix_len;
+    u_char pad[2];
+    u_int32_t if_id;
+    //added parameters in the private, composite ERO sub-object
+    u_char sw_type;
+    u_char encoding;
+    union {
+        u_int16_t lsc_lambda;
+        u_char tdm_indication;
+        u_int16_t l2sc_vlantag;
+        u_int16_t psc_mtu;
+    };
+    float bandwidth;
+};
+
+// definitions of loose/strict hop indicator
+#define ERO_TYPE_STRICT_HOP 0
+#define ERO_TYPE_LOOSE_HOP 1
+
 #define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL 0x0004 //the localid type for an intermediate tagged vlan link (ERO subobject)
+#define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
+#define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
+    
 
 enum  narb_tlv_type
 {
@@ -74,6 +102,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_VTAG_MASK = 0x05,
     TLV_TYPE_NARB_HOP_BACK = 0x06,
     TLV_TYPE_NARB_LSPB_ID = 0x08,
+    TLV_TYPE_NARB_SUBNET_ERO = 0x09,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
@@ -110,6 +139,12 @@ struct narb_lsp_lspb_id_tlv
     u_int32_t lspb_id;
 };
 
+struct narb_lsp_subnet_ero_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    ero_subobj subobjects[1]; //acually number of subobjects depends on length
+};
 
 // data structure of an IPv4 prefix type ERO sub-object
 struct ipv4_prefix_subobj
@@ -131,7 +166,6 @@ struct unum_if_subobj
     u_int32_t ifid;
 };
 
-struct ero_subobj;
 class LSPHandler: public Event
 {
 private:

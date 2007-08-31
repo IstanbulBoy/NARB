@@ -782,7 +782,7 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
     int msg_len, tlv_len;
     in_addr ip; ip.s_addr = 0;
     list<ero_subobj*> ero;
-    msg_app2narb_vtag_mask* vtagmask_tlv = NULL;
+    msg_narb_vtag_mask* vtagmask_tlv = NULL;
     u_int32_t options = 0;
     u_int32_t vtag = 0;
     link_info *link = NULL;
@@ -869,8 +869,8 @@ link_info* DomainInfo::ProbeSingleAutoLink(RCE_APIClient& rce, auto_link *auto_l
                 break;
             case TLV_TYPE_NARB_VTAG_MASK:
                 {
-                    tlv_len = sizeof(msg_app2narb_vtag_mask);
-                    vtagmask_tlv = (msg_app2narb_vtag_mask*)tlv;
+                    tlv_len = sizeof(msg_narb_vtag_mask);
+                    vtagmask_tlv = (msg_narb_vtag_mask*)tlv;
                     memcpy(link->vtagBitMask, vtagmask_tlv->bitmask, MAX_VLAN_NUM/8);
                     SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
                 }

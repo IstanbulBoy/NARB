@@ -41,35 +41,6 @@
 #include "rce_filter.hh"
 using namespace std;
 
-// the internal data type defined for the sub-object of ERO
-struct ero_subobj
-{
-    struct in_addr addr;
-    u_char hop_type;
-    u_char prefix_len;
-    u_char pad[2];
-    u_int32_t if_id;
-    //added parameters in the private, composite ERO sub-object
-    u_char sw_type;
-    u_char encoding;
-    union {
-        u_int16_t lsc_lambda;
-        u_char tdm_indication;
-        u_int16_t l2sc_vlantag;
-        u_int16_t psc_mtu;
-    };
-    float bandwidth;
-};
-
-// definitions of loose/strict hop indicator
-#define ERO_TYPE_STRICT_HOP 0
-#define ERO_TYPE_LOOSE_HOP 1
-
-
-#define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
-#define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
-    
-
 #define PCEN_MAX_GRAPH_SIZE 200
 #define PCEN_INFINITE_COST PCEN_MAX_GRAPH_SIZE*PCEN_MAX_GRAPH_SIZE*1000
 
@@ -368,6 +339,7 @@ protected:
 
     narb_lsp_vtagmask_tlv* vtag_mask;
     u_int32_t hop_back;
+    list<ero_subobj> subnet_ero; // Optional TLV to carry an extra subnet ERO when LSP_OPT_SUBNET_ERO is present
 
     u_int32_t options;
     u_int32_t uptime;

@@ -93,29 +93,29 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 }
 
 
-void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_app2narb_vtag_mask* vtag_bitmask)
+void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
     char buf[1024];
     memcpy(buf, &(cspf_req.app_req_data), sizeof(cspf_req.app_req_data));
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
-        memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
-    u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_app2narb_vtag_mask));
+        memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_narb_vtag_mask));
+    u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_narb_vtag_mask));
     if (cspf_req.lspb_id != 0)
     {
-        msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
+        msg_narb_lspb_id* lspb_id_tlv = (msg_narb_lspb_id*)(buf+mlen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspb_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = cspf_req.lspb_id;
-        mlen += sizeof(msg_app2narb_lspb_id);
+        mlen += sizeof(msg_narb_lspb_id);
     }  
     if (hop_back != 0)
     {
-        msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
+        msg_narb_hop_back* hop_back_tlv = (msg_narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
+        hop_back_tlv->length = htons(sizeof(msg_narb_hop_back) - TLV_HDR_SIZE);
         hop_back_tlv->ipv4 = hop_back;
-        mlen += sizeof(msg_app2narb_hop_back);
+        mlen += sizeof(msg_narb_hop_back);
     }
 
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, ucid, cspf_req.app_seqnum, vtag);
@@ -124,7 +124,7 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     SendMessage(rce_msg); 
 }
 
-void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_app2narb_vtag_mask* vtag_bitmask)
+void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -133,24 +133,24 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     u_int16_t mlen = sizeof(msg_app2narb_request)*2;
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL) 
     {
-        memcpy(buf+mlen, vtag_bitmask, sizeof(msg_app2narb_vtag_mask));
-        mlen += sizeof(msg_app2narb_vtag_mask);
+        memcpy(buf+mlen, vtag_bitmask, sizeof(msg_narb_vtag_mask));
+        mlen += sizeof(msg_narb_vtag_mask);
     }
     if (cspf_req.lspb_id != 0)
     {
-        msg_app2narb_lspb_id* lspb_id_tlv = (msg_app2narb_lspb_id*)(buf+mlen);
+        msg_narb_lspb_id* lspb_id_tlv = (msg_narb_lspb_id*)(buf+mlen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspb_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = cspf_req.lspb_id;
-        mlen += sizeof(msg_app2narb_lspb_id);
+        mlen += sizeof(msg_narb_lspb_id);
     }  
     if (hop_back != 0)
     {
-        msg_app2narb_hop_back* hop_back_tlv = (msg_app2narb_hop_back*)(buf+mlen);
+        msg_narb_hop_back* hop_back_tlv = (msg_narb_hop_back*)(buf+mlen);
         hop_back_tlv->type = htons(TLV_TYPE_NARB_HOP_BACK);
-        hop_back_tlv->length = htons(sizeof(msg_app2narb_hop_back) - TLV_HDR_SIZE);
+        hop_back_tlv->length = htons(sizeof(msg_narb_hop_back) - TLV_HDR_SIZE);
         hop_back_tlv->ipv4 = hop_back;
-        mlen += sizeof(msg_app2narb_hop_back);
+        mlen += sizeof(msg_narb_hop_back);
     }
 
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY_MRN, mlen, buf, ucid, cspf_req.app_seqnum, vtag);
@@ -160,7 +160,7 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
 }
 
 void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, 
-    u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, msg_app2narb_vtag_mask* vtag_mask_tlv)
+    u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, msg_narb_vtag_mask* vtag_mask_tlv)
 {
     api_msg *rce_msg;
     char buf[1500];
@@ -173,8 +173,8 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
     api_msg_delete(ero_msg);
     if (vtag_mask_tlv)
     {
-        memcpy(buf + length, vtag_mask_tlv, sizeof(msg_app2narb_vtag_mask));
-        length += sizeof(msg_app2narb_vtag_mask);
+        memcpy(buf + length, vtag_mask_tlv, sizeof(msg_narb_vtag_mask));
+        length += sizeof(msg_narb_vtag_mask);
     }
     rce_msg = api_msg_new(type, action, length, buf, ucid, seqnum, msgtag);
     rce_msg->header.options = htonl(options);

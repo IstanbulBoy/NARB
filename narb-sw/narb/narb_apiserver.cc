@@ -198,11 +198,11 @@ api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t e
 
     if (prev_lspb_id != 0)
     {
-        msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)((char *)tlv + mlen);
+        msg_narb_lspb_id* lspq_id_tlv = (msg_narb_lspb_id *)((char *)tlv + mlen);
         lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspq_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
         lspq_id_tlv->lspb_id = prev_lspb_id;
-        mlen += sizeof(msg_app2narb_lspb_id);
+        mlen += sizeof(msg_narb_lspb_id);
     }
 
     msg = api_msg_new (MSG_REPLY_ERROR, mlen, buf, ucid, seqnr);
@@ -218,11 +218,11 @@ api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr, u
     int mlen = 0;
     if (prev_lspb_id != 0)
     {
-        msg_app2narb_lspb_id *lspb_id_tlv = (msg_app2narb_lspb_id*)(buf + mlen);
+        msg_narb_lspb_id *lspb_id_tlv = (msg_narb_lspb_id*)(buf + mlen);
         lspb_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspb_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspb_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
         lspb_id_tlv->lspb_id = prev_lspb_id;
-        mlen += sizeof(msg_app2narb_lspb_id);
+        mlen += sizeof(msg_narb_lspb_id);
     }
      
     msg = api_msg_new (MSG_REPLY_REMOVE_CONFIRM, mlen, buf, ucid, seqnr);
@@ -230,18 +230,11 @@ api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr, u
     return msg;
 }
 
-api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_app2narb_vtag_mask* vtagmask, u_int32_t prev_lspb_id)
+static int make_ero_tlv_from_list(te_tlv_header* tlv, list<ero_subobj*>& ero, int offset)
 {
-    api_msg *msg;
-    int offset;
     int subobj_size;
-    char buf[API_MAX_MSG_SIZE];
-    te_tlv_header * tlv = (te_tlv_header *)buf;
+    int tlv_offset = sizeof(te_tlv_header);
 
-    if (ero.size() ==0)
-        return NULL;
-
-    offset = sizeof (te_tlv_header);
     list<ero_subobj*>::iterator it;
     for (it = ero.begin(); it != ero.end(); it++)
     {
@@ -250,7 +243,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         {
             if (subobj_narb->if_id != 0)
             {
-                unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
+                unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);
                 subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
                 subobj_unum->length = sizeof(unum_if_subobj);
                 subobj_unum->addr.s_addr = subobj_narb->addr.s_addr;
@@ -260,7 +253,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
             }
             else
             {
-                ipv4_prefix_subobj * subobj_ipv4 = (ipv4_prefix_subobj *)((char *)tlv + offset);
+                ipv4_prefix_subobj * subobj_ipv4 = (ipv4_prefix_subobj *)((char *)tlv + tlv_offset);
                 subobj_ipv4->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x01);
                 memcpy(subobj_ipv4->addr, &subobj_narb->addr, 4);
                 subobj_ipv4->length = sizeof(ipv4_prefix_subobj);
@@ -272,7 +265,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         else
         {//Generating UNumIf Subobjects for E2E Tagged VLAN 
             assert (subobj_narb->l2sc_vlantag != ANY_VTAG);
-            unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
+            unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);
             subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
             subobj_unum->length = sizeof(unum_if_subobj);
             subobj_unum->addr.s_addr = subobj_narb->addr.s_addr;
@@ -282,27 +275,49 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
             subobj_unum->resvd[0] = subobj_unum->resvd[1] = 0;
             subobj_size = sizeof(unum_if_subobj);
         }
-        offset += subobj_size;
+        tlv_offset += subobj_size;
     }
 
-    tlv->length = htons(offset - TLV_HDR_SIZE);
+    tlv->length = htons(tlv_offset - TLV_HDR_SIZE);
     tlv->type = htons(TLV_TYPE_NARB_ERO);
+    offset += tlv_offset;
+
+    return offset;
+}
+
+api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_narb_vtag_mask* vtagmask, u_int32_t prev_lspb_id, list<ero_subobj*>* p_ero_subnet)
+{
+    api_msg *msg;
+    int offset;
+    int subobj_size;
+    char buf[API_MAX_MSG_SIZE];
+    te_tlv_header * tlv = (te_tlv_header *)buf;
+
+    if (ero.size() ==0)
+        return NULL;
+
+    offset = make_ero_tlv_from_list(tlv, ero, 0);
 
     if (vtagmask)
     {
-        memcpy(buf+offset, vtagmask, sizeof(msg_app2narb_vtag_mask));
-        offset += sizeof(msg_app2narb_vtag_mask);
+        memcpy(buf+offset, vtagmask, sizeof(msg_narb_vtag_mask));
+        offset += sizeof(msg_narb_vtag_mask);
     }
 
     if (prev_lspb_id != 0)
     {
-        msg_app2narb_lspb_id* lspq_id_tlv = (msg_app2narb_lspb_id *)(buf+offset);
+        msg_narb_lspb_id* lspq_id_tlv = (msg_narb_lspb_id *)(buf+offset);
         lspq_id_tlv->type = htons(TLV_TYPE_NARB_LSPB_ID);
-        lspq_id_tlv->length = htons(sizeof(msg_app2narb_lspb_id) - TLV_HDR_SIZE);
+        lspq_id_tlv->length = htons(sizeof(msg_narb_lspb_id) - TLV_HDR_SIZE);
         lspq_id_tlv->lspb_id = prev_lspb_id;
-        offset += sizeof(msg_app2narb_lspb_id);
+        offset += sizeof(msg_narb_lspb_id);
     }
 
+    if (p_ero_subnet != NULL)
+    {
+        te_tlv_header* subnet_ero_tlv = (te_tlv_header *)(buf+offset);
+        offset = make_ero_tlv_from_list(subnet_ero_tlv, *p_ero_subnet, offset);
+    }
     msg = api_msg_new (MSG_REPLY_ERO, offset, buf, ucid, seqnr);
     
     return msg;
@@ -318,7 +333,7 @@ u_int32_t narb_get_msg_lspb_id(api_msg* msg)
     {
         if (ntohs(tlv->type) == TLV_TYPE_NARB_LSPB_ID) 
         {
-            return ((msg_app2narb_lspb_id*)tlv)->lspb_id;
+            return ((msg_narb_lspb_id*)tlv)->lspb_id;
         }
         tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
         tlv = (te_tlv_header*)((char*)tlv + tlv_len);
