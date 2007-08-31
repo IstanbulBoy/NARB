@@ -1253,7 +1253,7 @@ void PCEN::ReplyERO ()
             subnet_ero.pop_front();
             i++;
         }
-        bodylen += sizeof(ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE);
+        bodylen += ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE;
     }
 
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
