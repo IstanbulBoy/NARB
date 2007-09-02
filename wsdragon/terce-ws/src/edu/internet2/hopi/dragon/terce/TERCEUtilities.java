@@ -143,4 +143,21 @@ public class TERCEUtilities {
         int[] f = {o, s};
         return hDatatoh(b, f);
     }
+    
+    
+    public static String toNetString(float f) {
+        String suff = "";
+
+        if(f >= 1000000000) {
+            suff = "Gbps";
+            f /= 1000000000;
+        } else if(f >= 1000000) {
+            suff = "Mbps";
+            f /= 1000000;
+        } else if(f >= 1000) {
+            suff = "kbps";
+            f /= 1000;
+        }
+        return Float.toString(f) + suff;
+    }
 }

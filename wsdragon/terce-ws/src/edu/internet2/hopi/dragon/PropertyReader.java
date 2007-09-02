@@ -36,4 +36,8 @@ public class PropertyReader {
 	public String getProperty(String propertyName){
 		return props.getProperty(propertyName);
 	}
+        
+        public String getProperty(String propertyName, String dflt){
+		return props.getProperty(propertyName, dflt);
+	}
 }

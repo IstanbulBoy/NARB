@@ -37,20 +37,18 @@ public class TERCEMessageProcessor implements Runnable {
         /* open the async channel */
         if(mh.isSyncInit()) {
             core.openAsync((int)mh.getTag());
-        }
-        else if(mh.isSyncInsert()) {
+        } else if(mh.isSyncInsert()) {
             LSA lsa;
-            if(data != null) {      
+            if(data != null) {
                 try {
                     lsa = new LSA(data);
+                    core.addLSA(lsa);
                 } catch (TERCELSAException ex) {
                     System.err.println("SyncInsert: " + ex.getMessage());
                     return;
                 }
-                core.addLSA(lsa);
             }
-        }
-        else if(mh.isSyncQuery()) {
+        } else if(mh.isSyncQuery()) {
             
         }
     }

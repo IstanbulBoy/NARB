@@ -126,7 +126,7 @@ public class TLV {
         }
     }
     
-    /** Creates a new instance of TLV */
+    /** Creates a sub-TLV */
     public TLV(TLV t, byte[] d, int o) throws TERCELSAException {
         this();
         int x = 0;
@@ -298,7 +298,7 @@ public class TLV {
             f[0] += 2; f[1] = 2;
             ifSWCap.setVlanVersion(TERCEUtilities.nDatatoh(d, dataOff, f));
             f[0] += 2;
-            ifSWCap.copyBitmask(d, dataOff, f);
+            ifSWCap.setAvailVlans(d, dataOff, f);
             return (f[0] + (int)ifSWCap.getVlanLength() - 4);
         }
         return -1;
@@ -353,13 +353,121 @@ public class TLV {
         return (type == TE_TLV_LINK);
     }
     
+    public boolean isRtrAddr() {
+        return (type == TE_TLV_ROUTER_ADDR);
+    }
+    
+    public boolean isVlan() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.isVlan();
+    }
+    
+    public boolean isTdm() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.isTdm();
+    }
+    
+    public boolean isPsc() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.isPsc();
+    }
+    
     public void addSTLV(TLV stlv) {
         if(stlvs != null)
             stlvs.add(stlv);
     }
     
+    /**
+     * This function, regardles where it is caled from always returns the type of the TLV
+     * (never of the sub-TLV)
+     * @return type of the TLV (if called on a sub-TLV, it returns the type of the enclosing TLV)
+     */
+    public long getType() {
+        if(parent != null)
+            return parent.type;
+        else
+            return type;
+    }
+    
+    /**
+     * This function, regardles where it is caled from always returns the length of the TLV
+     * (never of the sub-TLV)
+     * @return length of the TLV (if called on a sub-TLV, it returns the length of the enclosing TLV)
+     */
     public long getLength() {
-        return length;
+        if(parent != null)
+            return parent.length;
+        else
+            return length;
+    }
+    
+    public long getDomainID() throws TERCELSAException {
+        return getSubTLV(TE_LINK_SUBTLV_DOMAIN_ID).domainID;
+    }
+    
+    public long getRtrAddr() {
+        if(parent != null)
+            return parent.rtr_addr;
+        else
+            return rtr_addr;
+    }
+    
+    public long getLinkID() throws TERCELSAException {
+        return getSubTLV(TE_LINK_SUBTLV_LINK_ID).linkID;
+    }
+    
+    public float getMaxBW() throws TERCELSAException {
+        return getSubTLV(TE_LINK_SUBTLV_MAX_BW).maxBW;
+    }
+    
+    public float getMaxRsvBW() throws TERCELSAException {
+        return getSubTLV(TE_LINK_SUBTLV_MAX_RSV_BW).maxRsvBW;
+    }
+    
+    public float getUnrsvBW() throws TERCELSAException {
+        float[] fa = getSubTLV(TE_LINK_SUBTLV_UNRSV_BW).unrsvBW;
+        float f = fa[0];
+        for (int i = 1; i < fa.length; i++) {
+            if(f > fa[i]) {
+                f = fa[i];
+            }
+        }
+        return f;
+    }
+    
+    public long getMetric() throws TERCELSAException {
+        return getSubTLV(TE_LINK_SUBTLV_TE_METRIC).teMetric;
+    }
+    
+    public long getSCType() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.getSWCap();
+    }
+    
+    public long getSCEnc() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.getEnc();
+    }
+    
+    public Vector<int[]> getAvailVlanRanges() throws TERCELSAException {
+        IFSWCap sw = getSubTLV(TE_LINK_SUBTLV_LINK_IFSWCAP).ifSWCap;
+        return sw.getAvaiRanges();
+    }
+    
+    private TLV getSubTLV(int t) throws TERCELSAException {
+        if(type == t) {
+            return this;
+        } else if(parent != null) {
+            return parent.getSubTLV(t);
+        } else if(stlvs != null) {
+            for (int i = 0; i < stlvs.size(); i++) {
+                if(stlvs.get(i).getType() == t)
+                    return stlvs.get(i);
+            }
+            throw new TERCELSAException(TERCEGlobals.stlvStrDescs.getStr(t) + ": missing tlv");
+        } else {
+            throw new TERCELSAException(TERCEGlobals.stlvStrDescs.getStr(t) + ": unknown tlv type");
+        }
     }
     
     public String toString() {
@@ -403,10 +511,20 @@ public class TLV {
                 }
                 
             } else if(type == TE_LINK_SUBTLV_LINK_IFSWCAP) {
-                s += " isswcap: (s:";
-                s += ifSWCap.getSWCap() + ", e:";
-                s += ifSWCap.getEnc() + ", data(";
-                s += ifSWCap.getVlanLength() + "))";
+                s += " ifswcap: " + TERCEGlobals.swcapStrDescs.getStr(ifSWCap.getSWCap()) + ", ";
+                s += TERCEGlobals.encStrDescs.getStr(ifSWCap.getEnc());
+                s += " vlans: avail(";
+                for (int i = 0; i < ifSWCap.getAvaiRanges().size(); i++) {
+                    s += ifSWCap.getAvaiRanges().get(i)[0] + " - " + ifSWCap.getAvaiRanges().get(i)[1];
+                    if(i < (ifSWCap.getAvaiRanges().size()-1)) s += ", ";
+                }
+                s += ")";
+                s += " aloc(";
+                for (int i = 0; i < ifSWCap.getAlocRanges().size(); i++) {
+                    s += ifSWCap.getAlocRanges().get(i)[0] + " - " + ifSWCap.getAlocRanges().get(i)[1];
+                    if(i < (ifSWCap.getAlocRanges().size()-1)) s += ", ";
+                }
+                s += ")";
             } else if(type == TE_LINK_SUBTLV_RESV_SCHEDULE) {
                 s += " resv. schedule: (hidden)";
             } else if(type == TE_LINK_SUBTLV_DOMAIN_ID) {
@@ -416,7 +534,7 @@ public class TLV {
             s += "\n";
         } else {
             s += "  TLV";
-            s += "(" + TERCEGlobals.stlvStrDescs.getStr(type) + ")";
+            s += "(" + TERCEGlobals.tlvStrDescs.getStr(type) + ")";
             if(type == TE_TLV_ROUTER_ADDR)
                 s += " rtr_addr: 0x" + Long.toHexString(rtr_addr & 0xffffffffL);
             if(stlvs != null) {

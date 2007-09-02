@@ -7,6 +7,8 @@
 
 package edu.internet2.hopi.dragon.terce;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
 /**
@@ -15,8 +17,14 @@ import java.util.Vector;
  */
 public class TERCEGlobals {
     
+    public static TERCECore core = null;
     public static strDesc tlvStrDescs = null;
     public static strDesc stlvStrDescs = null;
+    public static strDesc swcapStrDescs = null;
+    public static strDesc encStrDescs = null;
+    public static String minRsvBW = null;
+    public static String granularity = null;
+    public static String vlanMTU = null;
     
     /** Creates a new instance of TERCEGlobals */
     public TERCEGlobals() {
@@ -60,4 +68,17 @@ public class TERCEGlobals {
         }
     }
     
+    public static class delayedWarning {
+        private String msg;
+        public delayedWarning(String s) {
+            msg = s;
+            Timer t;
+            t = new Timer();
+            t.schedule(new TimerTask() {
+                public void run() {
+                    System.out.println(msg);
+                }
+            }, 7500);
+        }
+    }
 }

@@ -79,7 +79,7 @@ public class LSA {
         id = TERCEUtilities.nDatatoh(d, ID_FIELD);
         opq_type = (id>>>24) & 0xffL;
         opq_id = id & 0xffffffL;
-        adv_router = TERCEUtilities.hDatatoh(d, RTR_FIELD);
+        adv_router = TERCEUtilities.nDatatoh(d, RTR_FIELD);
         seqn = TERCEUtilities.hDatatoh(d, SEQN_FIELD);
         chksum = TERCEUtilities.hDatatoh(d, CHKSUM_FIELD);
         length = TERCEUtilities.nDatatoh(d, LENGTH_FIELD);
@@ -107,6 +107,27 @@ public class LSA {
             }
             tlvs.add(tlv);
         }
+    }
+    
+    public TLV getLinkTLV() {
+        for (int i = 0; i < tlvs.size(); i++) {
+            if(tlvs.get(i).isTELink())
+                return tlvs.get(i);
+        }
+        return null;
+    }
+    
+    TLV getRtrAddrTLV() {
+        for (int i = 0; i < tlvs.size(); i++) {
+            if(tlvs.get(i).isRtrAddr())
+                return tlvs.get(i);
+        }
+        return null;
+    }
+    
+    
+    public long getAdvRtr() {
+        return adv_router;
     }
     
     public String toString() {

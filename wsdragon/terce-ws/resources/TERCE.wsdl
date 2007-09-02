@@ -109,7 +109,7 @@
   </wsdl:binding>
   <wsdl:service name="TERCE">
     <wsdl:port name="TERCE" binding="tns:TERCESOAP">
-      <soap:address location="https://hopi.internet2.edu/axis2/services/DRAGON/TERCE"/>
+      <soap:address location="https://127.0.0.1/axis2/services/DRAGON/TERCE"/>
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

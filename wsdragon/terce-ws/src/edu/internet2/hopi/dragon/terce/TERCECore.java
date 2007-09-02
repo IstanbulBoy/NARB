@@ -1,18 +1,18 @@
 /*
  * TERCECore.java
  *
- * Created on August 13, 2007, 1:44 PM
- *
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
 
 package edu.internet2.hopi.dragon.terce;
 
+import edu.internet2.hopi.dragon.PropertyReader;
 import edu.internet2.hopi.dragon.terce.api.TERCEMessage;
 import edu.internet2.hopi.dragon.terce.api.TERCEMessageHeader;
 import edu.internet2.hopi.dragon.terce.tedb.LSA;
 import edu.internet2.hopi.dragon.terce.tedb.LSASet;
+import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,12 +20,15 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent;
 
 /**
  *
  * @author jflidr
  */
 public class TERCECore implements Runnable {
+    private PropertyReader props = null;
     
     private ServerSocket ss; //server socket
     private Socket cs; //connected socket
@@ -45,14 +48,38 @@ public class TERCECore implements Runnable {
     private boolean isInitialized = false;
     private boolean isAsyncConnected = false;
     
-    private LSASet TEdb;
+    private LSASet teDB;
+    private String topologyID = null;
+    private String idcID = null;
+    private boolean debugMode = false;
+    
     
     /**
      * Creates a new instance of TERCECore
      */
     public TERCECore(int p) {
+        String tmp = null;
         serverPort = p;
-        TEdb = new LSASet();
+        teDB = new LSASet();
+        try {
+            props = TERCEHandler.createPropertyReader();
+            topologyID = props.getProperty("terce.topology.id");
+            idcID = props.getProperty("terce.topology.idcid");
+            TERCEGlobals.minRsvBW = props.getProperty("terce.topology.domain.node.port.minrsvbw");
+            TERCEGlobals.granularity = props.getProperty("terce.topology.domain.node.port.granularity");
+            TERCEGlobals.vlanMTU = props.getProperty("terce.topology.domain.node.port.link.vlan.mtu");
+            tmp = props.getProperty("terce.debug");
+            if(tmp != null)
+                debugMode = (tmp.compareToIgnoreCase("yes") == 0);
+        } catch (IOException ex) {
+            String msg = "";
+            msg += "*******************************************************\n";
+            msg += "* WARNING: the configuration file terce-ws.properties *\n";
+            msg += "* was not found. Make sure that TERCEWS_HOME is set.  *\n";
+            msg += "*******************************************************\n";
+            System.out.println("WARNING: property file not found");
+            new TERCEGlobals.delayedWarning(msg);
+        }
     }
     
     public void run() {
@@ -95,7 +122,7 @@ public class TERCECore implements Runnable {
                     
                     /* form the header object */
                     mh = new TERCEMessageHeader(hbuf);
-//                    
+//
 //                    System.out.println("type: " + mh.getMessageType());
 //                    System.out.println("length: " + mh.getLength());
 //                    System.out.println("ucid: " + mh.getUcid());
@@ -180,7 +207,7 @@ public class TERCECore implements Runnable {
         }
         
         /* if narb's gone south clean up all the dynamic data structures */
-        TEdb.removeAllElements();
+        teDB.removeAllElements();
         
         isInitialized = false;
         isAsyncConnected = false;
@@ -225,8 +252,24 @@ public class TERCECore implements Runnable {
         return os;
     }
     
-    void addLSA(LSA l) {
-        TEdb.add(l);
-        System.out.println(l.toString());
+    void addLSA(LSA l) throws TERCELSAException {
+        teDB.addLSA(l);
+        if(debugMode)
+            System.out.println(l.toString());
+    }
+    
+    public CtrlPlaneTopologyContent getTopology() {
+        CtrlPlaneTopologyContent topology = teDB.getTopology();
+        
+        if(topologyID != null)
+            topology.setId(topologyID);
+        else
+            topology.setId("unknown");
+        if(idcID != null)
+            topology.setIdcId(idcID);
+        else
+            topology.setIdcId("unknown");
+        
+        return topology;
     }
 }

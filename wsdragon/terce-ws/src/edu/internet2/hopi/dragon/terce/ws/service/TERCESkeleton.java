@@ -8,6 +8,7 @@
 package edu.internet2.hopi.dragon.terce.ws.service;
 
 import edu.internet2.hopi.dragon.terce.TERCECore;
+import edu.internet2.hopi.dragon.terce.TERCEGlobals;
 import java.io.IOException;
 
 import edu.internet2.hopi.dragon.PropertyReader;
@@ -30,16 +31,16 @@ import org.apache.axis2.context.ServiceContext;
 public class TERCESkeleton{
 
     private Thread serverThread;
-    private TERCECore terceServer;
     
         public void init(ServiceContext serviceContext) {
-            terceServer = new TERCECore(2690);
-            serverThread = new Thread(terceServer);
+            TERCEGlobals.core = new TERCECore(2690);
+            serverThread = new Thread(TERCEGlobals.core);
            serverThread.start();
         }
         
         public void destroy(ServiceContext serviceContext) {
-            terceServer.stopServer();
+            TERCEGlobals.core.stopServer();
+            TERCEGlobals.core = null;
         }
         
 	/**
