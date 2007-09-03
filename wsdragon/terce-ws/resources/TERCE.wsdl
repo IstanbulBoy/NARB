@@ -10,12 +10,12 @@
 		  <xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/WS/TYPES/TEDB" schemaLocation="xsd2.xsd"/>
 		</xsd:schema>
   </wsdl:types>
-  <wsdl:message name="TEDBFaultMessage">
-    <wsdl:part name="fault" element="tedb:TerceTedbFault">
-    </wsdl:part>
-  </wsdl:message>
   <wsdl:message name="findPath">
     <wsdl:part name="findPath" element="rce:findPath">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="TEDBFaultMessage">
+    <wsdl:part name="fault" element="tedb:TerceTedbFault">
     </wsdl:part>
   </wsdl:message>
   <wsdl:message name="selectNetworkTopology">
@@ -30,12 +30,12 @@
     <wsdl:part name="findPathResponse" element="rce:findPathResponse">
     </wsdl:part>
   </wsdl:message>
-  <wsdl:message name="insertNetworkTopologyResponse">
-    <wsdl:part name="insertNetworkTopologyResponse" element="tedb:insertNetworkTopologyResponse">
-    </wsdl:part>
-  </wsdl:message>
   <wsdl:message name="insertNetworkTopology">
     <wsdl:part name="insertNetworkTopology" element="tedb:insertNetworkTopology">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="insertNetworkTopologyResponse">
+    <wsdl:part name="insertNetworkTopologyResponse" element="tedb:insertNetworkTopologyResponse">
     </wsdl:part>
   </wsdl:message>
   <wsdl:message name="selectNetworkTopologyResponse">
