@@ -7,7 +7,17 @@
 
 package edu.internet2.hopi.dragon.terce;
 
-import java.util.zip.DataFormatException;
+import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import org.apache.axiom.om.OMElement;
+import org.apache.axis2.databinding.ADBException;
+import org.apache.axis2.util.XMLUtils;
+import org.jdom.input.DOMBuilder;
+import org.jdom.output.XMLOutputter;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent;
 
 /**
  * This class provides some utility functions for manipulating primitive byte arrays (<CODE>byte[]</CODE>) received from the network while carefully avoiding auto-conversions, type promotions and other java-related delicatessen.
@@ -147,7 +157,7 @@ public class TERCEUtilities {
     
     public static String toNetString(float f) {
         String suff = "";
-
+        
         if(f >= 1000000000) {
             suff = "Gbps";
             f /= 1000000000;
@@ -159,5 +169,42 @@ public class TERCEUtilities {
             f /= 1000;
         }
         return Float.toString(f) + suff;
+    }
+    
+    public static void dumpLocalTopology(String fn) {
+        OMElement el;
+        DOMBuilder db = new DOMBuilder();
+        XMLOutputter x = new XMLOutputter(org.jdom.output.Format.getPrettyFormat());
+        File dumpFile = new File(fn);
+        FileOutputStream fos;
+        try {
+            dumpFile.createNewFile();
+        } catch (IOException ex) {
+            System.err.println("topology dump failed");
+            TERCEGlobals.topologyDumpScheduled = false;
+            return;
+        }
+        try {
+            fos = new FileOutputStream(dumpFile);
+        } catch (FileNotFoundException ex) {
+            System.err.println("dumpLocalTopology: file not found");
+            TERCEGlobals.topologyDumpScheduled = false;
+            return;
+        }
+        
+        CtrlPlaneTopologyContent topology;
+        topology = TERCEGlobals.core.getTopology();
+        try {
+            el = topology.getOMElement(SelectNetworkTopologyResponse.MY_QNAME,
+                    org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+            x.output(db.build(XMLUtils.toDOM(el)), fos);
+        } catch (ADBException ex) {
+            System.err.println("topology dump failed");
+        } catch (IOException ex) {
+            System.err.println("topology dump failed");
+        } catch (Exception ex) {
+            System.err.println("topology dump failed");
+        }
+        TERCEGlobals.topologyDumpScheduled = false;
     }
 }
