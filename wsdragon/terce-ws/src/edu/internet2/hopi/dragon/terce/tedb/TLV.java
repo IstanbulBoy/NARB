@@ -377,27 +377,11 @@ public class TLV {
             stlvs.add(stlv);
     }
     
-    /**
-     * This function, regardles where it is caled from always returns the type of the TLV
-     * (never of the sub-TLV)
-     * @return type of the TLV (if called on a sub-TLV, it returns the type of the enclosing TLV)
-     */
     public long getType() {
-        if(parent != null)
-            return parent.type;
-        else
             return type;
     }
     
-    /**
-     * This function, regardles where it is caled from always returns the length of the TLV
-     * (never of the sub-TLV)
-     * @return length of the TLV (if called on a sub-TLV, it returns the length of the enclosing TLV)
-     */
     public long getLength() {
-        if(parent != null)
-            return parent.length;
-        else
             return length;
     }
     
@@ -455,7 +439,7 @@ public class TLV {
     }
     
     private TLV getSubTLV(int t) throws TERCELSAException {
-        if(type == t) {
+        if((parent != null) && (type == t)) {
             return this;
         } else if(parent != null) {
             return parent.getSubTLV(t);
@@ -466,7 +450,7 @@ public class TLV {
             }
             throw new TERCELSAException(TERCEGlobals.stlvStrDescs.getStr(t) + ": missing tlv");
         } else {
-            throw new TERCELSAException(TERCEGlobals.stlvStrDescs.getStr(t) + ": unknown tlv type");
+            throw new TERCELSAException(TERCEGlobals.stlvStrDescs.getStr(t) + ": unknown tlv hierarchy");
         }
     }
     
