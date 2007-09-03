@@ -20,6 +20,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Timer;
+import java.util.TimerTask;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent;
 
@@ -52,7 +54,9 @@ public class TERCECore implements Runnable {
     private String topologyID = null;
     private String idcID = null;
     private boolean debugMode = false;
+    private String xmlDumpFile = null;
     
+    private final Object dumpLock = new Object();
     
     /**
      * Creates a new instance of TERCECore
@@ -71,6 +75,9 @@ public class TERCECore implements Runnable {
             tmp = props.getProperty("terce.debug");
             if(tmp != null)
                 debugMode = (tmp.compareToIgnoreCase("yes") == 0);
+            tmp = props.getProperty("terce.xml.dump");
+            if(tmp != null)
+                xmlDumpFile = tmp;
         } catch (IOException ex) {
             String msg = "";
             msg += "*******************************************************\n";
@@ -256,6 +263,14 @@ public class TERCECore implements Runnable {
         teDB.addLSA(l);
         if(debugMode)
             System.out.println(l.toString());
+        if(xmlDumpFile == null)
+            return;
+        synchronized(dumpLock) {
+            if(!TERCEGlobals.topologyDumpScheduled) {
+                TERCEGlobals.topologyDumpScheduled = true;
+                scheduleTopologyDump();
+            }
+        }
     }
     
     public CtrlPlaneTopologyContent getTopology() {
@@ -271,5 +286,15 @@ public class TERCECore implements Runnable {
             topology.setIdcId("unknown");
         
         return topology;
+    }
+    
+    private void scheduleTopologyDump() {
+        Timer tmr;
+        tmr = new Timer();
+        tmr.schedule(new TimerTask() {
+            public void run() {
+                TERCEUtilities.dumpLocalTopology(xmlDumpFile);
+            }
+        }, 3000);
     }
 }
