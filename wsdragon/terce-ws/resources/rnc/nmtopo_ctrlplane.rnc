@@ -1,0 +1,162 @@
+# ##############################################################
+# 
+# File: 	nmtopo_ctrlplane.rnc
+# Version: $Id: nmtopo_ctrlplane.rnc,v 1.1 2007-09-03 14:16:46 jarda Exp $
+# 
+# ##############################################################
+
+namespace CtrlPlane =
+  "http://ogf.org/schema/network/topology/ctrlPlane/20070707/"
+namespace nmtl3 =
+  "http://ogf.org/schema/network/topology/l3/20070707/"
+
+include "nmtopo_l3.rnc"
+
+## Definition of the topology element
+start |= element CtrlPlane:topology { CtrlPlaneTopologyContent }
+
+
+CtrlPlaneTopologyContent =
+  Identifier,
+ # Parameters,
+  element CtrlPlane:idcId { xsd:string }?,
+  (
+    CtrlPlaneDomain |
+    element CtrlPlane:domainSignature {
+      CtrlPlaneDomainSignatureContent
+    }
+  )*
+
+## this a placeholder until we discuss and experiment with signatures
+CtrlPlaneDomainSignatureContent =
+  attribute domainId { xsd:string },
+  anyElement
+  
+CtrlPlaneDomain =
+  element CtrlPlane:domain {
+    Identifier,
+    ( 
+      CtrlPlaneNode*
+      & CtrlPlanePort*
+      & CtrlPlaneLink*
+    )
+  }
+  
+CtrlPlaneNode =
+  element CtrlPlane:node {
+    Identifier,
+    element CtrlPlane:address { xsd:string | L3Address }?,
+    CtrlPlanePort*
+  }
+  
+CtrlPlanePort =
+  element CtrlPlane:port {
+    Identifier,
+    CtrlPlaneCapacityContent,
+    CtrlPlaneLink*
+  }
+  
+CtrlPlaneLink =
+  element CtrlPlane:link {
+    Identifier,
+    ( 
+      element CtrlPlane:remoteLinkId { L3Address }
+      & element CtrlPlane:remotePortId { L3Address }
+      & 
+      ## only use when remotePortId isn't fully qualified
+        element CtrlPlane:remoteNodeId { L3Address }
+      & element CtrlPlane:remoteDomainId { L3Address }
+      & element CtrlPlane:trafficEngineeringMetric { xsd:string }
+      & element CtrlPlane:linkProtectionTypes { xsd:string }*
+      & CtrlPlaneCapacityContent
+      & element CtrlPlane:administrativeGroups {
+        CtrlPlaneAdministrativeGroup
+      }*
+      & element CtrlPlane:SwitchingCapabilityDescriptors {
+        CtrlPlaneSwitchingCapabilityDescriptor+
+      }
+    )
+  }
+  
+# Begin path and endpoint additions
+CtrlPlanePath =
+  element CtrlPlane:path { CtrlPlanePathContent }
+
+# a path consists of a list of hops, and/or links
+CtrlPlanePathContent =
+  Identifier &
+    element CtrlPlane:hop { CtrlPlaneHopContent }*
+
+  
+CtrlPlaneHopContent =
+  Identifier,
+  ( 
+    DomainIdRef |
+    NodeIdRef |
+    PortIdRef |
+    LinkIdRef
+  )
+  
+# End path and endpoint
+
+CtrlPlaneAdministrativeGroup =
+  element CtrlPlane:group { xsd:int }
+  & element CtrlPlane:groupID { xsd:string }?
+  
+CtrlPlaneSwitchingCapabilityDescriptor =
+  element switchingcapType {
+    "psc-1"
+    | "psc-2"
+    | "psc-3"
+    | "psc-4"
+    | "l2sc"
+    | "tdm"
+    | "lsc"
+    | "fsc"
+  }
+  & element encodingType {
+      "packet"
+      | "ethernet"
+      | "pdh"
+      | "sdh/sonet"
+      | "digital wrapper"
+      | "lambda"
+      | "fiber"
+      | "fiberchannel"
+      | xsd:string
+    }
+  & element switchingCapabilitySpecficInfo {
+      CtrlPlaneSwitchingCapabilitySpecficInfo
+    }+
+    
+CtrlPlaneSwitchingCapabilitySpecficInfo =
+  CtrlPlaneSwitchingCapabilitySpecficInfo_psc
+  | CtrlPlaneSwitchingCapabilitySpecficInfo_l2sc
+  | CtrlPlaneSwitchingCapabilitySpecficInfo_tdm
+  | CtrlPlaneSwitchingCapabilitySpecficInfo_lsc
+  | CtrlPlaneSwitchingCapabilitySpecficInfo_fsc
+  
+CtrlPlaneSwitchingCapabilitySpecficInfo_psc =
+  element CtrlPlane:capability { xsd:string }
+  
+CtrlPlaneSwitchingCapabilitySpecficInfo_tdm =
+  element CtrlPlane:capability { xsd:string }
+  
+CtrlPlaneSwitchingCapabilitySpecficInfo_lsc =
+  element CtrlPlane:capability { xsd:string }
+  
+CtrlPlaneSwitchingCapabilitySpecficInfo_fsc =
+  element CtrlPlane:capability { xsd:string }
+  
+CtrlPlaneSwitchingCapabilitySpecficInfo_l2sc =
+  element interfaceMTU { xsd:int }
+  & element vlanRangeAvailability { xsd:string }
+
+## Capacity Description Pattern  
+CtrlPlaneCapacityContent =
+  element CtrlPlane:capacity { xsd:string }?
+  & element CtrlPlane:maximumReservableCapacity { xsd:string }?
+  & element CtrlPlane:minimumReservableCapacity { xsd:string }?
+  & element CtrlPlane:granularity { xsd:string }?
+  & element CtrlPlane:unreservedCapacity { xsd:string }?
+  
