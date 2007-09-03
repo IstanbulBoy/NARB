@@ -130,10 +130,16 @@
             </classpath>
             <arg value="-uri"/>
             <arg file="resources/TERCE.wsdl"/>
-            <arg value="--server-side"/>
-            <arg value="--serverside-interface"/>
+            <arg value="-ss"/>
+            <arg value="-sd"/>
             <arg value="-d"/>
             <arg value="adb"/>
+            <arg value="-g"/>
         </java>
+    </target>
+    <target name="wsdl2java.clean">
+        <delete dir="src/edu/internet2/hopi/dragon/terce/ws/service"/>
+        <delete dir="src/edu/internet2/hopi/dragon/terce/ws/types"/>
+        <delete dir="src/org"/>
     </target>
 </project>
