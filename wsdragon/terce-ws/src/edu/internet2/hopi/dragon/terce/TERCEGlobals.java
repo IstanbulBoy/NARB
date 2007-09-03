@@ -25,6 +25,7 @@ public class TERCEGlobals {
     public static String minRsvBW = null;
     public static String granularity = null;
     public static String vlanMTU = null;
+    public static volatile boolean topologyDumpScheduled = false;
     
     /** Creates a new instance of TERCEGlobals */
     public TERCEGlobals() {
