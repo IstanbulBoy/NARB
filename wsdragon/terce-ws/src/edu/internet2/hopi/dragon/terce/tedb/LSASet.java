@@ -13,6 +13,7 @@ import edu.internet2.hopi.dragon.terce.TERCEUtilities;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Vector;
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
@@ -200,8 +201,11 @@ public class LSASet extends Vector<LSA> {
         }
         
         private void setNodeAddr(long l) throws TERCELSAException {
+            CtrlPlaneAddressContent aC;
             rawNodeAddr = l;
-            nodeContent.setAddress(getNodeAddr(l)); // 192.168.1.8
+            aC = new CtrlPlaneAddressContent();
+            aC.setString(getNodeAddr(l));
+            nodeContent.setAddress(aC); // 192.168.1.8
         }
     }
     
@@ -281,30 +285,47 @@ public class LSASet extends Vector<LSA> {
         }
         
         private void setRmtLinkID(long l) {
+            CtrlPlaneAddressContent aC;
             rawRmtLinkID = l;
-            linkContent.setRemoteLinkId(Long.toHexString(l)); // c0a80204
+            aC = new CtrlPlaneAddressContent();
+            aC.setString(Long.toHexString(l));
+            linkContent.setRemoteLinkId(aC); // c0a80204
         }
         
         private void setRmtPortID(long l) {
+            CtrlPlaneAddressContent aC;
             rawRmtPortID = l;
-            linkContent.setRemotePortId("port-" + Long.toHexString(l)); // port-c0a80204
+            aC = new CtrlPlaneAddressContent();
+            aC.setString("port-" + Long.toHexString(l));
+            linkContent.setRemotePortId(aC); // port-c0a80204
         }
         
         private void setRmtNodeID(long l) throws TERCELSAException {
+            CtrlPlaneAddressContent aC;
             rawRmtNodeID = l;
-            linkContent.setRemoteNodeId(getNodeID(l)); // 192.168.2.4
+            aC = new CtrlPlaneAddressContent();
+            aC.setString(getNodeID(l));
+            linkContent.setRemoteNodeId(aC); // 192.168.2.4
         }
         
         private void setRmtDomainID(long l) {
+            CtrlPlaneAddressContent aC;
             rawRmtDomainID = l;
-            if(l == UNKNOWN_DOMAIN_ID)
-                linkContent.setRemoteDomainId("unknown");
-            else if(l == FOREIGN_DOMAIN_ID)
-                linkContent.setRemoteDomainId("foreign");
-            else if(l == DANGLING_DOMAIN_ID)
-                linkContent.setRemoteDomainId("dangling");
-            else
-                linkContent.setRemoteDomainId(Long.toHexString(l)); // c0a80200
+            aC = new CtrlPlaneAddressContent();
+            
+            if(l == UNKNOWN_DOMAIN_ID) {
+                aC.setString("unknown");
+                linkContent.setRemoteDomainId(aC);
+            } else if(l == FOREIGN_DOMAIN_ID) {
+                aC.setString("foreign");
+                linkContent.setRemoteDomainId(aC);
+            } else if(l == DANGLING_DOMAIN_ID) {
+                aC.setString("dangling");
+                linkContent.setRemoteDomainId(aC);
+            } else {
+                aC.setString(Long.toHexString(l));
+                linkContent.setRemoteDomainId(aC); // c0a80200
+            }
         }
         
         private void setRmtDomainID(String s) {

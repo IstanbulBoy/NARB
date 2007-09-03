@@ -203,6 +203,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	 * @return the node information in the format needed by Axis2
 	 */
 	private CtrlPlaneNodeContent parseNode(Node elem){
+                CtrlPlaneAddressContent aC;
 		CtrlPlaneNodeContent node = new CtrlPlaneNodeContent();
 		NamedNodeMap attrs = elem.getAttributes();
 		NodeList children = elem.getChildNodes();
@@ -218,7 +219,9 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			if(nodeName == null){
 				continue;
 			}else if(nodeName.equalsIgnoreCase("address")){
-				node.setAddress(child.getTextContent());
+                                aC = new CtrlPlaneAddressContent();
+                                aC.setString(child.getTextContent());
+				node.setAddress(aC);
 			}else if(nodeName.equalsIgnoreCase("port")){
 				CtrlPlanePortContent port = this.parsePort(child);
 				node.addPort(port);
@@ -277,6 +280,7 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 	 * @return the link information in the format needed by Axis2
 	 */
 	private CtrlPlaneLinkContent parseLink(Node elem){
+        CtrlPlaneAddressContent aC;
 		CtrlPlaneLinkContent link = new CtrlPlaneLinkContent();
 		NamedNodeMap attrs = elem.getAttributes();
 		NodeList children = elem.getChildNodes();
@@ -292,13 +296,21 @@ public class StaticTEDB extends TEDB implements TEDBInterface {
 			if(nodeName == null){
 				continue;
 			}else if(nodeName.equalsIgnoreCase("remoteLinkId")){
-				link.setRemoteLinkId(child.getTextContent());
+                                aC = new CtrlPlaneAddressContent();
+                                aC.setString(child.getTextContent());
+				link.setRemoteLinkId(aC);
 			}else if(nodeName.equalsIgnoreCase("remotePortId")){
-				link.setRemotePortId(child.getTextContent());
+                                aC = new CtrlPlaneAddressContent();
+                                aC.setString(child.getTextContent());
+				link.setRemotePortId(aC);
 			}else if(nodeName.equalsIgnoreCase("remoteNodeId")){
-				link.setRemoteNodeId(child.getTextContent());
+                                aC = new CtrlPlaneAddressContent();
+                                aC.setString(child.getTextContent());
+				link.setRemoteNodeId(aC);
 			}else if(nodeName.equalsIgnoreCase("remoteDomainId")){
-				link.setRemoteDomainId(child.getTextContent());
+                                aC = new CtrlPlaneAddressContent();
+                                aC.setString(child.getTextContent());
+				link.setRemoteDomainId(aC);
 			}else if(nodeName.equalsIgnoreCase("trafficEngineeringMetric")){
 				link.setTrafficEngineeringMetric(child.getTextContent());
 			}else if(nodeName.equalsIgnoreCase("linkProtectionTypes")){
