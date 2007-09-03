@@ -10,11 +10,9 @@ package edu.internet2.hopi.dragon.terce.tedb;
 import edu.internet2.hopi.dragon.terce.TERCEGlobals;
 import edu.internet2.hopi.dragon.terce.TERCELSAException;
 import edu.internet2.hopi.dragon.terce.TERCEUtilities;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Vector;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneAddressContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneDomainContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneLinkContent;
 import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneNodeContent;
@@ -64,47 +62,55 @@ public class LSASet extends Vector<LSA> {
             port p = new port(lsa.getAdvRtr());
             
             l = lsa.getAdvRtr();
-            p.setRawPortID(l);
+            p.setPortID(l);
             
             f = t.getMaxBW();
-            p.setRawMaxBW(f);
+            p.setMaxBW(f);
             
             f = t.getMaxRsvBW();
-            p.setRawMaxRsvBW(f);
+            p.setMaxRsvBW(f);
             
             if(TERCEGlobals.minRsvBW != null) {
-                f = Float.valueOf(TERCEGlobals.minRsvBW);
-                p.setRawMinRsvBW(f);
+                try {
+                    f = Float.valueOf(TERCEGlobals.minRsvBW);
+                    p.setMinRsvBW(f);
+                } catch (NumberFormatException ex) {
+                    System.out.println("terce-ww.properties: malformed min. rsv. BW");
+                }
             }
             
             f = t.getUnrsvBW();
-            p.setRawUnrsvBW(f);
+            p.setUnrsvBW(f);
             
             if(TERCEGlobals.granularity != null) {
-                f = Float.valueOf(TERCEGlobals.granularity);
-                p.setRawGranularity(f);
+                try {
+                    f = Float.valueOf(TERCEGlobals.granularity);
+                    p.setGranularity(f);
+                } catch (NumberFormatException ex) {
+                    System.out.println("terce-ww.properties: malformed granularity");
+                }
             }
             
             //build link and it's XML content
             l = t.getLinkID();
-            p.setRawLinkID(l);
-            p.setRawRmtLinkID(l);
-            p.setRawRmtPortID(l);
-            p.setRawRmtNodeID(l);
+            p.setLinkID(l);
+            p.setRmtLinkID(l);
+            p.setRmtPortID(l);
+            p.setRmtNodeID(l);
             
             //for this we will have to wait till all the LSAs are received (to
             //distinguish between inter and intra - domainContent links)
-            p.setRawRmtDomainID(UNKNOWN_DOMAIN_ID);
+            p.setRmtDomainID(UNKNOWN_DOMAIN_ID);
             
             l = t.getMetric();
-            p.setRawTEMetric(l);
+            p.setTEMetric(l);
             
             //build swcap and it's XML content
             l = t.getSCType();
-            p.setRawSCType(l);
+            p.setSCType(l);
             
             l = t.getSCEnc();
-            p.setRawSCEnc(l);
+            p.setSCEnc(l);
             
             //buid swcap specific info and it's XML content
             if(t.isVlan()) {
@@ -112,11 +118,11 @@ public class LSASet extends Vector<LSA> {
                 
                 if(TERCEGlobals.vlanMTU != null) {
                     l = Long.valueOf(TERCEGlobals.vlanMTU);
-                    p.setRawVlanMTU(l);
+                    p.setVlanMTU(l);
                 }
                 
                 Vector<int[]>vr = t.getAvailVlanRanges();
-                p.setRawVlanR(vr);
+                p.setVlanR(vr);
                 
             } else if(t.isTdm()) {
                 throw new TERCELSAException("TDM switching capability unsupported by the schema");
@@ -131,8 +137,8 @@ public class LSASet extends Vector<LSA> {
             node n = new node(lsa.getAdvRtr());
             
             l = t.getRtrAddr();
-            n.setRawNodeID(l);
-            n.setRawNodeAddr(l);
+            n.setNodeID(l);
+            n.setNodeAddr(l);
             
             nodes.add(n);
         }
@@ -151,7 +157,6 @@ public class LSASet extends Vector<LSA> {
         }
         
         topology.addDomain(domainContent);
-        
         return topology;
     }
     
@@ -189,12 +194,12 @@ public class LSASet extends Vector<LSA> {
             nodeContent = new CtrlPlaneNodeContent();
         }
         
-        private void setRawNodeID(long l) throws TERCELSAException {
+        private void setNodeID(long l) throws TERCELSAException {
             rawNodeID = l;
             nodeContent.setId(getNodeID(l)); // 192.168.1.8
         }
         
-        private void setRawNodeAddr(long l) throws TERCELSAException {
+        private void setNodeAddr(long l) throws TERCELSAException {
             rawNodeAddr = l;
             nodeContent.setAddress(getNodeAddr(l)); // 192.168.1.8
         }
@@ -240,57 +245,57 @@ public class LSASet extends Vector<LSA> {
             swcapContent.setSwitchingCapabilitySpecficInfo(specInfoContent);
         }
         
-        private void setRawPortID(long l) {
+        private void setPortID(long l) {
             rawID = l;
             portContent.setId("port-" + Long.toHexString(l)); // pC-c0a80108
         }
         
-        private void setRawMaxBW(float f) {
+        private void setMaxBW(float f) {
             rawMaxBW = f;
             portContent.setCapacity(TERCEUtilities.toNetString(8*f)); // 1Gbps
         }
         
-        private void setRawMaxRsvBW(float f) {
+        private void setMaxRsvBW(float f) {
             rawMaxRsvBW = f;
             portContent.setMaximumReservableCapacity(TERCEUtilities.toNetString(8*f)); // 1Gbps
         }
         
-        private void setRawMinRsvBW(float f) {
+        private void setMinRsvBW(float f) {
             rawMinRsvBW = f;
-            portContent.setMinimumReservableCapacity(TERCEUtilities.toNetString(8*f)); // 100Mbps
+            portContent.setMinimumReservableCapacity(TERCEUtilities.toNetString(f*1000000)); // 100Mbps
         }
         
-        private void setRawUnrsvBW(float f) {
+        private void setUnrsvBW(float f) {
             rawUnrsvBW = f;
             portContent.setUnreservedCapacity(TERCEUtilities.toNetString(8*f)); // 1Gbps
         }
         
-        private void setRawGranularity(float f) {
+        private void setGranularity(float f) {
             rawGranularity = f;
-            portContent.setGranularity(TERCEUtilities.toNetString(8*f)); // 100Mbps
+            portContent.setGranularity(TERCEUtilities.toNetString(f*1000000)); // 100Mbps
         }
         
-        private void setRawLinkID(long l) {
+        private void setLinkID(long l) {
             rawLinkID = l;
             linkContent.setId(Long.toHexString(advRtr) + "-" + Long.toHexString(l)); // c0a80108-c0a80204
         }
         
-        private void setRawRmtLinkID(long l) {
+        private void setRmtLinkID(long l) {
             rawRmtLinkID = l;
             linkContent.setRemoteLinkId(Long.toHexString(l)); // c0a80204
         }
         
-        private void setRawRmtPortID(long l) {
+        private void setRmtPortID(long l) {
             rawRmtPortID = l;
             linkContent.setRemotePortId("port-" + Long.toHexString(l)); // port-c0a80204
         }
         
-        private void setRawRmtNodeID(long l) throws TERCELSAException {
+        private void setRmtNodeID(long l) throws TERCELSAException {
             rawRmtNodeID = l;
             linkContent.setRemoteNodeId(getNodeID(l)); // 192.168.2.4
         }
         
-        private void setRawRmtDomainID(long l) {
+        private void setRmtDomainID(long l) {
             rawRmtDomainID = l;
             if(l == UNKNOWN_DOMAIN_ID)
                 linkContent.setRemoteDomainId("unknown");
@@ -309,30 +314,30 @@ public class LSASet extends Vector<LSA> {
             } catch (NumberFormatException ex) {
                 l = FOREIGN_DOMAIN_ID;
             }
-            setRawRmtDomainID(l);
+            setRmtDomainID(l);
         }
         
-        private void setRawTEMetric(long l) {
+        private void setTEMetric(long l) {
             rawTEMetric = l;
             linkContent.setTrafficEngineeringMetric(Long.toString(l)); // 50
         }
         
-        private void setRawSCType(long l) {
+        private void setSCType(long l) {
             rawSCType = l;
             swcapContent.setSwitchingcapType(TERCEGlobals.swcapStrDescs.getStr(l));
         }
         
-        private void setRawSCEnc(long l) {
+        private void setSCEnc(long l) {
             rawSCEnc = l;
             swcapContent.setEncodingType(TERCEGlobals.encStrDescs.getStr(l));
         }
         
-        private void setRawVlanMTU(long l) {
+        private void setVlanMTU(long l) {
             rawVlanMTU = l;
             specInfoContent.setInterfaceMTU((int)l);
         }
         
-        private void setRawVlanR(Vector<int[]> vr) {
+        private void setVlanR(Vector<int[]> vr) {
             rawVlanRanges = vr;
             String s = "";
             for (int i = 0; i < vr.size(); i++) {
@@ -378,7 +383,7 @@ public class LSASet extends Vector<LSA> {
                 if(nodes.haveRtr(get(i).rawRmtLinkID)) {
                     get(i).setRmtDomainID(domainContent.getId());
                 } else {
-                    get(i).setRawRmtDomainID(DANGLING_DOMAIN_ID);
+                    get(i).setRmtDomainID(DANGLING_DOMAIN_ID);
                 }
             }
         }
