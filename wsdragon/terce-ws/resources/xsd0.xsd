@@ -1,40 +1,41 @@
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/RCE" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE">
-<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="xsd1.xsd"/>
-<xsd:element name="findPath" type="tns:findPathContent"/>
-<xsd:element name="findPathResponse" type="tns:findPathResponseContent"/>
-<xsd:element name="TerceRceFault">
-<xsd:complexType>
-<xsd:sequence>
-<xsd:element name="msg" type="xsd:string"/>
-</xsd:sequence>
-</xsd:complexType>
-</xsd:element>
-<xsd:complexType name="findPathContent">
-<xsd:all>
-<xsd:element name="srcEndpoint" type="xsd:string"/>
-<xsd:element name="destEndpoint" type="xsd:string"/>
-<xsd:element minOccurs="0" name="bandwidth" type="xsd:int"/>
-<xsd:element minOccurs="0" name="encoding" type="xsd:string"/>
-<xsd:element minOccurs="0" name="swcap" type="xsd:string"/>
-<xsd:element minOccurs="0" name="gpid" type="xsd:string"/>
-<xsd:element minOccurs="0" name="vtag" type="xsd:string"/>
-<xsd:element maxOccurs="unbounded" minOccurs="0" name="exclude" type="tns:exclude"/>
-</xsd:all>
-<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="strict" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="preferred" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="mrn" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="viamovaz" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="allvtags" type="xsd:boolean" use="optional"/>
-<xsd:attribute name="allwaves" type="xsd:boolean" use="optional"/>
-</xsd:complexType>
-<xsd:complexType name="findPathResponseContent">
-<xsd:all>
-<xsd:element ref="ctrlp:path"/>
-<xsd:element minOccurs="0" name="availableVtags" type="xsd:string"/>
-</xsd:all>
-</xsd:complexType>
-<xsd:complexType name="exclude">
-<xsd:attribute name="layer" type="xsd:string"/>
-</xsd:complexType>
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS/TYPES/RCE" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS/TYPES/RCE">
+    <xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="xsd1.xsd"/>
+    <xsd:element name="findPath" type="tns:findPathContent"/>
+    <xsd:element name="findPathResponse" type="tns:findPathResponseContent"/>
+    <xsd:element name="TerceRceFault">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="msg" type="xsd:string"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:complexType name="findPathContent">
+        <xsd:all>
+            <xsd:element name="srcEndpoint" type="xsd:string"/>
+            <xsd:element name="destEndpoint" type="xsd:string"/>
+            <xsd:element minOccurs="0" name="bandwidth" type="xsd:int"/>
+            <xsd:element minOccurs="0" name="encoding" type="xsd:string"/>
+            <xsd:element minOccurs="0" name="swcap" type="xsd:string"/>
+            <xsd:element minOccurs="0" name="gpid" type="xsd:string"/>
+            <xsd:element minOccurs="0" name="vtag" type="xsd:string"/>
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="exclude" type="tns:exclude"/>
+        </xsd:all>
+        <xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="strict" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="preferred" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="mrn" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="viamovaz" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="allvtags" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="allwaves" type="xsd:boolean" use="optional"/>
+    </xsd:complexType>
+    <xsd:complexType name="findPathResponseContent">
+        <xsd:all>
+            <xsd:element ref="ctrlp:path"/>
+            <xsd:element minOccurs="0" name="availableVtags" type="xsd:string"/>
+        </xsd:all>
+    </xsd:complexType>
+    <xsd:complexType name="exclude">
+        <xsd:attribute name="layer" type="xsd:string"/>
+    </xsd:complexType>
 </xsd:schema>
