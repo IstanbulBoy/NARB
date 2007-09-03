@@ -1,0 +1,68 @@
+# @version SVN: $Id: nmtypes.rnc,v 1.1 2007-09-03 17:06:42 jarda Exp $
+
+namespace nmtb =
+  "http://ogf.org/schema/network/topology/base/20070707/"
+  
+start = anyElement
+
+Identifier =
+        attribute id { xsd:string }
+
+IdReference =
+        attribute idRef { xsd:string }
+        
+Type = 
+        attribute type { xsd:string }    
+
+
+# ##############################################################
+# This sequence allows any element, attribute, or text (regardless 
+# of name or namespace) into the document when invoked.
+# ##############################################################
+
+anyElement = 
+        element * { 
+                anyThing 
+        }
+
+anyAttribute = 
+        attribute * { text }
+
+anyThing = 
+        ( 
+                anyElement | 
+                anyAttribute | 
+                text 
+        )*
+        
+        
+# Node Type
+Node = element nmtb:node { NodeContent }
+NodeContent =
+  Identifier?
+  
+  
+# Base Topology IdReference types
+TopologyIdRef = 
+  element topologyIdRef { xsd:string }
+  
+NodeIdRef =
+  element nodeIdRef { xsd:string }
+
+PortIdRef =
+  element portIdRef { xsd:string }
+  
+InterfaceIdRef =
+  element interfaceIdRef { xsd:string }
+  
+LinkIdRef =
+  element linkIdRef { xsd:string }
+  
+PathIdRef = 
+  element pathIdRef { xsd:string }
+        
+NetworkIdRef = 
+  element networkIdRef { xsd:string }
+  
+DomainIdRef = 
+  element domainIdRef { xsd:string }
