@@ -157,7 +157,7 @@ void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
         inet_ntop(AF_INET, &subobj->addr, addr, 20);
         u_int32_t ifid = subobj->if_id;
         if (ifid == 0 && subobj->l2sc_vlantag != 0)
-            ifid = htonl((LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL << 16) | htons(subobj->l2sc_vlantag));
+            ifid = htonl((LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL << 16) | subobj->l2sc_vlantag);
         if (ifid == 0)
             sprintf(buf, " >> HOP-TYPE [%s]: %s [IPv4]", subobj->hop_type?"loose":"strict", addr);  
         else    
