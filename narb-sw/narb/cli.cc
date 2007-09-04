@@ -1356,12 +1356,12 @@ cmd_show_lsp cmd_show_lsp_alias1("show lsp", "Show configurations \n Established
 COMMAND(cmd_show_lsp_detail, "show lsp GRI",  "Show configureation:\nLSP\nGRI in UCID-SEQNUM format\n")
 {
     u_int32_t  ucid = 0, seqnum = 0;
-    if (sscanf(argv[0].c_str(), "%u-%u", &ucid, &seqnum) != 2)
+    LSPQ * lspq = NULL;
+    if (sscanf(argv[0].c_str(), "%u-%u", &ucid, &seqnum) != 2 || (lspq = NARB_APIServer::LspqLookup(ucid, seqnum)) == NULL)
     {
         CLI_OUT(" #### LSP with the GRI (ucid-seqnum): %s does not exist...%s", argv[0].c_str(), cli_cstr_newline);
         return;
     }
-    LSPQ * lspq = NARB_APIServer::LspqLookup(ucid, seqnum);
     vector<string> lsp_detail_v;
     lspq->DescribeLSPDetail(lsp_detail_v);
     for (int i = 0; i < lsp_detail_v.size(); i++)
