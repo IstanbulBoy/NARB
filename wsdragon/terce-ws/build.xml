@@ -32,6 +32,14 @@
         <mkdir dir="${classes}"/>
         <mkdir dir="${lib}"/>
         <mkdir dir="${test}"/>
+        <delete failonerror="false">
+            <fileset dir="src/edu/internet2/hopi/dragon/terce/ws/service" includes="TERCESkeleton.java"/>
+        </delete>
+        <copy toDir="src/edu/internet2/hopi/dragon/terce/ws/service" failonerror="true">
+            <fileset dir="${project.base.dir}">
+                <include name="TERCESkeleton.java"/>
+            </fileset>
+        </copy>
     </target>
     <target depends="init" name="pre.compile.test">
         <!--Test the classpath for the availability of necesary classes-->
@@ -121,9 +129,6 @@
         <delete dir="${build}"/>
     </target>
     <target name="wsdl2java">
-        <delete failonerror="false">
-            <fileset dir="resources" includes="services.xml"/>
-        </delete>
         <java classname="org.apache.axis2.wsdl.WSDL2Java" fork="true">
             <classpath>
                 <fileset dir="${axis2.home}/lib" includes="*.jar"/>
@@ -131,15 +136,22 @@
             <arg value="-uri"/>
             <arg file="resources/TERCE.wsdl"/>
             <arg value="-ss"/>
-            <arg value="-sd"/>
+            <arg value="--sync"/>
             <arg value="-d"/>
             <arg value="adb"/>
             <arg value="-g"/>
+            <arg value="-ns2p"/>
+            <arg value="http://hopi.internet2.edu/DRAGON/TERCE/RCE=edu.internet2.hopi.dragon.terce.ws.types.rce,http://hopi.internet2.edu/DRAGON/TERCE/TEDB=edu.internet2.hopi.dragon.terce.ws.types.tedb"/>
+            <arg value="-p"/>
+            <arg value="edu.internet2.hopi.dragon.terce.ws.service"/>
         </java>
     </target>
     <target name="wsdl2java.clean">
         <delete dir="src/edu/internet2/hopi/dragon/terce/ws/service"/>
         <delete dir="src/edu/internet2/hopi/dragon/terce/ws/types"/>
         <delete dir="src/org"/>
+        <delete failonerror="false">
+            <fileset dir="src/edu/internet2/hopi/dragon/terce/ws" includes="ExtensionMapper.java"/>
+        </delete>
     </target>
 </project>

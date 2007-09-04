@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- @version SVN: $Id: nmtypes.xsd,v 1.1 2007-09-03 17:05:42 jarda Exp $ -->
+<!-- @version SVN: $Id: nmtypes.xsd,v 1.2 2007-09-04 03:04:29 jarda Exp $ -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" xmlns:nmtl3="http://ogf.org/schema/network/topology/l3/20070707/" xmlns:nmtb="http://ogf.org/schema/network/topology/base/20070707/" xmlns:CtrlPlane="http://ogf.org/schema/network/topology/ctrlPlane/20070707/">
-  <xs:import namespace="http://ogf.org/schema/network/topology/base/20070707/" schemaLocation="nmtb.xsd"/>
-  <xs:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070707/" schemaLocation="xsd1.xsd"/>
-  <xs:import namespace="http://ogf.org/schema/network/topology/l3/20070707/" schemaLocation="nmtopo_l3.xsd"/>
   <xs:attributeGroup name="Identifier">
     <xs:attribute name="id" use="required" type="xs:string"/>
   </xs:attributeGroup>

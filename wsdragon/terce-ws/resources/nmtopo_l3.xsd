@@ -3,7 +3,7 @@
   ##############################################################
   
   File:         nmtopo_l3.rnc - Schema for Layer 3 entities 
-  Version:      $Id: nmtopo_l3.xsd,v 1.1 2007-09-03 17:05:42 jarda Exp $
+  Version:      $Id: nmtopo_l3.xsd,v 1.2 2007-09-04 03:04:29 jarda Exp $
                           
   ##############################################################
 -->
@@ -13,9 +13,6 @@
   ##############################################################
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://ogf.org/schema/network/topology/l3/20070707/" xmlns:nmtl3="http://ogf.org/schema/network/topology/l3/20070707/" xmlns:nmtb="http://ogf.org/schema/network/topology/base/20070707/" xmlns:CtrlPlane="http://ogf.org/schema/network/topology/ctrlPlane/20070707/">
-  <xs:import schemaLocation="nmtypes.xsd"/>
-  <xs:import namespace="http://ogf.org/schema/network/topology/base/20070707/" schemaLocation="nmtb.xsd"/>
-  <xs:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070707/" schemaLocation="xsd1.xsd"/>
   <xs:element name="interface" type="nmtl3:L3InterfaceContent"/>
   <xs:complexType name="L3InterfaceContent">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
