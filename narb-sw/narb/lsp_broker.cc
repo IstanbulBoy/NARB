@@ -141,10 +141,12 @@ void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
 {
     lsp_detail_v.clear();
     string desc;
+    desc = "Src             Dest            Bandwidth SwType EncType (Vtag)   State      GRI";
+    lsp_detail_v.push_back(desc);
     DescribeLSP(desc);
     lsp_detail_v.push_back(desc);
     char buf[200], addr[20];
-    sprintf(buf, "\nExplitic Route >>\n");
+    sprintf(buf, "Explitic Route >>");
     desc = buf;
     lsp_detail_v.push_back(desc);  
     ero_subobj* subobj;
@@ -152,8 +154,11 @@ void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
     for (; it != ero.end(); it++)
     {
         subobj = *it;
-        inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
-        sprintf(buf, "HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));  
+        inet_ntop(AF_INET, &subobj->addr, addr, 20);
+        u_int32_t ifid = subobj->if_id;
+        if (ifid == 0 && subobj->l2sc_vlantag != 0)
+            ifid = ((LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL << 16) | subobj->l2sc_vlantag);
+        sprintf(buf, "HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]", subobj->hop_type?"loose":"strict", addr,  ntohl(ifid), ntohl(ifid)>>16, (u_int16_t)ntohl(ifid), ntohs(subobj->l2sc_vlantag));  
         desc = buf;
         lsp_detail_v.push_back(desc);
     }
