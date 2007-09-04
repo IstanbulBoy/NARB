@@ -40,6 +40,14 @@
                 <include name="TERCESkeleton.java"/>
             </fileset>
         </copy>
+        <delete failonerror="false">
+            <fileset dir="src/org/ogf/schema/network/topology/ctrlplane/_20070626" includes="CtrlPlaneAddressContent.java"/>
+        </delete>
+        <copy toDir="src/org/ogf/schema/network/topology/ctrlplane/_20070626" failonerror="true">
+            <fileset dir="${project.base.dir}">
+                <include name="CtrlPlaneAddressContent.java"/>
+            </fileset>
+        </copy>
     </target>
     <target depends="init" name="pre.compile.test">
         <!--Test the classpath for the availability of necesary classes-->
@@ -136,6 +144,8 @@
             <arg value="-uri"/>
             <arg file="resources/TERCE.wsdl"/>
             <arg value="-ss"/>
+            <arg value="-wv"/>
+            <arg value="1.1"/>
             <arg value="--sync"/>
             <arg value="-d"/>
             <arg value="adb"/>
