@@ -199,11 +199,12 @@ public class TERCEUtilities {
                     org.apache.axiom.om.OMAbstractFactory.getOMFactory());
             x.output(db.build(XMLUtils.toDOM(el)), fos);
         } catch (ADBException ex) {
-            System.err.println("topology dump failed");
+            System.err.println("ADBException: topology dump failed");
         } catch (IOException ex) {
-            System.err.println("topology dump failed");
+            System.err.println("IOException: topology dump failed");
         } catch (Exception ex) {
-            System.err.println("topology dump failed");
+            System.err.println("Exception: topology dump failed");
+            ex.printStackTrace();
         }
         TERCEGlobals.topologyDumpScheduled = false;
     }
