@@ -1360,6 +1360,7 @@ COMMAND(cmd_show_lsp_detail, "show lsp GRI",  "Show configureation:\nLSP\nGRI in
     if (sscanf(argv[0].c_str(), "%u-%u", &ucid, &seqnum) != 2 || (lspq = NARB_APIServer::LspqLookup(ucid, seqnum)) == NULL)
     {
         CLI_OUT(" #### LSP with the GRI (ucid-seqnum): %s does not exist...%s", argv[0].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
         return;
     }
     vector<string> lsp_detail_v;
