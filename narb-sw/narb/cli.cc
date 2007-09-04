@@ -1341,7 +1341,7 @@ COMMAND(cmd_show_lsp, "show lsp {responded|established|deleted|all}",  "Show con
     if (lsp_desc_v.size() == 0)
         CLI_OUT("There is no current LSP information.%s", cli_cstr_newline);
     else
-        CLI_OUT("Src             Dest            Bandwidth SwType EncType (Vtag)   State%s", cli_cstr_newline);
+        CLI_OUT("Src             Dest            Bandwidth SwType EncType (Vtag)   State      GRI%s", cli_cstr_newline);
 
     for (int i = 0; i < lsp_desc_v.size(); i++)
     {
@@ -1352,6 +1352,21 @@ COMMAND(cmd_show_lsp, "show lsp {responded|established|deleted|all}",  "Show con
 
 //Alias of cmd_show_lsp
 cmd_show_lsp cmd_show_lsp_alias1("show lsp", "Show configurations \n Established LSP \n IP");
+
+COMMAND(cmd_show_lsp_detail, "show lsp GRI",  "Show configureation:\nLSP\nGRI in UCID-SEQNUM format\n")
+{
+    u_int32_t  ucid = 0, seqnum = 0;
+    if (sscanf(argv[0].c_str(), "%u-%u", &ucid, &seqnum) != 2)
+    {
+        CLI_OUT(" #### LSP with the GRI (ucid-seqnum): %s does not exist...%s", argv[0].c_str(), cli_cstr_newline);
+        return;
+    }
+    LSPQ * lspq = NARB_APIServer::LspqLookup(ucid, seqnum);
+    string lsp_detail;
+    lspq->DescribeLSPDetail(lsp_detail);
+    CLI_OUT("%s%s", lsp_detail, cli_cstr_newline);
+    cli_node->ShowPrompt();
+}
 
 
 ///////////////////////// configure command level  ////////////////////////////
@@ -2603,6 +2618,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_lsp_instance);
     cli_root->AddCommand(&cmd_show_lsp_alias1);
+    cli_root->AddCommand(&cmd_show_lsp_detail_instance);
     cli_root->AddCommand(&cmd_show_link_instance);
     cli_root->AddCommand(&cmd_show_static_ero_instance);
     cli_root->AddCommand(&cmd_show_static_ero_default);

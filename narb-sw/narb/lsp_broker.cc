@@ -134,7 +134,25 @@ void LSPQ::DescribeLSP(string& desc)
     
     sprintf(buf, "%-15s %-15s %-9.2f %-6d %-7d %-6d %-10s", buf1, buf2, req_spec.bandwidth,
         req_spec.switching_type, req_spec.encoding_type, req_vtag, buf3);
+    sprintf(buf, "  %u-%u", req_ucid, app_seqnum);
+
     desc = buf;
+}
+
+void LSPQ::DescribeLSPDetail(string& desc)
+{
+    char buf[200], addr[20];
+    DescribeLSP(desc);
+    sprintf(buf, "\nExplitic Route >>\n");
+    ero_subobj* subobj;
+    list<ero_subobj*>::iterator it = ero.begin();
+    for (; it != ero.end(); it++)
+    {
+        subobj = *it;
+        inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
+        sprintf(buf, "HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));  
+        desc += buf;
+    }
 }
 
 void LSPQ::SetState(u_char s)
