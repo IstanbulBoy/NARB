@@ -132,18 +132,21 @@ void LSPQ::DescribeLSP(string& desc)
             break;
     }
     
-    sprintf(buf, "%-15s %-15s %-9.2f %-6d %-7d %-6d %-10s", buf1, buf2, req_spec.bandwidth,
-        req_spec.switching_type, req_spec.encoding_type, req_vtag, buf3);
-    sprintf(buf, "  %u-%u", req_ucid, app_seqnum);
-
+    sprintf(buf, "%-15s %-15s %-9.2f %-6d %-7d %-6d %-10s %u-%u", buf1, buf2, req_spec.bandwidth,
+        req_spec.switching_type, req_spec.encoding_type, req_vtag, buf3, req_ucid, app_seqnum);
     desc = buf;
 }
 
-void LSPQ::DescribeLSPDetail(string& desc)
+void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
 {
-    char buf[200], addr[20];
+    lsp_detail_v.clear();
+    string desc;
     DescribeLSP(desc);
+    lsp_detail_v.push_back(desc);
+    char buf[200], addr[20];
     sprintf(buf, "\nExplitic Route >>\n");
+    desc = buf;
+    lsp_detail_v.push_back(desc);  
     ero_subobj* subobj;
     list<ero_subobj*>::iterator it = ero.begin();
     for (; it != ero.end(); it++)
@@ -151,7 +154,8 @@ void LSPQ::DescribeLSPDetail(string& desc)
         subobj = *it;
         inet_ntop(AF_INET, &subobj->addr, addr, 20); //debug
         sprintf(buf, "HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));  
-        desc += buf;
+        desc = buf;
+        lsp_detail_v.push_back(desc);
     }
 }
 

@@ -1362,9 +1362,12 @@ COMMAND(cmd_show_lsp_detail, "show lsp GRI",  "Show configureation:\nLSP\nGRI in
         return;
     }
     LSPQ * lspq = NARB_APIServer::LspqLookup(ucid, seqnum);
-    string lsp_detail;
-    lspq->DescribeLSPDetail(lsp_detail);
-    CLI_OUT("%s%s", lsp_detail, cli_cstr_newline);
+    vector<string> lsp_detail_v;
+    lspq->DescribeLSPDetail(lsp_detail_v);
+    for (int i = 0; i < lsp_detail_v.size(); i++)
+    {
+        CLI_OUT("%s%s", lsp_detail_v[i].c_str(), cli_cstr_newline);
+    }
     cli_node->ShowPrompt();
 }
 

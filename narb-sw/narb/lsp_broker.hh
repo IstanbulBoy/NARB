@@ -161,7 +161,7 @@ public:
     void HandleOptionalRequestTLVs (api_msg* msg);
     void HandleOptionalResponseTLVs (api_msg* msg);
     void DescribeLSP(string& desc);
-    void DescribeLSPDetail(string& desc);
+    void DescribeLSPDetail(vector<string>& lsp_detail_v);
     u_int32_t SeqNum() {  return app_seqnum;  }
     static void GetERO(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
     static void GetERO_RFCStandard(te_tlv_header* ero_tlv, list<ero_subobj*>& ero);
