@@ -97,6 +97,8 @@ public class TERCECore implements Runnable {
         int ret;
         byte[] hbuf = new byte[TERCEMessageHeader.SIZE];
         
+        TERCEGlobals.core = this;
+        
         try {
             ss = new ServerSocket(serverPort);
         } catch (IOException ex) {
