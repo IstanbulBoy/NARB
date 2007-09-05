@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS/TYPES/TEDB" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/WS/TYPES/TEDB">
     <xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="xsd1.xsd"/>
     <xsd:element name="selectNetworkTopology" type="tns:selectNetworkTopologyContent"/>
     <xsd:element name="selectNetworkTopologyResponse" type="tns:selectNetworkTopologyResponseContent"/>
