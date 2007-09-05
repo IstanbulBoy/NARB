@@ -147,11 +147,10 @@
             <arg value="-wv"/>
             <arg value="1.1"/>
             <arg value="--sync"/>
+            <arg value="-sd"/>
             <arg value="-d"/>
             <arg value="adb"/>
             <arg value="-g"/>
-            <arg value="-ns2p"/>
-            <arg value="http://hopi.internet2.edu/DRAGON/TERCE/RCE=edu.internet2.hopi.dragon.terce.ws.types.rce,http://hopi.internet2.edu/DRAGON/TERCE/TEDB=edu.internet2.hopi.dragon.terce.ws.types.tedb"/>
             <arg value="-p"/>
             <arg value="edu.internet2.hopi.dragon.terce.ws.service"/>
         </java>
@@ -160,8 +159,5 @@
         <delete dir="src/edu/internet2/hopi/dragon/terce/ws/service"/>
         <delete dir="src/edu/internet2/hopi/dragon/terce/ws/types"/>
         <delete dir="src/org"/>
-        <delete failonerror="false">
-            <fileset dir="src/edu/internet2/hopi/dragon/terce/ws" includes="ExtensionMapper.java"/>
-        </delete>
     </target>
 </project>
