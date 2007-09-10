@@ -1353,7 +1353,7 @@ COMMAND(cmd_show_lsp, "show lsp {responded|established|deleted|all}",  "Show con
 //Alias of cmd_show_lsp
 cmd_show_lsp cmd_show_lsp_alias1("show lsp", "Show configurations \n Established LSP \n IP");
 
-COMMAND(cmd_show_lsp_detail, "show lsp GRI",  "Show configureation:\nLSP\nGRI in UCID-SEQNUM format\n")
+COMMAND(cmd_show_lsp_detail, "show lsp detail GRI",  "Show configureation:\nLSP\nDetails...\nGRI in UCID-SEQNUM format\n")
 {
     u_int32_t  ucid = 0, seqnum = 0;
     LSPQ * lspq = NULL;
