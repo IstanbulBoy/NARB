@@ -115,6 +115,11 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             tlv_len = sizeof(narb_lsp_lspb_id_tlv);
             lspb_id = ((narb_lsp_lspb_id_tlv*)tlv)->lspb_id;
             break;
+        case TLV_TYPE_NARB_LOCAL_ID:
+            tlv_len = sizeof(narb_lsp_local_id_tlv);
+            src_lcl_id = ((narb_lsp_local_id_tlv*)tlv)->lclid_src;
+            dest_lcl_id = ((narb_lsp_local_id_tlv*)tlv)->lclid_dest;
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
@@ -132,12 +137,13 @@ void LSPHandler::Run()
     if ((options & LSP_OPT_MRN) == 0)
     {
         pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
-            ucid, seqnum, lspb_id, tag, hop_back);
+            ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
     }
     else
     {
         pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back, vtag_mask);
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+            src_lcl_id, dest_lcl_id, vtag_mask);
     }
 
     pcen_event->AssociateWriter (api_writer);

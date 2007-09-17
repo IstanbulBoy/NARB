@@ -90,6 +90,14 @@ struct msg_narb_lspb_id
     u_int32_t lspb_id;
 };
 
+struct msg_narb_local_id
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t lclid_src;
+    u_int32_t lclid_dest;
+};
+
 #define msg_app2narb_release msg_narb_confirm
 
 class LSP_Broker;
@@ -108,7 +116,9 @@ private:
     msg_narb_suggested_vtag* suggested_vtag;
     u_int32_t previous_lspb_id;
     u_int32_t returned_lspb_id;
-    u_int32_t hop_back;
+	u_int32_t src_lcl_id;
+	u_int32_t dest_lcl_id;
+	u_int32_t hop_back;
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO
     bool is_recursive_req;
     bool is_qconf_mode;
@@ -354,6 +364,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_SUGGESTED_VTAG = 0x07,
     TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_SUBNET_ERO = 0x09,
+    TLV_TYPE_NARB_LOCAL_ID = 0x0A,
 };
 
 // definitions of NARB error code as proccessing a request fails

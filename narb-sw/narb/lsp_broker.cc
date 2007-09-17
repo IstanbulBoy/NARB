@@ -88,6 +88,7 @@ void LSPQ::Init()
     vtag_mask = NULL;
     suggested_vtag = NULL;
     previous_lspb_id = 0;
+	src_lcl_id = dest_lcl_id = 0;
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
@@ -527,7 +528,7 @@ int LSPQ::HandleLSPQRequest()
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
-        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, vtag_mask);
+        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, vtag_mask);
     return 0;
 }
 
@@ -1761,6 +1762,11 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
         case TLV_TYPE_NARB_LSPB_ID:
             tlv_len = sizeof(msg_narb_lspb_id);
             previous_lspb_id = ((msg_narb_lspb_id*)tlv)->lspb_id;
+            break;
+        case TLV_TYPE_NARB_LOCAL_ID:
+            tlv_len = sizeof(msg_narb_local_id);
+            src_lcl_id = ((msg_narb_local_id*)tlv)->lclid_src;
+            dest_lcl_id = ((msg_narb_local_id*)tlv)->lclid_dest;
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
