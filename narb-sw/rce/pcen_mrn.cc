@@ -302,7 +302,7 @@ void PCEN_MRN::PostBuildTopology()
                                     iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
                             }
                         }
-                        link_dest_backward->iscds.push_back();
+                        link_dest_backward->iscds.push_back(iscd);
                         PCENLink* pcen_link_dest_backward = new PCENLink(link_dest_backward); //have to make new
                         pcen_link_dest_backward->link_self_allocated = true;
                         pcen_link_dest_backward->lcl_end = new_pcen_destination;
