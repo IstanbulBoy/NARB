@@ -90,6 +90,7 @@ struct ero_subobj
 #define ERO_TYPE_LOOSE_HOP 1
 
 #define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL 0x0004 //the localid type for an intermediate tagged vlan link (ERO subobject)
+#define LOCAL_ID_TYPE_SUBNET_IF_ID (u_int16_t)0x5
 #define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
 #define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
     

@@ -117,8 +117,8 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             break;
         case TLV_TYPE_NARB_LOCAL_ID:
             tlv_len = sizeof(narb_lsp_local_id_tlv);
-            src_lcl_id = ((narb_lsp_local_id_tlv*)tlv)->lclid_src;
-            dest_lcl_id = ((narb_lsp_local_id_tlv*)tlv)->lclid_dest;
+            src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
+            dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;

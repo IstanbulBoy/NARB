@@ -183,6 +183,7 @@ public:
     list<PCENLink*> out_links;
     list<PCENLink*> in_links;
     RouterId * router;
+    bool router_self_allocated; //Router* router is self-allocated instead of pointing to external resource in RDB
 
     //////Variables (sets) Indicating Search Progress//////
     TSpec tspec;
@@ -211,16 +212,18 @@ public:
 
     void Init()
         {
-	    auxvar1=0;
-	    auxvar2=0;
-	    minCost=PCEN_INFINITE_COST;
-           path_visited = false;
-	    nflg.flag=0;
+            auxvar1=0;
+            auxvar2=0;
+            minCost=PCEN_INFINITE_COST;
+            path_visited = false;
+            nflg.flag=0;
+            router_self_allocated = false;
         }
 
     PCENNode(): ref_num(-1) { Init(); }
     PCENNode(int id);
     PCENNode(RouterId *router_ptr): router(router_ptr), ref_num(-1)  { Init(); }
+    ~PCENNode()  { if (router_self_allocated) delete router; }
 
     u_int32_t DomainId ();
     PCENLink * GetOutLinkByIp(in_addr * ip);

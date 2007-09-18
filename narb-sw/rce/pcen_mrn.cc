@@ -62,7 +62,16 @@ void PCEN_MRN::PostBuildTopology()
     ISCD* iscd;
     list<PCENLink*>::iterator link_iter;
     RadixNode<Resource> *node;
+    bool is_lclid_constrained_mode = false;
+    PCENLink* lclid_link_src = NULL, *lclid_link_dest = NULL;
+    //$$$$ Local ID based edge constraints take priority over hopback!
+    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID &&  (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        hop_back = 0;
+        is_lclid_constrained_mode = true;
+    }
     bool hop_back_attaching_to_source_verified = (hop_back == 0 ? true : false);
+    PCENLink* hopBackInterdomainPcenLink = NULL;
 
     int rNum = routers.size(); 
     int lNum = links.size();
@@ -76,8 +85,7 @@ void PCEN_MRN::PostBuildTopology()
         pcen_node->tspec.Bandwidth = bandwidth_ingress;
     }
 
-
-    //Init reverseLink
+    //Init reverseLink and local-id links
     for (i = 0; i < lNum; i++)
     {
         pcen_link = links[i];
@@ -87,6 +95,20 @@ void PCEN_MRN::PostBuildTopology()
         if (hop_back != 0 && pcen_link->link->LclIfAddr() == hop_back && pcen_link->link->AdvRtId() == source.s_addr)
         {
             hop_back_attaching_to_source_verified = true;
+        }
+
+        if (is_lclid_constrained_mode && pcen_link->link->Iscds().size() > 0
+            && htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) == IFSWCAP_SPECIFIC_SUBNET_UNI
+            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+        {
+            lclid_link_src = pcen_link;
+        }
+
+        if (is_lclid_constrained_mode && pcen_link->link->Iscds().size() > 0
+            && htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) == IFSWCAP_SPECIFIC_SUBNET_UNI
+            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+        {
+            lclid_link_dest = pcen_link;
         }
 
         pcen_node = pcen_link->rmt_end;
@@ -112,13 +134,38 @@ void PCEN_MRN::PostBuildTopology()
         return;
     }
 
-    // Building SubnetUNI 'jump' links to incorporate the UNI subnet (say a Ciena SONET network)
-    u_int32_t new_source = 0;
+    if (is_lclid_constrained_mode && lclid_link_src && lclid_link_dest)
+    {
+        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
+        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+        return;
+    }
+
+    // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
     if (SystemConfig::should_incorporate_subnet)
     {
-        //  special handling for hop back
-        PCENLink* hopBackInterdomainPcenLink = NULL;
-        if (hop_back != 0)
+        PCENNode* new_pcen_source = NULL;
+        PCENNode* new_pcen_destination = NULL;
+        u_int32_t hopback_source = 0;
+
+        // Handling the special 'subnet' topology
+        if (is_lclid_constrained_mode)  //  special handling for lclid edge constraints
+        {
+            // costructing fake source and destination nodes for local-ids
+            // the newly constructed source edge node use source local-id as router id
+            RouterId* new_router = new RouterId(src_lcl_id); 
+            new_pcen_source = new PCENNode(new_router);
+            new_pcen_source->router_self_allocated = true;
+            routers.push_back(new_pcen_source);
+            rNum++;
+            // the newly constructed destination edge node use destination local-id as router id
+            new_router = new RouterId(dest_lcl_id);
+            new_pcen_destination = new PCENNode(new_router);
+            new_pcen_destination->router_self_allocated = true;
+            routers.push_back(new_pcen_destination);
+            rNum++;
+        }
+        else if (hop_back != 0) //  special handling for hop back
         {
             for (i = 0; i < lNum; i++)
             {
@@ -131,7 +178,7 @@ void PCEN_MRN::PostBuildTopology()
             //Moving source one hop back!!
             if (hopBackInterdomainPcenLink && hopBackInterdomainPcenLink->rmt_end && hopBackInterdomainPcenLink->rmt_end->router)
             {
-                new_source = hopBackInterdomainPcenLink->rmt_end->router->id;
+                hopback_source = hopBackInterdomainPcenLink->rmt_end->router->id;
             }
             else
             {
@@ -139,7 +186,6 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
 
-        //  fake hop-back intra-domain links will be added to replace the interdomain (border) links
         RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
         RadixNode<Resource>* node = tree->Root();
         while (node)
@@ -148,70 +194,186 @@ void PCEN_MRN::PostBuildTopology()
             if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
                 && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
                 && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
-            { // found an intra-domain hop back link!
-                hopBackInterdomainPcenLink = NULL;
-                for (i = 0; i < lNum; i++)
+            { // if found an intra-domain subnet edge link
+                if (is_lclid_constrained_mode) //local-id constraint handling
                 {
-                    pcen_link = links[i];
-                    if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    // Attaching local-id nodes
+                    if (lclid_link_src->link == link)
                     {
-                        //hop_back verified against the attaching-to subnet_vlsr, change source node now
-                        if ( new_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
+                        // costructing fake source links (bidirectional)
+                        Link* link_src_backward = new Link(pcen_link->link);
+                        // cutomizing link_src_backward
+                        link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
+                        PCENLink * pcen_link_src_backward = pcen_link;  // reusing the backward pcen_link
+                        pcen_link_src_backward->link_self_allocated = true;
+                        pcen_link_src_backward->link = link_src_backward;
+                        pcen_link_src_backward->rmt_end = new_pcen_source;
+                        new_pcen_source->in_links.push_back(pcen_link_src_backward);
+
+                        Link* link_src_forward = new Link(link_src_backward->Id(), link_src_backward->AdvRtId(), 
+                            link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
+                        // cutomizing link_src_forward with L2 ISCD
+                        ISCD* iscd = new ISCD;
+                        // looking for corresponding inter-domain link and copy layer-2 specific information
+                        PCENLink* link_inter = NULL;
+                        for (i = 0; i < lNum; i++)
                         {
-                            source.s_addr = new_source;
+                            if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                            {
+                                link_inter = links[i];
+                                break;
+                            }
                         }
-                        //record the found hop back link candidate
-                        hopBackInterdomainPcenLink = pcen_link;
-                    }
-                }
-                if (hopBackInterdomainPcenLink != NULL) // patten recoginized
-                {
-                    //adding two new links into the PCEN topology
-                    PCENLink* linkForward = NewTransitLink(links);
-                    PCENLink* linkHopback = NewTransitLink(links);
-                    lNum += 2;
-                    PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
-                    PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
-                    assert(nodeHead && nodeTail);
+                        if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                        {
+                            *iscd = *link_inter->link->iscds.front();
+                        }
+                        else // fake l2 info if unavailable
+                        {
+                            memset(iscd, 0, sizeof(IfSwCapDesc));
+                            iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                            iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                            for (i = 0; i < 8; i++)
+                                iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
+                        }
+                        link_src_forward->iscds.push_back(iscd);
+                        PCENLink* pcen_link_src_forward = new PCENLink(link_src_forward); //have to make new
+                        pcen_link_src_forward->link_self_allocated = true;
+                        pcen_link_src_forward->lcl_end = new_pcen_source;
+                        pcen_link_src_forward->rmt_end = pcen_link_src_backward->lcl_end;
+                        pcen_link_src_forward->reverse_link = pcen_link_src_backward;
+                        pcen_link_src_backward->reverse_link = pcen_link_src_forward;
+                        new_pcen_source->out_links.push_back(pcen_link_src_forward);
+                        pcen_link_src_backward->lcl_end->in_links.push_back(pcen_link_src_forward);
+                        lNum++;
+                        links.push_back(pcen_link_src_forward);
 
-                    // removing all links from nodeHead if it is a hop_back source
-                    if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
+                        // new source IP
+                        source.s_addr = src_lcl_id;
+                    }
+                    if (lclid_link_dest->link == link)
                     {
-                        nodeHead->out_links.clear();
-                        nodeHead->in_links.clear();
+                        // costructing fake destination links (bidirectional)
+                        Link* link_dest_forward = new Link(pcen_link->link);
+                        //cutomizing link_dest_forward
+                        link_dest_forward->rmtIfAddr = get_slash30_peer(link_dest_forward->lclIfAddr);
+                        PCENLink * pcen_link_dest_forward = pcen_link;  // reusing the forward pcen_link
+                        pcen_link_dest_forward->link_self_allocated = true;
+                        pcen_link_dest_forward->link = link_dest_forward;
+                        pcen_link_dest_forward->rmt_end = new_pcen_destination;
+                        new_pcen_destination->in_links.push_back(pcen_link_dest_forward);
+                        
+                        Link* link_dest_backward = new Link(link_dest_forward->Id(), link_dest_forward->AdvRtId(), 
+                            link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
+                        // cutomizing link_dest_backward
+                        ISCD* iscd = new ISCD;
+                        // looking for corresponding inter-domain link and copy layer-2 specific information
+                        PCENLink* link_inter = NULL;
+                        for (i = 0; i < lNum; i++)
+                        {
+                            if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                            {
+                                link_inter = links[i];
+                                break;
+                            }
+                        }
+                        if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                        {
+                            *iscd = *link_inter->link->iscds.front();
+                        }
+                        else // fake l2 info if unavailable
+                        {
+                            memset(iscd, 0, sizeof(IfSwCapDesc));
+                            iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                            iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                            for (i = 0; i < 8; i++)
+                                iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
+                        }
+                        link_dest_backward->iscds.push_back();
+                        PCENLink* pcen_link_dest_backward = new PCENLink(link_dest_backward); //have to make new
+                        pcen_link_dest_backward->link_self_allocated = true;
+                        pcen_link_dest_backward->lcl_end = new_pcen_destination;
+                        pcen_link_dest_backward->rmt_end = pcen_link_dest_forward->lcl_end;
+                        pcen_link_dest_backward->reverse_link = pcen_link_dest_forward;
+                        pcen_link_dest_forward->reverse_link = pcen_link_dest_backward;
+                        new_pcen_destination->out_links.push_back(pcen_link_dest_backward);
+                        pcen_link_dest_forward->lcl_end->in_links.push_back(pcen_link_dest_backward);
+                        lNum++;
+                        links.push_back(pcen_link_dest_backward);
+
+                        // new destination IP
+                        destination.s_addr = dest_lcl_id;
                     }
 
-                    // allocating link resource and updating link parameters for forward link
-                    assert(hopBackInterdomainPcenLink->reverse_link->link);
-                    linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
-                    linkForward->link_self_allocated = true;
-                    linkForward->link->type = RTYPE_LOC_PHY_LNK;
-                    linkForward->lcl_end = nodeHead;
-                    linkForward->rmt_end = nodeTail;
-                    nodeHead->out_links.push_back(linkForward);
-                    nodeTail->in_links.push_back(linkForward);
+                }
+                else if (hop_back != 0)  // hop-back constraint handling
+                {
+                    hopBackInterdomainPcenLink = NULL;
+                    for (i = 0; i < lNum; i++)
+                    {
+                        pcen_link = links[i];
+                        if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                        {
+                            //hop_back verified against the attaching-to subnet_vlsr, change source node now
+                            if ( hopback_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
+                            {
+                                source.s_addr = hopback_source;
+                            }
+                            //record the found hop back link candidate
+                            hopBackInterdomainPcenLink = pcen_link;
+                        }
+                    }
+                    // fake hop-back intra-domain links will be added to replace the interdomain (border) links
+                    if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                    {
+                        //adding two new links into the PCEN topology
+                        PCENLink* linkForward = NewTransitLink(links);
+                        PCENLink* linkHopback = NewTransitLink(links);
+                        lNum += 2;
+                        PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
+                        PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
+                        assert(nodeHead && nodeTail);
 
-                    // allocating link resource and updating link parameters for backward (hop back) link
-                    linkHopback->link = new Link(link);
-                    linkHopback->link_self_allocated = true;
-                    linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
-                    linkHopback->lcl_end = nodeTail;
-                    linkHopback->rmt_end = nodeHead;
-                    nodeHead->in_links.push_back(linkHopback);
-                    nodeTail->out_links.push_back(linkHopback);
+                        // removing all links from nodeHead if it is a hop_back source
+                        if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
+                        {
+                            nodeHead->out_links.clear();
+                            nodeHead->in_links.clear();
+                        }
 
-                    // assigning reverse links for the links in both directions
-                    linkHopback->reverse_link = linkForward;
-                    linkForward->reverse_link = linkHopback;
+                        // allocating link resource and updating link parameters for forward link
+                        assert(hopBackInterdomainPcenLink->reverse_link->link);
+                        linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
+                        linkForward->link_self_allocated = true;
+                        linkForward->link->type = RTYPE_LOC_PHY_LNK;
+                        linkForward->lcl_end = nodeHead;
+                        linkForward->rmt_end = nodeTail;
+                        nodeHead->out_links.push_back(linkForward);
+                        nodeTail->in_links.push_back(linkForward);
 
-                    //removing the links from the PCEN topology
-                    hopBackInterdomainPcenLink->linkID = -1;
-                    hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                        // allocating link resource and updating link parameters for backward (hop back) link
+                        linkHopback->link = new Link(link);
+                        linkHopback->link_self_allocated = true;
+                        linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
+                        linkHopback->lcl_end = nodeTail;
+                        linkHopback->rmt_end = nodeHead;
+                        nodeHead->in_links.push_back(linkHopback);
+                        nodeTail->out_links.push_back(linkHopback);
+
+                        // assigning reverse links for the links in both directions
+                        linkHopback->reverse_link = linkForward;
+                        linkForward->reverse_link = linkHopback;
+
+                        //removing the links from the PCEN topology
+                        hopBackInterdomainPcenLink->linkID = -1;
+                        hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                    }
                 }
             }
             node = tree->NextNode(node);
         }
-        
+
+        // 'jump' link construction logic...
         for (i = 0; i < lNum; i++)
         {
             pcen_link = links[i];
