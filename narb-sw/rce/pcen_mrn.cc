@@ -134,7 +134,7 @@ void PCEN_MRN::PostBuildTopology()
         return;
     }
 
-    if (is_lclid_constrained_mode && lclid_link_src && lclid_link_dest)
+    if (is_lclid_constrained_mode && (!lclid_link_src || !lclid_link_dest))
     {
         LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
         ReplyErrorCode(ERR_PCEN_INVALID_REQ);
