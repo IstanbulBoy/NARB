@@ -128,7 +128,10 @@ void PCEN_MRN::PostBuildTopology()
         Link* link = (Link*)node->Data();
 		if (link == NULL || link->Iscds().size() == 0 ||
 			(htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+		{
+	        node = tree->NextNode(node);
 			continue;
+		}
         if (link->AdvRtId() == source.s_addr
             && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
         {
