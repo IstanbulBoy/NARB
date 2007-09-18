@@ -127,7 +127,7 @@ void PCEN_MRN::PostBuildTopology()
     {
         Link* link = (Link*)node->Data();
 		if (link == NULL || link->Iscds().size() == 0 ||
-			(htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+			(htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
 		{
 	        node = tree->NextNode(node);
 			continue;
