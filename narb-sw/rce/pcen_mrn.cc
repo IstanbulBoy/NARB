@@ -214,27 +214,34 @@ void PCEN_MRN::PostBuildTopology()
                             link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
                         // cutomizing link_src_forward with L2 ISCD
                         ISCD* iscd = new ISCD;
-                        // looking for corresponding inter-domain link and copy layer-2 specific information
-                        PCENLink* link_inter = NULL;
-                        for (i = 0; i < lNum; i++)
+
+                        if (link_src_backward->Iacds().size() == 2)
                         {
-                            if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                            *iscd = *link_src_backward->iscds.back();  
+                        }
+                        else   // looking for corresponding inter-domain link and copy layer-2 specific information
+                        {
+                            PCENLink* link_inter = NULL;
+                            for (i = 0; i < lNum; i++)
                             {
-                                link_inter = links[i];
-                                break;
+                                if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                                {
+                                    link_inter = links[i];
+                                    break;
+                                }
                             }
-                        }
-                        if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
-                        {
-                            *iscd = *link_inter->link->iscds.front();
-                        }
-                        else // fake l2 info if unavailable
-                        {
-                            memset(iscd, 0, sizeof(IfSwCapDesc));
-                            iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
-                            iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
-                            for (i = 0; i < 8; i++)
-                                iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
+                            if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                            {
+                                *iscd = *link_inter->link->iscds.front();
+                            }
+                            else // fake l2 info if unavailable
+                            {
+                                memset(iscd, 0, sizeof(IfSwCapDesc));
+                                iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                                iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                                for (i = 0; i < 8; i++)
+                                    iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
+                            }
                         }
                         link_src_forward->iscds.push_back(iscd);
                         PCENLink* pcen_link_src_forward = new PCENLink(link_src_forward); //have to make new
@@ -267,27 +274,33 @@ void PCEN_MRN::PostBuildTopology()
                             link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
                         // cutomizing link_dest_backward
                         ISCD* iscd = new ISCD;
-                        // looking for corresponding inter-domain link and copy layer-2 specific information
-                        PCENLink* link_inter = NULL;
-                        for (i = 0; i < lNum; i++)
+                        if (link_dest_forward->Iacds().size() == 2)
                         {
-                            if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                            *iscd = *link_dest_forward->iscds.back();  
+                        }
+                        else // looking for corresponding inter-domain link and copy layer-2 specific information
+                        {
+                            PCENLink* link_inter = NULL;
+                            for (i = 0; i < lNum; i++)
                             {
-                                link_inter = links[i];
-                                break;
+                                if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                                {
+                                    link_inter = links[i];
+                                    break;
+                                }
                             }
-                        }
-                        if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
-                        {
-                            *iscd = *link_inter->link->iscds.front();
-                        }
-                        else // fake l2 info if unavailable
-                        {
-                            memset(iscd, 0, sizeof(IfSwCapDesc));
-                            iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
-                            iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
-                            for (i = 0; i < 8; i++)
-                                iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
+                            if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                            {
+                                *iscd = *link_inter->link->iscds.front();
+                            }
+                            else // fake l2 info if unavailable
+                            {
+                                memset(iscd, 0, sizeof(IfSwCapDesc));
+                                iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                                iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                                for (i = 0; i < 8; i++)
+                                    iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
+                            }
                         }
                         link_dest_backward->iscds.push_back();
                         PCENLink* pcen_link_dest_backward = new PCENLink(link_dest_backward); //have to make new
