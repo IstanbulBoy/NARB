@@ -85,7 +85,7 @@ void PCEN_MRN::PostBuildTopology()
         pcen_node->tspec.Bandwidth = bandwidth_ingress;
     }
 
-    //Init reverseLink and local-id links
+    //Init reverseLink and verify hopback
     for (i = 0; i < lNum; i++)
     {
         pcen_link = links[i];
@@ -95,20 +95,6 @@ void PCEN_MRN::PostBuildTopology()
         if (hop_back != 0 && pcen_link->link->LclIfAddr() == hop_back && pcen_link->link->AdvRtId() == source.s_addr)
         {
             hop_back_attaching_to_source_verified = true;
-        }
-
-        if (is_lclid_constrained_mode && pcen_link->link->Iscds().size() > 0
-            && htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) == IFSWCAP_SPECIFIC_SUBNET_UNI
-            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
-        {
-            lclid_link_src = pcen_link;
-        }
-
-        if (is_lclid_constrained_mode && pcen_link->link->Iscds().size() > 0
-            && htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) == IFSWCAP_SPECIFIC_SUBNET_UNI
-            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
-        {
-            lclid_link_dest = pcen_link;
         }
 
         pcen_node = pcen_link->rmt_end;
@@ -134,13 +120,62 @@ void PCEN_MRN::PostBuildTopology()
         return;
     }
 
-    if (is_lclid_constrained_mode && (!lclid_link_src || !lclid_link_dest))
+	// obtaining and verifying lclid_link_src and lclid_link_dest
+    RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    node = tree->Root();
+    while (is_lclid_constrained_mode && node)
     {
-        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
-        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-        return;
-    }
+        Link* link = (Link*)node->Data();
+		if (link == NULL || link->Iscds().size() == 0 ||
+			(htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+			continue;
+        if (link->AdvRtId() == source.s_addr
+            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+        {
+        	link = new Link(link);
+            lclid_link_src = new PCENLink(link);
+			lclid_link_src->link_self_allocated = true;
+        }
 
+        if (link->AdvRtId() == destination.s_addr
+            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+        {
+        	link = new Link(link);
+            lclid_link_dest = new PCENLink(link);
+			lclid_link_dest->link_self_allocated = true;
+        }
+	}
+    if (is_lclid_constrained_mode)
+   	{
+		// adding the lclid links into topology
+		if (lclid_link_src && lclid_link_src->link && lclid_link_dest && lclid_link_dest->link)
+		{
+			links.push_back(lclid_link_src);
+			links.push_back(lclid_link_dest);
+			lNum += 2;
+			for (i = 0; i < rNum; i++)
+			{
+				pcen_node = routers[i];
+				if (pcen_node->router && pcen_node->router->Id() == lclid_link_src->link->AdvRtId())
+				{
+					pcen_node->out_links.push_back(lclid_link_src);
+					lclid_link_src->lcl_end = pcen_node;
+				}
+				if (pcen_node->router && pcen_node->router->Id() == lclid_link_dest->link->AdvRtId())
+				{
+					pcen_node->out_links.push_back(lclid_link_dest);
+					lclid_link_dest->lcl_end = pcen_node;
+				}
+			}
+		}
+		else
+	    {
+	        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
+	        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+	        return;
+	    }
+   	}
+	
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
     if (SystemConfig::should_incorporate_subnet)
     {
@@ -186,8 +221,8 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
 
-        RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
-        RadixNode<Resource>* node = tree->Root();
+		tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+        node = tree->Root();
         while (node)
         {
             Link* link = (Link*)node->Data();
