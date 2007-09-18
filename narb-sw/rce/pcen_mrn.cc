@@ -144,6 +144,8 @@ void PCEN_MRN::PostBuildTopology()
             lclid_link_dest = new PCENLink(link);
 			lclid_link_dest->link_self_allocated = true;
         }
+
+        node = tree->NextNode(node);
 	}
     if (is_lclid_constrained_mode)
    	{
