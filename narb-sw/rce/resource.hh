@@ -370,9 +370,9 @@ public:
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId) {Init();}
     Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId) {Init();}
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf):
-        Resource(type_val, domain, advRt, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf) {Init();}
+        Resource(type_val, domain, advRt, lnkId) {Init(); lclIfAddr = lclIf; rmtIfAddr = rmtIf; }
     Link(u_int32_t advRtId, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf): 
-        Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf)  {Init();}
+        Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId)  {Init(); lclIfAddr = lclIf; rmtIfAddr = rmtIf; }
     Link(Link* link);
     void Init()  
         { 

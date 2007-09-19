@@ -204,8 +204,9 @@ void PCEN_MRN::PostBuildTopology()
             PCENLink * pcen_link_src_backward = lclid_link_src;  // reusing the backward pcen_link
             Link* link_src_backward = pcen_link_src_backward->link;
             // cutomizing link_src_backward
-            pcen_link_src_backward->rmt_end = new_pcen_source;
+            link_src_backward->id = new_pcen_source->router->id;
             link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
+            pcen_link_src_backward->rmt_end = new_pcen_source;
             //pcen_link_src_backward->link_self_allocated = true;
             new_pcen_source->in_links.push_back(pcen_link_src_backward);
             // costructing fake source link (reverse direction)
@@ -278,6 +279,7 @@ void PCEN_MRN::PostBuildTopology()
             PCENLink * pcen_link_dest_forward = lclid_link_dest;  // reusing the forward pcen_link
             Link* link_dest_forward = pcen_link_dest_forward->link;
             //cutomizing link_dest_forward
+            link_dest_forward->id = new_pcen_destination->router->id;
             link_dest_forward->rmtIfAddr = get_slash30_peer(link_dest_forward->lclIfAddr);
             pcen_link_dest_forward->rmt_end = new_pcen_destination;
             //pcen_link_dest_forward->link_self_allocated = true;
