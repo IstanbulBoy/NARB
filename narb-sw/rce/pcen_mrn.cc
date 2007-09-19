@@ -155,7 +155,9 @@ void PCEN_MRN::PostBuildTopology()
         // adding the lclid links into topology
         if (lclid_link_src && lclid_link_src->link && lclid_link_dest && lclid_link_dest->link)
         {
+            lclid_link_src->linkID = links.back()->linkID+1;
             links.push_back(lclid_link_src);
+            lclid_link_dest->linkID = links.back()->linkID+1;
             links.push_back(lclid_link_dest);
             lNum += 2;
             for (i = 0; i < rNum; i++) 
@@ -226,7 +228,7 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
 
-		tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+        tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
         node = tree->Root();
         while (node)
         {
@@ -292,8 +294,9 @@ void PCEN_MRN::PostBuildTopology()
                         pcen_link_src_backward->reverse_link = pcen_link_src_forward;
                         new_pcen_source->out_links.push_back(pcen_link_src_forward);
                         pcen_link_src_backward->lcl_end->in_links.push_back(pcen_link_src_forward);
-                        lNum++;
+                        pcen_link_src_forward->linkID = links.back()->linkID+1;
                         links.push_back(pcen_link_src_forward);
+                        lNum++;
 
                         // new source IP
                         source.s_addr = src_lcl_id;
@@ -351,8 +354,9 @@ void PCEN_MRN::PostBuildTopology()
                         pcen_link_dest_forward->reverse_link = pcen_link_dest_backward;
                         new_pcen_destination->out_links.push_back(pcen_link_dest_backward);
                         pcen_link_dest_forward->lcl_end->in_links.push_back(pcen_link_dest_backward);
-                        lNum++;
+                        pcen_link_dest_backward->linkID = links.back()->linkID+1;
                         links.push_back(pcen_link_dest_backward);
+                        lNum++;
 
                         // new destination IP
                         destination.s_addr = dest_lcl_id;
@@ -528,16 +532,16 @@ void PCEN_MRN::PostBuildTopology()
             pcen_link = links[i];
             if ( pcen_link->linkID == -1 )
             {
-		pcen_link->lcl_end->out_links.remove(pcen_link);
-		pcen_link->rmt_end->in_links.remove(pcen_link);
-		links.erase(links.begin()+i);
-		delete pcen_link; // ?
-		if (i == links.size())
-		    break;
-		else
-		    i--;
+               pcen_link->lcl_end->out_links.remove(pcen_link);
+               pcen_link->rmt_end->in_links.remove(pcen_link);
+               links.erase(links.begin()+i);
+               delete pcen_link; // ?
+               if (i == links.size())
+                   break;
+               else
+                   i--;
             }
-	}
+        }
     }
 
 }
