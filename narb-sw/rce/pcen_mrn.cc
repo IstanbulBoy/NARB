@@ -120,28 +120,28 @@ void PCEN_MRN::PostBuildTopology()
         return;
     }
 
-	// obtaining and verifying lclid_link_src and lclid_link_dest
+    // obtaining and verifying lclid_link_src and lclid_link_dest
     RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
     node = tree->Root();
     while (is_lclid_constrained_mode && node)
     {
         Link* link = (Link*)node->Data();
-	if (link == NULL || link->Iscds().size() == 0 ||
-	    (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
-	{
-	        node = tree->NextNode(node);
-		continue;
-	}
+        if (link == NULL || link->Iscds().size() == 0 ||
+           (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+        {
+            node = tree->NextNode(node);
+            continue;
+        }
         if (link->AdvRtId() == source.s_addr
-            && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+             && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
         {
             link = new Link(link);
             lclid_link_src = new PCENLink(link);
             lclid_link_src->link_self_allocated = true;
         }
-
+ 
         if (link->AdvRtId() == destination.s_addr
-            && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+             && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
         {
             link = new Link(link);
             lclid_link_dest = new PCENLink(link);
@@ -195,7 +195,7 @@ void PCEN_MRN::PostBuildTopology()
         {
             // costructing fake source and destination nodes for local-ids
             // the newly constructed source edge node use source local-id as router id
-            RouterId* new_router = new RouterId(src_lcl_id); 
+            RouterId* new_router = new RouterId(source.s_addr+src_lcl_id); 
             new_pcen_source = new PCENNode(new_router);
             new_pcen_source->router_self_allocated = true;
             routers.push_back(new_pcen_source);
@@ -212,24 +212,34 @@ void PCEN_MRN::PostBuildTopology()
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
             ISCD* iscd = new ISCD;
-            if (link_src_backward->Iacds().size() == 2)
+            if (link_src_backward->Iscds().size() == 2)
             {
                 *iscd = *link_src_backward->iscds.back();  
             }
             else   // looking for corresponding inter-domain link and copy layer-2 specific information
             {
-                PCENLink* link_inter = NULL;
-                for (i = 0; i < lNum; i++)
+                Link* link_inter = NULL;
+                tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
+                node = tree->Root();
+                while (node)
                 {
-                    if (links[i]->link->rmtIfAddr == link_src_forward->rmtIfAddr && links[i]->reverse_link != NULL && links[i]->link->type == RTYPE_GLO_ABS_LNK)
+                    Link* link = (Link*)node->Data();
+                    if (link == NULL || link->Iscds().size() == 0 || link->Iscds().front()->swtype != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                       || (htons(link->Iscds().front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
                     {
-                        link_inter = links[i];
+                        node = tree->NextNode(node);
+                        continue;
+                    }
+                    if (link->lclIfAddr == link_src_backward->lclIfAddr)
+                    {
+                        link_inter = link;
                         break;
                     }
+                    node = tree->NextNode(node);
                 }
-                if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                if (link_inter != NULL)
                 {
-                    *iscd = *link_inter->link->iscds.front();
+                    *iscd = *link_inter->iscds.front();
                 }
                 else // fake l2 info if unavailable
                 {
@@ -258,7 +268,7 @@ void PCEN_MRN::PostBuildTopology()
             //////////////////////////////////////////////////
             
             // the newly constructed destination edge node use destination local-id as router id
-            new_router = new RouterId(dest_lcl_id);
+            new_router = new RouterId(destination.s_addr+dest_lcl_id);
             new_pcen_destination = new PCENNode(new_router);
             new_pcen_destination->router_self_allocated = true;
             routers.push_back(new_pcen_destination);
@@ -275,24 +285,34 @@ void PCEN_MRN::PostBuildTopology()
                 link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
             // cutomizing link_dest_backward
             iscd = new ISCD;
-            if (link_dest_forward->Iacds().size() == 2)
+            if (link_dest_forward->Iscds().size() == 2)
             {
                 *iscd = *link_dest_forward->iscds.back();  
             }
             else // looking for corresponding inter-domain link and copy layer-2 specific information
             {
-                PCENLink* link_inter = NULL;
-                for (i = 0; i < lNum; i++)
+                Link* link_inter = NULL;
+                tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
+                node = tree->Root();
+                while (node)
                 {
-                    if (links[i]->link->rmtIfAddr == link_dest_forward->rmtIfAddr && links[i]->reverse_link != NULL && links[i]->link->type == RTYPE_GLO_ABS_LNK)
+                    Link* link = (Link*)node->Data();
+                    if (link == NULL || link->Iscds().size() == 0 || link->Iscds().front()->swtype != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                       || (htons(link->Iscds().front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
                     {
-                        link_inter = links[i];
+                        node = tree->NextNode(node);
+                        continue;
+                    }
+                    if (link->lclIfAddr == link_dest_forward->lclIfAddr)
+                    {
+                        link_inter = link;
                         break;
                     }
+                    node = tree->NextNode(node);
                 }
-                if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                if (link_inter != NULL)
                 {
-                    *iscd = *link_inter->link->iscds.front();
+                    *iscd = *link_inter->iscds.front();
                 }
                 else // fake l2 info if unavailable
                 {
