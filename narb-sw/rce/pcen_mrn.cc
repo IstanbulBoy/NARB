@@ -198,6 +198,7 @@ void PCEN_MRN::PostBuildTopology()
             RouterId* new_router = new RouterId(source.s_addr+src_lcl_id); 
             new_pcen_source = new PCENNode(new_router);
             new_pcen_source->router_self_allocated = true;
+            new_pcen_source->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
             routers.push_back(new_pcen_source);
             rNum++;
             PCENLink * pcen_link_src_backward = lclid_link_src;  // reusing the backward pcen_link
@@ -270,6 +271,7 @@ void PCEN_MRN::PostBuildTopology()
             // the newly constructed destination edge node use destination local-id as router id
             new_router = new RouterId(destination.s_addr+dest_lcl_id);
             new_pcen_destination = new PCENNode(new_router);
+            new_pcen_destination->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
             new_pcen_destination->router_self_allocated = true;
             routers.push_back(new_pcen_destination);
             rNum++;
