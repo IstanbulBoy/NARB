@@ -263,7 +263,7 @@ void PCEN_MRN::PostBuildTopology()
             links.push_back(pcen_link_src_forward);
             lNum++;
             // new source IP
-            source.s_addr = src_lcl_id;
+            source.s_addr = source.s_addr+src_lcl_id;
 
             //////////////////////////////////////////////////
             
@@ -336,7 +336,7 @@ void PCEN_MRN::PostBuildTopology()
             links.push_back(pcen_link_dest_backward);
             lNum++;
             // new destination IP
-            destination.s_addr = dest_lcl_id;
+            destination.s_addr = destination.s_addr+dest_lcl_id;
         }
         else if (hop_back != 0) //  special handling for hop back
         {
