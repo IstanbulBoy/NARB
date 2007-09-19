@@ -126,60 +126,60 @@ void PCEN_MRN::PostBuildTopology()
     while (is_lclid_constrained_mode && node)
     {
         Link* link = (Link*)node->Data();
-		if (link == NULL || link->Iscds().size() == 0 ||
-			(htons(pcen_link->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
-		{
+	if (link == NULL || link->Iscds().size() == 0 ||
+	    (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+	{
 	        node = tree->NextNode(node);
-			continue;
-		}
+		continue;
+	}
         if (link->AdvRtId() == source.s_addr
-            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+            && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
         {
-        	link = new Link(link);
+            link = new Link(link);
             lclid_link_src = new PCENLink(link);
-			lclid_link_src->link_self_allocated = true;
+            lclid_link_src->link_self_allocated = true;
         }
 
         if (link->AdvRtId() == destination.s_addr
-            && pcen_link->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+            && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
         {
-        	link = new Link(link);
+            link = new Link(link);
             lclid_link_dest = new PCENLink(link);
-			lclid_link_dest->link_self_allocated = true;
+            lclid_link_dest->link_self_allocated = true;
         }
 
         node = tree->NextNode(node);
-	}
+    }
     if (is_lclid_constrained_mode)
-   	{
-		// adding the lclid links into topology
-		if (lclid_link_src && lclid_link_src->link && lclid_link_dest && lclid_link_dest->link)
-		{
-			links.push_back(lclid_link_src);
-			links.push_back(lclid_link_dest);
-			lNum += 2;
-			for (i = 0; i < rNum; i++)
-			{
-				pcen_node = routers[i];
-				if (pcen_node->router && pcen_node->router->Id() == lclid_link_src->link->AdvRtId())
-				{
-					pcen_node->out_links.push_back(lclid_link_src);
-					lclid_link_src->lcl_end = pcen_node;
-				}
-				if (pcen_node->router && pcen_node->router->Id() == lclid_link_dest->link->AdvRtId())
-				{
-					pcen_node->out_links.push_back(lclid_link_dest);
-					lclid_link_dest->lcl_end = pcen_node;
-				}
-			}
-		}
-		else
-	    {
-	        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
-	        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-	        return;
-	    }
-   	}
+    {
+        // adding the lclid links into topology
+        if (lclid_link_src && lclid_link_src->link && lclid_link_dest && lclid_link_dest->link)
+        {
+            links.push_back(lclid_link_src);
+            links.push_back(lclid_link_dest);
+            lNum += 2;
+            for (i = 0; i < rNum; i++) 
+            {
+                pcen_node = routers[i];
+                if (pcen_node->router && pcen_node->router->Id() == lclid_link_src->link->AdvRtId())
+                {
+                    pcen_node->out_links.push_back(lclid_link_src);
+                    lclid_link_src->lcl_end = pcen_node;
+                }
+                if (pcen_node->router && pcen_node->router->Id() == lclid_link_dest->link->AdvRtId())
+                {
+                    pcen_node->out_links.push_back(lclid_link_dest);
+                    lclid_link_dest->lcl_end = pcen_node;
+                }
+            }
+        }
+        else
+	{
+	    LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
+	    ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+	    return;
+	}
+    }
 	
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
     if (SystemConfig::should_incorporate_subnet)
