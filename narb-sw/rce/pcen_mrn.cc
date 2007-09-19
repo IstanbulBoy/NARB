@@ -1035,6 +1035,19 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
     if (ero_track.size() == 0)
         return;
 
+    // removing ero_subojs from constructed src/dest local-id links
+    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID &&  (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        if (ero_track.front().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+            ero_track.pop_front();
+        if (ero_track.size() == 0)
+            return;
+        if (ero_track.back().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+            ero_track.pop_back();
+        if (ero_track.size() == 0)
+            return;
+    }
+
     list<ero_subobj>::iterator iter = ero_track.begin();
     list<ero_subobj>::iterator uni_src = ero_track.end();
     list<ero_subobj>::iterator uni_dest = ero_track.end();
