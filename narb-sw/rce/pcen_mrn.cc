@@ -200,21 +200,18 @@ void PCEN_MRN::PostBuildTopology()
             new_pcen_source->router_self_allocated = true;
             routers.push_back(new_pcen_source);
             rNum++;
-            // costructing fake source links (bidirectional)
-            Link* link_src_backward = new Link(pcen_link->link);
+            PCENLink * pcen_link_src_backward = lclid_link_src;  // reusing the backward pcen_link
+            Link* link_src_backward = pcen_link_src_backward->link;
             // cutomizing link_src_backward
-            link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
-            PCENLink * pcen_link_src_backward = pcen_link;  // reusing the backward pcen_link
-            pcen_link_src_backward->link_self_allocated = true;
-            pcen_link_src_backward->link = link_src_backward;
             pcen_link_src_backward->rmt_end = new_pcen_source;
+            link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
+            //pcen_link_src_backward->link_self_allocated = true;
             new_pcen_source->in_links.push_back(pcen_link_src_backward);
-
+            // costructing fake source link (reverse direction)
             Link* link_src_forward = new Link(link_src_backward->Id(), link_src_backward->AdvRtId(), 
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
             ISCD* iscd = new ISCD;
-
             if (link_src_backward->Iacds().size() == 2)
             {
                 *iscd = *link_src_backward->iscds.back();  
@@ -224,7 +221,7 @@ void PCEN_MRN::PostBuildTopology()
                 PCENLink* link_inter = NULL;
                 for (i = 0; i < lNum; i++)
                 {
-                    if (links[i]->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    if (links[i]->link->rmtIfAddr == link_src_forward->rmtIfAddr && links[i]->reverse_link != NULL && links[i]->link->type == RTYPE_GLO_ABS_LNK)
                     {
                         link_inter = links[i];
                         break;
@@ -266,16 +263,14 @@ void PCEN_MRN::PostBuildTopology()
             new_pcen_destination->router_self_allocated = true;
             routers.push_back(new_pcen_destination);
             rNum++;
-            // costructing fake destination links (bidirectional)
-            Link* link_dest_forward = new Link(pcen_link->link);
+            PCENLink * pcen_link_dest_forward = lclid_link_dest;  // reusing the forward pcen_link
+            Link* link_dest_forward = pcen_link_dest_forward->link;
             //cutomizing link_dest_forward
             link_dest_forward->rmtIfAddr = get_slash30_peer(link_dest_forward->lclIfAddr);
-            PCENLink * pcen_link_dest_forward = pcen_link;  // reusing the forward pcen_link
-            pcen_link_dest_forward->link_self_allocated = true;
-            pcen_link_dest_forward->link = link_dest_forward;
             pcen_link_dest_forward->rmt_end = new_pcen_destination;
+            //pcen_link_dest_forward->link_self_allocated = true;
             new_pcen_destination->in_links.push_back(pcen_link_dest_forward);
-            
+            // costructing fake destination link (reverse direction)            
             Link* link_dest_backward = new Link(link_dest_forward->Id(), link_dest_forward->AdvRtId(), 
                 link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
             // cutomizing link_dest_backward
@@ -289,7 +284,7 @@ void PCEN_MRN::PostBuildTopology()
                 PCENLink* link_inter = NULL;
                 for (i = 0; i < lNum; i++)
                 {
-                    if (links[i]->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    if (links[i]->link->rmtIfAddr == link_dest_forward->rmtIfAddr && links[i]->reverse_link != NULL && links[i]->link->type == RTYPE_GLO_ABS_LNK)
                     {
                         link_inter = links[i];
                         break;
