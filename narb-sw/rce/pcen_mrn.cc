@@ -200,12 +200,128 @@ void PCEN_MRN::PostBuildTopology()
             new_pcen_source->router_self_allocated = true;
             routers.push_back(new_pcen_source);
             rNum++;
+            // costructing fake source links (bidirectional)
+            Link* link_src_backward = new Link(pcen_link->link);
+            // cutomizing link_src_backward
+            link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
+            PCENLink * pcen_link_src_backward = pcen_link;  // reusing the backward pcen_link
+            pcen_link_src_backward->link_self_allocated = true;
+            pcen_link_src_backward->link = link_src_backward;
+            pcen_link_src_backward->rmt_end = new_pcen_source;
+            new_pcen_source->in_links.push_back(pcen_link_src_backward);
+
+            Link* link_src_forward = new Link(link_src_backward->Id(), link_src_backward->AdvRtId(), 
+                link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
+            // cutomizing link_src_forward with L2 ISCD
+            ISCD* iscd = new ISCD;
+
+            if (link_src_backward->Iacds().size() == 2)
+            {
+                *iscd = *link_src_backward->iscds.back();  
+            }
+            else   // looking for corresponding inter-domain link and copy layer-2 specific information
+            {
+                PCENLink* link_inter = NULL;
+                for (i = 0; i < lNum; i++)
+                {
+                    if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    {
+                        link_inter = links[i];
+                        break;
+                    }
+                }
+                if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                {
+                    *iscd = *link_inter->link->iscds.front();
+                }
+                else // fake l2 info if unavailable
+                {
+                    memset(iscd, 0, sizeof(IfSwCapDesc));
+                    iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                    iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                    for (i = 0; i < 8; i++)
+                        iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
+                }
+            }
+            link_src_forward->iscds.push_back(iscd);
+            PCENLink* pcen_link_src_forward = new PCENLink(link_src_forward); //have to make new
+            pcen_link_src_forward->link_self_allocated = true;
+            pcen_link_src_forward->lcl_end = new_pcen_source;
+            pcen_link_src_forward->rmt_end = pcen_link_src_backward->lcl_end;
+            pcen_link_src_forward->reverse_link = pcen_link_src_backward;
+            pcen_link_src_backward->reverse_link = pcen_link_src_forward;
+            new_pcen_source->out_links.push_back(pcen_link_src_forward);
+            pcen_link_src_backward->lcl_end->in_links.push_back(pcen_link_src_forward);
+            pcen_link_src_forward->linkID = links.back()->linkID+1;
+            links.push_back(pcen_link_src_forward);
+            lNum++;
+            // new source IP
+            source.s_addr = src_lcl_id;
+
+            //////////////////////////////////////////////////
+            
             // the newly constructed destination edge node use destination local-id as router id
             new_router = new RouterId(dest_lcl_id);
             new_pcen_destination = new PCENNode(new_router);
             new_pcen_destination->router_self_allocated = true;
             routers.push_back(new_pcen_destination);
             rNum++;
+            // costructing fake destination links (bidirectional)
+            Link* link_dest_forward = new Link(pcen_link->link);
+            //cutomizing link_dest_forward
+            link_dest_forward->rmtIfAddr = get_slash30_peer(link_dest_forward->lclIfAddr);
+            PCENLink * pcen_link_dest_forward = pcen_link;  // reusing the forward pcen_link
+            pcen_link_dest_forward->link_self_allocated = true;
+            pcen_link_dest_forward->link = link_dest_forward;
+            pcen_link_dest_forward->rmt_end = new_pcen_destination;
+            new_pcen_destination->in_links.push_back(pcen_link_dest_forward);
+            
+            Link* link_dest_backward = new Link(link_dest_forward->Id(), link_dest_forward->AdvRtId(), 
+                link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
+            // cutomizing link_dest_backward
+            iscd = new ISCD;
+            if (link_dest_forward->Iacds().size() == 2)
+            {
+                *iscd = *link_dest_forward->iscds.back();  
+            }
+            else // looking for corresponding inter-domain link and copy layer-2 specific information
+            {
+                PCENLink* link_inter = NULL;
+                for (i = 0; i < lNum; i++)
+                {
+                    if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    {
+                        link_inter = links[i];
+                        break;
+                    }
+                }
+                if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
+                {
+                    *iscd = *link_inter->link->iscds.front();
+                }
+                else // fake l2 info if unavailable
+                {
+                    memset(iscd, 0, sizeof(IfSwCapDesc));
+                    iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
+                    iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                    for (i = 0; i < 8; i++)
+                        iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
+                }
+            }
+            link_dest_backward->iscds.push_back(iscd);
+            PCENLink* pcen_link_dest_backward = new PCENLink(link_dest_backward); //have to make new
+            pcen_link_dest_backward->link_self_allocated = true;
+            pcen_link_dest_backward->lcl_end = new_pcen_destination;
+            pcen_link_dest_backward->rmt_end = pcen_link_dest_forward->lcl_end;
+            pcen_link_dest_backward->reverse_link = pcen_link_dest_forward;
+            pcen_link_dest_forward->reverse_link = pcen_link_dest_backward;
+            new_pcen_destination->out_links.push_back(pcen_link_dest_backward);
+            pcen_link_dest_forward->lcl_end->in_links.push_back(pcen_link_dest_backward);
+            pcen_link_dest_backward->linkID = links.back()->linkID+1;
+            links.push_back(pcen_link_dest_backward);
+            lNum++;
+            // new destination IP
+            destination.s_addr = dest_lcl_id;
         }
         else if (hop_back != 0) //  special handling for hop back
         {
@@ -226,145 +342,16 @@ void PCEN_MRN::PostBuildTopology()
             {
                 LOGF("Note: PCEN_MRN::PostBuildTopology did not change source address based on the hop_back interface 0x%x\n", hop_back);
             }
-        }
 
-        tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
-        node = tree->Root();
-        while (node)
-        {
-            Link* link = (Link*)node->Data();
-            if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
-                && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
-                && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
-            { // if found an intra-domain subnet edge link
-                if (is_lclid_constrained_mode) //local-id constraint handling
-                {
-                    // Attaching local-id nodes
-                    if (lclid_link_src->link == link)
-                    {
-                        // costructing fake source links (bidirectional)
-                        Link* link_src_backward = new Link(pcen_link->link);
-                        // cutomizing link_src_backward
-                        link_src_backward->rmtIfAddr = get_slash30_peer(link_src_backward->lclIfAddr);
-                        PCENLink * pcen_link_src_backward = pcen_link;  // reusing the backward pcen_link
-                        pcen_link_src_backward->link_self_allocated = true;
-                        pcen_link_src_backward->link = link_src_backward;
-                        pcen_link_src_backward->rmt_end = new_pcen_source;
-                        new_pcen_source->in_links.push_back(pcen_link_src_backward);
-
-                        Link* link_src_forward = new Link(link_src_backward->Id(), link_src_backward->AdvRtId(), 
-                            link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
-                        // cutomizing link_src_forward with L2 ISCD
-                        ISCD* iscd = new ISCD;
-
-                        if (link_src_backward->Iacds().size() == 2)
-                        {
-                            *iscd = *link_src_backward->iscds.back();  
-                        }
-                        else   // looking for corresponding inter-domain link and copy layer-2 specific information
-                        {
-                            PCENLink* link_inter = NULL;
-                            for (i = 0; i < lNum; i++)
-                            {
-                                if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
-                                {
-                                    link_inter = links[i];
-                                    break;
-                                }
-                            }
-                            if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
-                            {
-                                *iscd = *link_inter->link->iscds.front();
-                            }
-                            else // fake l2 info if unavailable
-                            {
-                                memset(iscd, 0, sizeof(IfSwCapDesc));
-                                iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
-                                iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
-                                for (i = 0; i < 8; i++)
-                                    iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
-                            }
-                        }
-                        link_src_forward->iscds.push_back(iscd);
-                        PCENLink* pcen_link_src_forward = new PCENLink(link_src_forward); //have to make new
-                        pcen_link_src_forward->link_self_allocated = true;
-                        pcen_link_src_forward->lcl_end = new_pcen_source;
-                        pcen_link_src_forward->rmt_end = pcen_link_src_backward->lcl_end;
-                        pcen_link_src_forward->reverse_link = pcen_link_src_backward;
-                        pcen_link_src_backward->reverse_link = pcen_link_src_forward;
-                        new_pcen_source->out_links.push_back(pcen_link_src_forward);
-                        pcen_link_src_backward->lcl_end->in_links.push_back(pcen_link_src_forward);
-                        pcen_link_src_forward->linkID = links.back()->linkID+1;
-                        links.push_back(pcen_link_src_forward);
-                        lNum++;
-
-                        // new source IP
-                        source.s_addr = src_lcl_id;
-                    }
-                    if (lclid_link_dest->link == link)
-                    {
-                        // costructing fake destination links (bidirectional)
-                        Link* link_dest_forward = new Link(pcen_link->link);
-                        //cutomizing link_dest_forward
-                        link_dest_forward->rmtIfAddr = get_slash30_peer(link_dest_forward->lclIfAddr);
-                        PCENLink * pcen_link_dest_forward = pcen_link;  // reusing the forward pcen_link
-                        pcen_link_dest_forward->link_self_allocated = true;
-                        pcen_link_dest_forward->link = link_dest_forward;
-                        pcen_link_dest_forward->rmt_end = new_pcen_destination;
-                        new_pcen_destination->in_links.push_back(pcen_link_dest_forward);
-                        
-                        Link* link_dest_backward = new Link(link_dest_forward->Id(), link_dest_forward->AdvRtId(), 
-                            link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
-                        // cutomizing link_dest_backward
-                        ISCD* iscd = new ISCD;
-                        if (link_dest_forward->Iacds().size() == 2)
-                        {
-                            *iscd = *link_dest_forward->iscds.back();  
-                        }
-                        else // looking for corresponding inter-domain link and copy layer-2 specific information
-                        {
-                            PCENLink* link_inter = NULL;
-                            for (i = 0; i < lNum; i++)
-                            {
-                                if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
-                                {
-                                    link_inter = links[i];
-                                    break;
-                                }
-                            }
-                            if (link_inter != NULL && link_inter->link->Iscds().size()  > 0)
-                            {
-                                *iscd = *link_inter->link->iscds.front();
-                            }
-                            else // fake l2 info if unavailable
-                            {
-                                memset(iscd, 0, sizeof(IfSwCapDesc));
-                                iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
-                                iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
-                                for (i = 0; i < 8; i++)
-                                    iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
-                            }
-                        }
-                        link_dest_backward->iscds.push_back(iscd);
-                        PCENLink* pcen_link_dest_backward = new PCENLink(link_dest_backward); //have to make new
-                        pcen_link_dest_backward->link_self_allocated = true;
-                        pcen_link_dest_backward->lcl_end = new_pcen_destination;
-                        pcen_link_dest_backward->rmt_end = pcen_link_dest_forward->lcl_end;
-                        pcen_link_dest_backward->reverse_link = pcen_link_dest_forward;
-                        pcen_link_dest_forward->reverse_link = pcen_link_dest_backward;
-                        new_pcen_destination->out_links.push_back(pcen_link_dest_backward);
-                        pcen_link_dest_forward->lcl_end->in_links.push_back(pcen_link_dest_backward);
-                        pcen_link_dest_backward->linkID = links.back()->linkID+1;
-                        links.push_back(pcen_link_dest_backward);
-                        lNum++;
-
-                        // new destination IP
-                        destination.s_addr = dest_lcl_id;
-                    }
-
-                }
-                else if (hop_back != 0)  // hop-back constraint handling
-                {
+            tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+            node = tree->Root();
+            while (node)
+            {
+                Link* link = (Link*)node->Data();
+                if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
+                    && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
+                    && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                { // if found an intra-domain subnet edge link
                     hopBackInterdomainPcenLink = NULL;
                     for (i = 0; i < lNum; i++)
                     {
@@ -390,14 +377,14 @@ void PCEN_MRN::PostBuildTopology()
                         PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
                         PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
                         assert(nodeHead && nodeTail);
-
+            
                         // removing all links from nodeHead if it is a hop_back source
                         if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
                         {
                             nodeHead->out_links.clear();
                             nodeHead->in_links.clear();
                         }
-
+            
                         // allocating link resource and updating link parameters for forward link
                         assert(hopBackInterdomainPcenLink->reverse_link->link);
                         linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
@@ -407,7 +394,7 @@ void PCEN_MRN::PostBuildTopology()
                         linkForward->rmt_end = nodeTail;
                         nodeHead->out_links.push_back(linkForward);
                         nodeTail->in_links.push_back(linkForward);
-
+            
                         // allocating link resource and updating link parameters for backward (hop back) link
                         linkHopback->link = new Link(link);
                         linkHopback->link_self_allocated = true;
@@ -416,18 +403,18 @@ void PCEN_MRN::PostBuildTopology()
                         linkHopback->rmt_end = nodeHead;
                         nodeHead->in_links.push_back(linkHopback);
                         nodeTail->out_links.push_back(linkHopback);
-
+            
                         // assigning reverse links for the links in both directions
                         linkHopback->reverse_link = linkForward;
                         linkForward->reverse_link = linkHopback;
-
+            
                         //removing the links from the PCEN topology
                         hopBackInterdomainPcenLink->linkID = -1;
                         hopBackInterdomainPcenLink->reverse_link->linkID = -1;
                     }
                 }
+                node = tree->NextNode(node);
             }
-            node = tree->NextNode(node);
         }
 
         // 'jump' link construction logic...
@@ -527,6 +514,8 @@ void PCEN_MRN::PostBuildTopology()
                 }
             }
         }
+
+        // removing trashed pcen_links
         for (i = 0; i < links.size(); i++)
         {
             pcen_link = links[i];
@@ -535,7 +524,7 @@ void PCEN_MRN::PostBuildTopology()
                pcen_link->lcl_end->out_links.remove(pcen_link);
                pcen_link->rmt_end->in_links.remove(pcen_link);
                links.erase(links.begin()+i);
-               delete pcen_link; // ?
+               delete pcen_link;
                if (i == links.size())
                    break;
                else
