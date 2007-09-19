@@ -224,7 +224,7 @@ void PCEN_MRN::PostBuildTopology()
                 PCENLink* link_inter = NULL;
                 for (i = 0; i < lNum; i++)
                 {
-                    if (link_inter->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    if (links[i]->link->rmtIfAddr == link_src_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
                     {
                         link_inter = links[i];
                         break;
@@ -289,7 +289,7 @@ void PCEN_MRN::PostBuildTopology()
                 PCENLink* link_inter = NULL;
                 for (i = 0; i < lNum; i++)
                 {
-                    if (link_inter->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                    if (links[i]->link->rmtIfAddr == link_dest_forward->rmtIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
                     {
                         link_inter = links[i];
                         break;
