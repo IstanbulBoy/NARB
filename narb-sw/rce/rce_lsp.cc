@@ -206,7 +206,9 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     u_int32_t seqnum = ntohl(msg->hdr.msgseq);
     bool is_bidir = ((ntohl(msg->hdr.options) & LSP_OPT_BIDIRECTIONAL) != 0);
     narb_lsp_vtagmask_tlv* vtag_mask_tlv = NULL;
+    u_int32_t src_lcl_id = 0, dest_lcl_id = 0;
     list<ero_subobj> ero;
+
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
@@ -225,6 +227,11 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             GetERO_RFCStandard(tlv, ero);
             break;
+        case TLV_TYPE_NARB_LOCAL_ID:
+            tlv_len = sizeof(narb_lsp_local_id_tlv);
+            src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
+            dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
@@ -234,7 +241,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     }
 
     assert(ero.size() > 0);
-    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, vtag_mask_tlv);
+    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, vtag_mask_tlv, src_lcl_id, dest_lcl_id);
     api_msg_delete(msg);
 }
 
@@ -351,7 +358,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 && vtag != 0 && vtag != ANY_VTAG)
             {
                 //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag);
             }
             else
             {
