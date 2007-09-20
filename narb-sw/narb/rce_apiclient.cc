@@ -117,15 +117,15 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
         hop_back_tlv->ipv4 = hop_back;
         mlen += sizeof(msg_narb_hop_back);
     }
-	if (src_lcl_id != 0 || dest_lcl_id != 0)
-	{
+    if (src_lcl_id != 0 || dest_lcl_id != 0)
+    {
         msg_narb_local_id* lcl_id_tlv = (msg_narb_local_id*)(buf+mlen);
         lcl_id_tlv->type = htons(TLV_TYPE_NARB_LOCAL_ID);
         lcl_id_tlv->length = htons(sizeof(msg_narb_local_id) - TLV_HDR_SIZE);
-        lcl_id_tlv->lclid_src = src_lcl_id;
-        lcl_id_tlv->lclid_dest = dest_lcl_id;
+        lcl_id_tlv->lclid_src = htonl(src_lcl_id);
+        lcl_id_tlv->lclid_dest = htonl(dest_lcl_id);
         mlen += sizeof(msg_narb_local_id);
-	}
+    }
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, ucid, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
 
