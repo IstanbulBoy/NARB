@@ -116,9 +116,9 @@ private:
     msg_narb_suggested_vtag* suggested_vtag;
     u_int32_t previous_lspb_id;
     u_int32_t returned_lspb_id;
-	u_int32_t src_lcl_id;
-	u_int32_t dest_lcl_id;
-	u_int32_t hop_back;
+    u_int32_t src_lcl_id;
+    u_int32_t dest_lcl_id;
+    u_int32_t hop_back;
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO
     bool is_recursive_req;
     bool is_qconf_mode;

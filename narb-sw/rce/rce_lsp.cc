@@ -238,7 +238,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     api_msg_delete(msg);
 }
 
-void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, narb_lsp_vtagmask_tlv* vtag_mask)
+void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t lclid_src, u_int32_t lclid_dest)
 {
     Link *link1;
     ero_subobj* subobj;
@@ -345,6 +345,29 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
     }
+
+    //$$$$ update inter-domain links based on subnet-interface local-id constraints
+    subobj = &ero_reply.front();
+    if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+    {
+        link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
+        if (link1 != NULL && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            && lsp_vtag != 0 && lsp_vtag != ANY_VTAG)
+        {
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
+        }
+    }
+    subobj = &ero_reply.back();
+    if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+    {
+        link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
+        if (link1 != NULL && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            && lsp_vtag != 0 && lsp_vtag != ANY_VTAG)
+        {
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
+        }
+    }
+
 }
 
 void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id, narb_lsp_vtagmask_tlv* vtag_mask)

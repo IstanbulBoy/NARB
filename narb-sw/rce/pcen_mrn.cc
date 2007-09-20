@@ -214,7 +214,7 @@ void PCEN_MRN::PostBuildTopology()
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
             ISCD* iscd = new ISCD;
-            if (link_src_backward->Iscds().size() == 2)
+            if (link_src_backward->Iscds().size() == 2) //@@@@ TODO in OSPFd
             {
                 *iscd = *link_src_backward->iscds.back();  
             }
@@ -289,7 +289,7 @@ void PCEN_MRN::PostBuildTopology()
                 link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
             // cutomizing link_dest_backward
             iscd = new ISCD;
-            if (link_dest_forward->Iscds().size() == 2)
+            if (link_dest_forward->Iscds().size() == 2) //@@@@ TODO in OSPFd
             {
                 *iscd = *link_dest_forward->iscds.back();  
             }

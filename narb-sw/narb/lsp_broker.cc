@@ -1263,6 +1263,62 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
         }
     }
 
+    //$$$$ update inter-domain links based on local-id constraints
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_INTERFACE && ero.front()->if_id >> 16)
+    {
+        link1 = NarbDomainInfo.LookupLinkByLclIf(ero.front()->addr);
+        if ( link1 != NULL && (zebra_client && zebra_client->GetWriter() 
+            && zebra_client->GetWriter()->Socket() > 0 || terce_client && terce_client->NarbTerceApiReady()) )
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
+                if ( link1->UnreservedBandwidth()[i] < 0)
+                     link1->UnreservedBandwidth()[i] = 0;
+                link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
+                if (link1->GetISCD()->max_lsp_bw[i] < 0)
+                    link1->GetISCD()->max_lsp_bw[i] = 0;
+            }
+            if (req_vtag != 0 && req_vtag != ANY_VTAG)
+            {
+                link1->ResetVtag(req_vtag);
+                link1->AllocateVtag(req_vtag);
+            }
+            // update the link to inter-domain topology if the narb working mode is dynamic
+            if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+            {
+                NarbDomainInfo.UpdateTeLink(link1);
+            }
+        }
+    }
+    if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_INTERFACE && ero.back()->if_id >> 16)
+    {
+        link1 = NarbDomainInfo.LookupLinkByLclIf(ero.back()->addr);
+        if ( link1 != NULL && (zebra_client && zebra_client->GetWriter() 
+            && zebra_client->GetWriter()->Socket() > 0 || terce_client && terce_client->NarbTerceApiReady()) )
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                link1->UnreservedBandwidth()[i] -= app_msg->req.bandwidth;
+                if ( link1->UnreservedBandwidth()[i] < 0)
+                     link1->UnreservedBandwidth()[i] = 0;
+                link1->GetISCD()->max_lsp_bw[i] -= app_msg->req.bandwidth;
+                if (link1->GetISCD()->max_lsp_bw[i] < 0)
+                    link1->GetISCD()->max_lsp_bw[i] = 0;
+            }
+            if (req_vtag != 0 && req_vtag != ANY_VTAG)
+            {
+                link1->ResetVtag(req_vtag);
+                link1->AllocateVtag(req_vtag);
+            }
+            // update the link to inter-domain topology if the narb working mode is dynamic
+            if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+            {
+                NarbDomainInfo.UpdateTeLink(link1);
+            }
+        }
+    }
+    
     //forward the message to the corresponding RCE server as an LSP reservation confirmation
     RCE_APIClient* rce_client  = RceFactory.GetClient((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
     int ret = 0;
@@ -1415,6 +1471,62 @@ int LSPQ::HandleResvRelease(api_msg* msg)
                 }
             }
             link1 = NarbDomainInfo.LookupNextLinkByLclIf(link1);
+        }
+    }
+
+    //$$$$ update inter-domain links based on local-id constraints
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_INTERFACE && ero.front()->if_id >> 16)
+    {
+        link1 = NarbDomainInfo.LookupLinkByLclIf(ero.front()->addr);
+        if ( link1 != NULL && (zebra_client && zebra_client->GetWriter() 
+            && zebra_client->GetWriter()->Socket() > 0 || terce_client && terce_client->NarbTerceApiReady()) )
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
+                if (link1->UnreservedBandwidth()[i] > link1->MaxBandwidth())
+                    link1->UnreservedBandwidth()[i] = link1->MaxBandwidth();
+                link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
+                if (link1->GetISCD()->max_lsp_bw[i] > link1->MaxBandwidth())
+                    link1->GetISCD()->max_lsp_bw[i] = link1->MaxBandwidth();
+            }
+            if (req_vtag != 0 && req_vtag != ANY_VTAG)
+            {
+                link1->SetVtag(req_vtag);
+                link1->DeallocateVtag(req_vtag);
+            }
+            // update the link to inter-domain topology if the narb working mode is dynamic
+            if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+            {
+                NarbDomainInfo.UpdateTeLink(link1);
+            }
+        }
+    }
+    if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_INTERFACE && ero.back()->if_id >> 16)
+    {
+        link1 = NarbDomainInfo.LookupLinkByLclIf(ero.back()->addr);
+        if ( link1 != NULL && (zebra_client && zebra_client->GetWriter() 
+            && zebra_client->GetWriter()->Socket() > 0 || terce_client && terce_client->NarbTerceApiReady()) )
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                link1->UnreservedBandwidth()[i] += app_msg->req.bandwidth;
+                if (link1->UnreservedBandwidth()[i] > link1->MaxBandwidth())
+                    link1->UnreservedBandwidth()[i] = link1->MaxBandwidth();
+                link1->GetISCD()->max_lsp_bw[i] += app_msg->req.bandwidth;
+                if (link1->GetISCD()->max_lsp_bw[i] > link1->MaxBandwidth())
+                    link1->GetISCD()->max_lsp_bw[i] = link1->MaxBandwidth();
+            }
+            if (req_vtag != 0 && req_vtag != ANY_VTAG)
+            {
+                link1->SetVtag(req_vtag);
+                link1->DeallocateVtag(req_vtag);
+            }
+            // update the link to inter-domain topology if the narb working mode is dynamic
+            if (SystemConfig::working_mode == WORKING_MODE_DYNAMIC_INTERDOMAIN_TOPOLOGY)
+            {
+                NarbDomainInfo.UpdateTeLink(link1);
+            }
         }
     }
 
@@ -1765,8 +1877,8 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             break;
         case TLV_TYPE_NARB_LOCAL_ID:
             tlv_len = sizeof(msg_narb_local_id);
-            src_lcl_id = ((msg_narb_local_id*)tlv)->lclid_src;
-            dest_lcl_id = ((msg_narb_local_id*)tlv)->lclid_dest;
+            src_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_src);
+            dest_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_dest);
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
