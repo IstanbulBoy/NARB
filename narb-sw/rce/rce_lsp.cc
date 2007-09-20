@@ -335,36 +335,29 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         while (link1 != NULL) // updating all links with the same local interface address
         {
             vtag = subobj->l2sc_vlantag;
-            if (vtag == 0 && lsp_vtag != 0 &&
-                ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+            if (vtag == 0 && lsp_vtag != 0
+                && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC 
+                    || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
             {
                 vtag = lsp_vtag;
             }
 
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
+            if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID 
+                && (lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID 
+                && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC 
+                    || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+                && link1->Iscds().size() > 0 
+                && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                && vtag != 0 && vtag != ANY_VTAG)
+            {
+                //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
+            }
+            else
+            {
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
+            }
             link1 = RDB.LookupNextLinkByLclIf(link1);
-        }
-    }
-
-    //$$$$ update inter-domain links based on subnet-interface local-id constraints
-    subobj = &ero_reply.front();
-    if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
-    {
-        link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
-        if (link1 != NULL && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-            && lsp_vtag != 0 && lsp_vtag != ANY_VTAG)
-        {
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
-        }
-    }
-    subobj = &ero_reply.back();
-    if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (subobj->if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
-    {
-        link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
-        if (link1 != NULL && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-            && lsp_vtag != 0 && lsp_vtag != ANY_VTAG)
-        {
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, lsp_vtag);
         }
     }
 
