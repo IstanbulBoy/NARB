@@ -241,16 +241,16 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     }
 
     assert(ero.size() > 0);
-    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, vtag_mask_tlv, src_lcl_id, dest_lcl_id);
+    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv);
     api_msg_delete(msg);
 }
 
-void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t lclid_src, u_int32_t lclid_dest)
+void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, u_int32_t lsp_vtag, u_int32_t lclid_src, u_int32_t lclid_dest, narb_lsp_vtagmask_tlv* vtag_mask)
 {
     Link *link1;
     ero_subobj* subobj;
     bool is_forward_link, is_starting_backward = false;
-    u_int32_t vtag, lsp_vtag = 0;
+    u_int32_t vtag;
     list<ero_subobj>::iterator it;
 
     if (ero_reply.size() < 2)
@@ -273,9 +273,11 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             lsp_vtag = (ntohl((*it).if_id) & 0xffff);
             break;
         }
-        
-        if ((lsp_vtag = (*it).l2sc_vlantag) !=0)
+
+        vtag = (*it).l2sc_vlantag;
+        if (vtag !=0 && vtag != ANY_VTAG)
         {
+            lsp_vtag = vtag;
             break;
         }
     }
@@ -304,8 +306,8 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         while (link1 != NULL) // updating all links with the same local interface address
         {
             vtag = subobj->l2sc_vlantag;
-            if (vtag == 0 && lsp_vtag != 0 && 
-                ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
+            if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG
+                && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
             {
                 vtag = lsp_vtag;
             }
@@ -342,7 +344,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         while (link1 != NULL) // updating all links with the same local interface address
         {
             vtag = subobj->l2sc_vlantag;
-            if (vtag == 0 && lsp_vtag != 0
+            if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG
                 && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC 
                     || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
             {
@@ -354,8 +356,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC 
                     || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
                 && link1->Iscds().size() > 0 
-                && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                && vtag != 0 && vtag != ANY_VTAG)
+                && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
             {
                 //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
                 HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag);

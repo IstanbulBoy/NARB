@@ -1283,7 +1283,7 @@ void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
     lsp_req.gpid = 0;
 
     bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-    LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir, vtag_mask, src_lcl_id, dest_lcl_id);
+    LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir, this->vtag, this->src_lcl_id, this->dest_lcl_id, vtag_mask);
 }
     
 PCEN::~PCEN()
