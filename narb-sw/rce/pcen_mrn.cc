@@ -153,13 +153,13 @@ void PCEN_MRN::PostBuildTopology()
             node = tree->NextNode(node);
         }
         // verifying and adding the source lclid link into topology
-        if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (!lclid_link_src ||!lclid_link_src->link))
+        if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_src)
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source  (0x%x) local-id is attaching to the topology\n", src_lcl_id);
             ReplyErrorCode(ERR_PCEN_INVALID_REQ);
             return;
         }
-        else
+        else if (lclid_link_src && lclid_link_src->link)
         {
             lclid_link_src->linkID = links.back()->linkID+1;
             links.push_back(lclid_link_src);
@@ -175,13 +175,13 @@ void PCEN_MRN::PostBuildTopology()
             }
         }
         // verifying and adding the destination lclid link into topology
-        if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (!lclid_link_dest ||!lclid_link_dest->link))
+        if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_dest)
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination  (0x%x) local-id is attaching to the topology\n", dest_lcl_id);
             ReplyErrorCode(ERR_PCEN_INVALID_REQ);
             return;
         }
-        else
+        else if (lclid_link_dest && lclid_link_dest->link)
         {
             lclid_link_dest->linkID = links.back()->linkID+1;
             links.push_back(lclid_link_dest);
