@@ -135,15 +135,14 @@ void PCEN_MRN::PostBuildTopology()
                 node = tree->NextNode(node);
                 continue;
             }
-            if (link->AdvRtId() == source.s_addr
+            if (!lclid_link_src && link->AdvRtId() == source.s_addr
                  && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
             {
                 link = new Link(link);
                 lclid_link_src = new PCENLink(link);
                 lclid_link_src->link_self_allocated = true;
             }
-     
-            if (link->AdvRtId() == destination.s_addr
+            else if (!lclid_link_dest && link->AdvRtId() == destination.s_addr
                  && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
             {
                 link = new Link(link);
@@ -229,7 +228,7 @@ void PCEN_MRN::PostBuildTopology()
             Link* link_src_forward = new Link(link_src_backward->Id(), link_src_backward->AdvRtId(), 
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
-            ISCD* iscd = new ISCD;
+            iscd = new ISCD;
             if (link_src_backward->Iscds().size() == 2) //@@@@ TODO in OSPFd
             {
                 *iscd = *link_src_backward->iscds.back();  
