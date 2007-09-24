@@ -477,7 +477,10 @@ void PCEN_MRN::PostBuildTopology()
                             {
                                 if (!pcen_link->reverse_link || !pcen_link->reverse_link->link)
                                     continue;
-                                
+                                // skip the formed intra-domain links that are also local-id edge links
+                                if ((lclid_link_src && lclid_link_src->link && pcen_link != lclid_link_src && pcen_link->link->LclIfAddr() == lclid_link_src->link->LclIfAddr())
+                                    || (lclid_link_dest && lclid_link_dest->link && pcen_link!= lclid_link_dest && pcen_link->link->LclIfAddr() == lclid_link_src->link->LclIfAddr()))
+                                    continue;
                                 // remove the links from RDB.
                                 if (!pcen_link->link_self_allocated)
                                     RDB.Remove(pcen_link->link);
