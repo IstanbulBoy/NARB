@@ -61,15 +61,16 @@ void PCEN_MRN::PostBuildTopology()
     list<ISCD*>::iterator iscd_iter;
     ISCD* iscd;
     list<PCENLink*>::iterator link_iter;
+    RadixTree<Resource>* tree;
     RadixNode<Resource> *node;
-    bool is_lclid_constrained_mode = false;
     PCENLink* lclid_link_src = NULL, *lclid_link_dest = NULL;
-    //$$$$ Local ID based edge constraints take priority over hopback!
-    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID &&  (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+
+    //$$$$ Local ID based source edge constraint take priority over hopback!
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
     {
         hop_back = 0;
-        is_lclid_constrained_mode = true;
     }
+
     bool hop_back_attaching_to_source_verified = (hop_back == 0 ? true : false);
     PCENLink* hopBackInterdomainPcenLink = NULL;
 
@@ -121,45 +122,49 @@ void PCEN_MRN::PostBuildTopology()
     }
 
     // obtaining and verifying lclid_link_src and lclid_link_dest
-    RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
-    node = tree->Root();
-    while (is_lclid_constrained_mode && node)
+    if (((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID ||  (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID))
     {
-        Link* link = (Link*)node->Data();
-        if (link == NULL || link->Iscds().size() == 0 ||
-           (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+        tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+        node = tree->Root();
+        while (node)
         {
-            node = tree->NextNode(node);
-            continue;
-        }
-        if (link->AdvRtId() == source.s_addr
-             && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
-        {
-            link = new Link(link);
-            lclid_link_src = new PCENLink(link);
-            lclid_link_src->link_self_allocated = true;
-        }
- 
-        if (link->AdvRtId() == destination.s_addr
-             && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
-        {
-            link = new Link(link);
-            lclid_link_dest = new PCENLink(link);
-            lclid_link_dest->link_self_allocated = true;
-        }
+            Link* link = (Link*)node->Data();
+            if (link == NULL || link->Iscds().size() == 0 ||
+               (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+            {
+                node = tree->NextNode(node);
+                continue;
+            }
+            if (link->AdvRtId() == source.s_addr
+                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+            {
+                link = new Link(link);
+                lclid_link_src = new PCENLink(link);
+                lclid_link_src->link_self_allocated = true;
+            }
+     
+            if (link->AdvRtId() == destination.s_addr
+                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+            {
+                link = new Link(link);
+                lclid_link_dest = new PCENLink(link);
+                lclid_link_dest->link_self_allocated = true;
+            }
 
-        node = tree->NextNode(node);
-    }
-    if (is_lclid_constrained_mode)
-    {
-        // adding the lclid links into topology
-        if (lclid_link_src && lclid_link_src->link && lclid_link_dest && lclid_link_dest->link)
+            node = tree->NextNode(node);
+        }
+        // verifying and adding the source lclid link into topology
+        if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (!lclid_link_src ||!lclid_link_src->link))
+        {
+            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source  (0x%x) local-id is attaching to the topology\n", src_lcl_id);
+            ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+            return;
+        }
+        else
         {
             lclid_link_src->linkID = links.back()->linkID+1;
             links.push_back(lclid_link_src);
-            lclid_link_dest->linkID = links.back()->linkID+1;
-            links.push_back(lclid_link_dest);
-            lNum += 2;
+            lNum += 1;
             for (i = 0; i < rNum; i++) 
             {
                 pcen_node = routers[i];
@@ -168,6 +173,23 @@ void PCEN_MRN::PostBuildTopology()
                     pcen_node->out_links.push_back(lclid_link_src);
                     lclid_link_src->lcl_end = pcen_node;
                 }
+            }
+        }
+        // verifying and adding the destination lclid link into topology
+        if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (!lclid_link_dest ||!lclid_link_dest->link))
+        {
+            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination  (0x%x) local-id is attaching to the topology\n", dest_lcl_id);
+            ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+            return;
+        }
+        else
+        {
+            lclid_link_dest->linkID = links.back()->linkID+1;
+            links.push_back(lclid_link_dest);
+            lNum += 1;
+            for (i = 0; i < rNum; i++) 
+            {
+                pcen_node = routers[i];
                 if (pcen_node->router && pcen_node->router->Id() == lclid_link_dest->link->AdvRtId())
                 {
                     pcen_node->out_links.push_back(lclid_link_dest);
@@ -175,12 +197,6 @@ void PCEN_MRN::PostBuildTopology()
                 }
             }
         }
-        else
-	{
-	    LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that both source  (0x%x) and destination  (0x%x) local-ids are attaching to the topology\n", src_lcl_id, dest_lcl_id);
-	    ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-	    return;
-	}
     }
 	
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
@@ -190,8 +206,8 @@ void PCEN_MRN::PostBuildTopology()
         PCENNode* new_pcen_destination = NULL;
         u_int32_t hopback_source = 0;
 
-        // Handling the special 'subnet' topology
-        if (is_lclid_constrained_mode)  //  special handling for lclid edge constraints
+        // Handling source local-id constraint in the special 'subnet' topology
+        if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)  //  special handling for lclid edge constraints
         {
             // costructing fake source and destination nodes for local-ids
             // the newly constructed source edge node use source local-id as router id
@@ -266,11 +282,13 @@ void PCEN_MRN::PostBuildTopology()
             lNum++;
             // new source IP
             source.s_addr = source.s_addr+src_lcl_id;
+        }
 
-            //////////////////////////////////////////////////
-            
+        // Handling destiantion local-id constraint in the special 'subnet' topology
+        if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)  //  special handling for lclid edge constraints
+        {            
             // the newly constructed destination edge node use destination local-id as router id
-            new_router = new RouterId(destination.s_addr+dest_lcl_id);
+            RouterId* new_router = new RouterId(destination.s_addr+dest_lcl_id);
             new_pcen_destination = new PCENNode(new_router);
             new_pcen_destination->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
             new_pcen_destination->router_self_allocated = true;
@@ -342,7 +360,9 @@ void PCEN_MRN::PostBuildTopology()
             // new destination IP
             destination.s_addr = destination.s_addr+dest_lcl_id;
         }
-        else if (hop_back != 0) //  special handling for hop back
+
+        // Handling hop-back constraint in the special 'subnet' topology
+        if (hop_back != 0) //  special handling for hop back
         {
             for (i = 0; i < lNum; i++)
             {
@@ -1036,12 +1056,15 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         return;
 
     // removing ero_subojs from constructed src/dest local-id links
-    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID &&  (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
     {
         if (ero_track.front().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
             ero_track.pop_front();
         if (ero_track.size() == 0)
             return;
+    }
+    if ( (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
         if (ero_track.back().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
             ero_track.pop_back();
         if (ero_track.size() == 0)
