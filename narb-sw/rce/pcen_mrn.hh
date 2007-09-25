@@ -38,7 +38,7 @@
 #include <list>
 using namespace std;
 
-#define DISPLAY_ROUTING_DETAILS
+#undef DISPLAY_ROUTING_DETAILS
 
 
 class PCEN_MRN: public PCEN
