@@ -1,4 +1,3 @@
-
 /**
  * TERCESkeleton.java
  *
@@ -7,10 +6,8 @@
  */
 package edu.internet2.hopi.dragon.terce.ws.service;
 
-import edu.internet2.hopi.dragon.terce.TERCECore;
-import java.io.IOException;
-
 import edu.internet2.hopi.dragon.PropertyReader;
+import edu.internet2.hopi.dragon.terce.TERCECore;
 import edu.internet2.hopi.dragon.terce.ws.handlers.TERCEHandler;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEFactory;
 import edu.internet2.hopi.dragon.terce.ws.handlers.rce.RCEInterface;
@@ -22,78 +19,86 @@ import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.InsertNetworkTopologyResponse;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopology;
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
+
 import org.apache.axis2.context.ServiceContext;
+
+import java.io.IOException;
+
 
 /**
  *  TERCESkeleton java skeleton for the axisService
  */
-public class TERCESkeleton{
-    
+public class TERCESkeleton {
     private Thread serverThread;
     private TERCECore terceServer;
-    
+
     public void init(ServiceContext serviceContext) {
         terceServer = new TERCECore(2690);
         serverThread = new Thread(terceServer);
         serverThread.start();
     }
-    
+
     public void destroy(ServiceContext serviceContext) {
         terceServer.stopServer();
     }
-    
+
     /**
      * Auto generated method signature
      * @param findPath
      */
-    public FindPathResponse findPath(FindPath findPath) throws RCEFaultMessage{
+    public FindPathResponse findPath(FindPath findPath)
+        throws RCEFaultMessage {
         PropertyReader props = null;
+
         /* Open properties file */
         try {
             props = TERCEHandler.createPropertyReader();
         } catch (IOException e) {
-            throw TERCEHandler.generateRCEException("IO Exception: " + e.getMessage());
+            throw TERCEHandler.generateRCEException("IO Exception: " +
+                e.getMessage());
         }
-        
+
         /* Contact underlying RCE module */
         RCEFactory factory = new RCEFactory();
         RCEInterface rce = factory.createRCE(props.getProperty("rce.type"));
         FindPathResponse response = rce.findPath(findPath);
         System.out.println("RCE DONE");
+
         return response;
     }
-    
+
     /**
      * Auto generated method signature
      * @param selectNetworkTopology
      */
-    public SelectNetworkTopologyResponse selectNetworkTopology(SelectNetworkTopology selectNetworkTopology)
-    throws TEDBFaultMessage{
+    public SelectNetworkTopologyResponse selectNetworkTopology(
+        SelectNetworkTopology selectNetworkTopology) throws TEDBFaultMessage {
         PropertyReader props = null;
-        
+
         /* Open properties file */
         try {
             props = TERCEHandler.createPropertyReader();
         } catch (IOException e) {
-            TERCEHandler.generateTEDBException("IO Exception: " + e.getMessage());
+            TERCEHandler.generateTEDBException("IO Exception: " +
+                e.getMessage());
         }
-        
+
         /* Select topology from underlying module */
         TEDBFactory factory = new TEDBFactory();
         TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
         SelectNetworkTopologyResponse response = tedb.selectNetworkTopology(selectNetworkTopology);
-        
+
         return response;
     }
-    
+
     /**
      * Auto generated method signature
      * @param insertNetworkTopology
      */
-    public InsertNetworkTopologyResponse insertNetworkTopology(InsertNetworkTopology insertNetworkTopology)
-    throws TEDBFaultMessage{
+    public InsertNetworkTopologyResponse insertNetworkTopology(
+        InsertNetworkTopology insertNetworkTopology) throws TEDBFaultMessage {
         PropertyReader props = null;
-        
+
         /* Open properties file */
         try {
             props = TERCEHandler.createPropertyReader();
@@ -101,12 +106,12 @@ public class TERCESkeleton{
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         /* Insert topology into underlyig database */
         TEDBFactory factory = new TEDBFactory();
         TEDBInterface tedb = factory.createTEDB(props.getProperty("tedb.type"));
         InsertNetworkTopologyResponse response = tedb.insertNetworkTopology(insertNetworkTopology);
-        
+
         return response;
     }
 }

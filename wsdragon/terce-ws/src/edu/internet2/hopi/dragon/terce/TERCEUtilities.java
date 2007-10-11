@@ -4,20 +4,26 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package edu.internet2.hopi.dragon.terce;
 
 import edu.internet2.hopi.dragon.terce.ws.types.tedb.SelectNetworkTopologyResponse;
+
+import org.apache.axiom.om.OMElement;
+
+import org.apache.axis2.databinding.ADBException;
+import org.apache.axis2.util.XMLUtils;
+
+import org.jdom.input.DOMBuilder;
+
+import org.jdom.output.XMLOutputter;
+
+import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import org.apache.axiom.om.OMElement;
-import org.apache.axis2.databinding.ADBException;
-import org.apache.axis2.util.XMLUtils;
-import org.jdom.input.DOMBuilder;
-import org.jdom.output.XMLOutputter;
-import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyContent;
+
 
 /**
  * This class provides some utility functions for manipulating primitive byte arrays (<CODE>byte[]</CODE>) received from the network while carefully avoiding auto-conversions, type promotions and other java-related delicatessen.
@@ -26,7 +32,6 @@ import org.ogf.schema.network.topology.ctrlplane._20070626.CtrlPlaneTopologyCont
  * @author jflidr
  */
 public class TERCEUtilities {
-    
     /**
      * Writes the data to the byte array in the network byte order
      * @param b target byte array
@@ -36,10 +41,10 @@ public class TERCEUtilities {
     public static void htonData(byte[] b, long d, int[] f) {
         //if((b == null) || ((f[0] + f[1]) > b.length) || !((f[1] == 1) || (f[1] == 2) || (f[1] == 4)) || (((f[0]%2) != 0) && (f[1] != 1)))
         for (int i = 0; i < f[1]; i++) {
-            b[f[0] + i] = (byte)((d >>> (8*(f[1]-1-i))) & 0xff);
+            b[f[0] + i] = (byte) ((d >>> (8 * (f[1] - 1 - i))) & 0xff);
         }
     }
-    
+
     /**
      * Writes the data to the offset byte array in the network byte order. The offset
      * can be used to traverse the primitive array without need to change the field
@@ -50,11 +55,11 @@ public class TERCEUtilities {
      * @param f structure field descriptor: int[] f = {offset, size}
      */
     public static void htonData(byte[] b, int o, long d, int[] f) {
-        int[] ff = {f[0], f[1]};
+        int[] ff = { f[0], f[1] };
         ff[0] += o;
         htonData(b, d, ff);
     }
-    
+
     /**
      * Reads the data from the byte array in the network byte order
      * @param b target byte array
@@ -63,12 +68,14 @@ public class TERCEUtilities {
      */
     public static long nDatatoh(byte[] b, int[] f) {
         long ret = 0;
+
         for (int i = 0; i < f[1]; i++) {
-            ret += (((long)b[f[0] + i] & 0xffL) << (8*(f[1]-1-i)));
+            ret += (((long) b[f[0] + i] & 0xffL) << (8 * (f[1] - 1 - i)));
         }
+        
         return ret;
     }
-    
+
     /**
      * Reads the data from the byte array in the network byte order. The offset
      * can be used to traverse the primitive array without need to change the field
@@ -79,11 +86,12 @@ public class TERCEUtilities {
      * @return value (always long) in the host order
      */
     public static long nDatatoh(byte[] b, int o, int[] f) {
-        int[] ff = {f[0], f[1]};
+        int[] ff = { f[0], f[1] };
         ff[0] += o;
+
         return nDatatoh(b, ff);
     }
-    
+
     /**
      * Writes the data to the byte array in the host byte order
      * @param b target byte array
@@ -92,10 +100,10 @@ public class TERCEUtilities {
      */
     public static void htohData(byte[] b, long d, int[] f) {
         for (int i = 0; i < f[1]; i++) {
-            b[f[0] + i] = (byte)((d >>> (8*i)) & 0xff);
+            b[f[0] + i] = (byte) ((d >>> (8 * i)) & 0xff);
         }
     }
-    
+
     /**
      * Writes the data to the offset byte array in the host byte order. The offset
      * can be used to traverse the primitive array without need to change the field
@@ -106,11 +114,11 @@ public class TERCEUtilities {
      * @param f structure field descriptor: int[] f = {offset, size}
      */
     public static void htohData(byte[] b, int o, long d, int[] f) {
-        int[] ff = {f[0], f[1]};
+        int[] ff = { f[0], f[1] };
         ff[0] += o;
         htohData(b, d, ff);
     }
-    
+
     /**
      * Reads the data from the byte array in the host byte order
      * @param b target byte array
@@ -119,12 +127,14 @@ public class TERCEUtilities {
      */
     public static long hDatatoh(byte[] b, int[] f) {
         long ret = 0;
+
         for (int i = 0; i < f[1]; i++) {
-            ret += (((long)b[f[0] + i] & 0xffL) << (8*i));
+            ret += (((long) b[f[0] + i] & 0xffL) << (8 * i));
         }
+
         return ret;
     }
-    
+
     /**
      * Reads the data from the byte array in the host byte order. The offset
      * can be used to traverse the primitive array without need to change the field
@@ -135,11 +145,12 @@ public class TERCEUtilities {
      * @return value (always long) in the host order
      */
     public static long hDatatoh(byte[] b, int o, int[] f) {
-        int[] ff = {f[0], f[1]};
+        int[] ff = { f[0], f[1] };
         ff[0] += o;
+
         return hDatatoh(b, ff);
     }
-    
+
     /**
      * Reads the data from the byte array in the host byte order. It allows to
      * read the data without the prior binary structure definition (useful for
@@ -150,50 +161,56 @@ public class TERCEUtilities {
      * @return value (always long) in the host order
      */
     public static long hDatatoh(byte[] b, int o, int s) {
-        int[] f = {o, s};
+        int[] f = { o, s };
+
         return hDatatoh(b, f);
     }
-    
-    
+
     public static String toNetString(float f) {
         String suff = "";
-        
-        if(f >= 1000000000) {
+
+        if (f >= 1000000000) {
             suff = "Gbps";
             f /= 1000000000;
-        } else if(f >= 1000000) {
+        } else if (f >= 1000000) {
             suff = "Mbps";
             f /= 1000000;
-        } else if(f >= 1000) {
+        } else if (f >= 1000) {
             suff = "kbps";
             f /= 1000;
         }
+
         return Float.toString(f) + suff;
     }
-    
+
     public static void dumpLocalTopology(String fn) {
         OMElement el;
         DOMBuilder db = new DOMBuilder();
         XMLOutputter x = new XMLOutputter(org.jdom.output.Format.getPrettyFormat());
         File dumpFile = new File(fn);
         FileOutputStream fos;
+
         try {
             dumpFile.createNewFile();
         } catch (IOException ex) {
             System.err.println("topology dump failed");
             TERCEGlobals.topologyDumpScheduled = false;
+
             return;
         }
+
         try {
             fos = new FileOutputStream(dumpFile);
         } catch (FileNotFoundException ex) {
             System.err.println("dumpLocalTopology: file not found");
             TERCEGlobals.topologyDumpScheduled = false;
+
             return;
         }
-        
+
         CtrlPlaneTopologyContent topology;
         topology = TERCEGlobals.core.getTopology();
+
         try {
             el = topology.getOMElement(SelectNetworkTopologyResponse.MY_QNAME,
                     org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -206,6 +223,7 @@ public class TERCEUtilities {
             System.err.println("Exception: topology dump failed");
             ex.printStackTrace();
         }
+
         TERCEGlobals.topologyDumpScheduled = false;
     }
 }

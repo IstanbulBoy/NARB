@@ -4,8 +4,8 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package edu.internet2.hopi.dragon.terce.tedb;
+
 
 /**
  *
@@ -13,12 +13,12 @@ package edu.internet2.hopi.dragon.terce.tedb;
  */
 public class Reservation {
     private long domainID;
-    private long lspID;       
-    private long uptime;           
+    private long lspID;
+    private long uptime;
     private long duration;
     private float bandwidth;
     private long status;
-    
+
     /** Creates a new instance of Reservation */
     public Reservation() {
     }
@@ -46,5 +46,4 @@ public class Reservation {
     void setStatus(long l) {
         status = l;
     }
-    
 }

@@ -32,18 +32,18 @@
   </xs:complexType>
   
   <!-- Node -->
-  <xs:element name="node" type="CtrlPlaneNodeContent"/>
+  <xs:element name="node" type="CtrlPlane:CtrlPlaneNodeContent"/>
   
   <xs:complexType name="CtrlPlaneNodeContent">
       <xs:sequence>
-        <xs:element minOccurs="0" name="address" type="xs:string" />
+        <xs:element minOccurs="0" name="address" type="CtrlPlane:CtrlPlaneAddressContent" />
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="CtrlPlane:port"/>
       </xs:sequence>
       <xs:attribute name="id" use="required" type="xs:string"/>
   </xs:complexType>
   
   <!-- Port -->
-  <xs:element name="port" type="CtrlPlanePortContent" />
+  <xs:element name="port" type="CtrlPlane:CtrlPlanePortContent" />
   
   <xs:complexType name="CtrlPlanePortContent">
       <xs:sequence>
@@ -61,7 +61,7 @@
   
   
   <!-- Link -->
-  <xs:element name="link" type="CtrlPlaneLinkContent" />
+  <xs:element name="link" type="CtrlPlane:CtrlPlaneLinkContent" />
   
   <xs:complexType name="CtrlPlaneLinkContent">
       <xs:sequence>
@@ -89,11 +89,11 @@
   </xs:complexType>
     
   <!-- Path -->
-  <xs:element name="path" type="CtrlPlanePathContent" />
+  <xs:element name="path" type="CtrlPlane:CtrlPlanePathContent" />
   
   <xs:complexType name="CtrlPlanePathContent">
       <xs:sequence>
-        <xs:element minOccurs="0" maxOccurs="unbounded" name="hop" type="CtrlPlaneHopContent" />
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="hop" type="CtrlPlane:CtrlPlaneHopContent" />
       </xs:sequence>
       <xs:attribute name="id" use="required" type="xs:string"/>
   </xs:complexType>
@@ -111,7 +111,7 @@
   <!-- Misc Types -->
   <xs:complexType name="CtrlPlaneDomainSignatureContent">
     <xs:attribute name="domainId" use="required" type="xs:string"/>
-    <xs:any minOccurs="0"/>
+     <!-- Further content will be defined by DICE -->
   </xs:complexType>
   
   <xs:complexType name="CtrlPlaneAddressContent">
@@ -143,12 +143,11 @@
     <xs:sequence>
       <xs:element minOccurs="0" name="capability" type="xs:string"/>
       <!-- <xs:group ref="CtrlPlane:CtrlPlaneSwitchingCapabilitySpecficInfo_l2sc"/> -->
-      <xs:element  name="interfaceMTU" type="xs:int"/>
+      <xs:element  minOccurs="0" name="interfaceMTU" type="xs:int"/>
       <xs:element minOccurs="0" name="vlanRangeAvailability" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 
-   
   <!-- Axis2 does not support groups so remove for now
   <xs:group name="CtrlPlaneSwitchingCapabilityDescriptor">
     <xs:sequence>

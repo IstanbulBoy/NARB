@@ -40,14 +40,6 @@
                 <include name="TERCESkeleton.java"/>
             </fileset>
         </copy>
-        <delete failonerror="false">
-            <fileset dir="src/org/ogf/schema/network/topology/ctrlplane/_20070626" includes="CtrlPlaneAddressContent.java"/>
-        </delete>
-        <copy toDir="src/org/ogf/schema/network/topology/ctrlplane/_20070626" failonerror="true">
-            <fileset dir="${project.base.dir}">
-                <include name="CtrlPlaneAddressContent.java"/>
-            </fileset>
-        </copy>
     </target>
     <target depends="init" name="pre.compile.test">
         <!--Test the classpath for the availability of necesary classes-->
@@ -142,7 +134,7 @@
                 <fileset dir="${axis2.home}/lib" includes="*.jar"/>
             </classpath>
             <arg value="-uri"/>
-            <arg file="resources/TERCE.wsdl"/>
+            <arg file="wsdl/TERCE.wsdl"/>
             <arg value="-ss"/>
             <arg value="-wv"/>
             <arg value="1.1"/>
@@ -153,6 +145,8 @@
             <arg value="-g"/>
             <arg value="-p"/>
             <arg value="edu.internet2.hopi.dragon.terce.ws.service"/>
+            <arg value="-ns2p"/>
+            <arg value="http://hopi.internet2.edu/DRAGON/TERCE/RCE=edu.internet2.hopi.dragon.terce.ws.types.rce,http://hopi.internet2.edu/DRAGON/TERCE/TEDB=edu.internet2.hopi.dragon.terce.ws.types.tedb"/>
         </java>
     </target>
     <target name="wsdl2java.clean">
