@@ -64,6 +64,7 @@
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing
+#define ANY_TIMESLOT 0xff  //Timeslot in TDM layer
 
 // the internal data type defined for the sub-object of ERO
 struct ero_subobj
