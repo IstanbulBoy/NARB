@@ -964,7 +964,7 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
         u_int8_t ts_start = 1, ts_num = 0;
-        if ((src_lcl_id & 0xff) > 0 &&  (src_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((src_lcl_id >> 8) & 0xff) == pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
+        if ((src_lcl_id & 0xff) > 0 &&  (src_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((src_lcl_id >> 8) & 0xff) == pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
             ts_start = (src_lcl_id & 0xff);
         for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
