@@ -53,7 +53,7 @@ PCEN_MRN::~PCEN_MRN()
 
 }
 
-void PCEN_MRN::PostBuildTopology()
+bool PCEN_MRN::PostBuildTopology()
 {
     int i, j, k;
     PCENLink *pcen_link, *pcen_link2;
@@ -118,7 +118,7 @@ void PCEN_MRN::PostBuildTopology()
     {
         LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that the hopback interface (0x%x) is attaching to the source router(0x%x)\n", hop_back, source.s_addr);
         ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-        return;
+        return false;
     }
 
     // obtaining and verifying lclid_link_src and lclid_link_dest
@@ -161,7 +161,7 @@ void PCEN_MRN::PostBuildTopology()
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source  (0x%x) local-id is attaching to the topology\n", src_lcl_id);
             ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-            return;
+            return false;
         }
         else if (lclid_link_src && lclid_link_src->link)
         {
@@ -183,7 +183,7 @@ void PCEN_MRN::PostBuildTopology()
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination  (0x%x) local-id is attaching to the topology\n", dest_lcl_id);
             ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-            return;
+            return false;
         }
         else if (lclid_link_dest && lclid_link_dest->link)
         {
@@ -578,6 +578,7 @@ void PCEN_MRN::PostBuildTopology()
         }
     }
 
+    return true;
 }
     
 void PCEN_MRN::Run()
@@ -607,7 +608,8 @@ void PCEN_MRN::Run()
         return;
     }
 
-    PostBuildTopology();
+    if (!PostBuildTopology())
+        return;
 
     if ((ret = PerformComputation()) != 0)
     {
@@ -928,8 +930,10 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if (SystemConfig::should_incorporate_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        u_int8_t ts_num = 0;
-        for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
+        u_int8_t ts_start = 1, ts_num = 0;
+        if ((dest_lcl_id & 0xff) > 0 &&  (dest_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((dest_lcl_id >> 8) & 0xff) == pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
+            ts_start = (dest_lcl_id & 0xff);
+        for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
             {
@@ -959,8 +963,10 @@ void PCEN_MRN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_li
     if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
-        u_int8_t ts_num = 0;
-        for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
+        u_int8_t ts_start = 1, ts_num = 0;
+        if ((src_lcl_id & 0xff) > 0 &&  (src_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((src_lcl_id >> 8) & 0xff) == pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
+            ts_start = (src_lcl_id & 0xff);
+        for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
         {
             if (HAS_TIMESLOT(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
             {

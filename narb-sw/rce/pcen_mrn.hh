@@ -77,7 +77,7 @@ public:
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
     virtual int PerformComputation();
-    void PostBuildTopology();
+    bool PostBuildTopology();
     virtual void Run();
 };
 
