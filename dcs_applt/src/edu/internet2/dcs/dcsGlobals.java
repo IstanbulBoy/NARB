@@ -18,6 +18,13 @@ import javax.swing.JLayeredPane;
  * @author jflidr
  */
 public class dcsGlobals {
+    
+    static final int DCS_MAP_PANE_W = 750;
+    static final int DCS_MAP_PANE_H = 500;
+    
+    static final int DCS_PANE_FIBER_LAYER = new Integer(200);
+    static final int DCS_PANE_NODE_LAYER = new Integer(300);
+    
     static Preferences prefsRoot = null;
     static JApplet dcsApplet = null;
     static JLayeredPane dcsLayeredPane = null;
@@ -25,8 +32,6 @@ public class dcsGlobals {
     static dcsMap currMap = null;
     static dcsMapPane currMapPane = null;
     
-    static final int DCS_MAP_PANE_W = 750;
-    static final int DCS_MAP_PANE_H = 500;
-    
     static dcsNodeSet dcsNodes = null;
+    static dcsFiberSet dcsFibers = null;
 }

@@ -23,6 +23,7 @@ public class dcsApplt extends javax.swing.JApplet {
                 public void run() {
                     dcsGlobals.prefsRoot = Preferences.userNodeForPackage(dcsApplt.class);
                     dcsGlobals.dcsNodes = new dcsNodeSet(10, 1);
+                    dcsGlobals.dcsFibers = new dcsFiberSet(10, 1);
                     
                     setBackground(new java.awt.Color(153, 153, 0));
                     
@@ -31,6 +32,7 @@ public class dcsApplt extends javax.swing.JApplet {
                     setContentPane(dcsGlobals.dcsLayeredPane);
                     loadMap();
                     loadNodes();
+                    fiberUp();
                 }
             });
         } catch (Exception ex) {
@@ -45,7 +47,15 @@ public class dcsApplt extends javax.swing.JApplet {
     }
     
     private void loadNodes() {
-        
+        dcsGlobals.dcsNodes.load();
+        dcsGlobals.dcsNodes.addShowAll();
+    }
+    
+    private void fiberUp() {
+        dcsNode[][] na = dcsGlobals.dcsNodes.getLinkedNodes();
+        for (int i = 0; i < na.length; i++) {
+            dcsGlobals.dcsFibers.add(new dcsFiber(na[i]));
+        }
     }
 }
 
