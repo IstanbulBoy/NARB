@@ -112,7 +112,35 @@ public class dcsNodeSet extends Vector<dcsNode> {
         }
     }
     
-    dcsNode[][] getLinkedNodes() {
+    public dcsNode[] getLinkedNodes(String s0, String s1) {
+        if(!isTELinked(s0, s1))
+            return null;
+        dcsNode n0, n1;
+        Vector<String> te_l0, te_l1;
+
+        String tes0, tes1;
+        for (int i = 0; i < size(); i++) {
+            n0 = get(i);
+            te_l0 = n0.getTELinks();
+            for (int j = i+1; j < size(); j++) {
+                n1 = get(j);
+                te_l1 = n1.getTELinks();
+                for (int k = 0; k < te_l0.size(); k++) {
+                    tes0 = te_l0.get(k);
+                    for (int l = 0; l < te_l1.size(); l++) {
+                        tes1 = te_l1.get(l);
+                        if((tes0.equals(s0) && tes1.equals(s1)) || (tes1.equals(s0) && tes0.equals(s1))) {
+                            dcsNode ret[] = {n0, n1};
+                            return ret;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    public dcsNode[][] getLinkedNodes() {
         boolean linkFound = false;
         dcsNode n0, n1;
         Vector<String> te_l0, te_l1;

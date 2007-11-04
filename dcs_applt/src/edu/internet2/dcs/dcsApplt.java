@@ -24,6 +24,7 @@ public class dcsApplt extends javax.swing.JApplet {
                     dcsGlobals.prefsRoot = Preferences.userNodeForPackage(dcsApplt.class);
                     dcsGlobals.dcsNodes = new dcsNodeSet(10, 1);
                     dcsGlobals.dcsFibers = new dcsFiberSet(10, 1);
+                    dcsGlobals.dcsEROHops = new dcsEROHopSet(10, 1);
                     
                     setBackground(new java.awt.Color(153, 153, 0));
                     
@@ -55,6 +56,25 @@ public class dcsApplt extends javax.swing.JApplet {
         dcsNode[][] na = dcsGlobals.dcsNodes.getLinkedNodes();
         for (int i = 0; i < na.length; i++) {
             dcsGlobals.dcsFibers.add(new dcsFiber(na[i]));
+        }
+    }
+    
+    //JavaScript API
+    public static void appletZoomIn() {
+        if(dcsGlobals.currMapPane.isZoomedOut()) {
+            dcsGlobals.currMapPane.zoomMap();
+        }
+    }
+    
+    public static void appletZoomOut() {
+        if(!dcsGlobals.currMapPane.isZoomedOut()) {
+            dcsGlobals.currMapPane.zoomMap();
+        }
+    }
+    
+    public static void loadERO(String s) {
+        if(s.length()>0) {
+            dcsGlobals.dcsEROHops.load(s.split(" "));
         }
     }
 }

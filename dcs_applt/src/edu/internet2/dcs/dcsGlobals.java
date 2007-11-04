@@ -34,4 +34,5 @@ public class dcsGlobals {
     
     static dcsNodeSet dcsNodes = null;
     static dcsFiberSet dcsFibers = null;
+    static dcsEROHopSet dcsEROHops = null;
 }

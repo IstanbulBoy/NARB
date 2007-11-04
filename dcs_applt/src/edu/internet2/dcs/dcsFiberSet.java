@@ -32,7 +32,7 @@ public class dcsFiberSet extends Vector<dcsFiber> {
     }
     
     // queries
-    boolean isHidden() {
+    public boolean isHidden() {
         return isHidden;
     }
 }

@@ -66,8 +66,8 @@ public class dcsFiber extends CubicCurve2D.Double {
         cx2 = ep2.getCenterX() - 20/f;
         cy2 = ep2.getCenterY();
         
-        int r1 = 5;
-        int r2 = 5;
+        int r1 = 3;
+        int r2 = 3;
         
         cx1 += dx1;
         cy1 += dy1;

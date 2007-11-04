@@ -52,25 +52,15 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     
     private dcsNodeLabel nodeLabel = null;
     
-    private final Color HIGHLIGHT_COLOR = new Color(255, 90, 90, 255);
-    private final Color INSET_COLOR = new Color(255, 190, 90, 255);
-    private final Color CD_COLOR = new Color(108, 128, 106, 255);
-    private final Color SHADOW_COLOR = new Color(0, 0, 0, 100);
-    private final Color NODE_OUTL_COLOR = new Color(0, 0, 0, 127);
-    private final Color NODE_TIP_COLOR = new Color(255,255,102,222);
-    private final Color NODE_TIP_FONT_COLOR = new Color(0, 0, 0, 255);
-    private final Color NODE_TIP_EM_FONT_COLOR = new Color(222, 0, 0, 255);
-    
     private int mouseX = 0;
     private int mouseY = 0;
     
-    private final Color TIP_OUTL_COLOR = new Color(55, 55, 55, 255);
-    
     private boolean isHighlighted = false;
-    private boolean nodeDragged = false;;
+    private boolean nodeDragged = false;
     
     private Vector<String> teLinks = new Vector<String>(4);
-    private Vector<dcsFiber> dcsFibers = new Vector<dcsFiber>();
+    private Vector<dcsFiber> nodeFibers = new Vector<dcsFiber>();
+    private Vector<dcsEROHop> nodeEROHops = new Vector<dcsEROHop>();
     
     /** Creates a new instance of dcsNode */
     public dcsNode(String s, int nx, int ny) {
@@ -170,10 +160,6 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     public void setHighlight(boolean b) {
         boolean emph = false;
         isHighlighted = b;
-        if(b) {
-            displayNodeTip(sysName, emph);
-        } else
-            hideLabel();
     }
     
     public void setRtrID(String s) {
@@ -205,21 +191,13 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         boolean emph = false;
         if(isHighlighted) {
             isHighlighted = false;
-            hideLabel();
         } else {
             int n = dcsGlobals.dcsNodes.getNumHihlights();
             if(n>=2) {
                 dcsGlobals.dcsNodes.normHighlits();
             }
             isHighlighted = true;
-            displayNodeTip(sysName, emph);
         }
-    }
-    
-    private void displayNodeTip(String s, boolean emph) {
-        //  nodeLabel.setMsg(s);
-        //  nodeLabel.setEmph(emph);
-        //  nodeLabel.setVisible(true);
     }
     
     private void hideLabel() {
@@ -308,7 +286,11 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     
     // infrastructure methods
     public void addFiber(dcsFiber f) {
-        dcsFibers.add(f);
+        nodeFibers.add(f);
+    }
+    
+    public void addEROHop(dcsEROHop l) {
+        nodeEROHops.add(l);
     }
     
     public void mouseClicked(MouseEvent e) {
@@ -367,12 +349,12 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
             msg = s;
             msgL = new JLabel(msg);
             msgL.setFont(f);
-
+            
             msgL.setSize(30, 15);
             add(msgL);
             setSize(msgL.getWidth(), msgL.getHeight());
             setLocation(cdx - nw/2 + 5, cdy + nh/2);
-
+            
             setOpaque(false);
             setVisible(true);
         }

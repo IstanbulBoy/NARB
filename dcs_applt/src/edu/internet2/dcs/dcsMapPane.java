@@ -49,6 +49,7 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
     private int mouseY = 0;
     
     private dcsFiberLayer fiberLayer = null;
+    private dcsEROLayer eroLayer = null;
     
     private boolean isZoomedOut = false;
     private Image img_sm;
@@ -73,6 +74,10 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         
         fiberLayer = new dcsFiberLayer(this);
         add(fiberLayer, JLayeredPane.DEFAULT_LAYER);
+        
+        eroLayer = new dcsEROLayer(this);
+        add(eroLayer, JLayeredPane.PALETTE_LAYER);
+        
         formatMap();
         
         popMapZoom.addActionListener(new ActionListener() {
@@ -124,6 +129,7 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         ih = img.getHeight(this);
         setPreferredSize(new Dimension(iw, ih));
         fiberLayer.setSize(new Dimension(iw, ih));
+        eroLayer.setSize(new Dimension(iw, ih));
         if(isZoomedOut) {
             if(dcsCurrMapImgSm != null) {
                 Graphics2D g2d = dcsCurrMapImgSm.createGraphics();
@@ -228,7 +234,7 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         popMenuMap.show(this, mouseX, mouseY);
     }
     
-    private void zoomMap() {
+    public void zoomMap() {
         Point p;
         isZoomedOut = !isZoomedOut;
         if(isZoomedOut) {
