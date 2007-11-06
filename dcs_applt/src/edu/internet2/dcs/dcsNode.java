@@ -21,11 +21,11 @@ import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.Vector;
 import java.util.prefs.Preferences;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
@@ -60,8 +60,9 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     private Vector<dcsEROHop> nodeEROHops = new Vector<dcsEROHop>();
     
     /** Creates a new instance of dcsNode */
-    public dcsNode(String s, int nx, int ny) {
+    public dcsNode(String s, int nx, int ny, String r) {
         sysName = s;
+        rtrID = r;
         cdx = nx; cdy = ny;
         int f = dcsGlobals.currMapPane.isZoomedOut()?2:1;
         
@@ -78,7 +79,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         prefs.putInt("center_x", cdx*f);
         prefs.putInt("center_y", cdy*f);
         
-        nodeLabel = new dcsNodeLabel(sysName);
+        nodeLabel = new dcsNodeLabel();
         
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -157,10 +158,8 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     public void setHighlight(boolean b) {
         boolean emph = false;
         isHighlighted = b;
-    }
-    
-    public void setRtrID(String s) {
-        rtrID = s;
+        if(!dcsGlobals.currMapPane.isZoomedOut())
+            nodeLabel.setVisible(!b);
     }
     
     public void addTELink(String s) {
@@ -187,18 +186,14 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     public void toggleHighlight() {
         boolean emph = false;
         if(isHighlighted) {
-            isHighlighted = false;
+            setHighlight(false);
         } else {
             int n = dcsGlobals.dcsNodes.getNumHihlights();
             if(n>=2) {
                 dcsGlobals.dcsNodes.normHighlits();
             }
-            isHighlighted = true;
+            setHighlight(true);
         }
-    }
-    
-    private void hideLabel() {
-        nodeLabel.setVisible(false);
     }
     
     public void loadSetGraphics() {
@@ -268,6 +263,13 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         setLocation(((cdx-nw/2)<0)?0:cdx-nw/2, ((cdy-nh/2)<0)?0:cdy-nh/2);
         if(nodeLabel != null) {
             nodeLabel.setLocation();
+            if(dcsGlobals.currMapPane.isZoomedOut()) {
+                nodeLabel.setVisible(true);
+            } else {
+                if(isHighlighted) {
+                    nodeLabel.setVisible(false);
+                }
+            }
         }
     }
     
@@ -337,23 +339,41 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     // private classes
     
     private class dcsNodeLabel extends JPanel {
-        private String msg;
         private boolean isEmph = false;
-        private JLabel msgL;
+        private final Color NODE_TIP_FONT_COLOR = new Color(0, 0, 0, 255);
+        private final Color NODE_TIP_EM_FONT_COLOR = new Color(222, 0, 0, 255);
         
-        public dcsNodeLabel(String s) {
-            Font f = new Font("Courier", Font.PLAIN, 10);
-            msg = s;
-            msgL = new JLabel(msg);
-            msgL.setFont(f);
-            
-            msgL.setSize(30, 15);
-            add(msgL);
-            setSize(msgL.getWidth(), msgL.getHeight());
-            setLocation(cdx - nw/2 + 5, cdy + nh/2);
-            
+        public dcsNodeLabel() {
             setOpaque(false);
             setVisible(true);
+            setLocation();
+            setSize(70, 20);
+        }
+        
+        public void paintComponent(Graphics g) {
+            if(isVisible()) {
+                Graphics2D g2d = (Graphics2D)g;
+                Font f = new Font("Courier", Font.PLAIN, 10);
+                Rectangle2D sb = f.getStringBounds(rtrID, g2d.getFontRenderContext());
+                
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if(isEmph)
+                    g2d.setPaint(NODE_TIP_EM_FONT_COLOR);
+                else
+                    g2d.setPaint(NODE_TIP_FONT_COLOR);
+                g2d.setFont(f);
+                
+                setLocation(cdx - nw/2 + 5, cdy + nh/2);
+                if(dcsGlobals.currMapPane.isZoomedOut()) {
+                    setSize(4 + (int)sb.getWidth(), (int)sb.getHeight());
+                    g2d.drawString(sysName, 2, (int)sb.getHeight());
+                } else {
+                    setSize(4 + (int)sb.getWidth(), 2*((int)sb.getHeight()) + 2);
+                    g2d.drawString(sysName, 2, (int)sb.getHeight());
+                    g2d.drawString(rtrID, 2, 2*((int)sb.getHeight()) + 2);
+                }
+            }
         }
         
         public void setLocation() {

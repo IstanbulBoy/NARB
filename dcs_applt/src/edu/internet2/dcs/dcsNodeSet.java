@@ -46,8 +46,7 @@ public class dcsNodeSet extends Vector<dcsNode> {
     }
     
     public void addNode(String s, int x, int y, String[] sa) {
-        dcsNode n = new dcsNode(s, x, y);
-        n.setRtrID(sa[3]);
+        dcsNode n = new dcsNode(s, x, y, sa[3]);
         for (int i = 4; i < sa.length; i++) {
             n.addTELink(sa[i]);
         }
@@ -117,7 +116,7 @@ public class dcsNodeSet extends Vector<dcsNode> {
             return null;
         dcsNode n0, n1;
         Vector<String> te_l0, te_l1;
-
+        
         String tes0, tes1;
         for (int i = 0; i < size(); i++) {
             n0 = get(i);
