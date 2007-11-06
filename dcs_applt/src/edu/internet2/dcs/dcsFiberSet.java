@@ -31,6 +31,11 @@ public class dcsFiberSet extends Vector<dcsFiber> {
         return Integer.parseInt(get(size()-1).getID().split("_")[1]) + 1;
     }
     
+    // setters
+    public void setHidden(boolean b) {
+        isHidden = b;
+    }
+    
     // queries
     public boolean isHidden() {
         return isHidden;

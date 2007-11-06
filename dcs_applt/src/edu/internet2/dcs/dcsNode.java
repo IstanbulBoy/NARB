@@ -9,7 +9,6 @@
 
 package edu.internet2.dcs;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -22,14 +21,11 @@ import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.Vector;
 import java.util.prefs.Preferences;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
 /**
@@ -56,6 +52,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     private int mouseY = 0;
     
     private boolean isHighlighted = false;
+    private boolean isLabeled = false;
     private boolean nodeDragged = false;
     
     private Vector<String> teLinks = new Vector<String>(4);
@@ -134,7 +131,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         return cdy;
     }
     
-    public Vector<String> getTELinks() {
+    public Vector<String> getTELinkLabels() {
         return teLinks;
     }
     

@@ -53,10 +53,7 @@ public class dcsApplt extends javax.swing.JApplet {
     }
     
     private void fiberUp() {
-        dcsNode[][] na = dcsGlobals.dcsNodes.getLinkedNodes();
-        for (int i = 0; i < na.length; i++) {
-            dcsGlobals.dcsFibers.add(new dcsFiber(na[i]));
-        }
+        dcsGlobals.dcsNodes.fiberNodes();
     }
     
     //JavaScript API
@@ -76,6 +73,16 @@ public class dcsApplt extends javax.swing.JApplet {
         if(s.length()>0) {
             dcsGlobals.dcsEROHops.load(s.split(" "));
         }
+    }
+    
+    public static void toggleFiber() {
+        dcsGlobals.dcsFibers.setHidden(!dcsGlobals.dcsFibers.isHidden());
+        dcsGlobals.currMapPane.repaint();
+    }
+    
+    public static void toggleEROs() {
+        dcsGlobals.dcsEROHops.setHidden(!dcsGlobals.dcsEROHops.isHidden());
+        dcsGlobals.currMapPane.repaint();
     }
 }
 

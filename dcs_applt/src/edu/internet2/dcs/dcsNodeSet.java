@@ -121,10 +121,10 @@ public class dcsNodeSet extends Vector<dcsNode> {
         String tes0, tes1;
         for (int i = 0; i < size(); i++) {
             n0 = get(i);
-            te_l0 = n0.getTELinks();
+            te_l0 = n0.getTELinkLabels();
             for (int j = i+1; j < size(); j++) {
                 n1 = get(j);
-                te_l1 = n1.getTELinks();
+                te_l1 = n1.getTELinkLabels();
                 for (int k = 0; k < te_l0.size(); k++) {
                     tes0 = te_l0.get(k);
                     for (int l = 0; l < te_l1.size(); l++) {
@@ -140,27 +140,26 @@ public class dcsNodeSet extends Vector<dcsNode> {
         return null;
     }
     
-    public dcsNode[][] getLinkedNodes() {
+    public void fiberNodes() {
         boolean linkFound = false;
         dcsNode n0, n1;
         Vector<String> te_l0, te_l1;
-        Vector<dcsNode[]> tpm_nn = new Vector<dcsNode[]>();
-        dcsNode ret[][] = {{}};
         String tes0, tes1;
         for (int i = 0; i < size(); i++) {
             n0 = get(i);
-            te_l0 = n0.getTELinks();
+            te_l0 = n0.getTELinkLabels();
             for (int j = i+1; j < size(); j++) {
                 n1 = get(j);
                 linkFound = false;
-                te_l1 = n1.getTELinks();
+                te_l1 = n1.getTELinkLabels();
                 for (int k = 0; k < te_l0.size(); k++) {
                     tes0 = te_l0.get(k);
                     for (int l = 0; l < te_l1.size(); l++) {
                         tes1 = te_l1.get(l);
                         if(isTELinked(tes0, tes1)) {
                             dcsNode[] np = {n0, n1};
-                            tpm_nn.add(np);
+                            String[] tep = {tes0, tes1};
+                            dcsGlobals.dcsFibers.add(new dcsFiber(np, tep));
                             linkFound = true;
                             break;
                         }
@@ -171,7 +170,6 @@ public class dcsNodeSet extends Vector<dcsNode> {
                 }
             }
         }
-        return tpm_nn.toArray(ret);
     }
     
     private boolean isTELinked(String s0, String s1) {
