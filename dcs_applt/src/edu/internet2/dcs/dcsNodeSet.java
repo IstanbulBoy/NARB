@@ -105,9 +105,9 @@ public class dcsNodeSet extends Vector<dcsNode> {
         dcsNode n;
         for (int i = 0; i < size(); i++) {
             n = get(i);
-            dcsGlobals.currMapPane.add(n, JLayeredPane.MODAL_LAYER);
+            dcsGlobals.currMapPane.add(n, JLayeredPane.POPUP_LAYER);
             n.setVisible(true);
-            dcsGlobals.currMapPane.add(n.getLabel(), JLayeredPane.MODAL_LAYER);
+            dcsGlobals.currMapPane.add(n.getLabel(), JLayeredPane.POPUP_LAYER);
         }
     }
     

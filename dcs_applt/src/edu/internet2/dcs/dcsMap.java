@@ -42,7 +42,7 @@ public class dcsMap extends JPanel implements MouseListener, MouseMotionListener
     /** Creates a new instance of dcsMap */
     public dcsMap() {
         super(new GridLayout());
-        setSize(dcsGlobals.DCS_MAP_PANE_W, dcsGlobals.DCS_MAP_PANE_H);
+        setSize(dcsGlobals.DCS_MAP_W, dcsGlobals.DCS_MAP_H);
         setLocation(0, 0);
         prefs = dcsGlobals.prefsRoot.node("/edu/internet2/dcs/DcsMap");
         URL img_url = dcsApplt.class.getResource("/edu/internet2/dcs/images/logic_bg.jpg");
@@ -65,9 +65,9 @@ public class dcsMap extends JPanel implements MouseListener, MouseMotionListener
         dcsGlobals.currMapPane = new dcsMapPane(img, img_sm, this);
         scroller = new javax.swing.JScrollPane(dcsGlobals.currMapPane);
         
-        scroller.setMaximumSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_PANE_W, dcsGlobals.DCS_MAP_PANE_H));
-        scroller.setMinimumSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_PANE_W, dcsGlobals.DCS_MAP_PANE_H));
-        scroller.setPreferredSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_PANE_W, dcsGlobals.DCS_MAP_PANE_H));
+        scroller.setMaximumSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_W, dcsGlobals.DCS_MAP_H));
+        scroller.setMinimumSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_W, dcsGlobals.DCS_MAP_H));
+        scroller.setPreferredSize(new java.awt.Dimension(dcsGlobals.DCS_MAP_W, dcsGlobals.DCS_MAP_H));
         scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         
@@ -84,10 +84,15 @@ public class dcsMap extends JPanel implements MouseListener, MouseMotionListener
         if(scroller != null) {
             JViewport v = scroller.getViewport();
             Rectangle r = v.getViewRect();
-            
-            if(p.x < 0) p.x = 0; if(p.y < 0) p.y = 0;
-            if(p.x + r.width > dcsGlobals.currMapPane.getWidth()) p.x = dcsGlobals.currMapPane.getWidth() - r.width;
-            if(p.y + r.height > dcsGlobals.currMapPane.getHeight()) p.y = dcsGlobals.currMapPane.getHeight() - r.height;
+
+            if(p.x < 0)
+                p.x = 0;
+            if((p.x + r.width) > dcsGlobals.currMapPane.getWidth())
+                p.x = dcsGlobals.currMapPane.getWidth() - r.width;
+            if(p.y < 0)
+                p.y = 0;
+            if((p.y + r.height) > dcsGlobals.currMapPane.getHeight())
+                p.y = dcsGlobals.currMapPane.getHeight() - r.height;
             v.setViewPosition(p);
             viewPoint = p;
             prefs.putInt("dcsmap_view_x", viewPoint.x);

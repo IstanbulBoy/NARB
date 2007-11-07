@@ -58,6 +58,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     private Vector<String> teLinks = new Vector<String>(4);
     private Vector<dcsFiber> nodeFibers = new Vector<dcsFiber>();
     private Vector<dcsEROHop> nodeEROHops = new Vector<dcsEROHop>();
+    private Vector<dcsLSP> nodeLSPs = new Vector<dcsLSP>();
     
     /** Creates a new instance of dcsNode */
     public dcsNode(String s, int nx, int ny, String r) {
@@ -288,8 +289,20 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         nodeFibers.add(f);
     }
     
-    public void addEROHop(dcsEROHop l) {
-        nodeEROHops.add(l);
+    public void addEROHop(dcsEROHop e) {
+        nodeEROHops.add(e);
+    }
+    
+    public void removeEROHop(dcsEROHop e) {
+        nodeEROHops.remove(e);
+    }
+    
+    public void addLSP(dcsLSP l) {
+        nodeLSPs.add(l);
+    }
+    
+    public void removeLSP(dcsLSP l) {
+        nodeLSPs.remove(l);
     }
     
     public void mouseClicked(MouseEvent e) {

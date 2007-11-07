@@ -1,7 +1,7 @@
 /*
- * dcsEROHop.java
+ * dcsLSP.java
  *
- * Created on November 3, 2007, 8:07 PM
+ * Created on November 6, 2007, 9:30 PM
  *
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
@@ -20,40 +20,37 @@ import java.awt.geom.Line2D;
  *
  * @author jflidr
  */
-public class dcsEROHop extends Line2D.Double {
+public class dcsLSP extends Line2D.Double {
     
-    private dcsNode endPoint1 = null;
-    private dcsNode endPoint2 = null;
+    private dcsNode endPoint1;
+    private dcsNode endPoint2;
     
     private String id;
     
-    private boolean isHidden = false;
-    private boolean isStale = false;
-    private boolean isLeader = true;
-    
-    private dcsEROShadow shadow;
-    private final Color ERO_COLOR = new Color(0, 255, 0, 200);
+    private dcsLSPShadow shadow;
+    private final Color LSP_COLOR = new Color(255, 0, 10, 200);
     private final Color SHADOW_COLOR = new Color(64, 64, 64, 90);
     private int bunchSize = 1;
     
-    /**
-     * Creates a new instance of dcsEROHop
-     */
-    public dcsEROHop(String s, dcsNode[] p) {
+    private boolean isHidden = false;;
+    private boolean isLeader = true;
+    
+    /** Creates a new instance of dcsLSP */
+    public dcsLSP(String s, dcsNode[] p) {
         endPoint1 = p[0];
         endPoint2 = p[1];
-        endPoint1.addEROHop(this);
-        endPoint2.addEROHop(this);
+        endPoint1.addLSP(this);
+        endPoint2.addLSP(this);
         id = s;
-        shadow = new dcsEROShadow(this);
+        shadow = new dcsLSPShadow(this);
     }
     
     public void paint(Graphics g) {
-        if(isHidden())
+        if(isHidden)
             return;
         if(!isLeader)
             return;
-
+        
         Color currentColor;
         Graphics2D g2d = (Graphics2D)g;
         int f = dcsGlobals.currMapPane.isZoomedOut()?2:1;
@@ -71,8 +68,8 @@ public class dcsEROHop extends Line2D.Double {
         cx2 = ep2.getCenterX() - 20/f;
         cy2 = ep2.getCenterY();
         
-        int r1 = 1;
-        int r2 = 1;
+        int r1 = 3;
+        int r2 = 3;
         
         cx1 += dx1;
         cy1 += dy1;
@@ -132,7 +129,7 @@ public class dcsEROHop extends Line2D.Double {
             
             g2d.setStroke(new BasicStroke(st));
             g2d.draw(g2d.getStroke().createStrokedShape(this));
-            currentColor = ERO_COLOR;
+            currentColor = LSP_COLOR;
             
             g2d.setPaint(currentColor);
             //g2d.fill(this);
@@ -143,10 +140,6 @@ public class dcsEROHop extends Line2D.Double {
     //getters
     public boolean isHidden() {
         return isHidden;
-    }
-    
-    public boolean isStale() {
-        return isStale;
     }
     
     public boolean isLeader() {
@@ -162,13 +155,9 @@ public class dcsEROHop extends Line2D.Double {
         return np;
     }
     
-    //setters
+//setters
     public void setHidden(boolean b) {
         isHidden = b;
-    }
-    
-    public void setStale(boolean b) {
-        isStale = b;
     }
     
     void setLeader(boolean b) {
@@ -188,9 +177,9 @@ public class dcsEROHop extends Line2D.Double {
     }
     
     //private classes
-    private class dcsEROShadow extends Line2D.Double {
-        dcsEROHop caster;
-        public dcsEROShadow(dcsEROHop l) {
+    private class dcsLSPShadow extends Line2D.Double {
+        dcsLSP caster;
+        public dcsLSPShadow(dcsLSP l) {
             caster = l;
         }
         

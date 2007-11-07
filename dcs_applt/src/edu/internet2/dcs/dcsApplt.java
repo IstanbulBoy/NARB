@@ -25,6 +25,7 @@ public class dcsApplt extends javax.swing.JApplet {
                     dcsGlobals.dcsNodes = new dcsNodeSet(10, 1);
                     dcsGlobals.dcsFibers = new dcsFiberSet(10, 1);
                     dcsGlobals.dcsEROHops = new dcsEROHopSet(10, 1);
+                    dcsGlobals.dcsLSPs = new dcsLSPSet(10, 1);
                     
                     setBackground(new java.awt.Color(153, 153, 0));
                     
@@ -73,6 +74,11 @@ public class dcsApplt extends javax.swing.JApplet {
         if(s.length()>0) {
             dcsGlobals.dcsEROHops.load(s.split(" "));
         }
+    }
+    
+    public static void highlightEROs(String s) {
+        dcsGlobals.dcsEROHops.highlightERO(s);
+        dcsGlobals.currMapPane.repaint();
     }
     
     public static void toggleFiber() {

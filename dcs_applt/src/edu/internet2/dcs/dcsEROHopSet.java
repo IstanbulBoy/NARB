@@ -53,7 +53,7 @@ public class dcsEROHopSet extends Vector<dcsEROHop> {
             for (int i = size()-1; i>=0 ; i--) {
                 e = get(i);
                 if(e.isStale()) {
-                    remove(e);
+                    removeERO(e);
                 }
             }
         }
@@ -76,6 +76,13 @@ public class dcsEROHopSet extends Vector<dcsEROHop> {
             e.setBunchSize(cnt);
         }
         dcsGlobals.currMapPane.repaint();
+    }
+    
+    private void removeERO(dcsEROHop e) {
+        dcsNode[] np = e.getEPs();
+        np[0].removeEROHop(e);
+        np[1].removeEROHop(e);
+        remove(e);
     }
     
     //getters
@@ -106,5 +113,30 @@ public class dcsEROHopSet extends Vector<dcsEROHop> {
             }
         }
         return ret;
+    }
+    
+    public void highlightERO(String s) {
+        boolean lsp_found = false;
+        dcsEROHop e;
+        dcsLSP l;
+        for (int j = dcsGlobals.dcsLSPs.size()-1; j >=0; j--) {
+            l = dcsGlobals.dcsLSPs.get(j);
+            if(l.getID().equals(s)) {
+                dcsGlobals.dcsLSPs.remove(l);
+                lsp_found = true;
+            }
+        }
+        if(!lsp_found) {
+            for(int j = dcsGlobals.dcsLSPs.size()-1; j >=0; j--) {
+                l = dcsGlobals.dcsLSPs.get(j);
+                dcsGlobals.dcsLSPs.remove(l);
+            }
+            for (int i = 0; i < size(); i++) {
+                e = get(i);
+                if(e.getID().equals(s)){
+                    dcsGlobals.dcsLSPs.addLSP(new dcsLSP(s, e.getEPs()));
+                }
+            }
+        }
     }
 }

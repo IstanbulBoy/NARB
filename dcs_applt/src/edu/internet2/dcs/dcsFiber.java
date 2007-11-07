@@ -48,8 +48,8 @@ public class dcsFiber extends CubicCurve2D.Double {
         endPoint2 = p[1];
         teLabel1 = new dcsTELabel(t[0]);
         teLabel2 = new dcsTELabel(t[1]);
-        dcsGlobals.currMapPane.add(teLabel1, JLayeredPane.MODAL_LAYER);
-        dcsGlobals.currMapPane.add(teLabel2, JLayeredPane.MODAL_LAYER);
+        dcsGlobals.currMapPane.add(teLabel1, JLayeredPane.POPUP_LAYER);
+        dcsGlobals.currMapPane.add(teLabel2, JLayeredPane.POPUP_LAYER);
         endPoint1.addFiber(this);
         endPoint2.addFiber(this);
         int idx = dcsGlobals.dcsFibers.getIdx();

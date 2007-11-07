@@ -50,6 +50,7 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
     
     private dcsFiberLayer fiberLayer = null;
     private dcsEROLayer eroLayer = null;
+    private dcsLSPLayer lspLayer = null;
     
     private boolean isZoomedOut = false;
     private Image img_sm;
@@ -77,6 +78,9 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         
         eroLayer = new dcsEROLayer(this);
         add(eroLayer, JLayeredPane.PALETTE_LAYER);
+        
+        lspLayer = new dcsLSPLayer(this);
+        add(lspLayer, JLayeredPane.MODAL_LAYER);
         
         formatMap();
         
@@ -128,8 +132,10 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         iw = img.getWidth(this);
         ih = img.getHeight(this);
         setPreferredSize(new Dimension(iw, ih));
+        setSize(new Dimension(iw, ih));
         fiberLayer.setSize(new Dimension(iw, ih));
         eroLayer.setSize(new Dimension(iw, ih));
+        lspLayer.setSize(new Dimension(iw, ih));
         if(isZoomedOut) {
             if(dcsCurrMapImgSm != null) {
                 Graphics2D g2d = dcsCurrMapImgSm.createGraphics();
@@ -237,22 +243,31 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
     public void zoomMap() {
         Point p;
         isZoomedOut = !isZoomedOut;
+        p = dcsGlobals.currMap.getViewPoint();
+        formatMap();
         if(isZoomedOut) {
+            p.x += dcsGlobals.DCS_MAP_W/2;
+            p.y += dcsGlobals.DCS_MAP_H/2;
+            p.x /= 2;
+            p.y /= 2;
+            p.x -= dcsGlobals.DCS_MAP_W/2;
+            p.y -= dcsGlobals.DCS_MAP_H/2;
             popMapZoom.setText("Zoom In");
             dcsGlobals.dcsNodes.scaleDown();
             prefs.putBoolean("zoomOut", isZoomedOut);
-            p = dcsGlobals.currMap.getViewPoint();
-            p.translate(-p.x/2, -p.y/2);
             dcsGlobals.currMap.setViewPoint(p);
         } else {
+            p.x += dcsGlobals.DCS_MAP_W/2;
+            p.y += dcsGlobals.DCS_MAP_H/2;
+            p.x *= 2;
+            p.y *= 2;
+            p.x -= dcsGlobals.DCS_MAP_W/2;
+            p.y -= dcsGlobals.DCS_MAP_H/2;
             popMapZoom.setText("Zoom Out");
             dcsGlobals.dcsNodes.scaleUp();
             prefs.putBoolean("zoomOut", isZoomedOut);
-            p = dcsGlobals.currMap.getViewPoint();
-            p.translate(p.x, p.y);
             dcsGlobals.currMap.setViewPoint(p);
         }
-        formatMap();
     }
     
     private void displayInfo(dcsNode n) {
