@@ -106,6 +106,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_SUBNET_ERO = 0x09,
     TLV_TYPE_NARB_LOCAL_ID = 0x0A,
+    TLV_TYPE_NARB_HOLDING_TIME = 0x10,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
@@ -155,6 +156,13 @@ struct narb_lsp_subnet_ero_tlv
     u_int16_t type;
     u_int16_t length;
     ero_subobj subobjects[1]; //acually number of subobjects depends on length
+};
+
+struct narb_lsp_holding_time_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t seconds;
 };
 
 // data structure of an IPv4 prefix type ERO sub-object
@@ -221,8 +229,8 @@ public:
 public:
     static void GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero);
     static void HandleResvNotification(api_msg* msg);
-    static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true, u_int32_t lsp_vtag=0, u_int32_t lclid_src=0, u_int32_t lclid_dest=0, narb_lsp_vtagmask_tlv* vtag_mask=NULL);
-    static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0, narb_lsp_vtagmask_tlv* vtag_mask=NULL);
+    static void UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir=true, u_int32_t lsp_vtag=0, u_int32_t lclid_src=0, u_int32_t lclid_dest=0, narb_lsp_vtagmask_tlv* vtag_mask=NULL, u_int32_t holding_time = 0);
+    static void HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag=0, u_int32_t if_id=0, narb_lsp_vtagmask_tlv* vtag_mask=NULL, u_int32_t holding_time = 0);
 };
 
 #endif

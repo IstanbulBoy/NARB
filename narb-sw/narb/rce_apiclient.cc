@@ -168,7 +168,8 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
 }
 
 void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, 
-    u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, msg_narb_vtag_mask* vtag_mask_tlv)
+    u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
+    msg_narb_vtag_mask* vtag_mask_tlv, u_int32_t holding_time)
 {
     api_msg *rce_msg;
     char buf[1500];
@@ -184,7 +185,7 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
         memcpy(buf + length, vtag_mask_tlv, sizeof(msg_narb_vtag_mask));
         length += sizeof(msg_narb_vtag_mask);
     }
-    if (src_lcl_id!= 0 || dest_lcl_id!=0)
+    if (src_lcl_id != 0 || dest_lcl_id !=0)
     {
         msg_narb_local_id* local_id_tlv = (msg_narb_local_id*)(buf + length);
         local_id_tlv->type = htons(TLV_TYPE_NARB_LOCAL_ID);
@@ -192,6 +193,14 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
         local_id_tlv->lclid_src= htonl(src_lcl_id);
         local_id_tlv->lclid_dest= htonl(dest_lcl_id);
         length += sizeof(msg_narb_local_id);
+    }
+    if (holding_time != 0)
+    {
+        msg_narb_holding_time* holding_time_tlv = (msg_narb_holding_time*)(buf + length);
+        holding_time_tlv->type = htons(TLV_TYPE_NARB_HOLDING_TIME);
+        holding_time_tlv->length = htons(sizeof(u_int32_t));
+        holding_time_tlv->seconds = htonl(holding_time);
+        length += sizeof(msg_narb_holding_time);
     }
     rce_msg = api_msg_new(type, action, length, buf, ucid, seqnum, msgtag);
     rce_msg->header.options = htonl(options);

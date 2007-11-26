@@ -98,6 +98,15 @@ struct msg_narb_local_id
     u_int32_t lclid_dest;
 };
 
+
+struct msg_narb_holding_time
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t seconds;
+};
+
+
 #define msg_app2narb_release msg_narb_confirm
 
 class LSP_Broker;
@@ -364,6 +373,8 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_SUGGESTED_VTAG = 0x07,
     TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_SUBNET_ERO = 0x09,
+    TLV_TYPE_NARB_LOCAL_ID = 0x0A,
+    TLV_TYPE_NARB_HOLDING_TIME = 0x10,
     TLV_TYPE_NARB_LOCAL_ID = 0x0A,
 };
 

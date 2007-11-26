@@ -207,8 +207,8 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     bool is_bidir = ((ntohl(msg->hdr.options) & LSP_OPT_BIDIRECTIONAL) != 0);
     narb_lsp_vtagmask_tlv* vtag_mask_tlv = NULL;
     u_int32_t src_lcl_id = 0, dest_lcl_id = 0;
+    u_int32_t holding_time = 0;
     list<ero_subobj> ero;
-
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
@@ -232,6 +232,10 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
             break;
+        case TLV_TYPE_NARB_HOLDING_TIME:
+            tlv_len = sizeof(narb_lsp_holding_time_tlv);
+            holding_time = ntohl(((narb_lsp_holding_time_tlv*)tlv)->seconds);
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
@@ -241,11 +245,12 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     }
 
     assert(ero.size() > 0);
-    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv);
+    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time);
     api_msg_delete(msg);
 }
 
-void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, u_int32_t lsp_vtag, u_int32_t lclid_src, u_int32_t lclid_dest, narb_lsp_vtagmask_tlv* vtag_mask)
+//TODO: adding holding_time logic!
+void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_subobj>& ero_reply, u_int32_t ucid, u_int32_t seqnum,  bool is_bidir, u_int32_t lsp_vtag, u_int32_t lclid_src, u_int32_t lclid_dest, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t holding_time)
 {
     Link *link1;
     ero_subobj* subobj;
@@ -368,7 +373,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
 
 }
 
-void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id, narb_lsp_vtagmask_tlv* vtag_mask)
+void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t holding_time)
 {
     assert(link1);
     u_int8_t reqtype = req_data.type >> 8;
@@ -435,9 +440,10 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             //simply removing without put back the held resources
             link1->DeltaListPointer()->remove(delta); 
             delete delta;
-            break; // not to continue...
+            // $$$$ TEST: let it continue and create a 'reservation' delta (Xi: 26-11-2007)
+            //break; // @@@@ original design: not to contniue;
         }
-        //else ...
+        //else ... the 'reservation' delta won't be necessary but it will expire after SystemConfig::delta_expire_reserve seconds
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
@@ -494,7 +500,6 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->vlan_tag = vtag;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
-        break;
         break;
     case ACT_DELETE:
         delta = link1->removeDeltaByOwner(ucid, seqnum);
