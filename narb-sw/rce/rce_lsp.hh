@@ -61,6 +61,7 @@
 // The below options are for NARB only
 //#define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
 #define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
+#define LSP_OPT_SUBNET_DTL  ((u_int32_t)(0x0800 << 16)) //returning subnet DTL TLV if any
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing
@@ -86,6 +87,15 @@ struct ero_subobj
     float bandwidth;
 };
 
+// $$$$ DCN-Subnet special handling
+// Structure of DTL hop
+#define MAX_DTL_NODENAME_LEN 19
+struct dtl_hop 
+{
+    u_int8_t nodename[MAX_DTL_NODENAME_LEN+1]; //19-char C string
+    u_int32_t linkid;  //link ID number
+};
+
 // definitions of loose/strict hop indicator
 #define ERO_TYPE_STRICT_HOP 0
 #define ERO_TYPE_LOOSE_HOP 1
@@ -106,6 +116,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_SUBNET_ERO = 0x09,
     TLV_TYPE_NARB_LOCAL_ID = 0x0A,
+    TLV_TYPE_NARB_SUBNET_DTL = 0x0B,
     TLV_TYPE_NARB_HOLDING_TIME = 0x10,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
@@ -156,6 +167,13 @@ struct narb_lsp_subnet_ero_tlv
     u_int16_t type;
     u_int16_t length;
     ero_subobj subobjects[1]; //acually number of subobjects depends on length
+};
+
+struct narb_lsp_subnet_dtl_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    dtl_hop hops[1]; //acually number of dtl_hops depends on length
 };
 
 struct narb_lsp_holding_time_tlv

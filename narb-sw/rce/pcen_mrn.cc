@@ -1176,6 +1176,16 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
     }
 }
 
+int PCEN_MRN::VerifyDTL(list<dtl_hop>& dtl_hops)
+{
+    //Build Topology
+    //loop DTL hops, for each hop
+        //locate link (loop RDB physical links to match dtl_link_id and then match dtl_name for adv_router.
+        //verify link capacity
+        //hold/reserve resources?
+    //return verification status
+}
+
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);

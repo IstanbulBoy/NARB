@@ -38,6 +38,7 @@ using namespace std;
 #include <string>
 #include "resource.hh"
 #include "rce_config.hh"
+#include "rce_lsp.hh"
 
 // data structure of an opaque router id generated in domain summary 
 #define RT_TYPE_DEFAULT 0x0
@@ -49,6 +50,8 @@ public:
     u_int32_t home_vlsr;
     bool hide;
     int rt_type; 
+    char dtl_name[MAX_DTL_NODENAME_LEN+1];
+
     router_id_info(ResourceType router_type, u_int32_t domain_id, in_addr ip);
     virtual ~router_id_info() {}
 };
@@ -59,6 +62,7 @@ class link_info: public Link
 public:
     bool hide;
     u_int16_t info_flag;
+    u_int32_t dtl_id;
 
 #define _ifswcap iscds.front()
     ISCD* GetISCD () { return iscds.front(); }

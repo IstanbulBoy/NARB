@@ -190,6 +190,8 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   inet_aton(home_vlsr, (in_addr*)&router->home_vlsr);
               }
 
+              ReadConfigParameter(blk_body, "dtl_name", "%s", router->dtl_name);
+
               AddRouter(router);
 
               link_blk = strstr(blk_body, "link");
@@ -295,6 +297,8 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
+
+                  ReadConfigParameter(blk_body, "dtl_id", "%d", &link->dtl_id);
 
                   AddLink(link);
                 }

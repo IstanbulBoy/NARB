@@ -37,6 +37,7 @@
 #include "rce_pcen.hh"
 #include "rce_lsa.hh"
 #include "rce_movaz_types.hh"
+#include "rce_subnet.hh"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -1256,6 +1257,23 @@ void PCEN::ReplyERO ()
         bodylen += ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE;
     }
 
+    if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_DTL))
+    {
+        list<dtl_hop> subnet_dtl;
+        TanslateSubnetEROIntoDTL(subnet_dtl);
+        narb_lsp_subnet_dtl_tlv* subnet_dtl_tlv = (narb_lsp_subnet_dtl_tlv*)(body + bodylen);
+        subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
+        subnet_dtl_tlv->length = htons(sizeof(dtl_hop)*subnet_dtl.size());
+        i = 0;
+        while (subnet_dtl.size() > 0)
+        {
+            subnet_dtl_tlv->hops[i] = subnet_dtl.front();
+            subnet_dtl.pop_front();
+            i++;
+        }
+        bodylen += ntohs(subnet_dtl_tlv->length)+TLV_HDR_SIZE;
+    }
+
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
     api_writer->PostMessage(msg);
 
@@ -1269,6 +1287,62 @@ void PCEN::ReplyERO ()
         HoldLinkStatesUponQuery(NULL);
     }
 }
+
+void PCEN::TanslateSubnetEROIntoDTL(list<dtl_hop>& dtl_hops)
+{
+    dtl_hops.clear();
+    if (subnet_ero.size() < 2 || subnet_ero.size()%2 != 0)
+    {
+        //@@@@ LOG Error: subnet ero hops must be paired
+        return;
+    }
+    
+    RadixTree<Resource> *tree_lk = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    RadixTree<Resource> *tree_rt = RDB.Tree(RTYPE_LOC_RTID);
+    list<ero_subobj>::iterator it;
+    ero_subobj *subobj1, *subobj2;
+    dtl_hop dhop;
+    for (it = subnet_ero.begin(); it != subnet_ero.end(); it++)
+    {
+        subobj1 = &(*it);
+        it++;
+        subobj2 = &(*it);
+        RadixNode<Resource> * node_lk = tree_lk->Root();
+        if (node_lk && !node_lk->Data())
+            node_lk = tree_rt->NextNodeHavingData(node_lk);
+        while (node_lk)
+        {
+            link_info * link = (link_info *)node_lk->Data();
+            if (link->LclIfAddr() == subobj1->addr.s_addr && link->RmtIfAddr() == subobj2->addr.s_addr)
+            {
+                link->AdvRtId();
+                RadixNode<Resource> * node_rt = tree_rt->Root();
+                if (node_rt && !node_rt->Data())
+                    node_rt = tree_rt->NextNodeHavingData(node_rt);
+                while (node_rt)
+                {
+                    router_id_info * rtid = (router_id_info *)node_rt->Data();
+                    if (rtid->Id() == link->AdvRtId())
+                    {
+                        //Adding DTL hop
+                        strncpy((char*)dhop.nodename, rtid->dtl_name, MAX_DTL_NODENAME_LEN);
+                        dhop.linkid = link->dtl_id;
+                        dtl_hops.push_back(dhop);
+                        break;
+                    }
+                    node_rt = tree_rt->NextNodeHavingData(node_rt);
+                }
+                // if (node_rt != NULL)                     
+                //@@@@ LOG Error: No DTL node found
+                break;
+            }        
+            node_lk = tree_rt->NextNodeHavingData(node_lk);
+        }        
+        // if (node_lk != NULL)
+        //@@@@ LOG Error: No DTL node found
+    }
+}
+
 
 void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 {

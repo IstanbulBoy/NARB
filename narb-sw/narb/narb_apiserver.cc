@@ -285,7 +285,8 @@ static int make_ero_tlv_from_list(te_tlv_header* tlv, list<ero_subobj*>& ero, in
     return offset;
 }
 
-api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_narb_vtag_mask* vtagmask, u_int32_t prev_lspb_id, list<ero_subobj*>* p_ero_subnet)
+api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, 
+    msg_narb_vtag_mask* vtagmask, u_int32_t prev_lspb_id, list<ero_subobj*>* p_subnet_ero, list<dtl_hop>* p_subnet_dtl)
 {
     api_msg *msg;
     int offset;
@@ -313,11 +314,25 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
         offset += sizeof(msg_narb_lspb_id);
     }
 
-    if (p_ero_subnet != NULL && p_ero_subnet->size() > 0)
+    if (p_subnet_ero != NULL && p_subnet_ero->size() > 0)
     {
         te_tlv_header* subnet_ero_tlv = (te_tlv_header *)(buf+offset);
-        offset = make_ero_tlv_from_list(subnet_ero_tlv, *p_ero_subnet, offset);
+        offset = make_ero_tlv_from_list(subnet_ero_tlv, *p_subnet_ero, offset);
     }
+
+    if (p_subnet_dtl != NULL && p_subnet_dtl->size() > 0)
+    {
+        msg_narb_subnet_dtl* subnet_dtl_tlv = (msg_narb_subnet_dtl *)(buf+offset);
+        subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
+        subnet_dtl_tlv->length = htons(TLV_HDR_SIZE+p_subnet_dtl->size()*sizeof(dtl_hop));
+        list<dtl_hop>::iterator it = p_subnet_dtl->begin();
+        for (int i=0; it != p_subnet_dtl->end(); it++, i++)
+        {
+            subnet_dtl_tlv->hops[i] = (*it);
+        }
+        offset += ntohs(subnet_dtl_tlv->length);
+    }
+
     msg = api_msg_new (MSG_REPLY_ERO, offset, buf, ucid, seqnr);
     
     return msg;

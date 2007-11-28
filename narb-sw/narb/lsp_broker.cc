@@ -460,6 +460,19 @@ void LSPQ::SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag)
     }
 }
 
+void LSPQ::GetDTL(te_tlv_header* tlv, list<dtl_hop>& dtl)
+{
+    assert (tlv);
+    dtl.clear();
+    int len = ntohs(tlv->length);
+    assert( len > 0 && len% sizeof(dtl_hop) == 0);
+
+    dtl_hop * hop  = (dtl_hop *)((char *)tlv + TLV_HDR_SIZE);
+    for (; len > 0 ;hop++, len -= sizeof(dtl_hop))
+    {
+        dtl.push_back(*hop);
+    }
+}
 
 //////////////////////////////////////////////////////////////////
 //////////////////////// LSPQ FSM Functions ////////////////////////
@@ -950,7 +963,7 @@ int LSPQ::HandleCompleteERO()
     assert(broker);
 
     rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req? previous_lspb_id : 0,
-        (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero);
+        (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl);
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
     rmsg->header.tag = htonl(req_vtag);
@@ -1047,7 +1060,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
         }
 
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req ? previous_lspb_id : 0,
-            (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero);
+            (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
 
@@ -1926,6 +1939,10 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
                 GetERO(tlv, subnet_ero);
             else if (state == STATE_NEXT_HOP_NARB_REPLY)
                 GetERO_RFCStandard(tlv, subnet_ero);
+            tlv_len = ntohs(tlv->length);
+            break;
+        case TLV_TYPE_NARB_SUBNET_DTL:
+            GetDTL(tlv, subnet_dtl);
             tlv_len = ntohs(tlv->length);
             break;
         /* RCE does not suggest vtag in the current implemention

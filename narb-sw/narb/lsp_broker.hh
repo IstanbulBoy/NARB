@@ -107,6 +107,22 @@ struct msg_narb_holding_time
 };
 
 
+// $$$$ DCN-Subnet special handling
+// Structure of DTL hop
+#define MAX_DTL_NODENAME_LEN 19
+struct dtl_hop 
+{
+    u_int8_t nodename[MAX_DTL_NODENAME_LEN+1]; //19-char C string
+    u_int32_t linkid;  //link ID number
+};
+
+struct msg_narb_subnet_dtl
+{
+    u_int16_t type;
+    u_int16_t length;
+    dtl_hop hops[1]; //acually number of dtl_hops depends on length
+};
+
 #define msg_app2narb_release msg_narb_confirm
 
 class LSP_Broker;
@@ -129,6 +145,7 @@ private:
     u_int32_t dest_lcl_id;
     u_int32_t hop_back;
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO
+    list<dtl_hop> subnet_dtl; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_DTL
     bool is_recursive_req;
     bool is_qconf_mode;
     
@@ -187,6 +204,7 @@ public:
     static int MergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
     static int ForceMergeERO(list<ero_subobj*>& ero_inter, list<ero_subobj*>& ero_intra);
     void SetVtagToERO(list<ero_subobj*>& ero, u_int32_t vtag);
+    void GetDTL(te_tlv_header* tlv, list<dtl_hop>& dtl);
 
     // FSM state handlers ...
     
@@ -374,8 +392,8 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_LSPB_ID = 0x08,
     TLV_TYPE_NARB_SUBNET_ERO = 0x09,
     TLV_TYPE_NARB_LOCAL_ID = 0x0A,
+    TLV_TYPE_NARB_SUBNET_DTL = 0x0B,
     TLV_TYPE_NARB_HOLDING_TIME = 0x10,
-    TLV_TYPE_NARB_LOCAL_ID = 0x0A,
 };
 
 // definitions of NARB error code as proccessing a request fails
