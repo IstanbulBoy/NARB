@@ -718,8 +718,15 @@ Link* ResourceDB::LookupIncompleteLink(ResourceType rcType, Prefix* prefix)
         rcType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
     else if (rcType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return NULL;
-    RadixNode<Resource>* node = r_trees[rcType].LookupNode(prefix);
-    return (node == NULL) ? NULL : (Link*)node->Data();
+
+    RadixNode<Resource>* node = r_trees[rcType].Root();
+    while (node)
+    {
+        if ((*prefix == (node->Index())) && (node->Data() != NULL))
+            return (Link*)node->Data();
+        node = r_trees[rcType].NextNode(node);
+    }
+    return NULL;
 }
 
 void ResourceDB::BookmarkIncompleteLink(Link* link)
