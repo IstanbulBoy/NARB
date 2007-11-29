@@ -324,13 +324,13 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
     {
         msg_narb_subnet_dtl* subnet_dtl_tlv = (msg_narb_subnet_dtl *)(buf+offset);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
-        subnet_dtl_tlv->length = htons(TLV_HDR_SIZE+p_subnet_dtl->size()*sizeof(dtl_hop));
+        subnet_dtl_tlv->length = htons(p_subnet_dtl->size()*sizeof(dtl_hop));
         list<dtl_hop>::iterator it = p_subnet_dtl->begin();
         for (int i=0; it != p_subnet_dtl->end(); it++, i++)
         {
             subnet_dtl_tlv->hops[i] = (*it);
         }
-        offset += ntohs(subnet_dtl_tlv->length);
+        offset += (ntohs(subnet_dtl_tlv->length)+TLV_HDR_SIZE);
     }
 
     msg = api_msg_new (MSG_REPLY_ERO, offset, buf, ucid, seqnr);
