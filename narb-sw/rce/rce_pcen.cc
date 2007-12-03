@@ -1260,7 +1260,7 @@ void PCEN::ReplyERO ()
     if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_DTL))
     {
         list<dtl_hop> subnet_dtl;
-        TanslateSubnetEROIntoDTL(subnet_ero, subnet_dtl);
+        TranslateSubnetEROIntoDTL(subnet_ero, subnet_dtl);
         narb_lsp_subnet_dtl_tlv* subnet_dtl_tlv = (narb_lsp_subnet_dtl_tlv*)(body + bodylen);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
         subnet_dtl_tlv->length = htons(sizeof(dtl_hop)*subnet_dtl.size());

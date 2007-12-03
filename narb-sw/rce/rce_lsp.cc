@@ -254,7 +254,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             break;
         case TLV_TYPE_NARB_SUBNET_DTL:
             GetDTL(tlv, dtl);
-            PCEN::TanslateSubnetDTLIntoERO(dtl, ero);
+            PCEN::TranslateSubnetDTLIntoERO(dtl, ero);
             tlv_len = ntohs(tlv->length);
             break;
         default:
@@ -440,33 +440,21 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
+
     case ACT_CONFIRM:
         delta = link1->lookupDeltaByOwner(ucid, seqnum);
         if (delta)
         {
-            /* $$$$
-            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query) // the existing delta is a query delta
-            {
-                delta->expiration.tv_sec = SystemConfig::delta_expire_reserve;
-            }
-            else
-            {
-                assert (delta->expiration.tv_sec == SystemConfig::delta_expire_reserve);
-                LOGF("Warning: on Link[0x%x--0x%x], delta (ResvConfirm) already existed. (ucid=0x%x, seqnum=0x%x, create_time=%d.%d) bandwidth: %g vtag: %d\n", 
-                    link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
-            }
-            //set time to the current
-            gettimeofday(&delta->create_time, NULL);
-            */
-
             //simply removing without put back the held resources
             link1->DeltaListPointer()->remove(delta); 
             delete delta;
         }
-        // $$$$ TEST: let it continue and create a 'reservation' delta (Xi: 26-11-2007)
+
         if (holding_time == 0)
-            break; // not to contniue;
-        //... the 'reservation' delta won't be necessary but it will expire after SystemConfig::delta_expire_reserve seconds
+            holding_time = SystemConfig::delta_expire_reserve;
+        if (holding_time == 0)
+            break; // not to contniue if still zero
+
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
@@ -494,6 +482,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         }
         link1->insertDelta(delta, holding_time, 0);
         break;
+
     case ACT_UPDATE:
         delta = link1->removeDeltaByOwner(ucid, seqnum);
         if (!delta)

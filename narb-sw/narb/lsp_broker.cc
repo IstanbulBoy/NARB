@@ -1893,6 +1893,10 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             src_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_dest);
             break;
+        case TLV_TYPE_NARB_SUBNET_DTL:
+            GetDTL(tlv, subnet_dtl);
+            tlv_len = ntohs(tlv->length);
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
