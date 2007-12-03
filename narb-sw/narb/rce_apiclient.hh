@@ -72,6 +72,7 @@ struct msg_narb_cspf_request;
 struct msg_app2narb_request;
 struct msg_narb_vtag_mask;
 struct ero_subobj;
+struct dtl_hop;
 class RCE_APIClient: public APIClient
 {
 
@@ -84,11 +85,11 @@ public:
     void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0, msg_narb_vtag_mask* vtag_bitmask = NULL);
     void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, msg_narb_vtag_mask* vtag_bitmask = NULL);
 
-    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, u_int32_t ucid, u_int32_t seqnum, u_int32_t options, 
-        u_int32_t msgtag, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0, msg_narb_vtag_mask* vtag_mask_tlv = NULL, u_int32_t holding_time = 0);
-    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, api_msg* msg, list<ero_subobj*>& ero_forward, u_int32_t src_lcl_id, u_int32_t dest_lcl_id)
+    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, list<dtl_hop>& subnet_dtl,  u_int32_t ucid, u_int32_t seqnum, 
+        u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0, msg_narb_vtag_mask* vtag_mask_tlv = NULL, u_int32_t holding_time = 0);
+    void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, api_msg* msg, list<ero_subobj*>& ero_forward, list<dtl_hop>& subnet_dtl, u_int32_t src_lcl_id, u_int32_t dest_lcl_id)
         {
-            NotifyResvStateWithERO(type, action, (msg_app2narb_request*)msg->body, ero_forward, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.options), ntohl(msg->header.tag), src_lcl_id, dest_lcl_id);
+            NotifyResvStateWithERO(type, action, (msg_app2narb_request*)msg->body, ero_forward, subnet_dtl, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.options), ntohl(msg->header.tag), src_lcl_id, dest_lcl_id);
         }
 };
 

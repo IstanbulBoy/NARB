@@ -887,7 +887,7 @@ int LSPQ::HandleNextHopNARBReply(api_msg *msg)
                     if (ret >= 0)
                     {
                         //single (picked) vlan tag instead of vtag_mask!==> (needed only if vtag_mask holding is active!)
-                        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, req_ucid, app_seqnum, app_options, req_vtag, src_lcl_id, dest_lcl_id);
+                        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_UPDATE, &req_spec, ero, subnet_dtl, req_ucid, app_seqnum, app_options, req_vtag, src_lcl_id, dest_lcl_id);
                     }
                 }
             }
@@ -932,7 +932,7 @@ int LSPQ::HandleErrorCode(u_int32_t errcode)
         if (ret >= 0)
         {
             //vtag and vtag_mask doesn't matter for delta deletion
-            rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, &req_spec, ero, req_ucid, app_seqnum, app_options, 0, src_lcl_id, dest_lcl_id);
+            rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, &req_spec, ero, subnet_dtl, req_ucid, app_seqnum, app_options, 0, src_lcl_id, dest_lcl_id);
         }
     }
 
@@ -1350,7 +1350,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
     } //else ret == 0;
     if (ret >= 0)
     {
-        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_CONFIRM, msg, ero_confirm, src_lcl_id, dest_lcl_id);
+        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_CONFIRM, msg, ero_confirm, subnet_dtl, src_lcl_id, dest_lcl_id);
     }
 
     //proceed to the next domain if any
@@ -1564,7 +1564,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
     }
     if (ret >= 0)
     {
-        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, msg, ero_confirm, src_lcl_id, dest_lcl_id);
+        rce_client->NotifyResvStateWithERO(MSG_LSP, ACT_DELETE, msg, ero_confirm, subnet_dtl, src_lcl_id, dest_lcl_id);
     }
 
     //proceed to the next domain if any
