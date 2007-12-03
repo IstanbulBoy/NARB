@@ -76,8 +76,7 @@ public:
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
-    void PCEN_MRN::TanslateSubnetEROIntoDTL(list<dtl_hop>& dtl_hops);
-    int PCEN_MRN::VerifyDTL(list<dtl_hop>& dtl_hops);
+    int VerifyDTL(list<dtl_hop>& dtl_hops);
 
     virtual int PerformComputation();
     bool PostBuildTopology();

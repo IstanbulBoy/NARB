@@ -1260,7 +1260,7 @@ void PCEN::ReplyERO ()
     if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_DTL))
     {
         list<dtl_hop> subnet_dtl;
-        TanslateSubnetEROIntoDTL(subnet_dtl);
+        TanslateSubnetEROIntoDTL(subnet_ero, subnet_dtl);
         narb_lsp_subnet_dtl_tlv* subnet_dtl_tlv = (narb_lsp_subnet_dtl_tlv*)(body + bodylen);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
         subnet_dtl_tlv->length = htons(sizeof(dtl_hop)*subnet_dtl.size());
@@ -1288,62 +1288,6 @@ void PCEN::ReplyERO ()
     }
 }
 
-void PCEN::TanslateSubnetEROIntoDTL(list<dtl_hop>& dtl_hops)
-{
-    dtl_hops.clear();
-    if (subnet_ero.size() < 2 || subnet_ero.size()%2 != 0)
-    {
-        //@@@@ LOG Error: subnet ero hops must be paired
-        return;
-    }
-    
-    RadixTree<Resource> *tree_lk = RDB.Tree(RTYPE_LOC_PHY_LNK);
-    RadixTree<Resource> *tree_rt = RDB.Tree(RTYPE_LOC_RTID);
-    list<ero_subobj>::iterator it;
-    ero_subobj *subobj1, *subobj2;
-    dtl_hop dhop;
-    for (it = subnet_ero.begin(); it != subnet_ero.end(); it++)
-    {
-        subobj1 = &(*it);
-        it++;
-        subobj2 = &(*it);
-        RadixNode<Resource> * node_lk = tree_lk->Root();
-        if (node_lk && !node_lk->Data())
-            node_lk = tree_rt->NextNodeHavingData(node_lk);
-        while (node_lk)
-        {
-            link_info * link = (link_info *)node_lk->Data();
-            if (link->LclIfAddr() == subobj1->addr.s_addr && link->RmtIfAddr() == subobj2->addr.s_addr)
-            {
-                link->AdvRtId();
-                RadixNode<Resource> * node_rt = tree_rt->Root();
-                if (node_rt && !node_rt->Data())
-                    node_rt = tree_rt->NextNodeHavingData(node_rt);
-                while (node_rt)
-                {
-                    router_id_info * rtid = (router_id_info *)node_rt->Data();
-                    if (rtid->Id() == link->AdvRtId())
-                    {
-                        //Adding DTL hop
-                        strncpy((char*)dhop.nodename, rtid->dtl_name, MAX_DTL_NODENAME_LEN);
-                        dhop.linkid = link->dtl_id;
-                        dtl_hops.push_back(dhop);
-                        break;
-                    }
-                    node_rt = tree_rt->NextNodeHavingData(node_rt);
-                }
-                // if (node_rt != NULL)                     
-                //@@@@ LOG Error: No DTL node found
-                break;
-            }        
-            node_lk = tree_rt->NextNodeHavingData(node_lk);
-        }        
-        // if (node_lk != NULL)
-        //@@@@ LOG Error: No DTL node found
-    }
-}
-
-
 void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 {
     narb_lsp_request_tlv lsp_req;
@@ -1358,6 +1302,10 @@ void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
 
     bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
     LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir, this->vtag, this->src_lcl_id, this->dest_lcl_id, vtag_mask);
+
+    //Holding links states for Subnet ERO (using the same lsp_req structure, where only req-type, source, destination and bandwidth matter)
+    if (subnet_ero.size() > 0)
+        LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir);
 }
     
 PCEN::~PCEN()
@@ -1564,4 +1512,173 @@ bool PCEN::IsLinkInDomain(PCENLink* pcenLink, u_int32_t domainId)
 
     return false;
 }
+
+void PCEN::TranslateSubnetEROIntoDTL(list<ero_subobj>&ero_hops, list<dtl_hop>& dtl_hops)
+{
+    dtl_hops.clear();
+    if (ero_hops.size() < 2 || ero_hops.size()%2 != 0)
+    {
+        //@@@@ LOG Error: subnet ero hops must be paired
+        return;
+    }
+    
+    RadixTree<Resource> *tree_rt = RDB.Tree(RTYPE_LOC_RTID);
+    RadixTree<Resource> *tree_lk = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    list<ero_subobj>::iterator it;
+    ero_subobj *subobj1, *subobj2;
+    dtl_hop dhop;
+    for (it = ero_hops.begin(); it != ero_hops.end(); it++)
+    {
+        subobj1 = &(*it);
+        it++;
+        subobj2 = &(*it);
+        RadixNode<Resource> * node_lk = tree_lk->Root();
+        if (node_lk && !node_lk->Data())
+            node_lk = tree_rt->NextNodeHavingData(node_lk);
+        while (node_lk)
+        {
+            link_info * link = (link_info *)node_lk->Data();
+            if (link->LclIfAddr() == subobj1->addr.s_addr && link->RmtIfAddr() == subobj2->addr.s_addr)
+            {
+                link->AdvRtId();
+                RadixNode<Resource> * node_rt = tree_rt->Root();
+                if (node_rt && !node_rt->Data())
+                    node_rt = tree_rt->NextNodeHavingData(node_rt);
+                while (node_rt)
+                {
+                    router_id_info * rtid = (router_id_info *)node_rt->Data();
+                    if (rtid->Id() == link->AdvRtId())
+                    {
+                        //Adding DTL hop
+                        strncpy((char*)dhop.nodename, rtid->dtl_name, MAX_DTL_NODENAME_LEN);
+                        dhop.linkid = link->dtl_id;
+                        dtl_hops.push_back(dhop);
+                        break;
+                    }
+                    node_rt = tree_rt->NextNodeHavingData(node_rt);
+                }
+                // if (node_rt != NULL)                     
+                //@@@@ LOG Error: No DTL node found
+                break;
+            }        
+            node_lk = tree_rt->NextNodeHavingData(node_lk);
+        }        
+        // if (node_lk != NULL)
+        //@@@@ LOG Error: No DTL node found
+    }
+}
+
+void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& ero_hops)
+{
+    ero_hops.clear();
+    if (dtl_hops.size() == 0)
+    {
+        return;
+    }
+
+    // form a subnet list
+    RadixTree<Resource> subnet_rtids;
+    RadixTree<Resource> subnet_links;
+    RadixTree<Resource> *tree_rt = RDB.Tree(RTYPE_LOC_RTID);
+    RadixNode<Resource> *node_rt = tree_rt->Root();
+    if (node_rt && !node_rt->Data())
+        node_rt = tree_rt->NextNodeHavingData(node_rt);
+    while (node_rt)
+    {
+        RouterId * rtid = (RouterId *)node_rt->Data();
+        if (SystemConfig::FindHomeVlsrByRouterId(rtid->Id()) != 0) // subnet node
+        {
+            Prefix index = rtid->Index();
+            subnet_rtids.InsertNode(&index, rtid);
+        }
+        node_rt = tree_rt->NextNodeHavingData(node_rt);
+    }
+    RadixTree<Resource> *tree_lk = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    RadixNode<Resource> *node_lk = tree_lk->Root();
+    if (node_lk && !node_lk->Data())
+        node_lk = tree_lk->NextNodeHavingData(node_lk);
+    while (node_lk)
+    {
+        Link * link = (Link *)node_lk->Data();
+        if (SystemConfig::FindHomeVlsrByRouterId(link->AdvRtId()) != 0) // subnet node
+        {
+            Prefix index = link->Index();
+            subnet_links.InsertNode(&index, link);
+        }
+        node_lk = tree_lk->NextNodeHavingData(node_lk);
+    }
+    
+    list<dtl_hop>::iterator it;
+    dtl_hop *dhop;
+    for (it = dtl_hops.begin(); it != dtl_hops.end(); it++)
+    {
+        dhop = &(*it);
+
+        //search the subbet rtid tree to match the dtl-node-name and get the RouterID
+        u_int32_t link_lcl_rtid = 0;
+        node_rt = subnet_rtids.Root();
+        if (node_rt && !node_rt->Data())
+            node_rt = tree_rt->NextNodeHavingData(node_rt);
+        while (node_rt)
+        {
+            router_id_info * rtid = (router_id_info *)node_rt->Data();
+            if (strncmp((char*)dhop->nodename, rtid->dtl_name, MAX_DTL_NODENAME_LEN) == 0)
+            {
+                link_lcl_rtid = rtid->Id();
+                break;
+            }
+            node_rt = tree_rt->NextNodeHavingData(node_rt);
+        }
+
+        if (link_lcl_rtid)
+            continue;
+
+        //search the subnet link tree to match both the AdvRtID and dtl-link-id
+        node_lk = subnet_links.Root();
+        if (node_lk && !node_lk->Data())
+            node_lk = tree_lk->NextNodeHavingData(node_lk);
+        link_info * link = NULL;
+        while (node_lk)
+        {
+            link_info * link = (link_info *)node_lk->Data();
+            if (link->AdvRtId() == link_lcl_rtid && dhop->linkid == link->dtl_id)
+            {
+                break;
+            }
+            node_lk = tree_lk->NextNodeHavingData(node_lk);
+            link = NULL;
+        }
+
+        //create two subnet ERO hops using the link, add into ero_hops
+        if (link != NULL)
+        {
+            ero_subobj subobj1, subobj2;
+            memset(&subobj1, 0, sizeof(ero_subobj));
+            subobj1.prefix_len = 32;
+            subobj1.addr.s_addr = link->lclIfAddr;
+            if (subobj1.addr.s_addr == 0)
+            {
+                subobj1.addr.s_addr = link->advRtId;
+                subobj1.if_id = link->lclRmtId[0];
+            }
+            memset(&subobj2, 0, sizeof(ero_subobj));
+            subobj2.prefix_len = 32;
+            subobj2.addr.s_addr = link->rmtIfAddr;
+            if (subobj2.addr.s_addr == 0)
+            {
+                subobj2.addr.s_addr = link->id;
+                subobj2.if_id = link->lclRmtId[1];
+            }
+            subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
+            assert (link->iscds.size() > 0);
+            ISCD * iscd = link->iscds.front();
+            subobj1.sw_type = subobj2.sw_type = iscd->swtype;
+            subobj1.encoding = subobj2.encoding = iscd->encoding;
+            subobj1.bandwidth= subobj2.bandwidth = iscd->max_lsp_bw[7];
+            ero_hops.push_back(subobj1);
+            ero_hops.push_back(subobj2);
+        }
+    }
+}
+
 

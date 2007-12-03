@@ -435,7 +435,6 @@ public:
     void DJhop(float *graphhop, int node_number, int source, int* path, int* hop, float* cost);
     void ReplyErrorCode(u_int32_t ret);
     void ReplyERO();
-    void TanslateSubnetEROIntoDTL(list<dtl_hop>& dtl_hops);
     void HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask=NULL);
 
     static int GetLinkEndsByIndex(vector<PCENNode*>& routers, vector<PCENLink*>& links, int j, int k, in_addr* head_ip, in_addr* tail_ip);
@@ -446,6 +445,9 @@ public:
     static int GetInterDomainLinks(vector<PCENNode*>& routers, vector<PCENLink*>& links, u_int32_t domainIdHead, u_int32_t domainIdTail, list<PCENLink*>&interDomainLinks);
     static bool IsDomainBorderRouter(vector<PCENNode*>& routers, vector<PCENLink*>& links, u_int32_t domainId, u_int32_t routerId);
     static bool IsLinkInDomain(PCENLink* pcenLink, u_int32_t domainId);
+
+    static void TranslateSubnetEROIntoDTL(list<ero_subobj>&ero_hops, list<dtl_hop>& dtl_hops);
+    static void TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>&ero_hops);
 
     // ... more ...
     //To get head and tail-end domain IDs for a TE link call GetRouterDomainId twice on advRtId and linkId

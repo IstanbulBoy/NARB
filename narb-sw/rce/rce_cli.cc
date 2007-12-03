@@ -1448,7 +1448,7 @@ _show_more_links:
         {
             delta = *it;
             CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s @ %d.%d<<<%s", cli_cstr_newline, k, 
-                (delta->expiration.tv_sec == SystemConfig::delta_expire_query) ? "Queried" : "Reserved", 
+                (delta->expiration.tv_sec <= SystemConfig::delta_expire_query) ? "Queried" : "Reserved", 
                 delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline);
             CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
             if (delta->flags & DELTA_VLANTAG)

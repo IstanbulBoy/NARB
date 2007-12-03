@@ -198,6 +198,21 @@ void LSPHandler::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero)
     }
 }
 
+void LSPHandler::GetDTL(te_tlv_header* tlv, list<dtl_hop>& dtl)
+{
+    assert (tlv);
+    dtl.clear();
+    int len = ntohs(tlv->length);
+    assert( len > 0 && len% sizeof(dtl_hop) == 0);
+
+    dtl_hop * hop  = (dtl_hop *)((char *)tlv + TLV_HDR_SIZE);
+    for (; len > 0 ;hop++, len -= sizeof(dtl_hop))
+    {
+        dtl.push_back(*hop);
+    }
+}
+
+
 void LSPHandler::HandleResvNotification(api_msg* msg)
 {
     //parse message
@@ -209,6 +224,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     u_int32_t src_lcl_id = 0, dest_lcl_id = 0;
     u_int32_t holding_time = 0;
     list<ero_subobj> ero;
+    list<dtl_hop> dtl;
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
@@ -236,6 +252,11 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             tlv_len = sizeof(narb_lsp_holding_time_tlv);
             holding_time = ntohl(((narb_lsp_holding_time_tlv*)tlv)->seconds);
             break;
+        case TLV_TYPE_NARB_SUBNET_DTL:
+            GetDTL(tlv, dtl);
+            PCEN::TanslateSubnetDTLIntoERO(dtl, ero);
+            tlv_len = ntohs(tlv->length);
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
@@ -244,8 +265,9 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
         msg_len -= tlv_len;
     }
 
-    assert(ero.size() > 0);
-    UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time);
+    if (ero.size() > 0)
+        UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time);
+
     api_msg_delete(msg);
 }
 
@@ -440,10 +462,11 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             //simply removing without put back the held resources
             link1->DeltaListPointer()->remove(delta); 
             delete delta;
-            // $$$$ TEST: let it continue and create a 'reservation' delta (Xi: 26-11-2007)
-            //break; // @@@@ original design: not to contniue;
         }
-        //else ... the 'reservation' delta won't be necessary but it will expire after SystemConfig::delta_expire_reserve seconds
+        // $$$$ TEST: let it continue and create a 'reservation' delta (Xi: 26-11-2007)
+        if (holding_time == 0)
+            break; // not to contniue;
+        //... the 'reservation' delta won't be necessary but it will expire after SystemConfig::delta_expire_reserve seconds
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
@@ -469,7 +492,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        link1->insertDelta(delta, SystemConfig::delta_expire_reserve, 0);
+        link1->insertDelta(delta, holding_time, 0);
         break;
     case ACT_UPDATE:
         delta = link1->removeDeltaByOwner(ucid, seqnum);
