@@ -224,7 +224,8 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     u_int32_t src_lcl_id = 0, dest_lcl_id = 0;
     u_int32_t holding_time = 0;
     list<ero_subobj> ero;
-    list<dtl_hop> dtl;
+    list<ero_subobj> subnet_ero;
+    list<dtl_hop> subnet_dtl;
 
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
@@ -253,8 +254,8 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             holding_time = ntohl(((narb_lsp_holding_time_tlv*)tlv)->seconds);
             break;
         case TLV_TYPE_NARB_SUBNET_DTL:
-            GetDTL(tlv, dtl);
-            PCEN::TranslateSubnetDTLIntoERO(dtl, ero);
+            GetDTL(tlv, subnet_dtl);
+            PCEN::TranslateSubnetDTLIntoERO(subnet_dtl, subnet_ero);
             tlv_len = ntohs(tlv->length);
             break;
         default:
@@ -266,7 +267,9 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     }
 
     if (ero.size() > 0)
-        UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time);
+        UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv); //using default reserve_time
+    if (subnet_ero.size() > 0)
+        UpdateLinkStatesByERO(*lsp_req_tlv, subnet_ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time ==0 ? MAX_HOLDING_TIME : holding_time);
 
     api_msg_delete(msg);
 }

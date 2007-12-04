@@ -182,6 +182,7 @@ struct narb_lsp_holding_time_tlv
     u_int16_t length;
     u_int32_t seconds;
 };
+#define MAX_HOLDING_TIME 86400 //24 hours
 
 // data structure of an IPv4 prefix type ERO sub-object
 struct ipv4_prefix_subobj
