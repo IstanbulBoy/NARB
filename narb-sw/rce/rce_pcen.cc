@@ -1305,7 +1305,7 @@ void PCEN::HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask)
         LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir, this->vtag, this->src_lcl_id, this->dest_lcl_id, vtag_mask);
     //Holding links states for Subnet ERO (using the same lsp_req structure, where only req-type, source, destination and bandwidth matter)
     if (subnet_ero.size() > 0)
-        LSPHandler::UpdateLinkStatesByERO(lsp_req, this->ero, this->ucid, this->seqnum, is_bidir);
+        LSPHandler::UpdateLinkStatesByERO(lsp_req, this->subnet_ero, this->ucid, this->seqnum, is_bidir);
 }
     
 PCEN::~PCEN()
