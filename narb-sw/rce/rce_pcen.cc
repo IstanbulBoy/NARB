@@ -1579,8 +1579,8 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
     }
 
     // form a subnet list
-    RadixTree<Resource> subnet_rtids;
-    RadixTree<Resource> subnet_links;
+    list<RouterId*> subnet_rtids;
+    list<Link*> subnet_links;
     RadixTree<Resource> *tree_rt = RDB.Tree(RTYPE_LOC_RTID);
     RadixNode<Resource> *node_rt = tree_rt->Root();
     if (node_rt && !node_rt->Data())
@@ -1590,8 +1590,7 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
         RouterId * rtid = (RouterId *)node_rt->Data();
         if (SystemConfig::FindHomeVlsrByRouterId(rtid->Id()) != 0) // subnet node
         {
-            Prefix index = rtid->Index();
-            subnet_rtids.InsertNode(&index, rtid);
+            subnet_rtids.push_back(rtid);
         }
         node_rt = tree_rt->NextNodeHavingData(node_rt);
     }
@@ -1604,8 +1603,7 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
         Link * link = (Link *)node_lk->Data();
         if (SystemConfig::FindHomeVlsrByRouterId(link->AdvRtId()) != 0) // subnet node
         {
-            Prefix index = link->Index();
-            subnet_links.InsertNode(&index, link);
+            subnet_links.push_back(link);
         }
         node_lk = tree_lk->NextNodeHavingData(node_lk);
     }
@@ -1618,36 +1616,30 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
 
         //search the subbet rtid tree to match the dtl-node-name and get the RouterID
         u_int32_t link_lcl_rtid = 0;
-        node_rt = subnet_rtids.Root();
-        if (node_rt && !node_rt->Data())
-            node_rt = tree_rt->NextNodeHavingData(node_rt);
-        while (node_rt)
+        list<RouterId*>::iterator it_rtid = subnet_rtids.begin();
+        for ( ; it_rtid!= subnet_rtids.end(); it_rtid++)
         {
-            router_id_info * rtid = (router_id_info *)node_rt->Data();
+            router_id_info * rtid = (router_id_info *)(*it_rtid);
             if (strncmp((char*)dhop->nodename, rtid->dtl_name, MAX_DTL_NODENAME_LEN) == 0)
             {
                 link_lcl_rtid = rtid->Id();
                 break;
             }
-            node_rt = tree_rt->NextNodeHavingData(node_rt);
         }
 
-        if (link_lcl_rtid)
+        if (link_lcl_rtid == 0)
             continue;
 
         //search the subnet link tree to match both the AdvRtID and dtl-link-id
-        node_lk = subnet_links.Root();
-        if (node_lk && !node_lk->Data())
-            node_lk = tree_lk->NextNodeHavingData(node_lk);
         link_info * link = NULL;
-        while (node_lk)
+        list<RouterId*>::iterator it_link = subnet_rtids.begin();
+        for ( ; it_link!= subnet_rtids.end(); it_link++)
         {
-            link_info * link = (link_info *)node_lk->Data();
+            link_info * link = (link_info *)(*it_link);
             if (link->AdvRtId() == link_lcl_rtid && dhop->linkid == link->dtl_id)
             {
                 break;
             }
-            node_lk = tree_lk->NextNodeHavingData(node_lk);
             link = NULL;
         }
 
