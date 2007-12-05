@@ -196,7 +196,7 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
     }
     if (subnet_dtl.size() > 0)
     {
-        msg_narb_subnet_dtl* subnet_dtl_tlv = (msg_narb_subnet_dtl*)buf + length;
+        msg_narb_subnet_dtl* subnet_dtl_tlv = (msg_narb_subnet_dtl*)(buf + length);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
         subnet_dtl_tlv->length = htons(sizeof(struct dtl_hop)*subnet_dtl.size());
         list<dtl_hop>::iterator it = subnet_dtl.begin();
