@@ -342,7 +342,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 vtag = lsp_vtag;
             }
 
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask, holding_time);
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
     }
@@ -386,11 +386,11 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
             {
                 //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag);
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
             }
             else
             {
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask);
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask, holding_time);
             }
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
