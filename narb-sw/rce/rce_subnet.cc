@@ -298,7 +298,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
-                  ReadConfigParameter(blk_body, "dtl_id", "%d", &link->dtl_id);
+                  ReadConfigParameter(link_body, "dtl_id", "%d", &link->dtl_id);
 
                   AddLink(link);
                 }

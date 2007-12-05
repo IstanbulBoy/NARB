@@ -1631,47 +1631,41 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
             continue;
 
         //search the subnet link tree to match both the AdvRtID and dtl-link-id
-        link_info * link = NULL;
-        list<RouterId*>::iterator it_link = subnet_rtids.begin();
-        for ( ; it_link!= subnet_rtids.end(); it_link++)
+        list<Link*>::iterator it_link = subnet_links.begin();
+        for ( ; it_link!= subnet_links.end(); it_link++)
         {
             link_info * link = (link_info *)(*it_link);
             if (link->AdvRtId() == link_lcl_rtid && dhop->linkid == link->dtl_id)
             {
-                break;
+                //create two subnet ERO hops using the link, add into ero_hops
+                ero_subobj subobj1, subobj2;
+                memset(&subobj1, 0, sizeof(ero_subobj));
+                subobj1.prefix_len = 32;
+                subobj1.addr.s_addr = link->lclIfAddr;
+                if (subobj1.addr.s_addr == 0)
+                {
+                    subobj1.addr.s_addr = link->advRtId;
+                    subobj1.if_id = link->lclRmtId[0];
+                }
+                memset(&subobj2, 0, sizeof(ero_subobj));
+                subobj2.prefix_len = 32;
+                subobj2.addr.s_addr = link->rmtIfAddr;
+                if (subobj2.addr.s_addr == 0)
+                {
+                    subobj2.addr.s_addr = link->id;
+                    subobj2.if_id = link->lclRmtId[1];
+                }
+                subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
+                assert (link->iscds.size() > 0);
+                ISCD * iscd = link->iscds.front();
+                subobj1.sw_type = subobj2.sw_type = iscd->swtype;
+                subobj1.encoding = subobj2.encoding = iscd->encoding;
+                subobj1.bandwidth= subobj2.bandwidth = iscd->max_lsp_bw[7];
+                ero_hops.push_back(subobj1);
+                ero_hops.push_back(subobj2);
             }
-            link = NULL;
         }
 
-        //create two subnet ERO hops using the link, add into ero_hops
-        if (link != NULL)
-        {
-            ero_subobj subobj1, subobj2;
-            memset(&subobj1, 0, sizeof(ero_subobj));
-            subobj1.prefix_len = 32;
-            subobj1.addr.s_addr = link->lclIfAddr;
-            if (subobj1.addr.s_addr == 0)
-            {
-                subobj1.addr.s_addr = link->advRtId;
-                subobj1.if_id = link->lclRmtId[0];
-            }
-            memset(&subobj2, 0, sizeof(ero_subobj));
-            subobj2.prefix_len = 32;
-            subobj2.addr.s_addr = link->rmtIfAddr;
-            if (subobj2.addr.s_addr == 0)
-            {
-                subobj2.addr.s_addr = link->id;
-                subobj2.if_id = link->lclRmtId[1];
-            }
-            subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
-            assert (link->iscds.size() > 0);
-            ISCD * iscd = link->iscds.front();
-            subobj1.sw_type = subobj2.sw_type = iscd->swtype;
-            subobj1.encoding = subobj2.encoding = iscd->encoding;
-            subobj1.bandwidth= subobj2.bandwidth = iscd->max_lsp_bw[7];
-            ero_hops.push_back(subobj1);
-            ero_hops.push_back(subobj2);
-        }
     }
 }
 
