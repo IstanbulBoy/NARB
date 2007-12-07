@@ -1247,11 +1247,11 @@ void PCEN::ReplyERO ()
         narb_lsp_subnet_ero_tlv* subnet_ero_tlv = (narb_lsp_subnet_ero_tlv*)(body + bodylen);
         subnet_ero_tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
         subnet_ero_tlv->length = htons(sizeof(ero_subobj)*subnet_ero.size());
-        i = 0;
-        while (subnet_ero.size() > 0)
+        list<ero_subobj>::iterator it = subnet_ero.begin();
+        int i = 0;
+        for (; it != subnet_ero.end(); it++, i++)
         {
-            subnet_ero_tlv->subobjects[i] = subnet_ero.front();
-            subnet_ero.pop_front();
+            subnet_ero_tlv->subobjects[i] = (*it);
             i++;
         }
         bodylen += ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE;
