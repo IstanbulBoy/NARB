@@ -1242,21 +1242,6 @@ void PCEN::ReplyERO ()
     }
     // placeholder for wave_mask ...
 
-    if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_ERO))
-    {
-        narb_lsp_subnet_ero_tlv* subnet_ero_tlv = (narb_lsp_subnet_ero_tlv*)(body + bodylen);
-        subnet_ero_tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
-        subnet_ero_tlv->length = htons(sizeof(ero_subobj)*subnet_ero.size());
-        list<ero_subobj>::iterator it = subnet_ero.begin();
-        int i = 0;
-        for (; it != subnet_ero.end(); it++, i++)
-        {
-            subnet_ero_tlv->subobjects[i] = (*it);
-            i++;
-        }
-        bodylen += ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE;
-    }
-
     if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_DTL))
     {
         list<dtl_hop> subnet_dtl;
@@ -1272,6 +1257,21 @@ void PCEN::ReplyERO ()
             i++;
         }
         bodylen += ntohs(subnet_dtl_tlv->length)+TLV_HDR_SIZE;
+    }
+
+    if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_ERO))
+    {
+        narb_lsp_subnet_ero_tlv* subnet_ero_tlv = (narb_lsp_subnet_ero_tlv*)(body + bodylen);
+        subnet_ero_tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
+        subnet_ero_tlv->length = htons(sizeof(ero_subobj)*subnet_ero.size());
+        i = 0;
+        while (subnet_ero.size() > 0)
+        {
+            subnet_ero_tlv->subobjects[i] = subnet_ero.front();
+            subnet_ero.pop_front();
+            i++;
+        }
+        bodylen += ntohs(subnet_ero_tlv->length)+TLV_HDR_SIZE;
     }
 
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
