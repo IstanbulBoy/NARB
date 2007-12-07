@@ -253,10 +253,20 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
             tlv_len = sizeof(narb_lsp_holding_time_tlv);
             holding_time = ntohl(((narb_lsp_holding_time_tlv*)tlv)->seconds);
             break;
-        case TLV_TYPE_NARB_SUBNET_DTL:
-            GetDTL(tlv, subnet_dtl);
-            PCEN::TranslateSubnetDTLIntoERO(subnet_dtl, subnet_ero);
+        case TLV_TYPE_NARB_SUBNET_ERO:
             tlv_len = ntohs(tlv->length);
+            if (subnet_ero.size() == 0)
+            {
+                GetERO_RFCStandard(tlv, subnet_ero);
+            }
+            break;
+        case TLV_TYPE_NARB_SUBNET_DTL:
+            tlv_len = ntohs(tlv->length);
+            if (subnet_ero.size() == 0)
+            {
+                GetDTL(tlv, subnet_dtl);
+                PCEN::TranslateSubnetDTLIntoERO(subnet_dtl, subnet_ero);
+            }
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;

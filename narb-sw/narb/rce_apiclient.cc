@@ -168,7 +168,7 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
 }
 
 void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward, 
-    list<dtl_hop>& subnet_dtl, u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
+    list<ero_subobj*>& subnet_ero, list<dtl_hop>& subnet_dtl,  u_int32_t ucid, u_int32_t seqnum, u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
     msg_narb_vtag_mask* vtag_mask_tlv, u_int32_t holding_time)
 {
     api_msg *rce_msg;
@@ -194,7 +194,13 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
         local_id_tlv->lclid_dest= htonl(dest_lcl_id);
         length += sizeof(msg_narb_local_id);
     }
-    if (subnet_dtl.size() > 0)
+    if (subnet_ero.size() > 0) //forward subnet_ero
+    {
+        api_msg *subnet_ero_msg = narb_new_msg_reply_ero(0, 0, subnet_ero, NULL, 0);
+        memcpy(buf + length, subnet_ero_msg->body, ntohs(subnet_ero_msg->header.length));
+        length += ntohs(subnet_ero_msg->header.length);
+    }
+    else if (subnet_dtl.size() > 0) // OR subnet_dtl (either should work)
     {
         msg_narb_subnet_dtl* subnet_dtl_tlv = (msg_narb_subnet_dtl*)(buf + length);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
