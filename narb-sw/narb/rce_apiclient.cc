@@ -198,6 +198,8 @@ void RCE_APIClient::NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_a
     {
         api_msg *subnet_ero_msg = narb_new_msg_reply_ero(0, 0, subnet_ero, NULL, 0);
         memcpy(buf + length, subnet_ero_msg->body, ntohs(subnet_ero_msg->header.length));
+        te_tlv_header* tlv = (te_tlv_header*)(buf + length);
+        tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
         length += ntohs(subnet_ero_msg->header.length);
     }
     else if (subnet_dtl.size() > 0) // OR subnet_dtl (either should work)
