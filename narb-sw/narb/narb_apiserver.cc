@@ -318,6 +318,7 @@ api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subo
     {
         te_tlv_header* subnet_ero_tlv = (te_tlv_header *)(buf+offset);
         offset = make_ero_tlv_from_list(subnet_ero_tlv, *p_subnet_ero, offset);
+        subnet_ero_tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
     }
 
     if (p_subnet_dtl != NULL && p_subnet_dtl->size() > 0)
