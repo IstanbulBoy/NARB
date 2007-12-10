@@ -279,7 +279,7 @@ void LSPHandler::HandleResvNotification(api_msg* msg)
     if (ero.size() > 0)
         UpdateLinkStatesByERO(*lsp_req_tlv, ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv); //using default reserve_time
     if (subnet_ero.size() > 0)
-        UpdateLinkStatesByERO(*lsp_req_tlv, subnet_ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time ==0 ? MAX_HOLDING_TIME : holding_time);
+        UpdateLinkStatesByERO(*lsp_req_tlv, subnet_ero, ucid, seqnum,  is_bidir, ntohl(msg->hdr.tag), src_lcl_id, dest_lcl_id, vtag_mask_tlv, holding_time ==0 ? SystemConfig::delta_expire_subnet_reserve : holding_time);
 
     api_msg_delete(msg);
 }

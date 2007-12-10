@@ -56,6 +56,8 @@ enum config_code {
   CONFIG_SCHEMA,
   CONFIG_TERCE,
   CONFIG_EOS_MAP,
+  CONFIG_HOLDING_TIME,
+  CONFIG_CLI,
   CONFIG_UNKNOWN
 };
 
@@ -96,7 +98,8 @@ public:
 
     static int delta_expire_query;
     static int delta_expire_reserve;
-
+    static int delta_expire_subnet_reserve;
+    
     static string narb_host;
     static int narb_port;
 

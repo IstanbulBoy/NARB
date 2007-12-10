@@ -54,6 +54,7 @@ int SystemConfig::max_ospf_sync_attempts = 10;
 
 int SystemConfig::delta_expire_query = 10;
 int SystemConfig::delta_expire_reserve = 0;
+int SystemConfig::delta_expire_subnet_reserve = 86400; // 86400 seconds == 24 hours
 
 string SystemConfig::narb_host("localhost");
 int SystemConfig::narb_port = 2609;
@@ -318,6 +319,40 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case  CONFIG_HOLDING_TIME:
+          {
+              int qhold_time = 0, rhold_time = 0, srhold_time = 0;
+              if (!ReadConfigParameter(blk_body, "query-expire-seconds", "%d", &qhold_time))
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:query-expire" << endl);
+                  SystemConfig::delta_expire_query = qhold_time;
+              }
+
+              if (!ReadConfigParameter(blk_body, "reserve-expire-seconds", "%d", &rhold_time))
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:reserve-expire" << endl);
+                  SystemConfig::delta_expire_reserve = rhold_time;
+              }
+
+              if (!ReadConfigParameter(blk_body, "subnet-reserve-expire-seconds", "%d", &srhold_time))
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:subnet-reserve-expire" << endl);
+                  SystemConfig::delta_expire_subnet_reserve = srhold_time;
+              }
+          }
+          break;
+
+        case  CONFIG_CLI:
+          {
+              char passwd[32];
+              if (!ReadConfigParameter(blk_body, "password", "%s" , passwd))
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_CLI" << endl);
+                  SystemConfig::cli_password = passwd;
+              }
+          }
+          break;
+
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s} for SystemConfig::ConfigFromFile()\n", blk_header, blk_body);
@@ -342,6 +377,10 @@ int SystemConfig::blk_code (char *buf)
         return CONFIG_ROUTER;
     else if (strstr(buf, "link"))
         return CONFIG_LINK;
+    else if (strstr(buf, "holding-time"))
+        return CONFIG_HOLDING_TIME;
+    else if (strstr(buf, "cli"))
+        return CONFIG_CLI; 
     else
         return CONFIG_UNKNOWN;
 }
