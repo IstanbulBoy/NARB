@@ -497,9 +497,9 @@ public:
     static Link* LookupNextLinkByLclRmtIf(Link* prev_link);
 
     //Hanlding incomplete local physical links
-    static Link* LookupIncompleteLink(ResourceType rcType, Prefix* prefix);
+    static RadixNode<Resource>* LookupIncompleteLinkNode(ResourceType rcType, Prefix* prefix);
     static void BookmarkIncompleteLink(Link* link);
-    static Link* RemoveIncompleteLink(Link* link);
+    static void RemoveIncompleteLinkNode(RadixNode<Resource>* node);
 
     //testing code
     static void WalkTree(ResourceType type);
