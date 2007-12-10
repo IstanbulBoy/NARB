@@ -322,22 +322,34 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case  CONFIG_HOLDING_TIME:
           {
               int qhold_time = 0, rhold_time = 0, srhold_time = 0;
-              if (!ReadConfigParameter(blk_body, "query-expire-seconds", "%d", &qhold_time))
+              if (ReadConfigParameter(blk_body, "query-expire-seconds", "%d", &qhold_time))
               {
-                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:query-expire" << endl);
                   SystemConfig::delta_expire_query = qhold_time;
               }
-
-              if (!ReadConfigParameter(blk_body, "reserve-expire-seconds", "%d", &rhold_time))
+              else
               {
-                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:reserve-expire" << endl);
-                  SystemConfig::delta_expire_reserve = rhold_time;
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:query-expire" << endl);
+                  LOG("CONFIG_HOLDING_TIME:query-expire has been set to default: " << SystemConfig::delta_expire_query << endl);
               }
 
-              if (!ReadConfigParameter(blk_body, "subnet-reserve-expire-seconds", "%d", &srhold_time))
+              if (ReadConfigParameter(blk_body, "reserve-expire-seconds", "%d", &rhold_time))
+              {
+                  SystemConfig::delta_expire_reserve = rhold_time;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:reserve-expire" << endl);
+                  LOG("CONFIG_HOLDING_TIME:reserve-expire has been set to default: " << SystemConfig::delta_expire_reserve << endl);
+              }
+
+              if (ReadConfigParameter(blk_body, "subnet-reserve-expire-seconds", "%d", &srhold_time))
+              {
+                  SystemConfig::delta_expire_subnet_reserve = srhold_time;
+              }
+              else
               {
                   LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:subnet-reserve-expire" << endl);
-                  SystemConfig::delta_expire_subnet_reserve = srhold_time;
+                  LOG("CONFIG_HOLDING_TIME:subnet-reserve-expire has been set to default: " << SystemConfig::delta_expire_subnet_reserve << endl);
               }
           }
           break;
@@ -345,10 +357,13 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case  CONFIG_CLI:
           {
               char passwd[32];
-              if (!ReadConfigParameter(blk_body, "password", "%s" , passwd))
+              if (ReadConfigParameter(blk_body, "password", "%s" , passwd))
               {
-                  LOG("ReadConfigParameter failed on CONFIG_CLI" << endl);
                   SystemConfig::cli_password = passwd;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on CONFIG_CLI --> using default DRAGON password" << endl);
               }
           }
           break;
