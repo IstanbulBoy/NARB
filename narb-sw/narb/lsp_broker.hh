@@ -120,7 +120,7 @@ struct msg_narb_subnet_dtl
 {
     u_int16_t type;
     u_int16_t length;
-    dtl_hop hops[1]; //acually number of dtl_hops depends on length
+    dtl_hop hops[1]; //actual number of dtl_hops depends on length
 };
 
 #define msg_app2narb_release msg_narb_confirm

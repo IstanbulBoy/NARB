@@ -1794,6 +1794,12 @@ static link_info* link_to_update = NULL;
         CLI_OUT("    >>%-2d: (%s-hop) -- %s -- %s%s", num, (*it)->hop_type == 0 ? "strict" : "loose", ip_addr, if_id, cli_cstr_newline); \
     }
 
+#define SHOW_DTL_HOPS(P) \
+    list<dtl_hop>::iterator it_dtl = P->dtl.begin(); \
+    for (int num_dtl; it_dtl != P->dtl.end(); num_dtl++, it_dtl++) \
+    { \
+        CLI_OUT("          >> dtl-hop%d: --%s:%d --%s", num_dtl, (*it_dtl).nodename, (*it_dtl).linkid, cli_cstr_newline); \
+    }
 
 COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
     "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
@@ -2194,6 +2200,8 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             strcpy(str, inet_ntoa(src));
             strcpy(pstr, inet_ntoa(dest));
             CLI_OUT(" ## ERO %s-%s with %d hops: status '%s'%s", str, pstr, (*it)->ero.size(), (*it)->enabled ? "enabled" : "disabled", cli_cstr_newline);
+            if ((*it)->dtl.size() > 0)
+                CLI_OUT("    ==> DTL is present with %d hops'%s", (*it)->dtl.size(), cli_cstr_newline);
         }
     }
     else if ((pstr=strstr(str, "-")) != NULL)
@@ -2215,8 +2223,10 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             strcpy(str, inet_ntoa(src));
             strcpy(pstr, inet_ntoa(dest));
             CLI_OUT(" ## ERO %s-%s with %d hops, status '%s', showing subobjects >>%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
-
             SHOW_ERO_SUBOBJECTS(p_ero);
+            if (p_ero->dtl.size() > 0)
+                CLI_OUT("    ==> DTL is present with %d hops'%s", p_ero->dtl.size(), cli_cstr_newline);
+            SHOW_DTL_HOPS(p_ero);
         }
     }
     else
@@ -2300,17 +2310,30 @@ COMMAND(cmd_ero_show, "show config",
     CLI_OUT(" ## showing %d ERO (status '%s') subobjects (cursor=%d) >> %s",  current_static_ero->ero.size(), 
         current_static_ero->enabled ? "enabled" : "disabled", current_static_ero->cursor, cli_cstr_newline);
     SHOW_ERO_SUBOBJECTS(current_static_ero);
+    if (current_static_ero->dtl.size() > 0)
+    {
+        CLI_OUT("    ==> showing %d DTL hops >> %s",  current_static_ero->dtl.size());
+        SHOW_DTL_HOPS(current_static_ero);
+    }
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_clear, "clear",
+COMMAND(cmd_ero_clear, "clear {ero|dtl}",
        "Clear all subobjects")
 {
-    list<ero_subobj*>::iterator it = current_static_ero->ero.begin();
-    for (; it != current_static_ero->ero.end(); it++)
-        delete (*it);
-    current_static_ero->ero.clear();
-    CLI_OUT(" ## number of ERO (status '%s') subobjects = 0 %s",  current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
+    if (strncmp(argv[0].c_str(), "dtl", 1) == 0)
+    {
+        current_static_ero->dtl.clear();        
+    }
+    else
+    {
+        list<ero_subobj*>::iterator it = current_static_ero->ero.begin();
+        for (; it != current_static_ero->ero.end(); it++)
+            delete (*it);
+        current_static_ero->ero.clear();
+    }
+    CLI_OUT(" ## number of ERO subobjects = %d,  number of DTL hops = %d (status '%s') %s",   current_static_ero->ero.size(),
+        current_static_ero->dtl.size(), current_static_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
@@ -2577,6 +2600,16 @@ COMMAND(cmd_set_subobject_lcl_id, "set subobject {strict|loose} local-id {port|g
 }
 
 
+COMMAND(cmd_set_dtl_hop, "set dtl-hop node NAME link ID",
+       "Set/Add DTL hop \ncont... \n Node name \n Name \n Link ID \n ID Number")
+{
+    dtl_hop dhop;
+    strncpy((char*)dhop.nodename, argv[0].c_str(), MAX_DTL_NODENAME_LEN);
+    sscanf(argv[1].c_str(), "%d", &dhop.linkid);
+    current_static_ero->dtl.push_back(dhop);
+    cli_node->ShowPrompt();
+}
+
 COMMAND(cmd_ero_exit, "exit",
        "Exit static ERO editing\n")
 {
@@ -2690,6 +2723,7 @@ void CLIReader::InitSession()
     node_level2->AddCommand(&cmd_set_subobject_vlan_te_instance);
     node_level2->AddCommand(&cmd_set_subobject_subobj_if_instance);
     node_level2->AddCommand(&cmd_set_subobject_lcl_id_instance);
+    node_level2->AddCommand(&cmd_set_dtl_hop_instance);
     node_level2->AddCommand(&cmd_ero_exit_instance);
     //////////////// End /////////////////
 

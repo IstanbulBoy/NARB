@@ -34,6 +34,7 @@
 #define  __NARB_CONFIG_HH__
 using namespace std;
 #include "dts.hh"
+#include "lsp_broker.hh"
 #include <string>
 #include <iostream>
 #include <list>
@@ -95,6 +96,7 @@ struct indexed_ero
     u_int32_t src_ip;
     u_int32_t dest_ip;
     list<ero_subobj*> ero;
+    list<dtl_hop> dtl;
     int cursor;
     indexed_ero(): enabled(false), src_ip(0), dest_ip(0), cursor(-1) {}
     //~indexed_ero() { } // free ero_subobj in the list...
