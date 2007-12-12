@@ -2225,7 +2225,7 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
             CLI_OUT(" ## ERO %s-%s with %d hops, status '%s', showing subobjects >>%s", str, pstr, p_ero->ero.size(), p_ero->enabled ? "enabled" : "disabled", cli_cstr_newline);
             SHOW_ERO_SUBOBJECTS(p_ero);
             if (p_ero->dtl.size() > 0)
-                CLI_OUT("    ==> DTL is present with %d hops'%s", p_ero->dtl.size(), cli_cstr_newline);
+                CLI_OUT("    ==> In addition, a DTL has been configured with %d hop(s)%s", p_ero->dtl.size(), cli_cstr_newline);
             SHOW_DTL_HOPS(p_ero);
         }
     }
@@ -2312,7 +2312,7 @@ COMMAND(cmd_ero_show, "show config",
     SHOW_ERO_SUBOBJECTS(current_static_ero);
     if (current_static_ero->dtl.size() > 0)
     {
-        CLI_OUT("    ==> showing %d DTL hops >> %s",  current_static_ero->dtl.size());
+        CLI_OUT("    ==> showing DTL with %d  hops >> %s",  current_static_ero->dtl.size(), cli_cstr_newline);
         SHOW_DTL_HOPS(current_static_ero);
     }
     cli_node->ShowPrompt();
