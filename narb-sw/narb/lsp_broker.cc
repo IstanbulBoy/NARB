@@ -528,6 +528,14 @@ int LSPQ::HandleLSPQRequest()
             memcpy(subobj, *it, sizeof(struct ero_subobj));
             ero.push_back( subobj);
         }
+        if (preconfiged_static_ero->dtl.size() > 0)
+        {
+            subnet_dtl.clear();
+            for (list<dtl_hop>::iterator it_dtl = preconfiged_static_ero->dtl.begin(); it_dtl != preconfiged_static_ero->dtl.end(); it_dtl++)
+            {
+                subnet_dtl.push_back(*it_dtl);
+            }
+        }
         return HandleCompleteERO();
     }
     
