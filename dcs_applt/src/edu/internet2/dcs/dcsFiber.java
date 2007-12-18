@@ -79,10 +79,10 @@ public class dcsFiber extends CubicCurve2D.Double {
         cx2 = ep2.getCenterX() - 14/f;
         cy2 = ep2.getCenterY();
         
-        int r1 = 3;
-        int r2 = 3;
-        int lr1 = 65;
-        int lr2 = 65;
+        int r1 = 1;
+        int r2 = 1;
+        int lr1 = 70;
+        int lr2 = 70;
         
         double alpha = Math.atan((cy2 - cy1)/(cx2 - cx1));
         
@@ -93,15 +93,15 @@ public class dcsFiber extends CubicCurve2D.Double {
             p = 1;
         }
         
-        x1 = cx1 + p*(r1+7) * Math.cos(alpha);
-        y1 = cy1 + p*(r1+7) * Math.sin(alpha);
-        x2 = cx2 - p*(r2+7) * Math.cos(alpha);
-        y2 = cy2 - p*(r2+7) * Math.sin(alpha);
+        x1 = cx1 + p*(r1) * Math.cos(alpha);
+        y1 = cy1 + p*(r1) * Math.sin(alpha);
+        x2 = cx2 - p*(r2) * Math.cos(alpha);
+        y2 = cy2 - p*(r2) * Math.sin(alpha);
         
-        lx1 = cx1 + p*(lr1+7) * Math.cos(alpha);
-        ly1 = cy1 + p*(lr1+7) * Math.sin(alpha);
-        lx2 = cx2 - p*(lr2+7) * Math.cos(alpha);
-        ly2 = cy2 - p*(lr2+7) * Math.sin(alpha);
+        lx1 = cx1 + p*(lr1) * Math.cos(alpha);
+        ly1 = cy1 + p*(lr1) * Math.sin(alpha);
+        lx2 = cx2 - p*(lr2) * Math.cos(alpha);
+        ly2 = cy2 - p*(lr2) * Math.sin(alpha);
         
         d = Math.sqrt((y2 - y1)*(y2 - y1) + (x2 - x1)*(x2 - x1));
         
@@ -179,6 +179,7 @@ public class dcsFiber extends CubicCurve2D.Double {
             teAddr = s;
             msgL = new JLabel(teAddr);
             msgL.setFont(f);
+            msgL.setForeground(Color.WHITE);
             
             msgL.setSize(90, 15);
             add(msgL);

@@ -77,7 +77,8 @@ public class dcsApplt extends javax.swing.JApplet {
     }
     
     public static void highlightEROs(String s) {
-        dcsGlobals.dcsEROHops.highlightERO(s);
+        String[] sa = s.split(" ");
+        dcsGlobals.dcsEROHops.toggleERO(sa[0], sa[1].equals("true"));
         dcsGlobals.currMapPane.repaint();
     }
     
@@ -88,6 +89,11 @@ public class dcsApplt extends javax.swing.JApplet {
     
     public static void toggleEROs() {
         dcsGlobals.dcsEROHops.setHidden(!dcsGlobals.dcsEROHops.isHidden());
+        dcsGlobals.currMapPane.repaint();
+    }
+    
+    public static void resetView() {
+        dcsGlobals.dcsNodes.resetView();
         dcsGlobals.currMapPane.repaint();
     }
 }

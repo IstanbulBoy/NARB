@@ -62,7 +62,6 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
         img_sm = i1;
         prefs = dcsGlobals.prefsRoot.node("/edu/internet2/dcs/DcsMap");
         isZoomedOut = prefs.getBoolean("zoomOut", false);
-        prefs.putBoolean("zoomOut", isZoomedOut);
         
         setAutoscrolls(true);
         addMouseListener(m);
@@ -93,6 +92,7 @@ public class dcsMapPane extends JLayeredPane implements Scrollable, MouseListene
             popMapZoom.setText("Zoom In");
         else
             popMapZoom.setText("Zoom Out");
+        prefs.putBoolean("zoomOut", isZoomedOut);
         
         popMapReset.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {

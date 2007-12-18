@@ -19,8 +19,8 @@ import javax.swing.JLayeredPane;
  */
 public class dcsGlobals {
     
-    static final int DCS_MAP_W = 750;
-    static final int DCS_MAP_H = 500;
+    static final int DCS_MAP_W = 954;
+    static final int DCS_MAP_H = 618;
     
     static final int DCS_PANE_FIBER_LAYER = new Integer(200);
     static final int DCS_PANE_NODE_LAYER = new Integer(300);

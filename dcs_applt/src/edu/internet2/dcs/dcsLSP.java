@@ -14,6 +14,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.geom.Line2D;
 
 /**
@@ -28,12 +29,14 @@ public class dcsLSP extends Line2D.Double {
     private String id;
     
     private dcsLSPShadow shadow;
-    private final Color LSP_COLOR = new Color(255, 0, 10, 200);
+    private final Color LSP_COLOR = new Color(0, 128, 255, 250);
     private final Color SHADOW_COLOR = new Color(64, 64, 64, 90);
     private int bunchSize = 1;
     
     private boolean isHidden = false;;
     private boolean isLeader = true;
+    
+    private int strokeWeight = 2;
     
     /** Creates a new instance of dcsLSP */
     public dcsLSP(String s, dcsNode[] p) {
@@ -53,6 +56,7 @@ public class dcsLSP extends Line2D.Double {
         
         Color currentColor;
         Graphics2D g2d = (Graphics2D)g;
+        Stroke str = g2d.getStroke();
         int f = dcsGlobals.currMapPane.isZoomedOut()?2:1;
         int dx1 = 0, dy1 = 0;
         int dx2 = 0, dy2 = 0;
@@ -90,16 +94,16 @@ public class dcsLSP extends Line2D.Double {
         x2 = cx2 - p*(r2+7) * Math.cos(alpha);
         y2 = cy2 - p*(r2+7) * Math.sin(alpha);
         
-        int cnt, st;
+        int cnt;
         double o, s;
         
         if(bunchSize>3) {
-            st = 9;
+            strokeWeight = 9;
             cnt = 1;
             o = 0;
             s = 0;
         } else {
-            st = 2;
+            strokeWeight = 2;
             cnt = bunchSize;
             if(cnt==1) {
                 o = 0;
@@ -123,17 +127,21 @@ public class dcsLSP extends Line2D.Double {
         for (int i = 0; i < cnt; i++) {
             setLine(x1, y1, x2, y2);
             x1 += xs; y1 -= ys;
-            x2 += xs; y2 -= ys;
+            x2 += xs; y2 -= ys;       
             shadow.paint(g);
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             
-            g2d.setStroke(new BasicStroke(st));
-            g2d.draw(g2d.getStroke().createStrokedShape(this));
-            currentColor = LSP_COLOR;
-            
+            g2d.setStroke(new BasicStroke(strokeWeight));
+            if(strokeWeight == 2) {
+                currentColor = SHADOW_COLOR;
+                g2d.setPaint(currentColor);
+                g2d.draw(g2d.getStroke().createStrokedShape(this));
+            }
+            currentColor = LSP_COLOR;            
             g2d.setPaint(currentColor);
-            //g2d.fill(this);
+                
             g2d.draw(this);
+            g2d.setStroke(str);
         }
     }
     
@@ -176,6 +184,10 @@ public class dcsLSP extends Line2D.Double {
         return ((endPoint1 == n1) && (endPoint2 == n2)) || ((endPoint2 == n1) && (endPoint1 == n2));
     }
     
+    public void decBunchSize() {
+        bunchSize--;
+    }
+    
     //private classes
     private class dcsLSPShadow extends Line2D.Double {
         dcsLSP caster;
@@ -186,14 +198,17 @@ public class dcsLSP extends Line2D.Double {
         public void paint(Graphics g) {
             Graphics2D g2d = (Graphics2D)g;
             Color currentColor;
+            Stroke s = g2d.getStroke();
+            
             double x1 = caster.x1; double y1 = caster.y1; double x2 = caster.x2; double y2 = caster.y2;
             setLine(x1+2, y1+2, x2+2, y2+2);
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             currentColor = SHADOW_COLOR;
-            
             g2d.setPaint(currentColor);
+            g2d.setStroke(new BasicStroke(strokeWeight));
             
             g2d.draw(this);
+            g2d.setStroke(s);
         }
     }
 }

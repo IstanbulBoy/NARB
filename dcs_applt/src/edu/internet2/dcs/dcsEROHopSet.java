@@ -80,6 +80,7 @@ public class dcsEROHopSet extends Vector<dcsEROHop> {
     
     private void removeERO(dcsEROHop e) {
         dcsNode[] np = e.getEPs();
+        dcsGlobals.dcsLSPs.removeLSPSegment(e.getID(), np);
         np[0].removeEROHop(e);
         np[1].removeEROHop(e);
         remove(e);
@@ -115,28 +116,37 @@ public class dcsEROHopSet extends Vector<dcsEROHop> {
         return ret;
     }
     
-    public void highlightERO(String s) {
+    public void setHighlight(String s, boolean b) {
         boolean lsp_found = false;
         dcsEROHop e;
         dcsLSP l;
-        for (int j = dcsGlobals.dcsLSPs.size()-1; j >=0; j--) {
-            l = dcsGlobals.dcsLSPs.get(j);
-            if(l.getID().equals(s)) {
-                dcsGlobals.dcsLSPs.remove(l);
-                lsp_found = true;
-            }
-        }
-        if(!lsp_found) {
-            for(int j = dcsGlobals.dcsLSPs.size()-1; j >=0; j--) {
-                l = dcsGlobals.dcsLSPs.get(j);
-                dcsGlobals.dcsLSPs.remove(l);
-            }
+        if(b) {
             for (int i = 0; i < size(); i++) {
                 e = get(i);
                 if(e.getID().equals(s)){
-                    dcsGlobals.dcsLSPs.addLSP(new dcsLSP(s, e.getEPs()));
+                    dcsGlobals.dcsLSPs.addLSP(s, e.getEPs());
                 }
             }
+        } else {
+            dcsGlobals.dcsLSPs.removeLSP(s);
+        }
+    }
+    
+    public void highlightNodeEROs(dcsNode n, boolean b) {
+        Vector<dcsEROHop> es = n.getEROEndPts();
+        dcsLSP l;
+        dcsGlobals.dcsLSPs.removeAllElements();
+        if(b) {
+            for (int i = 0; i < es.size(); i++) {
+                setHighlight(es.get(i).getID(), true);
+            }
+        }
+    }
+    
+    public void toggleERO(String s, boolean b) {
+        dcsGlobals.dcsLSPs.removeAllElements();
+        if(b) {
+            setHighlight(s, b);
         }
     }
 }

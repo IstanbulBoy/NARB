@@ -24,6 +24,8 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Vector;
 import java.util.prefs.Preferences;
 import javax.swing.JPanel;
@@ -42,6 +44,8 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     private BufferedImage cd_imgh = null;
     private BufferedImage cd_img_sm = null;
     private BufferedImage cd_imgh_sm = null;
+    private BufferedImage cd_img_inact = null;
+    private BufferedImage cd_img_sm_inact = null;
     
     private String sysName = "";
     private String rtrID = "";
@@ -57,6 +61,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     
     private Vector<String> teLinks = new Vector<String>(4);
     private Vector<dcsFiber> nodeFibers = new Vector<dcsFiber>();
+    
     private Vector<dcsEROHop> nodeEROHops = new Vector<dcsEROHop>();
     private Vector<dcsLSP> nodeLSPs = new Vector<dcsLSP>();
     
@@ -105,18 +110,30 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
             }
         } else {
             if(dcsGlobals.currMapPane.isZoomedOut()) {
-                if(cd_img_sm != null) {
-                    g2d.drawImage(cd_img_sm,0,0,this);
+                if(sysName.equals("TULS")) {
+                    if(cd_img_sm_inact != null) {
+                        g2d.drawImage(cd_img_sm_inact,0,0,this);
+                    }
+                } else {
+                    if(cd_img_sm != null) {
+                        g2d.drawImage(cd_img_sm,0,0,this);
+                    }
                 }
             } else {
-                if(cd_img != null) {
-                    g2d.drawImage(cd_img,0,0,this);
+                if(sysName.equals("TULS")) {
+                    if(cd_img_inact != null) {
+                        g2d.drawImage(cd_img_inact,0,0,this);
+                    }
+                } else {
+                    if(cd_img != null) {
+                        g2d.drawImage(cd_img,0,0,this);
+                    }
                 }
             }
         }
     }
     
-    //getters
+//getters
     public String getID() {
         return id;
     }
@@ -141,7 +158,38 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         return nodeLabel;
     }
     
-    //setters
+    public Vector<dcsEROHop> getEROEndPts() {
+        boolean notEP;
+        Vector<dcsEROHop> ret = new Vector<dcsEROHop>();
+        int i = 0;
+        String id0;
+        for (int j = 0; j < nodeEROHops.size(); j++) {
+            ret.add(nodeEROHops.get(j));
+        }
+        
+        while(i < ret.size()) {
+            id0 = ret.get(i).getID();
+            notEP = false;
+            for (int j = i+1; j < ret.size(); j++) {
+                if(id0.equals(ret.get(j).getID())) {
+                    notEP = true;
+                    break;
+                }
+            }
+            if(notEP) {
+                for (int j = (ret.size()-1); j >= i; j--) {
+                    if(id0.equals(ret.get(j).getID())) {
+                        ret.remove(j);
+                    }
+                }
+            } else {
+                i++;
+            }
+        }
+        return ret;
+    }
+    
+//setters
     public void setCenterX(int x) {
         cdx = x;
     }
@@ -159,6 +207,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
     public void setHighlight(boolean b) {
         boolean emph = false;
         isHighlighted = b;
+        dcsGlobals.dcsEROHops.highlightNodeEROs(this, b);
         if(!dcsGlobals.currMapPane.isZoomedOut())
             nodeLabel.setVisible(!b);
     }
@@ -167,12 +216,12 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         teLinks.add(s);
     }
     
-    //queries
+//queries
     public boolean isHighlighted() {
         return isHighlighted;
     }
     
-    //visual methods
+//visual methods
     void moveBy(int dx, int dy) {
         if(((cdx-dx-nw/2)>=0) && ((cdx-dx+nw/2)<=dcsGlobals.currMapPane.getWidth())) {
             cdx -= dx;
@@ -230,6 +279,22 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
             tracker.waitForID(0);
         } catch ( Exception e ) {}
         
+        img_url = dcsApplt.class.getResource("/edu/internet2/dcs/images/cd2_inact.png");
+        Image img_inact = Toolkit.getDefaultToolkit().getImage(img_url);
+        try {
+            MediaTracker tracker = new MediaTracker(this);
+            tracker.addImage(img_inact, 0);
+            tracker.waitForID(0);
+        } catch ( Exception e ) {}
+        
+        img_url = dcsApplt.class.getResource("/edu/internet2/dcs/images/cd2_sm_inact.png");
+        Image img_sm_inact = Toolkit.getDefaultToolkit().getImage(img_url);
+        try {
+            MediaTracker tracker = new MediaTracker(this);
+            tracker.addImage(img_sm_inact, 0);
+            tracker.waitForID(0);
+        } catch ( Exception e ) {}
+        
         cd_img = new BufferedImage(img.getWidth(this), img.getHeight(this), BufferedImage.TYPE_INT_ARGB);
         if(cd_img != null) {
             Graphics2D g2d = cd_img.createGraphics();
@@ -249,6 +314,16 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         if(cd_imgh_sm != null) {
             Graphics2D g2d = cd_imgh_sm.createGraphics();
             g2d.drawImage(imgh_sm, 0, 0, this);
+        }
+        cd_img_inact = new BufferedImage(img.getWidth(this), img.getHeight(this), BufferedImage.TYPE_INT_ARGB);
+        if(cd_img_inact != null) {
+            Graphics2D g2d = cd_img_inact.createGraphics();
+            g2d.drawImage(img_inact, 0, 0, this);
+        }
+        cd_img_sm_inact = new BufferedImage(img_sm.getWidth(this), img_sm.getHeight(this), BufferedImage.TYPE_INT_ARGB);
+        if(cd_img_sm_inact != null) {
+            Graphics2D g2d = cd_img_sm_inact.createGraphics();
+            g2d.drawImage(img_sm_inact, 0, 0, this);
         }
     }
     
@@ -284,7 +359,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
         cdy *= 2;
     }
     
-    // infrastructure methods
+// infrastructure methods
     public void addFiber(dcsFiber f) {
         nodeFibers.add(f);
     }
@@ -349,7 +424,7 @@ public class dcsNode extends JPanel implements MouseListener, MouseMotionListene
                 ((e.getModifiersEx() & e.CTRL_DOWN_MASK) == e.CTRL_DOWN_MASK));
     }
     
-    // private classes
+// private classes
     
     private class dcsNodeLabel extends JPanel {
         private boolean isEmph = false;
