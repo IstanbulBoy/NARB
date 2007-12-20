@@ -146,7 +146,7 @@ void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
     lsp_detail_v.push_back(desc);
     DescribeLSP(desc);
     lsp_detail_v.push_back(desc);
-    char buf[200], addr[20];
+    char buf[100], addr[20];
     sprintf(buf, "Explitic Route >> %d Hops", ero.size());
     desc = buf;
     lsp_detail_v.push_back(desc);  
@@ -189,6 +189,39 @@ void LSPQ::DescribeLSPDetail(vector<string>& lsp_detail_v)
         }
     }
 }
+
+void LSPQ::DescribeLSPWithDTL(vector<string>& lsp_dtl_v)
+{
+    lsp_dtl_v.clear();
+    string desc;
+    desc = "\nSrc             Dest            Bandwidth SwType EncType (Vtag)   State      GRI";
+    lsp_dtl_v.push_back(desc);
+    DescribeLSP(desc);
+    lsp_dtl_v.push_back(desc);
+
+    char buf[100] ;
+    dtl_hop* dhop;
+    if (subnet_dtl.size() > 0)
+    {
+        sprintf(buf, " >> Subnet Designated Transit List ++>> %d Hops", subnet_dtl.size());
+        desc = buf;
+        lsp_dtl_v.push_back(desc); 
+        list<dtl_hop>::iterator it2 = subnet_dtl.begin();
+        for (; it2 != subnet_dtl.end(); it2++)
+        {
+            dhop = &(*it2);
+            sprintf(buf, " ++>> DTL-HOP [%s:%d]", (char*)dhop->nodename, dhop->linkid);
+            desc = buf;
+            lsp_dtl_v.push_back(desc);
+        }
+    }
+    else
+    {
+        desc = " >> Subnet Designated Transit List (DTL) Unavailable!";
+        lsp_dtl_v.push_back(desc); 
+    }
+}
+
 
 void LSPQ::SetState(u_char s)
 {

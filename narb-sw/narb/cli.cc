@@ -1372,6 +1372,24 @@ COMMAND(cmd_show_lsp_detail, "show lsp detail GRI",  "Show configureation:\nLSP\
     cli_node->ShowPrompt();
 }
 
+COMMAND(cmd_show_lsp_dtl, "show lsp dtl GRI",  "Show configureation:\nLSP\nDesignated Transit Lit...\nGRI in UCID-SEQNUM format\n")
+{
+    u_int32_t  ucid = 0, seqnum = 0;
+    LSPQ * lspq = NULL;
+    if (sscanf(argv[0].c_str(), "%u-%u", &ucid, &seqnum) != 2 || (lspq = NARB_APIServer::LspqLookup(ucid, seqnum)) == NULL)
+    {
+        CLI_OUT(" #### LSP with the GRI (ucid-seqnum): %s does not exist...%s", argv[0].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+    vector<string> lsp_dtl_v;
+    lspq->DescribeLSPWithDTL(lsp_dtl_v);
+    for (int i = 0; i < lsp_dtl_v.size(); i++)
+    {
+        CLI_OUT("%s%s", lsp_dtl_v[i].c_str(), cli_cstr_newline);
+    }
+    cli_node->ShowPrompt();
+}
 
 ///////////////////////// configure command level  ////////////////////////////
 
@@ -2656,6 +2674,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_lsp_instance);
     cli_root->AddCommand(&cmd_show_lsp_alias1);
     cli_root->AddCommand(&cmd_show_lsp_detail_instance);
+    cli_root->AddCommand(&cmd_show_lsp_dtl_instance);
     cli_root->AddCommand(&cmd_show_link_instance);
     cli_root->AddCommand(&cmd_show_static_ero_instance);
     cli_root->AddCommand(&cmd_show_static_ero_default);
