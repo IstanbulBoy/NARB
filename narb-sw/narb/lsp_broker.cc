@@ -203,7 +203,7 @@ void LSPQ::DescribeLSPWithDTL(vector<string>& lsp_dtl_v)
     dtl_hop* dhop;
     if (subnet_dtl.size() > 0)
     {
-        sprintf(buf, " >> Subnet Designated Transit List ++>> %d Hops", subnet_dtl.size());
+        sprintf(buf, " ++>> Subnet Designated Transit List (DTL) ++>> %d Hops", subnet_dtl.size());
         desc = buf;
         lsp_dtl_v.push_back(desc); 
         list<dtl_hop>::iterator it2 = subnet_dtl.begin();
