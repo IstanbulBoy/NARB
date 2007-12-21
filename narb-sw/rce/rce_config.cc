@@ -328,8 +328,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
               }
               else
               {
-                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:query-expire" << endl);
-                  LOG("CONFIG_HOLDING_TIME:query-expire has been set to default: " << SystemConfig::delta_expire_query << endl);
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:query-expire-seconds" << endl);
+                  LOG("CONFIG_HOLDING_TIME:query-expire-seconds has been set to default: " << SystemConfig::delta_expire_query << endl);
               }
 
               if (ReadConfigParameter(blk_body, "reserve-expire-seconds", "%d", &rhold_time))
@@ -338,8 +338,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
               }
               else
               {
-                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:reserve-expire" << endl);
-                  LOG("CONFIG_HOLDING_TIME:reserve-expire has been set to default: " << SystemConfig::delta_expire_reserve << endl);
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:reserve-expire-seconds" << endl);
+                  LOG("CONFIG_HOLDING_TIME:reserve-expire-seconds has been set to default: " << SystemConfig::delta_expire_reserve << endl);
               }
 
               if (ReadConfigParameter(blk_body, "subnet-reserve-expire-seconds", "%d", &srhold_time))
@@ -348,8 +348,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
               }
               else
               {
-                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:subnet-reserve-expire" << endl);
-                  LOG("CONFIG_HOLDING_TIME:subnet-reserve-expire has been set to default: " << SystemConfig::delta_expire_subnet_reserve << endl);
+                  LOG("ReadConfigParameter failed on CONFIG_HOLDING_TIME:subnet-reserve-expire-seconds" << endl);
+                  LOG("CONFIG_HOLDING_TIME:subnet-reserve-expire-seconds has been set to default: " << SystemConfig::delta_expire_subnet_reserve << endl);
               }
           }
           break;

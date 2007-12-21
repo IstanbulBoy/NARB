@@ -1,1 +1,8 @@
-1.0
+narb/lsp_broker.cc       2.159
+narb/narb_config.cc      2.31
+narb/cli.cc              2.52
+
+rce/pcen_mrn.cc          2.129
+rce/rce_lsp.cc           2.53
+rce/cli.cc               2.22
+
