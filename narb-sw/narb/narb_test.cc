@@ -349,19 +349,10 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
     bodylen += sizeof (msg_narb_hop_back);
   }
 
-  //@@@@ for temp tests BEGIN >>
-  msg_narb_local_id* lcl_id_tlv = (msg_narb_local_id*)(msgbody+bodylen);
-  lcl_id_tlv->type = htons(TLV_TYPE_NARB_LOCAL_ID);
-  lcl_id_tlv->length = htons(sizeof(msg_narb_local_id) - TLV_HDR_SIZE);
-  lcl_id_tlv->lclid_src = htonl((0x05 << 16) | 27391);
-  lcl_id_tlv->lclid_dest = htonl((0x05 << 16) | 26623);
-  bodylen += sizeof(msg_narb_local_id);
-  //@@@@ for temp tests END <<
-
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
-        opt_query_hold | opt_query_with_confirmation | LSP_OPT_SUBNET_ERO);
+        opt_query_hold | opt_query_with_confirmation);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -576,35 +567,6 @@ int main(int argc, char* argv[])
                 }
                 cout<<endl;
             }
-            LOGF("Subnet ERO hops\n");
-            tlv = (te_tlv_header*)((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
-            len = ntohs(tlv->length);
-            offset = sizeof(struct te_tlv_header);
-            subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
-            while (len > 0)
-            {
-                if ((subobj_ipv4->l_and_type & 0x7f) == 4)
-                    subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
-                else
-                    subobj_unum = NULL;
-
-                if (subobj_unum)
-                {   
-                    inet_ntop(AF_INET, &subobj_unum->addr, addr, 20);
-                    LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d)]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, ntohl(subobj_unum->ifid), ntohl(subobj_unum->ifid)>>16, (u_int16_t)ntohl(subobj_unum->ifid));
-                    len -= sizeof(unum_if_subobj);
-                    offset += sizeof(unum_if_subobj);
-                }   
-                else
-                {   
-                    inet_ntop(AF_INET, (in_addr*)subobj_ipv4->addr, addr, 20);
-                    LOGF("HOP-TYPE [%s]: %s\n", (subobj_ipv4->l_and_type & (1<<7)) == 0?"strict":"loose", addr);
-                    len -= sizeof(ipv4_prefix_subobj);
-                    offset += sizeof(ipv4_prefix_subobj);
-                }   
-                subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
-            }
-
             break;
         case MSG_REPLY_ERROR:
             LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
