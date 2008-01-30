@@ -86,6 +86,8 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
     int msg_len = ntohs(msg->hdr.msglen);
     te_tlv_header* tlv = (te_tlv_header*)(msg->body);
     int tlv_len;
+    list<ero_subobj> subnet_ero;
+    is_subnet_ero2dtl_enabled = false;
 
     while (msg_len > 0)
     {
@@ -120,6 +122,12 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
             break;
+        case TLV_TYPE_NARB_SUBNET_ERO:
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
+            GetERO_RFCStandard(tlv, subnet_ero);
+            if (options & LSP_OPT_SUBNET_DTL)
+                is_subnet_ero2dtl_enabled = true;
+            break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
@@ -148,6 +156,7 @@ void LSPHandler::Run()
 
     pcen_event->AssociateWriter (api_writer);
     pcen_event->SetAutoDelete(true);
+    pcen_event->EnableConvSubnetERO2DTL(is_subnet_ero2dtl_enabled);
     eventMaster.Schedule(pcen_event);
 }
 

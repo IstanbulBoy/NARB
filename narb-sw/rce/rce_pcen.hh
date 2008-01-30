@@ -356,6 +356,7 @@ protected:
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
     bool is_via_movaz;
+    bool is_subnet_ero2dtl_enabled;
 
     float * gGraph;
     int gSize;
@@ -384,6 +385,7 @@ public:
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 // VIA_MOVAZ and INCOPORATE_SUBNET modes are mutually exclusive and the later overrides the former...
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
+                is_subnet_ero2dtl_enabled = false;
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t lspb_id1 = 0, u_int32_t tag = 0, u_int32_t hopback = 0, 
@@ -409,6 +411,7 @@ public:
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
+                is_subnet_ero2dtl_enabled = false;
             }
     virtual ~PCEN();
 
@@ -436,6 +439,7 @@ public:
     void ReplyErrorCode(u_int32_t ret);
     void ReplyERO();
     void HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask=NULL);
+    void EnableConvSubnetERO2DTL(bool x) { is_subnet_ero2dtl_enabled = x;}
 
     static int GetLinkEndsByIndex(vector<PCENNode*>& routers, vector<PCENLink*>& links, int j, int k, in_addr* head_ip, in_addr* tail_ip);
     static PCENLink* GetLinkByIp(vector<PCENLink*>& links, in_addr* head_ip, in_addr* tail_ip);

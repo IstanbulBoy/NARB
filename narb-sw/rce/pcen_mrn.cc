@@ -1102,13 +1102,16 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         uni_dest = iter;
     }
 
-    subnet_ero.clear(); //optional TLV defiend in class rce_pcen.hh
-    if (uni_src != ero_track.end() && uni_dest != ero_track.end())
+    if (!is_subnet_ero2dtl_enabled)
     {
-        if ((++uni_src) != uni_dest)
+        subnet_ero.clear(); //SUBNET_ERO is optional TLV defiend in class rce_pcen.hh
+        if (uni_src != ero_track.end() && uni_dest != ero_track.end())
         {
-            subnet_ero.assign(uni_src, uni_dest);
-            ero_track.erase(uni_src, uni_dest);
+            if ((++uni_src) != uni_dest)
+            {
+                subnet_ero.assign(uni_src, uni_dest);
+                ero_track.erase(uni_src, uni_dest);
+            }
         }
     }
 

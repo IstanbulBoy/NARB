@@ -582,7 +582,7 @@ int LSPQ::HandleLSPQRequest()
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
-        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, vtag_mask);
+        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, vtag_mask, subnet_ero.size() > 0 ? &subnet_ero : NULL);
     return 0;
 }
 
@@ -1890,6 +1890,8 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
         delete vtag_mask;
         vtag_mask = NULL;
     }
+    subnet_ero.clear();
+    subnet_dtl.clear();
 
     while (msg_len > 0)
     {
@@ -1934,6 +1936,11 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             src_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_dest);
             break;
+        case TLV_TYPE_NARB_SUBNET_ERO:
+            GetERO_RFCStandard(tlv, subnet_ero);
+            tlv_len = ntohs(tlv->length);
+            break;
+        //obsolete: no DTL in NARB request
         case TLV_TYPE_NARB_SUBNET_DTL:
             GetDTL(tlv, subnet_dtl);
             tlv_len = ntohs(tlv->length);

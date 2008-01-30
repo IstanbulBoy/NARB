@@ -227,6 +227,7 @@ private:
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    bool is_subnet_ero2dtl_enabled;
 
     int caller_fd;
 
@@ -235,7 +236,7 @@ private:
         {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
             options = 0; tag = 0; ucid = seqnum = 0xffffffff; lspb_id = 0; uptime = 0; duration = 0xffffffff;
-            api_writer = NULL;  vtag_mask = NULL; hop_back = 0; src_lcl_id = dest_lcl_id = 0; }
+            api_writer = NULL;  vtag_mask = NULL; hop_back = 0; src_lcl_id = dest_lcl_id = 0; is_subnet_ero2dtl_enabled = false;}
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}
     virtual ~LSPHandler() { if (vtag_mask) delete vtag_mask; }
