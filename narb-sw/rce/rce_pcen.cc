@@ -1249,14 +1249,21 @@ void PCEN::ReplyERO ()
         narb_lsp_subnet_dtl_tlv* subnet_dtl_tlv = (narb_lsp_subnet_dtl_tlv*)(body + bodylen);
         subnet_dtl_tlv->type = htons(TLV_TYPE_NARB_SUBNET_DTL);
         subnet_dtl_tlv->length = htons(sizeof(dtl_hop)*subnet_dtl.size());
-        i = 0;
-        while (subnet_dtl.size() > 0)
+        if (subnet_dtl.size() > 0)
         {
-            subnet_dtl_tlv->hops[i] = subnet_dtl.front();
-            subnet_dtl.pop_front();
-            i++;
+            i = 0;
+            while (subnet_dtl.size() > 0)
+            {
+                subnet_dtl_tlv->hops[i] = subnet_dtl.front();
+                subnet_dtl.pop_front();
+                i++;
+            }
+            bodylen += ntohs(subnet_dtl_tlv->length)+TLV_HDR_SIZE;
         }
-        bodylen += ntohs(subnet_dtl_tlv->length)+TLV_HDR_SIZE;
+        else
+        {
+            LOG("#### Warning #### User supplied subnet ERO cannot be translated to DTL!"<<endl);
+        }
     }
 
     if (subnet_ero.size() > 0 && (options & LSP_OPT_SUBNET_ERO))
