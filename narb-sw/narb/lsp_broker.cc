@@ -498,7 +498,12 @@ void LSPQ::GetDTL(te_tlv_header* tlv, list<dtl_hop>& dtl)
     assert (tlv);
     dtl.clear();
     int len = ntohs(tlv->length);
-    assert( len > 0 && len% sizeof(dtl_hop) == 0);
+    if ( len == 0)
+    {
+        LOGF("#### Warning #### LSPQ::GetDTL handling empty TLV!\n");
+        return;
+    }
+    assert(len% sizeof(dtl_hop) == 0);
 
     dtl_hop * hop  = (dtl_hop *)((char *)tlv + TLV_HDR_SIZE);
     for (; len > 0 ;hop++, len -= sizeof(dtl_hop))

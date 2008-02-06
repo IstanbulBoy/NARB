@@ -94,7 +94,7 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 
 
 void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
-    msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* subnet_ero)
+    msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -127,9 +127,9 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
         lcl_id_tlv->lclid_dest = htonl(dest_lcl_id);
         mlen += sizeof(msg_narb_local_id);
     }
-    if (subnet_ero != NULL && subnet_ero->size() > 0)
+    if (p_subnet_ero != NULL && p_subnet_ero->size() > 0)
     {
-        api_msg *subnet_ero_msg = narb_new_msg_reply_ero(0, 0, *subnet_ero, NULL, 0);
+        api_msg *subnet_ero_msg = narb_new_msg_reply_ero(0, 0, *p_subnet_ero, NULL, 0);
         memcpy(buf + mlen, subnet_ero_msg->body, ntohs(subnet_ero_msg->header.length));
         te_tlv_header* tlv = (te_tlv_header*)(buf + mlen);
         tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
