@@ -1943,12 +1943,12 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             break;
         case TLV_TYPE_NARB_SUBNET_ERO:
             GetERO_RFCStandard(tlv, subnet_ero);
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         //obsolete: no DTL in NARB request
         case TLV_TYPE_NARB_SUBNET_DTL:
             GetDTL(tlv, subnet_dtl);
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         default:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
@@ -1996,11 +1996,11 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
                 GetERO(tlv, subnet_ero);
             else if (state == STATE_NEXT_HOP_NARB_REPLY)
                 GetERO_RFCStandard(tlv, subnet_ero);
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         case TLV_TYPE_NARB_SUBNET_DTL:
             GetDTL(tlv, subnet_dtl);
-            tlv_len = ntohs(tlv->length);
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
         /* RCE does not suggest vtag in the current implemention
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
