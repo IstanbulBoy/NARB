@@ -169,7 +169,7 @@ void LSPHandler::GetERO_RFCStandard(te_tlv_header* tlv, list<ero_subobj>& ero)
     assert (tlv);
     ero.clear();
 
-    int len = ntohs(tlv->length) + TLV_HDR_SIZE;
+    int len = ntohs(tlv->length);
     if (len <= 0)
         return;
     
