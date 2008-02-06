@@ -389,7 +389,7 @@ public:
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t ucid1, u_int32_t msg_seqnum, u_int32_t lspb_id1 = 0, u_int32_t tag = 0, u_int32_t hopback = 0, 
-                u_int32_t src_lclid = 0, u_int32_t dest_lclid = 0, narb_lsp_vtagmask_tlv* vtm = NULL ): 
+                u_int32_t src_lclid = 0, u_int32_t dest_lclid = 0, narb_lsp_vtagmask_tlv* vtm = NULL): 
                 source(src), destination(dest), ucid(ucid1), seqnum(msg_seqnum), lspb_id(lspb_id1), options(opts), vtag(tag), hop_back(hopback), src_lcl_id(src_lclid), dest_lcl_id(dest_lclid), 
 				api_writer(NULL), gGraph (NULL), gSize (PCEN_MAX_GRAPH_SIZE)
             {
@@ -439,7 +439,8 @@ public:
     void ReplyErrorCode(u_int32_t ret);
     void ReplyERO();
     void HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask=NULL);
-    void EnableConvSubnetERO2DTL(bool x) { is_subnet_ero2dtl_enabled = x;}
+    void EnableConvSubnetERO2DTL() { is_subnet_ero2dtl_enabled = true;}
+    void SetSubnetERO(list<ero_subobj>& s_ero) { subnet_ero.assign(s_ero.begin(), s_ero.end()); }
 
     static int GetLinkEndsByIndex(vector<PCENNode*>& routers, vector<PCENLink*>& links, int j, int k, in_addr* head_ip, in_addr* tail_ip);
     static PCENLink* GetLinkByIp(vector<PCENLink*>& links, in_addr* head_ip, in_addr* tail_ip);

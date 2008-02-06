@@ -227,6 +227,7 @@ private:
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    list<ero_subobj> subnet_ero;
     bool is_subnet_ero2dtl_enabled;
 
     int caller_fd;
