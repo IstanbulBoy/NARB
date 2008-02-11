@@ -40,8 +40,8 @@
 #include "zebra_ospfclient.hh" 
 
 #define TERCE_API_SERVER_PORT 2690
-#define RCE_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+2)
-#define RCE_TERCE_ASYNC_PORT  (RCE_TERCE_SYNC_PORT+2)
+#define RCE_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+4) //2094
+#define RCE_TERCE_ASYNC_PORT  (RCE_TERCE_SYNC_PORT+1) //2095
 
 // Message types in addition to existing NARB/RCE API
 #define MSG_TERCE_TOPO_SYNC ((u_int8_t)0x11)
@@ -102,8 +102,8 @@ public:
     virtual int RunWithoutSyncTopology();
     virtual void Run();
     void KeepAlive();
-    void InitNarbTerceComm();
-    bool NarbTerceApiReady() { return api_ready; }
+    void InitRceTerceComm();
+    bool RceTerceApiReady() { return api_ready; }
 };
 
 class TerceApiTopoReader: public Reader
@@ -140,6 +140,27 @@ public:
     int UpdateLsa( in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
 };
 
+class TerceApiTopoOriginator: public Timer
+{
+private:
+    TerceApiTopoSync * terce_client;
+
+public:
+    TerceApiTopoOriginator(int interval): Timer(interval, 0), terce_client(NULL) { }
+    virtual TerceApiTopoOriginator() { }
+    void SetTerceClient(TerceApiTopoSync* tc) { terce_client = tc; }
+    virtual void Run();
+
+    int OriginateTopology ();
+    int DeleteTopology ();
+
+    int OriginateRouterId (RouterId* rtid);
+    int OriginateTeLink (Link* link);
+    int UpdateTeLink (Link* link);
+
+    void* BuildRouterIdOpaqueData(RouterId* rtid);
+    void* BuildTeLinkOpaqueData(Link* link);
+};
 
 #endif
 

@@ -72,6 +72,7 @@ void usage()
 ZebraOspfSync *zebra_client_inter = NULL;
 ZebraOspfSync *zebra_client_intra = NULL;
 TerceApiTopoSync *terce_client = NULL;
+TerceApiTopoOriginator* topo_originator = NULL;
 
 int main( int argc, char* argv[])
 {
@@ -153,13 +154,31 @@ int main( int argc, char* argv[])
     eventMaster.Schedule(zebra_client_inter);
     zebra_client_inter->Run();
 
-    TerceApiTopoSync terceSync((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, 
-        DOMAIN_MASK_LOCAL, SystemConfig::ospf_sync_interval);
+    TerceApiTopoSync terceClient((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, DOMAIN_MASK_LOCAL, 0);
     if (SystemConfig::terce_host.size() > 0 && SystemConfig::terce_port > 0)
     {
-        terce_client = &terceSync;
-        eventMaster.Schedule(terce_client);
-        terce_client->Run();
+        terce_client = &terceClient;
+        if (terce_client->RunWithoutSyncTopology() < 0)
+        {
+            LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        }
+
+        while (!terce_client->NarbTerceApiReady())
+        {
+            LOGF("RCE-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+            sleep(10);
+        }
+
+        //Start abstract domain topology origination via TERCE
+        if (topo_originator == NULL)
+        {
+            topo_originator= new TerceApiTopoOriginator(SystemConfig::ospf_sync_interval * 2);
+            topo_originator->SetRepeats(FOREVER);
+            topo_originator->SetAutoDelete(true);
+        }
+        topo_originator->SetTerceClient(terce_client);
+        topo_originator->OriginateTopology();
+        eventMaster.Schedule(topo_originator);
     }
 
     APIServer server(SystemConfig::api_port);
@@ -174,3 +193,4 @@ int main( int argc, char* argv[])
     eventMaster.Run();
     return 0;
 }
+

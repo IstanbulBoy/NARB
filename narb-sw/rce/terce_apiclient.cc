@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <vector>
 
-void TerceApiTopoSync::InitNarbTerceComm()
+void TerceApiTopoSync::InitRceTerceComm()
 {
     if (sync_fd < 0)
     {
@@ -283,7 +283,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
     //Check if the API is ready
     if (!api_ready)
     {
-        InitNarbTerceComm();
+        InitRceTerceComm();
 	if (!api_ready)
 	    return -2;
     }
@@ -316,7 +316,7 @@ void TerceApiTopoSync::Run ()
     //Check if the API is ready
     if (!api_ready)
     {
-        InitNarbTerceComm();
+        InitRceTerceComm();
         if (!api_ready)
             return;
     }
@@ -838,5 +838,221 @@ int TerceApiTopoWriter::UpdateLsa(in_addr adv_id, u_char lsa_type, u_char opaque
     }
     api_msg_delete(msg);
     return ret;
+}
+
+
+
+
+///////////TerceApiTopoOriginator//////////
+
+void TerceApiTopoOriginator::Run()
+{
+    if (terce_client && terce_client->RceTerceApiReady())
+    {
+        DeleteTopology();
+        OriginateTopology();
+    }
+}
+
+//@@@@
+int TerceApiTopoOriginator::OriginateTopology ()
+{
+    int ret = 0;
+
+    if (!terce_client || !terce_client->GetWriter())
+        return -1;
+
+    // originate router-id LSA's
+    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
+    while (router_id)
+    {
+        if (!router_id->hide)
+        {
+            this->OriginateRouterId(tc_writer, router_id);
+         }
+        router_id = NarbDomainInfo.NextRouterId();
+    }
+
+    // originate  te-link LSA's
+    link_info * link = NarbDomainInfo.FirstLink();
+    while (link)
+    {
+        if (!link->hide)
+        {
+            this->OriginateTeLink(tc_writer, link);
+        }
+        link = NarbDomainInfo.NextLink();
+    }
+
+    return ret;
+}
+
+//@@@@
+int TerceApiTopoOriginator::DeleteTopology ()
+{
+    int ret = 0;
+    if (!terce_client || !terce_client->GetWriter())
+        return -1;
+  
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+  
+    // delete router-id LSA's
+    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
+    while (router_id)
+    {
+        if (!router_id->hide)
+        {
+            ret = tc_writer->DeleteLsa(*(in_addr*)&router_id->advRtId, lsa_type, opaque_type, router_id->opaque_id);
+            
+            LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
+               lsa_type, opaque_type, router_id->opaque_id, NarbDomainInfo.terce.addr);
+            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router_id->id, router_id->advRtId, ret);
+        }
+        router_id = NarbDomainInfo.NextRouterId();
+    }
+
+    // delete  te-link LSA's
+    link_info * link = NarbDomainInfo.FirstLink();
+    while (link)
+    {
+        if (!link->hide)
+        {
+            ret = tc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id);
+            
+            LOGF("LINK_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
+               lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
+            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->advRtId, ret);
+        }
+        link = NarbDomainInfo.NextLink();
+    }
+
+    return ret;
+}
+
+
+int TerceApiTopoOriginator::OriginateRouterId (TerceApiTopoWriter* tc_writer, RouterId* rtid)
+{
+    int ret = 0;
+    if (!terce_client || !terce_client->GetWriter())
+        return -1;
+  
+    void *opaquedata;
+    int opaquelen;
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+  
+    opaquedata = (void *)BuildRouterIdOpaqueData(rtid); 
+    opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                  + sizeof (struct te_tlv_header);
+
+    //using Router ID as the opaque ID, which TERCE should not care
+    ret = tc_writer->OriginateLsa(*(in_addr*)&(rtid->advRtId), lsa_type, opaque_type, rtid->Id, opaquedata, opaquelen);
+    free(opaquedata);
+    return ret;
+}
+
+int TerceApiTopoOriginator::OriginateTeLink (TerceApiTopoWriter* tc_writer, Link* link)
+{
+    int ret = 0;
+    if (!terce_client || !terce_client->GetWriter())
+        return -1;
+  
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+    
+    void *opaquedata = BuildTeLinkOpaqueData(link);
+    int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                      + sizeof (struct te_tlv_header);
+
+    //using Link Local IfAddr as the opaque ID, which TERCE should not care
+    ret = tc_writer->OriginateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);
+    free(opaquedata);
+    return ret;
+}
+
+int TerceApiTopoOriginator::UpdateTeLink (TerceApiTopoWriter* tc_writer, link_info* link)
+{
+    int ret = 0;
+    if (!terce_client || !terce_client->GetWriter())
+        return -1;
+
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+    
+    void *opaquedata = BuildTeLinkOpaqueData(link);
+    int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length) + sizeof (struct te_tlv_header);
+  
+    //using Link Local IfAddr as the opaque ID, which TERCE should not care
+    ret = tc_writer->UpdateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);   
+    free(opaquedata);
+    return ret;
+}
+
+void* TerceApiTopoOriginator::BuildRouterIdOpaqueData(RouterId* rtid)
+{
+    te_tlv_header * tlv_header = (te_tlv_header*)malloc(sizeof(te_tlv_header)+ sizeof(in_addr));
+    tlv_header->type = htons(TE_TLV_ROUTER_ADDR);
+    tlv_header->length = htons(sizeof(in_addr));
+    *(u_int32_t*)((char *)tlv_header + sizeof(te_tlv_header)) = rtid->Id();
+    return (void*)tlv_header;
+}
+
+// @@@@
+void* TerceApiTopoOriginator::BuildTeLinkOpaqueData(Link* link)
+{
+  void* opaquedata = (void *)ospf_te_link_tlv_alloc(link->linkType, *(in_addr*)&link->id); 
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_LCLIF_IPADDR, &link->lclIfAddr);
+    }
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_RMTIF_IPADDR, &link->rmtIfAddr);
+    }
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_MAX_BW, &link->maxBandwidth);
+    }
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata, 
+    		TE_LINK_SUBTLV_TE_METRIC, &link->metric);
+    }
+
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata, 
+    		TE_LINK_SUBTLV_MAX_RSV_BW, &link->maxReservableBandwidth);
+    }
+
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_UNRSV_BW))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_UNRSV_BW, link->unreservedBandwidth);
+    }
+
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)link->ifswcap);
+      if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN))
+          opaquedata = ospf_te_link_subtlv_set_swcap_vlan((te_tlv_header*)opaquedata, link->vtagBitMask, link->vtagBitMaskAlloc);
+    }
+
+  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_RESV))
+    {
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_RESV_SCHEDULE, (void*)(&link->resvTable.reserves));
+    }
+
+  opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_DOMAIN_ID, (void*)&NarbDomainInfo.domain_id);
+
+  return opaquedata;
+
 }
 
