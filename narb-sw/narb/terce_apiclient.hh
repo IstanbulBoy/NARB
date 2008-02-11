@@ -40,8 +40,8 @@
 #include "zebra_ospfclient.hh" 
 
 #define TERCE_API_SERVER_PORT    2690
-#define NARB_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+2)
-#define NARB_TERCE_ASYNC_PORT  (NARB_TERCE_SYNC_PORT+1)
+#define NARB_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+2)  //2092
+#define NARB_TERCE_ASYNC_PORT  (NARB_TERCE_SYNC_PORT+1)  //2093
 
 // Message types in addition to existing NARB/RCE API
 #define MSG_TERCE_TOPO_SYNC ((u_int8_t)0x11)
@@ -139,7 +139,6 @@ public:
     int DeleteLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id);
     int UpdateLsa( in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
 };
-
 
 #endif
 

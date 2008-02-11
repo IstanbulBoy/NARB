@@ -220,7 +220,7 @@ int main( int argc, char* argv[])
         // Polling for OSPF ajdacency (waiting for the origination interface up and in full adjacency with a neighbor)
         while (!terce_client->NarbTerceApiReady())
         {
-            LOGF("TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            LOGF("NARB-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
             sleep(10);
         }
         //Start abstract domain topology origination via TERCE
@@ -233,10 +233,7 @@ int main( int argc, char* argv[])
             dts_originator->SetAutoDelete(true);
         }
         dts_originator->SetTerceClient(terce_client);
-        if (dts_originator == NULL)
-        {
-            eventMaster.Schedule(dts_originator);
-        }
+        eventMaster.Schedule(dts_originator);
     }
 
     //Run program as daemon
