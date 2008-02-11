@@ -50,7 +50,7 @@ void TerceApiTopoSync::InitNarbTerceComm()
 
     //$$$$ TBD
     u_int32_t ucid = domain_id;
-    api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, 0, NULL, ucid, get_narb_seqnum(), NARB_TERCE_SYNC_PORT+1);
+    api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INIT, 0, NULL, ucid, get_narb_seqnum(), NARB_TERCE_ASYNC_PORT);
 
     if (writer->WriteMessage(amsg) < 0)
     {
@@ -59,7 +59,7 @@ void TerceApiTopoSync::InitNarbTerceComm()
     }
 
     /* kick start the server */
-    if (Accept(NARB_TERCE_SYNC_PORT) < 0)
+    if (Accept(NARB_TERCE_ASYNC_PORT) < 0)
     {
 	LOGF("NARB-TerceApiTopoSync async server failed.");
 	SetObsolete(true);
@@ -179,7 +179,7 @@ int TerceApiTopoSync::Connect (char *host, int syncport, int remote_port)
     return 0;
 }
 
-int TerceApiTopoSync::Accept (int syncport)
+int TerceApiTopoSync::Accept (int asyncport)
 {
     sockaddr_in myaddr_async, peeraddr;
     int size = 0, on = 1, sock_accept, ret;
@@ -202,7 +202,7 @@ int TerceApiTopoSync::Accept (int syncport)
     memset (&myaddr_async, 0, sizeof (sockaddr_in));
     myaddr_async.sin_family = AF_INET;
     myaddr_async.sin_addr.s_addr = htonl (INADDR_ANY);
-    myaddr_async.sin_port = htons (syncport+1);
+    myaddr_async.sin_port = htons (asyncport);
     size = sizeof (sockaddr_in);
     //myaddr_async.sin_len = size;
 

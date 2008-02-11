@@ -40,8 +40,8 @@
 #include "zebra_ospfclient.hh" 
 
 #define TERCE_API_SERVER_PORT 2690
-#define RCE_TERCE_SYNC_PORT    2694
-//#define RCE_TERCE_ASYNC_PORT  2695
+#define RCE_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+2)
+#define RCE_TERCE_ASYNC_PORT  (RCE_TERCE_SYNC_PORT+2)
 
 // Message types in addition to existing NARB/RCE API
 #define MSG_TERCE_TOPO_SYNC ((u_int8_t)0x11)
@@ -79,6 +79,8 @@ public:
 
     int Connect (char *host, int syncport, int remote_port);
     int Connect() { return Connect(terce_host, RCE_TERCE_SYNC_PORT, terce_port); }
+    int Accept (int asyncport);
+    int Accept () { return Accept(RCE_TERCE_ASYNC_PORT); }
     bool Alive() { extern int module_connectable(char * host, int port); 
             return module_connectable (terce_host, terce_port); }
     TerceApiTopoReader * GetReader() {  return reader;}
@@ -97,10 +99,11 @@ public:
                 close(async_fd);
         }
 
+    virtual int RunWithoutSyncTopology();
     virtual void Run();
     void KeepAlive();
-    void InitRceTerceComm();
-    bool RceTerceApiReady() { return api_ready; }
+    void InitNarbTerceComm();
+    bool NarbTerceApiReady() { return api_ready; }
 };
 
 class TerceApiTopoReader: public Reader

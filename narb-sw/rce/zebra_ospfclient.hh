@@ -42,6 +42,7 @@
 #include "rce_apiserver.hh"
 
 #define ZEBRA_OSPF_API_VERSION 1
+#define OSPF_MAX_LSA_SIZE 1500
 
 // Message tyes to OSPF daemon.
 #define MSG_ZEBRA_REGISTER_OPAQUETYPE   1
