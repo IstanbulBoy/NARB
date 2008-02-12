@@ -172,7 +172,7 @@ int main( int argc, char* argv[])
         //Start abstract domain topology origination via TERCE
         if (topo_originator == NULL)
         {
-            topo_originator= new TerceApiTopoOriginator(SystemConfig::ospf_sync_interval * 2);
+            topo_originator= new TerceApiTopoOriginator(SystemConfig::terce_topo_sync_interval);
             topo_originator->SetRepeats(FOREVER);
             topo_originator->SetAutoDelete(true);
         }

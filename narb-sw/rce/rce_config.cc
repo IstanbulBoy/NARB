@@ -48,6 +48,7 @@ int SystemConfig::ospfd_intra_port_local = 4617;
 string SystemConfig::terce_host;
 int SystemConfig::terce_port = 0;
 int SystemConfig::terce_port_local = 0;
+int SystemConfig::terce_topo_sync_interval = 60;
 
 int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;
@@ -275,6 +276,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           {
               char address[MAXADDRLEN];
               int port;
+			  int interval;
   
               if (ReadConfigParameter(blk_body, "address", "%s", address))
               {
@@ -306,6 +308,16 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   LOG("ReadConfigParameter failed on TERCE : port" << endl);
                   SystemConfig::terce_port  = TERCE_API_SERVER_PORT;
                   LOG("TERCE server port has been set to " << TERCE_API_SERVER_PORT << endl);
+              }
+
+              if (ReadConfigParameter(blk_body, "topology-sync-interval", "%d", &interval))
+              {
+                  SystemConfig::terce_topo_sync_interval = interval;
+              }
+              else
+              {
+                  LOG("ReadConfigParameter failed on TERCE : topology-sync-interval" << endl);
+                  LOG("TERCE topology-sync-interval has been set to " << SystemConfig::terce_topo_sync_interval << endl);
               }
           }
           break;
