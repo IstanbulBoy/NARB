@@ -147,7 +147,7 @@ private:
 
 public:
     TerceApiTopoOriginator(int interval): Timer(interval, 0), terce_client(NULL) { }
-    virtual TerceApiTopoOriginator() { }
+    virtual ~TerceApiTopoOriginator() { }
     void SetTerceClient(TerceApiTopoSync* tc) { terce_client = tc; }
     virtual void Run();
 

@@ -854,7 +854,8 @@ void TerceApiTopoOriginator::Run()
     }
 }
 
-//@@@@
+//Originating intra-domain/physical topology only
+//TODO: will be made configurable to select the target topology
 int TerceApiTopoOriginator::OriginateTopology ()
 {
     int ret = 0;
@@ -862,32 +863,40 @@ int TerceApiTopoOriginator::OriginateTopology ()
     if (!terce_client || !terce_client->GetWriter())
         return -1;
 
+    RadixTree<Resource>* tree;
+    RadixNode<Resource> *node;
+
     // originate router-id LSA's
-    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
-    while (router_id)
+    tree = RDB.Tree(RTYPE_LOC_RTID);
+    node = tree->Root();
+    while (node)
     {
-        if (!router_id->hide)
+        RouterId* router_id = (RouterId*)node->Data();
+        if (router_id != NULL)
         {
-            this->OriginateRouterId(tc_writer, router_id);
-         }
-        router_id = NarbDomainInfo.NextRouterId();
+            this->OriginateRouterId(router_id);
+        }
+
+        node = tree->NextNode(node);
     }
 
     // originate  te-link LSA's
-    link_info * link = NarbDomainInfo.FirstLink();
-    while (link)
+    tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    node = tree->Root();
+    while (node)
     {
-        if (!link->hide)
+        Link* link = (Link*)node->Data();
+        if (link != NULL)
         {
-            this->OriginateTeLink(tc_writer, link);
+            this->OriginateTeLink(link);
         }
-        link = NarbDomainInfo.NextLink();
+
+        node = tree->NextNode(node);
     }
 
     return ret;
 }
 
-//@@@@
 int TerceApiTopoOriginator::DeleteTopology ()
 {
     int ret = 0;
@@ -897,62 +906,69 @@ int TerceApiTopoOriginator::DeleteTopology ()
     u_char lsa_type = 10;
     u_char opaque_type = 1;
   
-    // delete router-id LSA's
-    router_id_info * router_id = NarbDomainInfo.FirstRouterId();
-    while (router_id)
+    RadixTree<Resource>* tree;
+    RadixNode<Resource> *node;
+
+    // originate router-id LSA's
+    tree = RDB.Tree(RTYPE_LOC_RTID);
+    node = tree->Root();
+    while (node)
     {
-        if (!router_id->hide)
+        RouterId* router_id = (RouterId*)node->Data();
+        if (router_id != NULL)
         {
-            ret = tc_writer->DeleteLsa(*(in_addr*)&router_id->advRtId, lsa_type, opaque_type, router_id->opaque_id);
-            
-            LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
-               lsa_type, opaque_type, router_id->opaque_id, NarbDomainInfo.terce.addr);
-            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router_id->id, router_id->advRtId, ret);
+			u_int32_t adv_rt_id = router_id->AdvRtId();
+        	u_int32_t opaque_id = router_id->Id();
+            terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
         }
-        router_id = NarbDomainInfo.NextRouterId();
+
+        node = tree->NextNode(node);
     }
 
-    // delete  te-link LSA's
-    link_info * link = NarbDomainInfo.FirstLink();
-    while (link)
+    // originate  te-link LSA's
+    tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    node = tree->Root();
+    while (node)
     {
-        if (!link->hide)
+        Link* link = (Link*)node->Data();
+        if (link != NULL)
         {
-            ret = tc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id);
-            
-            LOGF("LINK_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
-               lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
-            LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->advRtId, ret);
+			u_int32_t adv_rt_id = link->AdvRtId();
+        	u_int32_t opaque_id = link->LclIfAddr();
+            terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
         }
-        link = NarbDomainInfo.NextLink();
+
+        node = tree->NextNode(node);
     }
 
     return ret;
 }
 
 
-int TerceApiTopoOriginator::OriginateRouterId (TerceApiTopoWriter* tc_writer, RouterId* rtid)
+int TerceApiTopoOriginator::OriginateRouterId (RouterId* rtid)
 {
     int ret = 0;
     if (!terce_client || !terce_client->GetWriter())
         return -1;
-  
+
     void *opaquedata;
     int opaquelen;
     u_char lsa_type = 10;
     u_char opaque_type = 1;
-  
+
+	TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
     opaquedata = (void *)BuildRouterIdOpaqueData(rtid); 
     opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                   + sizeof (struct te_tlv_header);
 
     //using Router ID as the opaque ID, which TERCE should not care
-    ret = tc_writer->OriginateLsa(*(in_addr*)&(rtid->advRtId), lsa_type, opaque_type, rtid->Id, opaquedata, opaquelen);
+	u_int32_t adv_rt_id = rtid->AdvRtId();
+    ret = tc_writer->OriginateLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, rtid->Id(), opaquedata, opaquelen);
     free(opaquedata);
     return ret;
 }
 
-int TerceApiTopoOriginator::OriginateTeLink (TerceApiTopoWriter* tc_writer, Link* link)
+int TerceApiTopoOriginator::OriginateTeLink (Link* link)
 {
     int ret = 0;
     if (!terce_client || !terce_client->GetWriter())
@@ -961,17 +977,19 @@ int TerceApiTopoOriginator::OriginateTeLink (TerceApiTopoWriter* tc_writer, Link
     u_char lsa_type = 10;
     u_char opaque_type = 1;
     
+	TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
     void *opaquedata = BuildTeLinkOpaqueData(link);
     int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                       + sizeof (struct te_tlv_header);
 
     //using Link Local IfAddr as the opaque ID, which TERCE should not care
-    ret = tc_writer->OriginateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);
+	u_int32_t adv_rt_id = link->AdvRtId();
+    ret = tc_writer->OriginateLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);
     free(opaquedata);
     return ret;
 }
 
-int TerceApiTopoOriginator::UpdateTeLink (TerceApiTopoWriter* tc_writer, link_info* link)
+int TerceApiTopoOriginator::UpdateTeLink (Link* link)
 {
     int ret = 0;
     if (!terce_client || !terce_client->GetWriter())
@@ -980,11 +998,13 @@ int TerceApiTopoOriginator::UpdateTeLink (TerceApiTopoWriter* tc_writer, link_in
     u_char lsa_type = 10;
     u_char opaque_type = 1;
     
+	TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
     void *opaquedata = BuildTeLinkOpaqueData(link);
     int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length) + sizeof (struct te_tlv_header);
   
     //using Link Local IfAddr as the opaque ID, which TERCE should not care
-    ret = tc_writer->UpdateLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);   
+	u_int32_t adv_rt_id = link->AdvRtId();
+    ret = tc_writer->UpdateLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);   
     free(opaquedata);
     return ret;
 }
@@ -998,61 +1018,267 @@ void* TerceApiTopoOriginator::BuildRouterIdOpaqueData(RouterId* rtid)
     return (void*)tlv_header;
 }
 
-// @@@@
+
+//////// Defining static C functions
+//////// Constructing TE Link TLV
+//////// Memory for tlv data allocated within function
+te_tlv_header *ospf_te_link_tlv_alloc(u_char type, in_addr addr)
+{
+    te_tlv_header * tlv_header;
+    te_link_subtlv_link_type link_type;
+    te_link_subtlv_link_id link_id;
+    int length = sizeof (te_link_subtlv_link_type) + sizeof(te_link_subtlv_link_id);
+    
+    tlv_header = (te_tlv_header*)malloc(sizeof(te_tlv_header) + length);
+    tlv_header->type = TE_TLV_LINK;
+    tlv_header->type = htons(tlv_header->type);
+    tlv_header->length = htons(length);
+  
+    memset(&link_type, 0, sizeof(te_link_subtlv_link_type));
+    link_type.header.type = htons(TE_LINK_SUBTLV_LINK_TYPE);
+    link_type.header.length = htons(1);
+    link_type.link_type.value = type;
+    memcpy((char *)tlv_header + sizeof(te_tlv_header), 
+                (char *)&link_type, sizeof(te_link_subtlv_link_type));
+  
+    link_id.header.type = TE_LINK_SUBTLV_LINK_ID;
+    link_id.header.type = htons(link_id.header.type);
+    link_id.header.length = sizeof(in_addr);
+    link_id.header.length = htons(link_id.header.length);
+    link_id.value = addr;
+    memcpy((char *)tlv_header + sizeof(te_tlv_header) + sizeof(te_link_subtlv_link_type), 
+                (char*)&link_id, sizeof(te_link_subtlv_link_id));
+  
+    return tlv_header;
+}
+
+//////// Appending optional TE parameter (sub-TLV) to TE Link TLV.
+//////// Memory of the tlv data re-allocated within function
+te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t type, void *value)
+{
+    te_tlv_header *tlv_header_appended;
+    char buf[OSPF_MAX_LSA_SIZE];
+    int tlv_size = sizeof(te_tlv_header) + ntohs(tlv_header->length);
+    int sub_tlv_size;
+  
+    switch (type)
+    {
+    case TE_LINK_SUBTLV_LCLIF_IPADDR:
+        {
+            te_link_subtlv_lclif_ipaddr *lclif_ipaddr
+              = (te_link_subtlv_lclif_ipaddr *)(buf + tlv_size);
+            
+            lclif_ipaddr->header.type = htons(TE_LINK_SUBTLV_LCLIF_IPADDR);
+            sub_tlv_size = sizeof (te_link_subtlv_lclif_ipaddr);
+            lclif_ipaddr->header.length = htons(sizeof(in_addr));
+            lclif_ipaddr->value = *((in_addr*)value);
+        }
+        break;
+    case TE_LINK_SUBTLV_RMTIF_IPADDR:
+        {
+            te_link_subtlv_rmtif_ipaddr *rmtif_ipaddr 
+              = (te_link_subtlv_rmtif_ipaddr *)(buf + tlv_size);
+            
+            rmtif_ipaddr->header.type = htons(TE_LINK_SUBTLV_RMTIF_IPADDR);
+            sub_tlv_size = sizeof (te_link_subtlv_rmtif_ipaddr);
+            rmtif_ipaddr->header.length = htons(sizeof(in_addr));
+            rmtif_ipaddr->value = *((in_addr*)value);
+         }
+         break;
+    case TE_LINK_SUBTLV_TE_METRIC:
+        {
+            te_link_subtlv_te_metric *metric 
+              = (te_link_subtlv_te_metric *)(buf + tlv_size);
+            
+            metric->header.type = htons(TE_LINK_SUBTLV_TE_METRIC);
+            sub_tlv_size = sizeof (te_link_subtlv_te_metric);
+            metric->header.length = htons(sizeof(u_int32_t));
+            metric->value = htonl(*((u_int32_t*)value));	     
+        }
+        break;
+    case TE_LINK_SUBTLV_MAX_BW:
+        {
+            te_link_subtlv_max_bw *max_bw 
+              = (te_link_subtlv_max_bw *)(buf + tlv_size);
+            
+            max_bw->header.type = htons(TE_LINK_SUBTLV_MAX_BW);
+            sub_tlv_size = sizeof (te_link_subtlv_max_bw);
+            max_bw->header.length = htons(sizeof(float));
+            max_bw->value = *(float*)value;
+            htonf_mbps(max_bw->value);
+        }
+        break;
+    case TE_LINK_SUBTLV_MAX_RSV_BW:
+        {
+            te_link_subtlv_max_rsv_bw *max_rsv_bw 
+              = (te_link_subtlv_max_rsv_bw *)(buf + tlv_size);
+            
+            max_rsv_bw->header.type = htons(TE_LINK_SUBTLV_MAX_RSV_BW);
+            sub_tlv_size = sizeof (te_link_subtlv_max_rsv_bw);
+            max_rsv_bw->header.length = htons(sizeof(float));
+            max_rsv_bw->value = *(float*)value;
+            htonf_mbps(max_rsv_bw->value);
+        }
+        break;
+    case TE_LINK_SUBTLV_UNRSV_BW:
+        {
+            te_link_subtlv_unrsv_bw *max_unrsv_bw 
+              = (te_link_subtlv_unrsv_bw *)(buf + tlv_size);
+            int i;
+            
+            max_unrsv_bw->header.type = htons(TE_LINK_SUBTLV_UNRSV_BW);
+            sub_tlv_size = sizeof (te_link_subtlv_unrsv_bw);
+            max_unrsv_bw->header.length = htons(sizeof(float) * 8);
+            for (i = 0; i < 8; i++)
+            {
+                *((float *)(&(max_unrsv_bw->value)) + i) = *(float*)value;
+                htonf_mbps(*((float *)(&(max_unrsv_bw->value)) + i));
+            }
+        }
+        break;
+    case TE_LINK_SUBTLV_RSC_CLSCLR:
+        {
+  	     te_link_subtlv_rsc_clsclr *rsc_clsclr 
+              = (te_link_subtlv_rsc_clsclr *)(buf + tlv_size);
+            
+            rsc_clsclr->header.type = htons(TE_LINK_SUBTLV_RSC_CLSCLR);
+            sub_tlv_size = sizeof (te_link_subtlv_rsc_clsclr);
+            rsc_clsclr->header.length = htons(sizeof(u_int32_t));
+            rsc_clsclr->value = htonl(*((u_int32_t *)value));
+        }  
+        break;
+    case TE_LINK_SUBTLV_LINK_LCRMT_ID:
+        {
+            te_link_subtlv_link_lcrmt_id *lcrmt_id 
+              = (te_link_subtlv_link_lcrmt_id *)(buf + tlv_size);
+  
+            lcrmt_id->header.type = htons(TE_LINK_SUBTLV_LINK_LCRMT_ID);
+            sub_tlv_size = sizeof (te_link_subtlv_link_lcrmt_id);
+            lcrmt_id->header.length = htons(sizeof(u_int32_t) * 2);
+            lcrmt_id->link_local_id = htonl(*((u_int32_t *)value));
+            lcrmt_id->link_remote_id = htonl(*((u_int32_t *)value + 1));
+        }
+        break;
+    case TE_LINK_SUBTLV_LINK_IFSWCAP:
+        {
+            int i; float x;
+
+			ISCD* iscd = (ISCD*)value;
+            sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
+			if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+			&& (htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+			{
+			  sub_tlv_size += (sizeof(link_ifswcap_specific_vlan) - 8);
+			}
+			else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+			&& (htons(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+			{
+			  sub_tlv_size += (sizeof(link_ifswcap_specific_subnet_uni) - 8);
+			}
+
+            te_link_subtlv_link_ifswcap *ifswcap = (te_link_subtlv_link_ifswcap*)(buf+tlv_size);
+            ifswcap->header.type = htons(TE_LINK_SUBTLV_LINK_IFSWCAP);
+            ifswcap->header.length = htons(sub_tlv_size - sizeof(te_tlv_header));
+            memcpy((char *)&ifswcap->link_ifswcap_data, value, sub_tlv_size - sizeof(te_tlv_header));
+            for (i = 0; i < 8; i++)
+            {
+                htonf_mbps(*(ifswcap->link_ifswcap_data.max_lsp_bw_at_priority + i));
+            }
+        }
+        break;
+    case TE_LINK_SUBTLV_RESV_SCHEDULE:
+        {
+            te_tlv_header *resv_header = (te_tlv_header*)(buf + tlv_size);
+            Reservation *resv = (Reservation *)(buf + tlv_size+TLV_HDR_SIZE);
+            vector<Reservation*>* resvs_v = (vector<Reservation*>*)value;
+            resv_header->type = htons(TE_LINK_SUBTLV_RESV_SCHEDULE);
+            resv_header->length = htons(resvs_v->size()*RESV_SIZE);
+            sub_tlv_size = TLV_HDR_SIZE + resvs_v->size()*RESV_SIZE;
+            for (int i = 0; i < resvs_v->size(); i++)
+            {
+                memcpy((char *)(resv++), (char*)((*resvs_v)[i]), sizeof(Reservation));
+            }
+        }
+        break;
+    case TE_LINK_SUBTLV_DOMAIN_ID:
+        {
+            te_link_subtlv_domain_id *domain_id 
+              = (te_link_subtlv_domain_id *)(buf + tlv_size);
+            sub_tlv_size = sizeof (te_link_subtlv_domain_id);
+            domain_id->header.type = htons(TE_LINK_SUBTLV_DOMAIN_ID);
+            domain_id->header.length = htons(sizeof(u_int32_t));
+            domain_id->value = *(u_int32_t*)value;
+        }       
+        break;
+    default:
+  	  LOGF("ospf_te_link_subtlv_append: Unrecognized subtlv type-%d\n", type);
+         return tlv_header;
+    }
+  
+    tlv_header->length = htons(ntohs(tlv_header->length) + sub_tlv_size);
+    memcpy(buf, (char*)tlv_header, tlv_size);
+    free(tlv_header);
+  
+    tlv_header_appended = (te_tlv_header*)malloc(tlv_size + sub_tlv_size);
+    memcpy((char *)tlv_header_appended, (char *)buf, tlv_size + sub_tlv_size);
+  
+    return tlv_header_appended;
+}
+
+//////// End of defining static C functions
+
+
 void* TerceApiTopoOriginator::BuildTeLinkOpaqueData(Link* link)
 {
   void* opaquedata = (void *)ospf_te_link_tlv_alloc(link->linkType, *(in_addr*)&link->id); 
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF))
+  if (link->lclIfAddr != 0)
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_LCLIF_IPADDR, &link->lclIfAddr);
     }
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF))
+  if (link->rmtIfAddr != 0)
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_RMTIF_IPADDR, &link->rmtIfAddr);
     }
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW))
-    {
-      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
-    		TE_LINK_SUBTLV_MAX_BW, &link->maxBandwidth);
-    }
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC))
-    {
-      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata, 
-    		TE_LINK_SUBTLV_TE_METRIC, &link->metric);
-    }
 
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW))
+  opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_MAX_BW, &link->maxBandwidth);
+  
+  opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata, 
+		TE_LINK_SUBTLV_TE_METRIC, &link->metric);
+
+  if (link->maxReservableBandwidth != 0)
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata, 
     		TE_LINK_SUBTLV_MAX_RSV_BW, &link->maxReservableBandwidth);
     }
 
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_UNRSV_BW))
+  if (link->unreservedBandwidth != 0)
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_UNRSV_BW, link->unreservedBandwidth);
     }
 
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP))
+  if (link->iscds.size() > 0)
     {
+      //Only sending the first ISCD
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
-    		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)link->ifswcap);
-      if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN))
-          opaquedata = ospf_te_link_subtlv_set_swcap_vlan((te_tlv_header*)opaquedata, link->vtagBitMask, link->vtagBitMaskAlloc);
+    		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)link->iscds.front());
     }
 
-  if (LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_RESV))
+  if (link->resvTable.reserves.size() > 0)
     {
       opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
     		TE_LINK_SUBTLV_RESV_SCHEDULE, (void*)(&link->resvTable.reserves));
     }
 
-  opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
-    		TE_LINK_SUBTLV_DOMAIN_ID, (void*)&NarbDomainInfo.domain_id);
+  if (SystemConfig::domainId != 0)
+  	{
+      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_DOMAIN_ID, (void*)&SystemConfig::domainId);
+  	}
 
   return opaquedata;
-
 }
 

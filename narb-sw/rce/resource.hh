@@ -124,6 +124,7 @@ public:
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
+	friend class TerceApiTopoOriginator;
 };
 
 class RouterId: public Resource
@@ -447,6 +448,7 @@ public:
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
+	friend class TerceApiTopoOriginator;
 };
 
 //defining domain mask
