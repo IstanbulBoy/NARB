@@ -52,6 +52,32 @@ int PCEN_OSCARS::PerformComputation()
 
 void PCEN_OSCARS::Run()
 {
+    //modifying topology 
+        //1. subnet handling in PCEN_MRN::PostBuildTopology
+        //2. relaxing constraints for OSCARS requests
+            //-->augmenting bandwidth and vtag set wherever needed
 
+
+    //PerformComputation --> Generating initial CSPF path (shortest)
+        //return error code if failed
+
+    //Storing initial CSPF path 
+        //both ERO and SubnetERO
+        //OR destNode->path
+
+    //Cleaning up and modifying topology
+        //reset TSPEC and interim variables
+        //trim links on forward path and assign VERY_BIG metric value to links on reverse path 
+            //$$$$ This should work since we only look at the metric value (cost) of forward links
+            //$$$$ Using ERO and SubnetERO together to revisit the path (checking on the fly)
+                //OR destNode->path
+
+    //PerformComputation --> Generating maximally CSPF diverse path
+
+    //Cutting off common links and exchanging head and tail for the two paths
+
+    //Generating and returninig the two diverse paths 
+        //if the initial shortest path is different than the two diverse paths return it too (three path set)
+        //otherwise return the two path set
 }
 
