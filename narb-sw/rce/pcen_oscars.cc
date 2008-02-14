@@ -43,11 +43,61 @@ bool PCEN_OSCARS::PostBuildTopology()
     PCEN_MRN::PostBuildTopology();
 
     //special topology manipulations for PCEN_OSCARS
+    //relaxing Bandwidth and VLAN Tag constraints...
+    int i,j, lNum = links.size();
+    PCENLink *pcen_link;
+
+    for (i = 0; i < lNum; i++)
+    {
+        pcen_link = links[i];
+        pcen_link->link = new Link(pcen_link->link);
+        //The Link resource is self-allcated will will be deleted in ~PCENLink()...
+        pcen_link->link_self_allocated = true;
+        if (pcen_link->link->maxBandwidth > 0)
+        {
+            for (j = 0; j < 7; j++)
+            {
+                if (pcen_link->link->maxBandwidth > pcen_link->link->unreservedBandwidth[j])
+                    pcen_link->link->unreservedBandwidth[j] = pcen_link->link->maxBandwidth;
+            }
+        }
+        list<ISCD*>::iterator it = pcen_link->link->iscds.begin();
+        IfSwCapDesc* iscd;
+        for (; it != pcen_link->link->iscds.end(); it++)
+        {
+            iscd = *it;
+            //$$$$ using max bandwidth
+            for (j = 0; j < 7; j++)
+            {
+                if (pcen_link->link->maxBandwidth > iscd->max_lsp_bw[j] )
+                    iscd->max_lsp_bw[j] = pcen_link->link->maxBandwidth;
+            }
+            //$$$$ all possible vtagss
+            if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                for (j = 0; j < MAX_VLAN_NUM/8; j++)
+                {
+                    iscd->vlan_info.bitmask[j] = (iscd->vlan_info.bitmask[j] | iscd->vlan_info.bitmask_alloc[j]);
+                    iscd->vlan_info.bitmask_alloc[j] = 0;
+                }
+            }
+            //$$$$ all timeslots ???? (@@@@ picked timeslots shoud be ignored by OSCARS!)
+            if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+            {
+                iscd->subnet_uni_info.first_timeslot = 0;
+                for (j = 0; j < MAX_TIMESLOTS_NUM/8; j++)
+                {
+                    iscd->subnet_uni_info.timeslot_bitmask[j] = 0xff;
+                }
+            }            
+        }
+            
+    }
+    
 }
 
 int PCEN_OSCARS::PerformComputation()
 {
-
 }
 
 void PCEN_OSCARS::Run()
@@ -62,15 +112,15 @@ void PCEN_OSCARS::Run()
         //return error code if failed
 
     //Storing initial CSPF path 
-        //both ERO and SubnetERO
-        //OR destNode->path
+        //destNode->path
+        //or ERO + SubnetERO
 
     //Cleaning up and modifying topology
         //reset TSPEC and interim variables
         //trim links on forward path and assign VERY_BIG metric value to links on reverse path 
             //$$$$ This should work since we only look at the metric value (cost) of forward links
-            //$$$$ Using ERO and SubnetERO together to revisit the path (checking on the fly)
-                //OR destNode->path
+            //destNode->path
+                //Or Using ERO and SubnetERO together to revisit the path (checking on the fly)
 
     //PerformComputation --> Generating maximally CSPF diverse path
 

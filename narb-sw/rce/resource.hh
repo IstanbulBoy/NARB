@@ -448,7 +448,8 @@ public:
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
-	friend class TerceApiTopoOriginator;
+    friend class TerceApiTopoOriginator;
+    friend class PCEN_OSCARS;
 };
 
 //defining domain mask
