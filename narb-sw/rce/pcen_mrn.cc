@@ -233,7 +233,7 @@ bool PCEN_MRN::PostBuildTopology()
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
             iscd = new ISCD;
-            if (link_src_backward->Iscds().size() == 2) //@@@@ TODO in OSPFd
+            if (link_src_backward->Iscds().size() == 2) //@@@@ TODO in OSPFd?
             {
                 *iscd = *link_src_backward->iscds.back();  
             }
@@ -759,7 +759,7 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                 //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
-                tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
                 break;
             }
             return 0;
@@ -1296,6 +1296,7 @@ int PCEN_MRN::PerformComputation()
             nextNode->DisplayInfo();
             cout<<endl;
 #endif
+
             // check if nextLink satisfies Tspec constraints of headNode
             if (!nextLink->IsAvailableForTspec(headNode->tspec))
                 continue;
@@ -1329,8 +1330,10 @@ int PCEN_MRN::PerformComputation()
                 cout << "HeadNode->vtagset: ";
                 headNode->vtagset.DisplayTags();
 #endif
+
                 nextLink->ProceedByUpdatingVtags(headNode->vtagset, nextVtagSet);
                 //nextNode->vtagset to be updaed later
+
 #ifdef DISPLAY_ROUTING_DETAILS
                 cout << "NextLink ";
                 nextVtagSet.DisplayTags();
@@ -1402,8 +1405,7 @@ int PCEN_MRN::PerformComputation()
                 //@@@@ We might make a special Ciena sw_type like CIENA_TDM (101) ...
                 if ( SystemConfig::should_incorporate_subnet ) 
                 {
-                    // $$$$ Checking available timeslots on the region-border interface
-                    // getting out of TDM region
+                    // $$$$ Checking available timeslots on the region-border interface getting out of TDM region
                     if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
                     {                    
                         if (!VerifyTimeslotsAvailability(nextLink, nextNode->tspec.Bandwidth))

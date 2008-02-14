@@ -78,8 +78,8 @@ public:
 
     int VerifyDTL(list<dtl_hop>& dtl_hops);
 
+    virtual bool PostBuildTopology();
     virtual int PerformComputation();
-    bool PostBuildTopology();
     virtual void Run();
 };
 
