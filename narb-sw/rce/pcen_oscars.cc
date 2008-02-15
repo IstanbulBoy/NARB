@@ -364,5 +364,29 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
 void PCEN_OSCARS::ReplyAltPathEROs()
 {
     //returning non-empty components in ero-vlsr-alts and ero-subnet-alts.
+
+    //log info
+    char addr[20];
+    ero_subobj* subobj;
+    list<ero_subobj>::iterator iter;
+    LOGF("---------PCEN_OSCARS::ReplyAltPathEROs ouput---------\n");
+    for (int i = 0; i < ero_vlsr_alts.size(); i++)
+    {
+        LOGF(">> Path #%d VLSR ERO:\n", i);        
+        for (iter = ero_vlsr_alts[i].begin(); iter != ero_vlsr_alts[i].end(); iter++)
+        {
+            subobj = &(*iter);
+            inet_ntop(AF_INET, &subobj->addr, addr, 20);
+            LOGF("-->> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+        }
+        LOGF("++>> Path #%d Subnet ERO:n", i);        
+        for (iter = ero_subnet_alts[i].begin(); iter != ero_subnet_alts[i].end(); iter++)
+        {
+            subobj = &(*iter);
+            inet_ntop(AF_INET, &subobj->addr, addr, 20);
+            LOGF("--++>> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+        }
+    }
+
 }
 
