@@ -344,7 +344,7 @@ private:
     u_int32_t linkType; //tlv type 1 // id -> 2
     u_int32_t lclIfAddr; // 3
     u_int32_t rmtIfAddr;  // 4
-    u_int32_t metric; // 5
+    int metric; // 5
     float maxBandwidth; //6
     float maxReservableBandwidth; // 7
     float minReservableBandwidth; //?
@@ -386,8 +386,8 @@ public:
     void SetLclIfAddr(u_int32_t x) { lclIfAddr = x;}
     u_int32_t RmtIfAddr() {return rmtIfAddr;}
     void SetRmtIfAddr(u_int32_t x) { rmtIfAddr = x;}
-    u_int32_t Metric() {return metric;}
-    void SetMetric(u_int32_t x) { metric = x;}
+    int Metric() {return metric;}
+    void SetMetric(int x) { metric = x;}
     float MaxBandwidth() {return maxBandwidth;}
     float MaxReservableBandwidth() {return maxReservableBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}

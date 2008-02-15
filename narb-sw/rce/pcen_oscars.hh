@@ -35,11 +35,18 @@
 #define __PCEN_OSCARS_HH__
 #include "rce_types.hh"
 #include "pcen_mrn.hh"
+#include <list>
+#include <vector>
+
+#define PCEN_VERYBIG_COST 1000000 // cost to assign on reverse links in searching for max-diverse path
 
 class PCEN_OSCARS: public PCEN_MRN
 {
 private:
-
+    vector< list<PCENLink*> > path_alts;
+    vector< list<ero_subobj> > ero_alts;
+    vector< list<ero_subobj> > ero_vlsr_alts;
+    vector< list<ero_subobj> > ero_subnet_alts;
 
 public:
     PCEN_OSCARS(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
@@ -52,7 +59,28 @@ public:
     virtual int PerformComputation();
     virtual bool PostBuildTopology();
     virtual void Run();
+
+    void CleanUpTopology();
+    void PrepareLinkDisjointSearch();
+    void FinishMaxDisjointPaths();
+    bool TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2);
+    void ReplyAltPathEROs();
+
+    friend bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
 };
+
+bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2)
+{
+    list<ero_subobj>::iterator iter1, iter2;
+    if (path1.size() != path2.size())
+        return false;
+    for (iter1 = path1.begin(), iter2 = path2.begin(); iter1 != path1.end(); iter1++, iter2++)
+    {
+        if (memcmp(&(*iter1), &(*iter2), sizeof(ero_subobj)) != 0)
+            return false;
+    }
+    return true;
+}
 
 #endif
 

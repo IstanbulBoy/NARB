@@ -43,7 +43,7 @@ using namespace std;
 
 class PCEN_MRN: public PCEN
 {
-private:
+protected:
     list<PCENNode*> PStack;
     list<TSpec> TSpecStack;
     list<ConstraintTagSet> WaveSetStack;

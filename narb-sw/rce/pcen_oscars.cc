@@ -40,7 +40,8 @@
 
 bool PCEN_OSCARS::PostBuildTopology()
 {
-    PCEN_MRN::PostBuildTopology();
+    if (!PCEN_MRN::PostBuildTopology())
+        return false;
 
     //special topology manipulations for PCEN_OSCARS
     //relaxing Bandwidth and VLAN Tag constraints...
@@ -93,41 +94,275 @@ bool PCEN_OSCARS::PostBuildTopology()
         }
             
     }
-    
+
+    return true;
 }
 
 int PCEN_OSCARS::PerformComputation()
 {
+    return PCEN_MRN::PerformComputation();
 }
 
 void PCEN_OSCARS::Run()
 {
-    //modifying topology 
-        //1. subnet handling in PCEN_MRN::PostBuildTopology
-        //2. relaxing constraints for OSCARS requests
-            //-->augmenting bandwidth and vtag set wherever needed
+    int ret;
+    Event::Run();
+    
+    if (is_e2e_tagged_vlan && vtag == 0)
+    {
+        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
+        LOG("PCEN_MRN::Run() : Requested vlan tag cannot be zero!" << endl);
+        return;
+    }
 
+    if ((ret = VerifyRequest()) != 0)
+    {
+        LOGF("PCEN_OSCARS::VerifyRequest() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ret);
+        return;
+    }
+
+    if ((ret = BuildTopology()) != 0)
+    {
+        LOGF("PCEN_OSCARS::BuildTopology() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ret);
+        return;
+    }
+
+    //modifying topology 
+    //  1. subnet handling in PCEN_MRN::PostBuildTopology
+    //  2. relaxing constraints for OSCARS requests
+    //  -->augmenting bandwidth and vtag set wherever needed
+    if (!PostBuildTopology())
+        return;
 
     //PerformComputation --> Generating initial CSPF path (shortest)
-        //return error code if failed
+    //  return error code if failed
+    if ((ret = PerformComputation()) != 0)
+    {
+        LOGF("PCEN_OSCARS::PerformComputation() failed (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ret);
+        return;
+    }
 
     //Storing initial CSPF path 
-        //destNode->path
-        //or ERO + SubnetERO
+    //destNode->path
+    //  and ERO + SubnetERO
+    PCENNode * destNode = GetNodeByIp(routers, &destination);
+    path_alts.push_back(destNode->path);
+    ero_alts.push_back(ero);
+    /*
+    if (SystemConfig::should_incorporate_subnet)
+    {
+        HandleSubnetUNIEROTrack(ero);
+        if (ero.size() == 0)
+            ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+    }
+    ero_vlsr_alts.push_back(ero);
+    ero_subnet_alts.push_back(subnet_ero);
+    */
 
     //Cleaning up and modifying topology
-        //reset TSPEC and interim variables
-        //trim links on forward path and assign VERY_BIG metric value to links on reverse path 
-            //$$$$ This should work since we only look at the metric value (cost) of forward links
-            //destNode->path
-                //Or Using ERO and SubnetERO together to revisit the path (checking on the fly)
+    //Reset node tspec and other interim variables
+    CleanUpTopology();
+
+    //Trim links on forward path and assign VERY_BIG metric value to links on reverse path 
+    //    This should work since we only look at the metric value (cost) of forward links
+    //    Using destNode->path ($$$$: Using ERO and SubnetERO together to revisit the path)
+    PrepareLinkDisjointSearch();
 
     //PerformComputation --> Generating maximally CSPF diverse path
+    if ((ret = PerformComputation()) != 0)
+    {
+        LOGF("PCEN_OSCARS::PerformComputation() failed for max-diverse path (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
+        //@@@@ReplyErrorCode(ret);
+        ReplyAltPathEROs();
+        return;
+    }
 
-    //Cutting off common links and exchanging head and tail for the two paths
+    //Storing max-diverse CSPF path (best-disjoint)
+    path_alts.push_back(destNode->path);
+    ero_alts.push_back(ero);
+    /*
+    ero_vlsr_alts.push_back(ero);
+    ero_subnet_alts.push_back(subnet_ero);
+    */
+
+    //Cutting off opposite-common links and exchanging head and tail for the two paths
+    FinishMaxDisjointPaths();
 
     //Generating and returninig the two diverse paths 
-        //if the initial shortest path is different than the two diverse paths return it too (three path set)
-        //otherwise return the two path set
+    //  if the initial shortest path is different than the two diverse paths return it too (three path set)
+    //      --> Done in FinishMaxDisjointPaths();
+    //   otherwise return the two path set
+    ReplyAltPathEROs();
+}
+
+void PCEN_OSCARS::CleanUpTopology()
+{
+    int rNum = routers.size(); 
+    int lNum = links.size();
+    int i;
+
+    //resetting Tspec and other interim varibles on nodes/routers 
+    PCENNode* pcen_node;
+    for (i = 0; i < rNum; i++)
+    {
+        pcen_node = routers[i];
+        pcen_node->tspec.SWtype = switching_type_ingress;
+        pcen_node->tspec.ENCtype = encoding_type_ingress;
+        pcen_node->tspec.Bandwidth = bandwidth_ingress;
+        pcen_node->ero_track.clear();
+        pcen_node->path.clear();
+        pcen_node->vtagset.TagSet().clear();
+        pcen_node->waveset.TagSet().clear();
+        pcen_node->minCost=PCEN_INFINITE_COST;
+        pcen_node->path_visited = false;
+        pcen_node->nflg.flag=0;
+        pcen_node->auxvar1=0;
+        pcen_node->auxvar2=0;
+
+    }
+
+    //resetting interim varibles on links 
+    PCENLink* pcen_link;
+    for (i = 0; i < lNum; i++)
+    {
+        pcen_link = links[i];
+        pcen_link->lflg.flag=0;
+        pcen_link->auxvar1=0;
+        pcen_link->auxvar2=0;
+    }
+
+    //cleanning up PCEN stacks
+    PStack.clear();
+    TSpecStack.clear();
+    WaveSetStack.clear();
+    VtagSetStack.clear();
+    MinCostStack.clear();
+    PathVisitedStack.clear();
+    PathStack.clear();
+    EROTrackStack.clear();
+
+    //cleanning up ERO and SubnetERO
+    ero.clear();
+    subnet_ero.clear();
+}
+
+void PCEN_OSCARS::PrepareLinkDisjointSearch()
+{
+    for (int i = 0; i < path_alts.size(); i++)
+    {
+        //@@@@ Should have botain path from ero_alts[1];
+        list<PCENLink*>& path = path_alts[i];
+        list<PCENLink*>::iterator iter_link = path.begin();
+        PCENLink* pcen_link;
+        for (; iter_link != path.end(); iter_link++)
+        {
+            pcen_link = (*iter_link);
+            pcen_link->link->SetMetric(PCEN_VERYBIG_COST);
+            if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->link->Metric() > 0)
+                pcen_link->reverse_link->link->SetMetric(-pcen_link->link->Metric());
+        }
+    }
+}
+
+
+void PCEN_OSCARS::FinishMaxDisjointPaths()
+{
+    // store the initial CSPF path ...
+    path_alts.push_back(path_alts[0]);
+    ero_alts.push_back(ero_alts[0]);
+
+    // locate and trim opposite-common segments, plus head-tail swapping
+    // @@@@ only handling two paths at this moment
+    while (TrimOppositeSharedSegmentAndSwapTail(ero_alts[0], ero_alts[1]))
+        ;  
+
+    // if the initial shortest path is different than the two diverse paths return it too (three path set)
+    if (ero_alts[0] ==  ero_alts.back())
+    {
+        ero_alts.pop_back();
+        path_alts.pop_back();
+    }
+
+    // generating vlsr_ero's and subnet_ero's !!
+    ero_vlsr_alts.clear();
+    ero_subnet_alts.clear();
+    for (int i = 0; i < ero_alts.size(); i++)
+    {
+        subnet_ero.clear(); //??
+        ero_vlsr_alts.push_back(ero_alts[i]);
+        if (SystemConfig::should_incorporate_subnet)
+        {
+            HandleSubnetUNIEROTrack(ero_vlsr_alts.back());
+        }
+        ero_subnet_alts.push_back(subnet_ero); // could be empty
+    }
+}
+
+bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2)
+{
+    list<ero_subobj>::iterator iter1a, iter2a;
+    list<ero_subobj>::reverse_iterator iter1z, iter2z;
+    list<ero_subobj> ero1_tail, ero2_tail;
+    ero_subobj *subobj1, *subobj2;
+
+    bool found1 = false;
+    iter1a = ero1.begin();
+    for (++iter1a; iter1a != ero1.end(); iter1a++)
+    {
+        subobj1 = &(*iter1a);
+        iter2z = ero2.rbegin();
+        for (++iter2z; iter2z != ero2.rend(); iter2z++)
+        {
+            subobj2 = &(*iter2z);
+            if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+            {
+                found1 = true;
+                break;
+            }
+        }
+        if (found1)  break;
+    }
+
+    bool found2 = false;
+    iter2a = ero2.begin();
+    for (++iter2a; iter2a != ero2.end(); iter2a++)
+    {
+        subobj1 = &(*iter2a);
+        iter1z = ero1.rbegin();
+        for (++iter1z; iter1z != ero1.rend(); iter1z++)
+        {
+            subobj2 = &(*iter1z);
+            if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+            {
+                found2 = true;
+                break;
+            }
+        }
+        if (found2)  break;
+    }
+
+    if (!found1 || !found2)
+        return false;
+
+    assert (memcmp(&(*iter1a), &(*iter1z), sizeof(ero_subobj)) != 0);
+    assert (memcmp(&(*iter2a), &(*iter2z), sizeof(ero_subobj)) != 0);
+    ero1_tail.assign(ero1.rbegin(), iter1z);
+    ero1_tail.reverse();
+    ero2_tail.assign(ero2.rbegin(), iter2z);
+    ero2_tail.reverse();
+    ero1.erase(iter1a, ero1.end());
+    ero2.erase(iter2a, ero2.end());
+    ero1.splice(ero1.end(), ero2_tail);
+    ero2.splice(ero2.end(), ero1_tail);
+
+    return true;
+}
+
+void PCEN_OSCARS::ReplyAltPathEROs()
+{
+    //returning non-empty components in ero-vlsr-alts and ero-subnet-alts.
 }
 
