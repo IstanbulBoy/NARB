@@ -396,6 +396,18 @@ api_msg * api_msg_new (u_char msgtype, u_char action, u_int16_t msglen, void *ms
     return msg;
 }
 
+struct api_msg * api_msg_append_tlv (struct api_msg * msg, struct te_tlv_header* tlv)
+{
+    api_msg* rmsg = new (api_msg);
+    memcpy(rmsg, msg, sizeof(api_msg));
+    rmsg->header.length = htons(ntohs(msg->header.length) + sizeof(te_tlv_header) + ntohs(tlv->length));
+    rmsg->header.chksum = MSG_CHKSUM(rmsg->header);
+    memcpy(rmsg->body, msg->body, ntohs(msg->header.length));
+    memcpy(rmsg->body + ntohs(msg->header.length), tlv, sizeof(te_tlv_header) + ntohs(tlv->length));
+    api_msg_delete(msg);
+    return rmsg;
+}
+
 void api_msg_delete (struct api_msg* msg)
 {
     assert(msg);

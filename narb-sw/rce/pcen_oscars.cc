@@ -37,6 +37,18 @@
 #include "pcen_mrn.hh"
 #include "pcen_oscars.hh"
 
+bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2)
+{
+    list<ero_subobj>::iterator iter1, iter2;
+    if (path1.size() != path2.size())
+        return false;
+    for (iter1 = path1.begin(), iter2 = path2.begin(); iter1 != path1.end(); iter1++, iter2++)
+    {
+        if (memcmp(&(*iter1), &(*iter2), sizeof(ero_subobj)) != 0)
+            return false;
+    }
+    return true;
+}
 
 bool PCEN_OSCARS::PostBuildTopology()
 {

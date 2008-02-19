@@ -83,6 +83,7 @@ struct api_msg
 
 api_msg * api_msg_new (u_int16_t msgtype, u_int16_t msglen, void *msgbody, u_int32_t ucid, u_int32_t seqnum,  u_int32_t tag = 0);
 api_msg* api_msg_new (u_char msgtype, u_char action, u_int16_t msglen, void *msgbody, u_int32_t ucid, u_int32_t seqnum,  u_int32_t tag = 0);
+struct api_msg * api_msg_append_tlv (struct api_msg * msg, struct te_tlv_header* tlv);
 void api_msg_delete (struct api_msg* msg);
 void api_msg_dump (struct api_msg* msg);
 

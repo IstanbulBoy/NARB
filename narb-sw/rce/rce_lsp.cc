@@ -36,6 +36,7 @@
 #include "rce_pcen.hh"
 #include "pcen_ksp.hh"
 #include "pcen_mrn.hh"
+#include "pcen_oscars.hh"
 #include "rce_lsp.hh"
 
 void LSPHandler::Load(api_msg *msg)
@@ -146,6 +147,12 @@ void LSPHandler::Run()
     {
         pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
             ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+    }
+    else if ((options & LSP_OPT_MRN) != 0 && (options & LSP_OPT_ALT_PATHS) != 0)
+    {
+        pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+            src_lcl_id, dest_lcl_id, vtag_mask);
     }
     else
     {

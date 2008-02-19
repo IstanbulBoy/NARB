@@ -2002,6 +2002,14 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             GetDTL(tlv, subnet_dtl);
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             break;
+        case TLV_TYPE_NARB_ALTERNATE_ERO:
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
+            //TODO
+            break;
+        case TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO:
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
+            //TODO
+            break;
         /* RCE does not suggest vtag in the current implemention
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
             if (!suggested_vtag)

@@ -62,6 +62,7 @@
 //#define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
 #define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
 #define LSP_OPT_SUBNET_DTL  ((u_int32_t)(0x0800 << 16)) //returning subnet DTL TLV if any
+#define LSP_OPT_ALT_PATHS  ((u_int32_t)(0x1000 << 16)) //returning alternate paths (ERO + subnetERO)
 
 #define ANY_VTAG 0xffff  //Indicating that LSP uses any available E2E VLAN Tag
 #define ANY_WAVE 0xffff  //Indicating that LSP uses any available Wavelength for optical layer routing

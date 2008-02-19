@@ -89,6 +89,7 @@ enum narb_working_mode {
 #define LSP_OPT_QUERY_CONFIRM  ((u_int32_t)(0x0200 << 16)) //holding resource upon query and return confirmation ID (instead of strict ERO hops)
 #define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
 #define LSP_OPT_SUBNET_DTL  ((u_int32_t)(0x0800 << 16)) //returning subnet DTL TLV if any
+#define LSP_OPT_ALT_PATHS  ((u_int32_t)(0x1000 << 16)) //returning alternate paths (ERO + subnetERO)
 
 struct indexed_ero
 {

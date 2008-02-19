@@ -40,6 +40,8 @@
 
 #define PCEN_VERYBIG_COST 1000000 // cost to assign on reverse links in searching for max-diverse path
 
+inline bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
+
 class PCEN_OSCARS: public PCEN_MRN
 {
 private:
@@ -68,19 +70,6 @@ public:
 
     friend bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
 };
-
-bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2)
-{
-    list<ero_subobj>::iterator iter1, iter2;
-    if (path1.size() != path2.size())
-        return false;
-    for (iter1 = path1.begin(), iter2 = path2.begin(); iter1 != path1.end(); iter1++, iter2++)
-    {
-        if (memcmp(&(*iter1), &(*iter2), sizeof(ero_subobj)) != 0)
-            return false;
-    }
-    return true;
-}
 
 #endif
 
