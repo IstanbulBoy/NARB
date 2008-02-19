@@ -442,6 +442,8 @@ public:
     void EnableConvSubnetERO2DTL() { is_subnet_ero2dtl_enabled = true;}
     void SetSubnetERO(list<ero_subobj>& s_ero) { subnet_ero.assign(s_ero.begin(), s_ero.end()); }
 
+    api_msg* NewEROReplyMessage ();
+    
     static int GetLinkEndsByIndex(vector<PCENNode*>& routers, vector<PCENLink*>& links, int j, int k, in_addr* head_ip, in_addr* tail_ip);
     static PCENLink* GetLinkByIp(vector<PCENLink*>& links, in_addr* head_ip, in_addr* tail_ip);
     static PCENNode* GetNodeByIp(vector<PCENNode*>& routers, in_addr* ip);

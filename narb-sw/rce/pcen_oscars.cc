@@ -189,11 +189,11 @@ void PCEN_OSCARS::Run()
     */
 
     //Cutting off opposite-common links and exchanging head and tail for the two paths
-    FinishMaxDisjointPaths();
+    CreateMaxDisjointPaths();
 
     //Generating and returninig the two diverse paths 
     //  if the initial shortest path is different than the two diverse paths return it too (three path set)
-    //      --> Done in FinishMaxDisjointPaths();
+    //      --> Done in CreateMaxDisjointPaths();
     //   otherwise return the two path set
     ReplyAltPathEROs();
 }
@@ -253,7 +253,7 @@ void PCEN_OSCARS::PrepareLinkDisjointSearch()
 {
     for (int i = 0; i < path_alts.size(); i++)
     {
-        //@@@@ Should have botain path from ero_alts[1];
+        //@@@@ Should have otained path from ero_alts[i];
         list<PCENLink*>& path = path_alts[i];
         list<PCENLink*>::iterator iter_link = path.begin();
         PCENLink* pcen_link;
@@ -268,7 +268,7 @@ void PCEN_OSCARS::PrepareLinkDisjointSearch()
 }
 
 
-void PCEN_OSCARS::FinishMaxDisjointPaths()
+void PCEN_OSCARS::CreateMaxDisjointPaths()
 {
     // store the initial CSPF path ...
     path_alts.push_back(path_alts[0]);
@@ -276,7 +276,8 @@ void PCEN_OSCARS::FinishMaxDisjointPaths()
 
     // locate and trim opposite-common segments, plus head-tail swapping
     // @@@@ only handling two paths at this moment
-    while (TrimOppositeSharedSegmentAndSwapTail(ero_alts[0], ero_alts[1]))
+    assert(ero_alts[1].size() == 3);
+    while (TrimOppositeSharedSegmentAndSwapTail(ero_alts[1], ero_alts[2]))
         ;  
 
     // if the initial shortest path is different than the two diverse paths return it too (three path set)
@@ -299,6 +300,9 @@ void PCEN_OSCARS::FinishMaxDisjointPaths()
         }
         ero_subnet_alts.push_back(subnet_ero); // could be empty
     }
+
+    //this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
+    //this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
 }
 
 bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2)
@@ -364,29 +368,78 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
 void PCEN_OSCARS::ReplyAltPathEROs()
 {
     //returning non-empty components in ero-vlsr-alts and ero-subnet-alts.
+    //ERO TLV with ero and SubnetERO TLV with subnet_ero
+    assert (api_writer);
 
-    //log info
+    api_msg* msg = NewEROReplyMessage();
+    assert (msg != NULL);
+
+    //plus altanative EROs TLVs (ero_alts[1] (and ero_alts[2] if any)) 
+    LOGF("#### PCEN_OSCARS::ReplyAltPathEROs for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
+        ucid, seqnum, source, destination, bandwidth_ingress);
+    char buf[1000];
+    te_tlv_header *ero_tlv = (te_tlv_header*)buf;
     char addr[20];
     ero_subobj* subobj;
     list<ero_subobj>::iterator iter;
-    LOGF("---------PCEN_OSCARS::ReplyAltPathEROs ouput---------\n");
     for (int i = 0; i < ero_vlsr_alts.size(); i++)
     {
-        LOGF(">> Path #%d VLSR ERO:\n", i);        
-        for (iter = ero_vlsr_alts[i].begin(); iter != ero_vlsr_alts[i].end(); iter++)
+        //$$$$ Special handling for HOP BACK ...
+        list<ero_subobj>::iterator iter; 
+        if (hop_back != 0)
+        {
+            for (iter = ero.begin(); iter != ero.end(); iter++)
+            {
+                if ((*iter).addr.s_addr == hop_back && iter != ero.begin())
+                {
+                    iter = ero.erase(ero.begin(), iter);
+                    break;
+                }
+            }
+            if (iter == ero.end()) // add a back_hop to the beginning
+            {
+                ero_subobj subobj_hopback = *(ero.begin());
+                if (subobj_hopback.hop_type == ERO_TYPE_STRICT_HOP &&
+                    (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC && 
+                    (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_DEST )
+                {
+                    subobj_hopback.addr.s_addr = hop_back;
+                    ero.push_front(subobj_hopback);
+                }
+            }
+        }
+
+        LOGF(">> Path #%d VLSR ERO:\n", i);
+        //$$$$ Making AltVlsrERO TLV
+        ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_ERO);
+        ero_tlv->length = htons(sizeof(ero_subobj)*ero_vlsr_alts[i].size());
+        ero_subobj* ero_hop = (ero_subobj*)((char*)ero_tlv + TLV_HDR_SIZE);
+        int j =0;
+        for (iter = ero_vlsr_alts[i].begin(); iter != ero_vlsr_alts[i].end(); iter++, j++)
         {
             subobj = &(*iter);
             inet_ntop(AF_INET, &subobj->addr, addr, 20);
             LOGF("-->> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+            *(ero_hop+j) = (*subobj);
         }
-        LOGF("++>> Path #%d Subnet ERO:n", i);        
-        for (iter = ero_subnet_alts[i].begin(); iter != ero_subnet_alts[i].end(); iter++)
+        msg = api_msg_append_tlv(msg, ero_tlv);
+
+        LOGF("++>> Path #%d Subnet ERO:\n", i);
+        //$$$$ Making AltSubnetERO TLV
+        ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO);
+        ero_tlv->length = htons(sizeof(ero_subobj)*ero_subnet_alts[i].size());
+        ero_hop = (ero_subobj*)((char*)ero_tlv + TLV_HDR_SIZE);
+        j = 0;
+        for (iter = ero_subnet_alts[i].begin(); iter != ero_subnet_alts[i].end(); iter++, j++)
         {
             subobj = &(*iter);
             inet_ntop(AF_INET, &subobj->addr, addr, 20);
             LOGF("--++>> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+            *(ero_hop+j) = (*subobj);
         }
+        msg = api_msg_append_tlv(msg, ero_tlv);
     }
 
+    api_writer->PostMessage(msg);
 }
 

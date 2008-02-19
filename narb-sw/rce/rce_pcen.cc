@@ -1175,13 +1175,9 @@ void PCEN::ReplyErrorCode (u_int32_t code)
     return;
 }
 
-void PCEN::ReplyERO ()
+api_msg* PCEN::NewEROReplyMessage ()
 {
     char body[1024];
-    assert (api_writer);
-
-    LOGF("Replying ERO for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
-        ucid, seqnum, source, destination, bandwidth_ingress);
 
     list<ero_subobj>::iterator iter; 
 
@@ -1282,7 +1278,18 @@ void PCEN::ReplyERO ()
     }
 
     api_msg* msg = api_msg_new(MSG_LSP, ACT_ACKDATA, body, ucid, seqnum, bodylen, vtag);
-    api_writer->PostMessage(msg);
+    return msg;
+}
+
+void PCEN::ReplyERO ()
+{
+    assert (api_writer);
+    LOGF("Replying ERO for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
+        ucid, seqnum, source, destination, bandwidth_ingress);
+
+    api_msg* msg = NewEROReplyMessage();
+    if (msg != NULL)
+        api_writer->PostMessage(msg);
 
     //holding the resources enqueried for a short period of time to avoid contention...
     if (options & LSP_OPT_QUERY_HOLD)

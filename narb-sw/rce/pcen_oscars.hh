@@ -62,7 +62,7 @@ public:
 
     void CleanUpTopology();
     void PrepareLinkDisjointSearch();
-    void FinishMaxDisjointPaths();
+    void CreateMaxDisjointPaths();
     bool TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2);
     void ReplyAltPathEROs();
 
