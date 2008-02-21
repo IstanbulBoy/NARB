@@ -313,24 +313,46 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
         }
     }
 
+    /* without the following, returnig the second path as ero/subnet_ero
     this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
     if (ero_subnet_alts.size() > 0)
         this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
+    //vtag_mask?
+    */
 }
 
 bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2)
 {
     list<ero_subobj>::iterator iter1a, iter2a;
-    list<ero_subobj>::reverse_iterator iter1z, iter2z;
+    list<ero_subobj>::reverse_iterator iter1z, iter2z, iter1z_x, iter2z_x;
     list<ero_subobj> ero1_tail, ero2_tail;
     ero_subobj *subobj1, *subobj2;
 
-    bool found1 = false;
+    bool found1 = false, found2 = false;
+
+    //skip common segment at the source end (usually one or two subobjects)
     iter1a = ero1.begin();
+    iter2a = ero2.begin();
+    while (iter1a != ero1.end() && iter2a != ero2.end() && memcmp(&(*iter1a), &(*iter2a), sizeof(ero_subobj)) == 0)
+    {
+        ++iter1a; 
+        ++iter2a; 
+    }
+
+    //skip common segment at the destination end (usually one or two subobjects)
+    iter1z_x = ero1.rbegin();
+    iter2z_x = ero2.rbegin();
+    while (iter1z_x != ero1.rend() && iter2z_x != ero2.rend() && memcmp(&(*iter1z_x), &(*iter2z_x), sizeof(ero_subobj)) == 0)
+    {
+        ++iter1z_x; 
+        ++iter2z_x; 
+    }
+
+    //locate starting and ending points for the opposite common path segment
     for (++iter1a; iter1a != ero1.end(); iter1a++)
     {
         subobj1 = &(*iter1a);
-        iter2z = ero2.rbegin();
+        iter2z = iter2z_x;
         for (++iter2z; iter2z != ero2.rend(); iter2z++)
         {
             subobj2 = &(*iter2z);
@@ -342,13 +364,10 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
         }
         if (found1)  break;
     }
-
-    bool found2 = false;
-    iter2a = ero2.begin();
     for (++iter2a; iter2a != ero2.end(); iter2a++)
     {
         subobj1 = &(*iter2a);
-        iter1z = ero1.rbegin();
+        iter1z = iter1z_x;
         for (++iter1z; iter1z != ero1.rend(); iter1z++)
         {
             subobj2 = &(*iter1z);
