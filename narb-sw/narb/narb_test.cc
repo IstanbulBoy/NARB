@@ -75,6 +75,7 @@ u_int32_t opt_req_all_vtags = 0;
 u_int32_t opt_vtag_mask = 0;
 u_int32_t opt_query_hold = 0;
 u_int32_t opt_query_with_confirmation = 0;
+u_int32_t opt_alt_paths = 0;
 in_addr hop_back;
 
 struct msg_narb_vtag_mask vtag_mask;
@@ -352,7 +353,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
-        opt_query_hold | opt_query_with_confirmation);
+        opt_query_hold | opt_query_with_confirmation | opt_alt_paths);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -388,7 +389,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:CLMOQUVma", longopts, 0);
+        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:CLMOQUVZma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -445,6 +446,9 @@ int main(int argc, char* argv[])
             break;
         case 'X':
             xml_file = optarg;
+            break;
+        case 'Z':
+            opt_alt_paths = LSP_OPT_ALT_PATHS;
             break;
         case 'E':
             sscanf(optarg, "%d", &opt_excluded_layers);
