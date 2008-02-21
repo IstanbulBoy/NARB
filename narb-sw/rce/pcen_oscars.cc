@@ -313,8 +313,9 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
         }
     }
 
-    //this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
-    //this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
+    this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
+    if (ero_subnet_alts.size() > 0)
+        this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
 }
 
 bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2)
