@@ -288,7 +288,7 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
 
     // locate and trim opposite-common segments, plus head-tail swapping
     // @@@@ only handling two paths at this moment
-    assert(ero_alts[1].size() == 3);
+    assert(ero_alts.size() == 3);
     while (TrimOppositeSharedSegmentAndSwapTail(ero_alts[1], ero_alts[2]))
         ;  
 
