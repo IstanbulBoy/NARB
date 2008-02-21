@@ -570,7 +570,40 @@ int main(int argc, char* argv[])
                         cout<<" " << vtag;
                 }
                 cout<<endl;
+                offset += sizeof(msg_narb_vtag_mask);
             }
+            tlv = (te_tlv_header*)((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
+            if (htons(narb_reply->header.length) - offset > sizeof(te_tlv_header) && ntohs(tlv->type) == TLV_TYPE_NARB_SUBNET_ERO)
+            {
+                LOGF("Subnet ERO hops\n");
+                len = ntohs(tlv->length);
+                offset = sizeof(struct te_tlv_header);
+                subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
+                while (len > 0)
+                {
+                    if ((subobj_ipv4->l_and_type & 0x7f) == 4)
+                        subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
+                    else
+                        subobj_unum = NULL;
+                
+                    if (subobj_unum)
+                    {   
+                        inet_ntop(AF_INET, &subobj_unum->addr, addr, 20);
+                        LOGF("HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d)]\n", (subobj_unum->l_and_type & (1<<7)) == 0?"strict":"loose", addr, ntohl(subobj_unum->ifid), ntohl(subobj_unum->ifid)>>16, (u_int16_t)ntohl(subobj_unum->ifid));
+                        len -= sizeof(unum_if_subobj);
+                        offset += sizeof(unum_if_subobj);
+                    }   
+                    else
+                    {   
+                        inet_ntop(AF_INET, (in_addr*)subobj_ipv4->addr, addr, 20);
+                        LOGF("HOP-TYPE [%s]: %s\n", (subobj_ipv4->l_and_type & (1<<7)) == 0?"strict":"loose", addr);
+                        len -= sizeof(ipv4_prefix_subobj);
+                        offset += sizeof(ipv4_prefix_subobj);
+                    }   
+                    subobj_ipv4  = (ipv4_prefix_subobj *)((char *)tlv + offset);
+                }           
+            }
+
             break;
         case MSG_REPLY_ERROR:
             LOGF("Request failed : %s\n", error_code_to_cstr(ntohl(*(u_int32_t *)((char *)tlv + sizeof(struct te_tlv_header)))));
