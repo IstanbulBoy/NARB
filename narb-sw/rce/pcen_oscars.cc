@@ -351,8 +351,21 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
             subobj2 = &(*iter2z);
             if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
             {
-                found1 = true;
-                break;
+                ++iter1a;
+                ++iter2z;
+                if (iter1a != ero1.end() && iter2z != ero2.rend())
+                {
+                    subobj1 = &(*iter1a);
+                    subobj2 = &(*iter2z);
+                    if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+                    {
+                        --iter1a;
+                        --iter2z;                    
+                        found1 = true;
+                        break;
+                    }
+                }
+                //else continue;
             }
         }
         if (found1)  break;
@@ -366,18 +379,29 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
             subobj2 = &(*iter1z);
             if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
             {
-                found2 = true;
-                break;
+                ++iter2a;
+                ++iter1z;
+                if (iter2a != ero2.end() && iter1z != ero1.rend())
+                {
+                    subobj1 = &(*iter2a);
+                    subobj2 = &(*iter1z);
+                    if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+                    {
+                        --iter2a;
+                        --iter1z;                    
+                        found2 = true;
+                        break;
+                    }
+                }
             }
         }
-        if (found2)  break;
     }
-
     if (!found1 || !found2)
         return false;
-
     assert (memcmp(&(*iter1a), &(*iter1z), sizeof(ero_subobj)) != 0);
     assert (memcmp(&(*iter2a), &(*iter2z), sizeof(ero_subobj)) != 0);
+
+    //swap tail
     ero1_tail.assign(ero1.rbegin(), iter1z);
     ero1_tail.reverse();
     ero2_tail.assign(ero2.rbegin(), iter2z);
