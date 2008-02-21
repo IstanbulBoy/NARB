@@ -312,13 +312,6 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
             ero_subnet_alts.push_back(subnet_ero); // could be empty
         }
     }
-
-    /* without the following, returnig the second path as ero/subnet_ero
-    this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
-    if (ero_subnet_alts.size() > 0)
-        this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
-    //vtag_mask?
-    */
 }
 
 bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2)
@@ -403,6 +396,10 @@ void PCEN_OSCARS::ReplyAltPathEROs()
     //ERO TLV with ero and SubnetERO TLV with subnet_ero
     assert (api_writer);
 
+    // returnig the second path as ero/subnet_ero (carrying the latest vtag_mask)
+    this->ero.assign(ero_vlsr_alts[1].begin(), ero_vlsr_alts[1].end());
+    if (ero_subnet_alts.size() > 1)
+        this->subnet_ero.assign(ero_subnet_alts[1].begin(), ero_subnet_alts[1].end());
     api_msg* msg = NewEROReplyMessage();
     assert (msg != NULL);
 
@@ -458,7 +455,7 @@ void PCEN_OSCARS::ReplyAltPathEROs()
 
         if (SystemConfig::should_incorporate_subnet && ero_subnet_alts[i].size() > 0)
         {
-            LOGF("++>> Path #%d Subnet ERO:\n", i);
+            LOGF("++>> Path #%d Subnet ERO:\n", i+1);
             //$$$$ Making AltSubnetERO TLV
             ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO);
             ero_tlv->length = htons(sizeof(ero_subobj)*ero_subnet_alts[i].size());
