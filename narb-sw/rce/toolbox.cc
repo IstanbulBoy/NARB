@@ -83,6 +83,7 @@ struct api_msg * api_msg_append_tlv (struct api_msg * msg, struct te_tlv_header*
     memcpy(rmsg, msg, sizeof(api_msg));
     rmsg->hdr.msglen = htons(ntohs(msg->hdr.msglen) + sizeof(te_tlv_header) + ntohs(tlv->length));
     rmsg->hdr.chksum = MSG_CHKSUM(rmsg->hdr);
+    rmsg->body = new char[ntohs(msg->hdr.msglen)];
     memcpy(rmsg->body, msg->body, ntohs(msg->hdr.msglen));
     memcpy(rmsg->body + ntohs(msg->hdr.msglen), tlv, sizeof(te_tlv_header) + ntohs(tlv->length));
     api_msg_delete(msg);

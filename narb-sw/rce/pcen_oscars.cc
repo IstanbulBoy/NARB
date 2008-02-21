@@ -309,8 +309,8 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
         if (SystemConfig::should_incorporate_subnet)
         {
             HandleSubnetUNIEROTrack(ero_vlsr_alts.back());
+            ero_subnet_alts.push_back(subnet_ero); // could be empty
         }
-        ero_subnet_alts.push_back(subnet_ero); // could be empty
     }
 
     //this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
@@ -436,20 +436,23 @@ void PCEN_OSCARS::ReplyAltPathEROs()
         }
         msg = api_msg_append_tlv(msg, ero_tlv);
 
-        LOGF("++>> Path #%d Subnet ERO:\n", i);
-        //$$$$ Making AltSubnetERO TLV
-        ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO);
-        ero_tlv->length = htons(sizeof(ero_subobj)*ero_subnet_alts[i].size());
-        ero_hop = (ero_subobj*)((char*)ero_tlv + TLV_HDR_SIZE);
-        j = 0;
-        for (iter = ero_subnet_alts[i].begin(); iter != ero_subnet_alts[i].end(); iter++, j++)
+        if (SystemConfig::should_incorporate_subnet && ero_subnet_alts[i].size() > 0)
         {
-            subobj = &(*iter);
-            inet_ntop(AF_INET, &subobj->addr, addr, 20);
-            LOGF("--++>> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
-            *(ero_hop+j) = (*subobj);
+            LOGF("++>> Path #%d Subnet ERO:\n", i);
+            //$$$$ Making AltSubnetERO TLV
+            ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO);
+            ero_tlv->length = htons(sizeof(ero_subobj)*ero_subnet_alts[i].size());
+            ero_hop = (ero_subobj*)((char*)ero_tlv + TLV_HDR_SIZE);
+            j = 0;
+            for (iter = ero_subnet_alts[i].begin(); iter != ero_subnet_alts[i].end(); iter++, j++)
+            {
+                subobj = &(*iter);
+                inet_ntop(AF_INET, &subobj->addr, addr, 20);
+                LOGF("--++>> HOP-TYPE [%s]: %s [UnumIfId: %d(%d,%d): vtag:%d]\n", subobj->hop_type?"loose":"strict", addr,  ntohl(subobj->if_id), ntohl(subobj->if_id)>>16, (u_int16_t)ntohl(subobj->if_id), ntohs(subobj->l2sc_vlantag));
+                *(ero_hop+j) = (*subobj);
+            }
+            msg = api_msg_append_tlv(msg, ero_tlv);
         }
-        msg = api_msg_append_tlv(msg, ero_tlv);
     }
 
     api_writer->PostMessage(msg);
