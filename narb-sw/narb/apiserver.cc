@@ -402,6 +402,7 @@ struct api_msg * api_msg_append_tlv (struct api_msg * msg, struct te_tlv_header*
     memcpy(rmsg, msg, sizeof(api_msg));
     rmsg->header.length = htons(ntohs(msg->header.length) + sizeof(te_tlv_header) + ntohs(tlv->length));
     rmsg->header.chksum = MSG_CHKSUM(rmsg->header);
+    rmsg->body = new char[ntohs(msg->header.length) + sizeof(te_tlv_header) + ntohs(tlv->length)];    
     memcpy(rmsg->body, msg->body, ntohs(msg->header.length));
     memcpy(rmsg->body + ntohs(msg->header.length), tlv, sizeof(te_tlv_header) + ntohs(tlv->length));
     api_msg_delete(msg);
