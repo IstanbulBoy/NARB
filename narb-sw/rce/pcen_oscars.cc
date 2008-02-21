@@ -387,7 +387,7 @@ void PCEN_OSCARS::ReplyAltPathEROs()
     assert (msg != NULL);
 
     //plus altanative EROs TLVs (ero_alts[1] (and ero_alts[2] if any)) 
-    LOGF("#### PCEN_OSCARS::ReplyAltPathEROs for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g\n",  
+    LOGF("##--DEBUG--## PCEN_OSCARS::ReplyAltPathEROs for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g--##\n",  
         ucid, seqnum, source, destination, bandwidth_ingress);
     char buf[1000];
     te_tlv_header *ero_tlv = (te_tlv_header*)buf;
@@ -421,7 +421,7 @@ void PCEN_OSCARS::ReplyAltPathEROs()
             }
         }
 
-        LOGF(">> Path #%d VLSR ERO:\n", i);
+        LOGF(">> Path #%d VLSR ERO:\n", i+1);
         //$$$$ Making AltVlsrERO TLV
         ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_ERO);
         ero_tlv->length = htons(sizeof(ero_subobj)*ero_vlsr_alts[i].size());
@@ -455,6 +455,7 @@ void PCEN_OSCARS::ReplyAltPathEROs()
         }
     }
 
+    LOGF("##---END---## PCEN_OSCARS::ReplyAltPathEROs ---------------##\n");
     api_writer->PostMessage(msg);
 }
 
