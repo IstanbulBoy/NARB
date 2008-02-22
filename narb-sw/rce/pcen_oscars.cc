@@ -273,8 +273,8 @@ void PCEN_OSCARS::PrepareLinkDisjointSearch()
         {
             pcen_link = (*iter_link);
             pcen_link->link->SetMetric(PCEN_VERYBIG_COST);
-            if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->link->Metric() > 0)
-                pcen_link->reverse_link->link->SetMetric(-pcen_link->link->Metric());
+            if (pcen_link->reverse_link && pcen_link->reverse_link->link && pcen_link->reverse_link->link->Metric() > 0)
+                pcen_link->reverse_link->link->SetMetric(-pcen_link->reverse_link->link->Metric());
         }
     }
 }
