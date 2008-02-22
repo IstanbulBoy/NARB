@@ -368,7 +368,10 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
                 }
             }
         }
-        if (found1)  break;
+        if (found1 || iter1a == ero1.end())
+        {
+            break;
+        }
     }
     for (++iter2a; iter2a != ero2.end(); iter2a++)
     {
@@ -395,6 +398,10 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
                     break;
                 }
             }
+        }
+        if (found2 || iter2a == ero2.end())  
+        {
+                break;
         }
     }
     if (!found1 || !found2)
