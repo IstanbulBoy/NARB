@@ -353,19 +353,19 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
             {
                 ++iter1a;
                 ++iter2z;
-                if (iter1a != ero1.end() && iter2z != ero2.rend())
+                if (iter1a == ero1.end() || iter2z == ero2.rend())
                 {
-                    subobj1 = &(*iter1a);
-                    subobj2 = &(*iter2z);
-                    if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
-                    {
-                        --iter1a;
-                        --iter2z;                    
-                        found1 = true;
-                        break;
-                    }
+                    break;
+                }                
+                subobj1 = &(*iter1a);
+                subobj2 = &(*iter2z);
+                if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+                {
+                    --iter1a;
+                    --iter2z;                    
+                    found1 = true;
+                    break;
                 }
-                //else continue;
             }
         }
         if (found1)  break;
@@ -381,17 +381,18 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
             {
                 ++iter2a;
                 ++iter1z;
-                if (iter2a != ero2.end() && iter1z != ero1.rend())
+                if (iter2a == ero2.end() || iter1z == ero1.rend())
                 {
-                    subobj1 = &(*iter2a);
-                    subobj2 = &(*iter1z);
-                    if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
-                    {
-                        --iter2a;
-                        --iter1z;                    
-                        found2 = true;
-                        break;
-                    }
+                    break;
+                }
+                subobj1 = &(*iter2a);
+                subobj2 = &(*iter1z);
+                if (memcmp(subobj1, subobj2, sizeof(ero_subobj)) == 0)
+                {
+                    --iter2a;
+                    --iter1z;                    
+                    found2 = true;
+                    break;
                 }
             }
         }
