@@ -1436,9 +1436,9 @@ int PCEN_MRN::PerformComputation()
             {
                 double new_cost = headNode->minCost+(nextLink->PCENmetric());
                 if (nextNode->minCost <= new_cost && nextNode == destNode)
-		   continue; 
+                    continue; //always keep the lowest-cost path on the destination node
                 else if (nextNode->minCost > new_cost || !link_visited || !headNode->path_visited)
-                    nextNode->minCost = new_cost;
+                    nextNode->minCost = new_cost; //allowing for new path from unvisited links even it has higher cost.
                 else 
                     continue;
             }
@@ -1448,7 +1448,7 @@ int PCEN_MRN::PerformComputation()
                 nextNode->nflg.nfg.visited = 1;
             }
 
-            //keeping the trace to indicate whether any link in the current path has been visited
+            //keeping the trace to indicate whether any (even one) link in the current path has been visited
             headNode->path_visited = (headNode->path_visited || link_visited);
 
             //proceed with new wavelengthSet

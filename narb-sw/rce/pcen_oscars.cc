@@ -94,7 +94,7 @@ bool PCEN_OSCARS::PostBuildTopology()
                     iscd->vlan_info.bitmask_alloc[j] = 0;
                 }
             }
-            //$$$$ all timeslots ???? (@@@@ picked timeslots shoud be ignored by OSCARS!)
+            //$$$$ all timeslots ???? (--> picked timeslots shoud be ignored by OSCARS!)
             if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
             {
                 iscd->subnet_uni_info.first_timeslot = 0;
@@ -187,7 +187,6 @@ void PCEN_OSCARS::Run()
     if ((ret = PerformComputation()) != 0)
     {
         LOGF("PCEN_OSCARS::PerformComputation() failed for max-diverse path (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
-        //@@@@ReplyErrorCode(ret);
         ReplyEROWithAltPaths();
         return;
     }
@@ -265,7 +264,8 @@ void PCEN_OSCARS::PrepareLinkDisjointSearch()
 {
     for (int i = 0; i < path_alts.size(); i++)
     {
-        //@@@@ Should have otained path from ero_alts[i];
+        // At the end of each round of path computation, the path vector on destNode should be the optimal 
+        // that corresponds to the final ERO. There for the following changes are made precisely on target links.
         list<PCENLink*>& path = path_alts[i];
         list<PCENLink*>::iterator iter_link = path.begin();
         PCENLink* pcen_link;
@@ -287,7 +287,7 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
     ero_alts.push_back(ero_alts[0]);
 
     // locate and trim opposite-common segments, plus head-tail swapping
-    // @@@@ only handling two paths at this moment
+    // $$$$ only handling two paths at this moment --> can do more in future!
     assert(ero_alts.size() == 3);
     while (TrimOppositeSharedSegmentAndSwapTail(ero_alts[1], ero_alts[2]))
         ;  
@@ -475,7 +475,7 @@ void PCEN_OSCARS::ReplyEROWithAltPaths()
             }
         }
 
-        LOGF(">> Path #%d VLSR ERO:\n", i+1);
+        LOGF(">> Alternate Path #%d VLSR ERO:\n", i);
         //$$$$ Making AltVlsrERO TLV
         ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_ERO);
         ero_tlv->length = htons(sizeof(ero_subobj)*ero_vlsr_alts[i].size());
@@ -492,7 +492,7 @@ void PCEN_OSCARS::ReplyEROWithAltPaths()
 
         if (SystemConfig::should_incorporate_subnet && ero_subnet_alts[i].size() > 0)
         {
-            LOGF("++>> Path #%d Subnet ERO:\n", i+1);
+            LOGF("++>> Alternate Path #%d Subnet ERO:\n", i);
             //$$$$ Making AltSubnetERO TLV
             ero_tlv->type = htons(TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO);
             ero_tlv->length = htons(sizeof(ero_subobj)*ero_subnet_alts[i].size());
