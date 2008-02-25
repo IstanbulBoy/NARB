@@ -66,7 +66,7 @@ public:
     void PrepareLinkDisjointSearch();
     void CreateMaxDisjointPaths();
     bool TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2);
-    void ReplyAltPathEROs();
+    void ReplyEROWithAltPaths();
 
     friend bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
 };

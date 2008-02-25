@@ -188,7 +188,7 @@ void PCEN_OSCARS::Run()
     {
         LOGF("PCEN_OSCARS::PerformComputation() failed for max-diverse path (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
         //@@@@ReplyErrorCode(ret);
-        ReplyAltPathEROs();
+        ReplyEROWithAltPaths();
         return;
     }
 
@@ -207,7 +207,7 @@ void PCEN_OSCARS::Run()
     //  if the initial shortest path is different than the two diverse paths return it too (three path set)
     //      --> Done in CreateMaxDisjointPaths();
     //   otherwise return the two path set
-    ReplyAltPathEROs();
+    ReplyEROWithAltPaths();
 }
 
 void PCEN_OSCARS::CleanUpTopology()
@@ -293,6 +293,7 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
         ;  
 
     // if the initial shortest path is different than the two diverse paths return it too (three path set)
+    // otherwise the duplicate is removed (two path set)
     if (ero_alts[0] ==  ero_alts.back())
     {
         ero_alts.pop_back();
@@ -422,28 +423,32 @@ bool PCEN_OSCARS::TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, l
     return true;
 }
 
-void PCEN_OSCARS::ReplyAltPathEROs()
+void PCEN_OSCARS::ReplyEROWithAltPaths()
 {
     //returning non-empty components in ero-vlsr-alts and ero-subnet-alts.
     //ERO TLV with ero and SubnetERO TLV with subnet_ero
     assert (api_writer);
 
-    // returnig the second path as ero/subnet_ero (carrying the latest vtag_mask)
-    this->ero.assign(ero_vlsr_alts[1].begin(), ero_vlsr_alts[1].end());
-    if (ero_subnet_alts.size() > 1)
-        this->subnet_ero.assign(ero_subnet_alts[1].begin(), ero_subnet_alts[1].end());
+    // returnig the First/Shortest path as ero/subnet_ero (but carrying vtag_mask etc. from the last path)
+    this->ero.assign(ero_vlsr_alts[0].begin(), ero_vlsr_alts[0].end());
+    if (ero_subnet_alts.size() > 0)
+        this->subnet_ero.assign(ero_subnet_alts[0].begin(), ero_subnet_alts[0].end());
+    // Some other TLVs such as vtag_mask belong to the last path computation and may be inconsistent 
+    // with the first path (shortest path). But they are not a concen here. When those TLVs are really
+    // cared by OSCARS we can store and retrieve them with extra data structure...
+
     api_msg* msg = NewEROReplyMessage();
     assert (msg != NULL);
-
-    //plus altanative EROs TLVs (ero_alts[1] (and ero_alts[2] if any)) 
-    LOGF("##--DEBUG--## PCEN_OSCARS::ReplyAltPathEROs for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g--##\n",  
+    //plus altanative EROs TLVs (ero_alts[1] and ero_alts[2] (if any)) 
+    LOGF("##--DEBUG--## PCEN_OSCARS::ReplyEROWithAltPaths for LSP request (ucid=0x%x, seqnum=0x%x): Src 0x%x Dest 0x%x Bandwidth %g--##\n",  
         ucid, seqnum, source, destination, bandwidth_ingress);
     char buf[1000];
     te_tlv_header *ero_tlv = (te_tlv_header*)buf;
     char addr[20];
     ero_subobj* subobj;
     list<ero_subobj>::iterator iter;
-    for (int i = 0; i < ero_vlsr_alts.size(); i++)
+    //  ero_vlsr_alts[0] is already included in ero (and subnet_ero if any)
+    for (int i = 1; i < ero_vlsr_alts.size(); i++)
     {
         //$$$$ Special handling for HOP BACK ...
         list<ero_subobj>::iterator iter; 
@@ -504,7 +509,7 @@ void PCEN_OSCARS::ReplyAltPathEROs()
         }
     }
 
-    LOGF("##---END---## PCEN_OSCARS::ReplyAltPathEROs ---------------##\n");
+    LOGF("##---END---## PCEN_OSCARS::ReplyEROWithAltPaths ---------------##\n");
     api_writer->PostMessage(msg);
 }
 
