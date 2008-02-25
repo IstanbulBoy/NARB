@@ -1122,6 +1122,9 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
         }
     }
 
+    list<PCENLink*> path_loop_trace;
+    list<PCENLink*>::iterator iter_path_loop;
+    list<ero_subobj>::iterator iter_ero_loop;
     // handling arbitrary number of subnet home vlsrs baed on the size of subnet_ero_tmp
     iter = subnet_ero_tmp.begin();
     while (iter != subnet_ero_tmp.end())
@@ -1182,6 +1185,30 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
             subobj2.addr.s_addr = home_vlsr_link->link->rmtIfAddr;
             ero_track.insert(uni_dest, subobj2);    
 
+            // $$$$ logic to remove loops from the vlsr-level ero/path
+            path_loop_trace.push_back(home_vlsr_link);
+            // search for loop (advRtID of a previous link == ID or this link)
+            for (iter_path_loop = path_loop_trace.begin(); (*iter_path_loop) != home_vlsr_link; iter_path_loop++)
+            {
+                // if found, get the iter headend location of the loop in ero_track
+                if ((*iter_path_loop)->link->AdvRtId() == home_vlsr_link->link->Id())
+                {
+                    list<ero_subobj>::iterator iter_ero_track_end = uni_dest;
+                    iter_ero_track_end--; iter_ero_track_end--;
+                    for (iter_ero_loop = ero_track.begin(); iter_ero_loop != iter_ero_track_end; iter_ero_loop++)
+                    {
+                        if ((*iter_ero_loop).addr.s_addr == (*iter_path_loop)->link->LclIfAddr())
+                            break;
+                    }
+                    if (iter_ero_loop != iter_ero_track_end)
+                    {
+                        //remove (iter, uni_dest); (also remote the loop in path)
+                        path_loop_trace.erase(iter_path_loop, path_loop_trace.end());
+                        ero_track.erase(iter_ero_loop, uni_dest);
+                        break;
+                    }
+                }
+            }
         }
     }
 
