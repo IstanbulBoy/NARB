@@ -10,7 +10,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -59,7 +59,7 @@ sub dbg_api() {
 	return 0;
 }
 
-sub print_dbg($$;@) {
+sub print_dbg($;@) {
 	my ($sys, $msg, @args) = @_;
 	if(!defined($dbg_sys)) {
 		return;
@@ -71,7 +71,7 @@ sub print_dbg($$;@) {
 }
 
 sub print_dbg_net($;@) {
-	print_dbg(NET_DBG, @_);
+	 print_dbg(NET_DBG, @_);
 }
 
 sub print_dbg_api($;@) {
