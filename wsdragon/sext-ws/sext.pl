@@ -24,7 +24,9 @@
 
 use lib ("/usr/share/dragon/lib", "./lib");
 
+use Aux;
 use Log;
+use Server;
 use strict;
 use sigtrap;
 use POSIX;
@@ -35,8 +37,6 @@ use Getopt::Long;
 use threads;
 use threads::shared;
 use IO::Socket::INET;
-
-sub dump_config($;$);
 
 sub usage() {
 	print("usage: sext [-h] [-d] [-p <port>]\n");
@@ -57,18 +57,9 @@ sub usage() {
 
 sub catch_term {
 	my $signame = shift;
-	Log::log "info", "caught SIG$signame:";
+	Log::log("info", "caught SIG$signame:");
 	$::ctrlC = 1;
 }
-
-sub print_dbg($$;@) {
-	my ($sys, $msg, @args) = @_;
-	if($::dbg_sys & (1<<$sys)) {
-		$msg = sprintf($msg, @args);
-		Log::log "info",  $msg;
-	}
-}
-
 
 sub process_opts($$) {
 	my ($n, $v) = @_;
@@ -84,13 +75,7 @@ sub process_opts($$) {
 
 	if(defined($k1) && !defined($k2) && !$is_array) {
 		if($k1 eq "dbg") {
-			$::cfg{$k1}{v} |= ($v eq "run")?(1<<$::RUN_DBG):
-						$v eq "config"?(1<<$::CFG_DBG):
-						$v eq "narb"?(1<<$::NARB_DBG):
-						$v eq "rce"?(1<<$::RCE_DBG):
-						$v eq "net"?(1<<$::NET_DBG):
-						$v eq "api"?(1<<$::API_DBG):0
-						;
+			$::cfg{$k1}{v} |= Aux::get_dbg_sys($v);
 			$::cfg{$k1}{s} = 'c';
 		}
 		else {
@@ -100,61 +85,25 @@ sub process_opts($$) {
 	}
 }
 
-sub dump_config($;$) {
-	my ($hr,$u) = @_;
-	foreach my $k (sort(keys %$hr)) {
-		if((ref($$hr{$k}) eq "HASH") && exists($$hr{$k}{v}) && $$hr{$k}{s}) {
-			if(defined($$hr{$k}{v})) {
-				printf("%s$k($$hr{$k}{s}):\t\t$$hr{$k}{v}\n", defined($u)?"$u:":"");
-			}
-			else {
-				printf("%s$k($$hr{$k}{s}):\t\tundefined\n", defined($u)?"$u:":"");
-			}
-		}
-		elsif(ref($$hr{$k}) eq "ARRAY") {
-			for(my $i=0; $i<@{$$hr{$k}}; $i++) {
-				dump_config(${$$hr{$k}}[$i], "$i: $k");
-			}
-		}
-		else {
-			dump_config($$hr{$k}, defined($u)?"$u:$k":$k);
-		}
-	}
-}
-
 # transfer the configured values to more sensible variables
 # r1: daemonize
 sub init_cfg($) {
 	my ($r1) = @_;
-	if($::cfg{dbg}{v} & (1<<$::CFG_DBG)) {
+	Aux::init_dbg($::cfg{dbg}{v});
+	if(Aux::dbg_cfg()) {
 		print("LEGEND: (d) - default value, (f) - file supplied,\n");
 		print("        (c) - cli override, (i) - stdin override\n");
 		print("------------------------------------------------------------\n");
-		dump_config(\%::cfg);
+		Aux::dump_config(\%::cfg);
 		print("------------------------------------------------------------\n");
 	}
 	$$r1 = $::cfg{daemonize}{v};
-	$::dbg_sys = $::cfg{dbg}{v};
 }
 
-sub get_msg($) {
+sub spawn_server($) {
 	my ($s) = @_;
-	#get the header
-	my $hdr;
-	if(defined($s->recv($hdr, 24, 0))) {
-		my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCSNNNNN", $hdr);	
-		print_dbg($::API_DBG, "----------------------- header -----------------------\n");
-		print_dbg($::API_DBG, "type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $type, $type, $action, $action, $len, $len);
-		print_dbg($::API_DBG, "ucid:\t\t\t0x%08X (%u)\n", $ucid, $ucid);
-		print_dbg($::API_DBG, "seq. number:\t\t0x%08X (%u)\n", $sn, $sn);
-		print_dbg($::API_DBG, "checksum:\t\t0x%08X (%u)\n", $chksum, $chksum);
-		print_dbg($::API_DBG, "tag1:\t\t\t0x%08X (%u)\n", $tag1, $tag1);
-		print_dbg($::API_DBG, "tag2:\t\t\t0x%08X (%u)\n", $tag2, $tag2);
-		print_dbg($::API_DBG, "------------------------------------------------------\n");
-	}
-	else {
-		Log::log "err", "recv: $@\n";
-	}
+	my $server = new Server();
+	$server->server_th($s);
 }
 
 ################################################################################
@@ -164,26 +113,9 @@ $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $::ctrlC = 0;
 $| = 1;
+
 #$::d = 0; # a global to use in regex embedded command execution
 
-$::RUN_DBG = 0;
-$::CFG_DBG = 1;
-$::NARB_DBG = 2;
-$::RCE_DBG = 3;
-$::NET_DBG = 4;
-$::API_DBG = 5;
-
-$::RCE_MSG_TERCE_TOPO_SYNC = 0x11;
-$::RCE_MSG_TERCE_TOPO_ASYNC = 0x12;
-$::ACT_QUERY = 0x01;
-$::ACT_INSERT = 0x02;
-$::ACT_DELETE = 0x03;
-$::ACT_UPDATE = 0x04;
-$::ACT_ACK = 0x05;
-$::ACT_ACKDATA = 0x06;
-$::ACT_ERROR = 0x07;
-$::ACT_INIT = 0x0A;
-$::ACT_ALIVE = 0x0B;
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -228,7 +160,6 @@ if(!GetOptions ('d' =>			\&process_opts,
 }
 
 my $daemonize = undef;
-$::dbg_sys = undef;
 
 init_cfg(\$daemonize);
 
@@ -260,7 +191,7 @@ eval {
 		ReuseAddr => 1,
 		Blocking => 1,
 		Proto     => 'tcp') or die "socket: $@\n";
-	print_dbg($::NET_DBG, "listening on port $::cfg{port}{v}");
+	Aux::print_dbg_net("listening on port $::cfg{port}{v}");
 	while(!$::ctrlC) {
 		my @conn = $serv_sock->accept();
 		if(!@conn) {
@@ -270,16 +201,15 @@ eval {
 		my @tmp = sockaddr_in($conn[1]);
 		my $peer_ip = inet_ntoa($tmp[1]);
 		my $peer_port = $tmp[0];
-		Log::log "info", "accepted connection from $peer_ip:$peer_port\n";
-		#examine the message and create appropriate thread 
-		get_msg($client_sock);
+		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
+		#spawn a new server thread
+		threads->create(\&spawn_server, $client_sock);
 	}
 
 	$serv_sock->shutdown(SHUT_RDWR);
 };
 if($@) {
-	Log::log "err", $@;
-	print("ERROR: $@\n");
+	Log::log("err", $@);
 }
 
 Log::close();
