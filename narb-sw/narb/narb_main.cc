@@ -44,6 +44,7 @@
 #include "dts.hh"
 #include "cli.hh"
 #include "clicmd.hh"
+#include <arpa/inet.h>
 #include <string>
 #include <signal.h>
 
@@ -193,9 +194,11 @@ int main( int argc, char* argv[])
         }
 
         // Polling for OSPF ajdacency (waiting for the origination interface up and in full adjacency with a neighbor)
+        char ori_ifip[20];
+        strcpy(ori_ifip, inet_ntoa(NarbDomainInfo.ospfd_inter.ori_if));
         while (!NarbDomainInfo.IsOriginateInterfaceReady(ospf_apiwriter))
         {
-            LOGF("Inter-domain OSPF interface 0x%x is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.ospfd_inter.ori_if);
+            LOGF("Inter-domain OSPF interface %s is not ready\n\t... wait 10 seconds...\n", ori_ifip);
             sleep(10);
         }
         //Start abstract domain topology origination via Zebra OSPFd   
