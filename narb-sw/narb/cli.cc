@@ -1488,10 +1488,10 @@ COMMAND(cmd_undelete_topology, "undelete topology", "Undelete configureation: \n
 }
 
 COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
-       "Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instancce |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
+       "Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
 {
     ospfd_info* ospfd;
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     	ospfd = &NarbDomainInfo.ospfd_intra;
     else
     	ospfd = &NarbDomainInfo.ospfd_inter;
@@ -1504,11 +1504,11 @@ COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_
 }
 
 COMMAND (cmd_show_ospfd, "show ospfd {interdomain|intradomain}",
-       "Show Configuration \n OSPF daemon \n Pick inter-domain instancce |Pick intra-domain instance")
+       "Show Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance")
 {
     char ip1[20], ip2[20];
     ospfd_info* ospfd;
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     	ospfd = &NarbDomainInfo.ospfd_intra;
     else
     	ospfd = &NarbDomainInfo.ospfd_inter;
@@ -1522,7 +1522,7 @@ COMMAND(cmd_connect_ospfd, "connect ospfd {interdomain | intradomain}", "(Re)Con
 {
     int ret;
     
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     {
        //void
     }      
@@ -1580,7 +1580,7 @@ _out:
 COMMAND (cmd_delete_ospfd, "delete ospfd {interdomain | intradomain}",
        "Delete and disconnect an OSPFd\nContinue...\n")
 {
-    if (argv[0] == "interdomain")
+    if (argv[0].compare(0, 4, "inte") == 0)
     {
         cli_node->Reader()->Execute("delete topology", true);
         if (zebra_client && zebra_client->GetReader() && zebra_client->GetReader()->Socket() >0)

@@ -40,8 +40,8 @@
 #include "zebra_ospfclient.hh" 
 
 #define TERCE_API_SERVER_PORT 2690
-#define RCE_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+4) //2094
-#define RCE_TERCE_ASYNC_PORT  (RCE_TERCE_SYNC_PORT+1) //2095
+#define RCE_TERCE_SYNC_PORT    (TERCE_API_SERVER_PORT+4) //2694
+#define RCE_TERCE_ASYNC_PORT  (RCE_TERCE_SYNC_PORT+1) //2695
 
 // Message types in addition to existing NARB/RCE API
 #define MSG_TERCE_TOPO_SYNC ((u_int8_t)0x11)

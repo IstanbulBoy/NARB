@@ -585,7 +585,7 @@ int main(int argc, char* argv[])
                         subobj_unum = (unum_if_subobj *)((char *)tlv + offset);
                     else
                         subobj_unum = NULL;
-                
+
                     if (subobj_unum)
                     {   
                         inet_ntop(AF_INET, &subobj_unum->addr, addr, 20);

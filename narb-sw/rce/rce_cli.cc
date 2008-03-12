@@ -1222,7 +1222,7 @@ COMMAND(cmd_show_topology, "show topology {interdomain | intradomain}",  "Show c
 
     ResourceType rt_type = RTYPE_GLO_RTID, link_type = RTYPE_GLO_ABS_LNK;
 
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     {
         rt_type = RTYPE_LOC_RTID;
         link_type = RTYPE_LOC_PHY_LNK;
@@ -1346,7 +1346,7 @@ COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_
 {
     string* ospfd_host;
     int* ospfd_port, *ospfd_port_local;
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     {
         ospfd_host = &SystemConfig::ospfd_intra_host;
         ospfd_port = &SystemConfig::ospfd_intra_port;
@@ -1374,7 +1374,7 @@ COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_I
     inet_aton(argv[1].c_str(), &lcl_if);
     inet_aton(argv[2].c_str(), &rmt_if);
     
-    ResourceType rcType = (strncmp(argv[0].c_str(), "interdomain", 5) == 0 ? RTYPE_GLO_ABS_LNK : RTYPE_LOC_PHY_LNK);
+    ResourceType rcType = (argv[0].compare(0, 4, "inte") == 0 ? RTYPE_GLO_ABS_LNK : RTYPE_LOC_PHY_LNK);
     link = RDB.LookupLinkByLclRmtIf(rcType, lcl_if, rmt_if);
     if (!link)
     {
@@ -1501,7 +1501,7 @@ COMMAND(cmd_connect_ospfd, "connect ospfd {interdomain | intradomain}", "(Re)Con
     int* ospfd_port, *ospfd_port_local;
     ZebraOspfSync * zebra_client;
     u_int32_t domain_mask;
-    if (argv[0] == "intradomain")
+    if (argv[0].compare(0, 4, "intr") == 0)
     {
         ospfd_host = &SystemConfig::ospfd_intra_host;
         ospfd_port = &SystemConfig::ospfd_intra_port;
