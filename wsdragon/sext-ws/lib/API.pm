@@ -31,7 +31,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -39,10 +39,11 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-%::msg_type = 	(	0x11 => "TERCE_TOPO_SYNC",
+my %msg_type = 	(	0x11 => "TERCE_TOPO_SYNC",
 			0x12 => "TERCE_TOPO_ASYNC");
 
-%::msg_action =	(	0x01 => "ACT_QUERY",
+my %msg_action =	(	
+			0x01 => "ACT_QUERY",
 			0x02 => "ACT_INSERT", 
 			0x03 => "ACT_DELETE",
 			0x04 => "ACT_UPDATE",
@@ -89,6 +90,7 @@ sub get_msg($$) {
 	}
 	if(Aux::dbg_api()) {
 		Aux::print_dbg_api("----------------------- header -----------------------\n");
+		Aux::print_dbg_api("(%s, %s)\n", $msg_type{$type}, $msg_action{$action});
 		Aux::print_dbg_api("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{$sn}{hdr}{type}, $$mr{$sn}{hdr}{type}, $$mr{$sn}{hdr}{action}, $$mr{$sn}{hdr}{action}, $$mr{$sn}{hdr}{length}, $$mr{$sn}{hdr}{length});
 		Aux::print_dbg_api("ucid:\t\t\t0x%08X (%u)\n", $$mr{$sn}{hdr}{ucid}, $$mr{$sn}{hdr}{ucid});
 		Aux::print_dbg_api("seq. number:\t\t0x%08X (%u)\n", $sn, $sn);
@@ -107,6 +109,7 @@ sub get_msg($$) {
 		}
 		Aux::print_dbg_api("------------------------------------------------------\n");
 	}
+	return $sn;
 }
 
 1;

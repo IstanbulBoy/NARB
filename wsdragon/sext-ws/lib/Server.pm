@@ -31,7 +31,7 @@ use API;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -39,22 +39,48 @@ BEGIN {
 }
 our @EXPORT_OK;
 
+my $ctrlC = 0;
+my $name = undef;
+
 sub new {
+	shift;
+	my $s = shift;
 	my $self = {};
 	bless $self;
-	$self->initialize();
+	$self->initialize($s);
 	return $self;
 }
 
-sub initialize() {
-}
-
-sub server_th() {
-	my $self = shift;
+sub initialize($) {
+	shift;
 	my ($s) = @_;
 	my %msg;
-	API::get_msg($s, \%msg);
+	my $sn = API::get_msg($s, \%msg);
+	#guess who's calling ....
+	if($msg{$sn}{hdr}{tag2} eq 2693) {
+		$name = "narb";
+	}
+	elsif($msg{$sn}{hdr}{tag2} eq 2695) {
+		$name = "rce";
+	}
+	else {
+		$name = "unidentified";
+	}
+	Aux::print_dbg_net("started (%s) server thread\n", $name);
+	
 #	process_msg($s, \%msg);
 }
+
+sub term {
+	$ctrlC = 1;
+}
+
+sub run() {
+	while(!$ctrlC) {
+		threads->yield();
+	}
+	Log::log("info", "exiting $name server thread");
+}
+
 
 1;
