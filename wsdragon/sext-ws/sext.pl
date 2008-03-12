@@ -24,6 +24,9 @@
 
 use lib ("/usr/share/dragon/lib", "./lib");
 
+use threads;
+use threads::shared;
+
 use Aux;
 use Log;
 use Server;
@@ -34,12 +37,10 @@ use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
 use Getopt::Long;
-use threads;
-use threads::shared;
 use IO::Socket::INET;
 
-my $ctrlC = 0;
-my @servers:shared = ();
+my @servers = ();
+$::ctrlC = 0;
 
 sub usage() {
 	print("usage: sext [-h] [-d] [-p <port>]\n");
@@ -61,8 +62,7 @@ sub usage() {
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "caught SIG$signame:");
-	kill_servers($signame);
-	$ctrlC = 1;
+	$::ctrlC = 1;
 }
 
 sub process_opts($$) {
@@ -108,31 +108,13 @@ sub init_cfg($) {
 sub spawn_server($) {
 	my ($s) = @_;
 	my $srvr = new Server($s);
-	my $thr = threads->self();
-
-	#NOTE1 The only values that can be assigned to a shared scalar 
-	#      are other scalar values, or shared refs.
-	#NOTE2 (in case I wonder later): When share is used on arrays, 
-	#      hashes, array refs or hash refs, 
-	#      any data they contain will be lost.
-	my $tmp:shared = &share({});
-	$$tmp{server} = share($srvr);
-	$$tmp{thread} = share($thr);
-	{
-		lock @servers;
-		push(@servers, $tmp);
-	}
 	$srvr->run();
 }
 
-sub kill_servers($) {
-	my $sig = shift;
-	lock @servers;
+sub clenup_servers() {
 	foreach my $s (@servers) {
-		$$s{server}->term();
-		$$s{thread}->join();
+		$s->join();
 	}
-	@servers = ();
 }
 
 ################################################################################
@@ -141,6 +123,8 @@ $SIG{TERM} = \&catch_term;
 $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $| = 1;
+
+share($::ctrlC);
 
 #$::d = 0; # a global to use in regex embedded command execution
 
@@ -220,7 +204,7 @@ eval {
 		Blocking => 1,
 		Proto     => 'tcp') or die "socket: $@\n";
 	Aux::print_dbg_net("listening on port $::cfg{port}{v}");
-	while(!$ctrlC) {
+	while(!$::ctrlC) {
 		my @conn = $serv_sock->accept();
 		if(!@conn) {
 			next;
@@ -231,8 +215,10 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		threads->create(\&spawn_server, $client_sock);
+		my $thr = threads->create(\&spawn_server, $client_sock);
+		push(@servers, $thr);
 	}
+	clenup_servers();
 
 	$serv_sock->shutdown(SHUT_RDWR);
 };
