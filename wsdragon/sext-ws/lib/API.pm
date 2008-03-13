@@ -31,13 +31,26 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
 	@EXPORT_OK   = qw();
 }
 our @EXPORT_OK;
+
+use constant TERCE_TOPO_SYNC => 0x11;
+use constant TERCE_TOPO_ASYNC => 0x12;
+
+use constant ACT_QUERY => 0x01;
+use constant ACT_INSERT => 0x02; 
+use constant ACT_DELETE => 0x03;
+use constant ACT_UPDATE => 0x04;
+use constant ACT_ACK => 0x05;
+use constant ACT_ACKDATA => 0x06;
+use constant ACT_ERROR => 0x07;
+use constant ACT_INIT => 0x0A;
+use constant ACT_ALIVE => 0x0B;
 
 my %msg_type = 	(	0x11 => "TERCE_TOPO_SYNC",
 			0x12 => "TERCE_TOPO_ASYNC");
@@ -52,6 +65,80 @@ my %msg_action =	(
 			0x07 => "ACT_ERROR",
 			0x0A => "ACT_INIT",
 			0x0B => "ACT_ALIVE");
+sub dump_data($) {
+	my ($mr) = @_;
+	if(Aux::dbg_data()) {
+		Aux::print_dbg_data("----------------------- header -----------------------\n");
+		Aux::print_dbg_data("(%s, %s)\n", $msg_type{$$mr{hdr}{type}}, $msg_action{$$mr{hdr}{action}});
+		Aux::print_dbg_data("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{hdr}{type}, $$mr{hdr}{type}, $$mr{hdr}{action}, $$mr{hdr}{action}, $$mr{hdr}{length}, $$mr{hdr}{length});
+		Aux::print_dbg_data("ucid:\t\t\t0x%08X (%u)\n", $$mr{hdr}{ucid}, $$mr{hdr}{ucid});
+		Aux::print_dbg_data("seq. number:\t\t0x%08X (%u)\n", $$mr{hdr}{seqn}, $$mr{hdr}{seqn});
+		Aux::print_dbg_data("checksum:\t\t0x%08X (%u)\n", $$mr{hdr}{chksum}, $$mr{hdr}{chksum});
+		Aux::print_dbg_data("tag1:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag1}, $$mr{hdr}{tag1});
+		Aux::print_dbg_data("tag2:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag2}, $$mr{hdr}{tag2});
+		Aux::print_dbg_data("------------------------ data ------------------------\n");
+		if(defined($$mr{data})) {
+			my @tmp = unpack("C*", $$mr{data});
+			my $len = $$mr{hdr}{length};
+			for(my $i=0; $i<$len; $i++) {
+				Aux::print_dbg_data("%02X ", $tmp[$i]);
+				if(($i+1)%16 && (($i+1)<$len)) {
+					Aux::print_dbg_data("\n");
+				}
+			}
+		}
+		Aux::print_dbg_data("------------------------------------------------------\n");
+	}
+}
+
+sub open_ctrl_channel($$) {
+	my ($s, $ctrl_p) = @_;
+	my $ctrl_sock = IO::Socket::INET->new(
+		PeerAddr => $s->peerhost(),
+		PeerPort => $ctrl_p,
+		Proto     => 'tcp') or die "control socket ".$s->peerhost().":".$ctrl_p.": $@\n";
+	if($ctrl_sock) {
+		if($ctrl_sock->connected()) {
+			Aux::print_dbg_net("connected to %s:%d\n", $s->peerhost(), $ctrl_p);
+		}
+	}
+	return $ctrl_sock;
+}
+
+sub ack_msg($$) {
+	my ($s, $mr) = @_;
+	my $block = pack("CCSNN", TERCE_TOPO_SYNC, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
+	my $chksum = unpack("%32N3", $block);
+	my $ack_msg = {
+		"hdr" => {
+			"type" => TERCE_TOPO_SYNC,
+			"action" => ACT_ACK,
+			"length" => 0,
+			"ucid" => $$mr{hdr}{ucid},
+			"seqn" => $$mr{hdr}{seqn},
+			"chksum" => $chksum,
+			"tag1" => 0,
+			"tag2" => 0
+		},
+		"data" => undef
+	};
+	my $ack_msg_bin = pack("CCSNNNNN", 
+		$$ack_msg{hdr}{type}, 
+		$$ack_msg{hdr}{action}, 
+		$$ack_msg{hdr}{length}, 
+		$$ack_msg{hdr}{ucid},
+		$$ack_msg{hdr}{seqn},
+		$$ack_msg{hdr}{chksum},, 
+		$$ack_msg{hdr}{tag1},
+		$$ack_msg{hdr}{tag2}
+	);
+	if(defined($s->send($ack_msg_bin, 0))) {
+		Aux::print_dbg_api("sent ACK for %s to %s:%s\n", $msg_action{$$mr{hdr}{action}},
+			$s->peerhost(), $s->peerport()
+		);
+		dump_data($ack_msg);
+	}
+}
 
 sub get_msg($$) {
 	my ($s, $mr) = @_;
@@ -67,10 +154,12 @@ sub get_msg($$) {
 				"action" => $action,
 				"length" => $len,
 				"ucid" => $ucid,
+				"seqn" => $sn,
 				"chksum" => $chksum,
 				"tag1" => $tag1,
 				"tag2" => $tag2
-			}
+			},
+			"data" => undef
 		};
 
 	}
@@ -80,36 +169,41 @@ sub get_msg($$) {
 	# and the body
 	if($len > 0) {
 		if(defined($s->recv($data, $len, 0))) {
-			$$mr{$sn} = {
-				"data" => $data 
-			};
+			$$mr{$sn}{data} =  $data;
 		}
 		else {
 			Log::log("err", "recv body: $@\n");
 		}
 	}
-	if(Aux::dbg_api()) {
-		Aux::print_dbg_api("----------------------- header -----------------------\n");
-		Aux::print_dbg_api("(%s, %s)\n", $msg_type{$type}, $msg_action{$action});
-		Aux::print_dbg_api("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{$sn}{hdr}{type}, $$mr{$sn}{hdr}{type}, $$mr{$sn}{hdr}{action}, $$mr{$sn}{hdr}{action}, $$mr{$sn}{hdr}{length}, $$mr{$sn}{hdr}{length});
-		Aux::print_dbg_api("ucid:\t\t\t0x%08X (%u)\n", $$mr{$sn}{hdr}{ucid}, $$mr{$sn}{hdr}{ucid});
-		Aux::print_dbg_api("seq. number:\t\t0x%08X (%u)\n", $sn, $sn);
-		Aux::print_dbg_api("checksum:\t\t0x%08X (%u)\n", $$mr{$sn}{hdr}{chksum}, $$mr{$sn}{hdr}{chksum});
-		Aux::print_dbg_api("tag1:\t\t\t0x%08X (%u)\n", $$mr{$sn}{hdr}{tag1}, $$mr{$sn}{hdr}{tag1});
-		Aux::print_dbg_api("tag2:\t\t\t0x%08X (%u)\n", $$mr{$sn}{hdr}{tag2}, $$mr{$sn}{hdr}{tag2});
-		Aux::print_dbg_api("------------------------ data ------------------------\n");
-		if(defined($data)) {
-			my @tmp = unpack("C*", $$mr{$sn}{data});
-			for(my $i=0; $i<$len; $i++) {
-				Aux::print_dbg_api("%02X ", $tmp[$i]);
-				if(($i+1)%16 && (($i+1)<$len)) {
-					Aux::print_dbg_api("\n");
-				}
+	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action{$$mr{$sn}{hdr}{action}},
+		$s->peerhost(), $s->peerport()
+	);
+	dump_data($$mr{$sn});
+	return $sn;
+}
+
+sub process_msg($$$) {
+	my ($s, $mr, $csr) = @_;
+	if($$mr{hdr}{type} == TERCE_TOPO_SYNC) {
+		if($$mr{hdr}{action} == ACT_INIT) {
+			# open the control channel
+			eval{
+				$$csr = open_ctrl_channel($s, $$mr{hdr}{tag2});
+			};
+			if($@) {
+				die "ACT_INIT: $@\n";
+			}
+			# ack the message
+			eval{
+				ack_msg($s, $mr);
+			};
+			if($@) {
+				die "ACK ACT_INIT: $@\n";
 			}
 		}
-		Aux::print_dbg_api("------------------------------------------------------\n");
 	}
-	return $sn;
+	#nuke the message
+	$mr = {};
 }
 
 1;

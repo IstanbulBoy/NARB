@@ -10,7 +10,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -26,6 +26,7 @@ use constant NARB_DBG => 2;
 use constant RCE_DBG => 3;
 use constant NET_DBG => 4;
 use constant API_DBG => 5;
+use constant DATA_DBG => 6;
 
 my $dbg_sys = undef;
 
@@ -41,7 +42,8 @@ sub get_dbg_sys($) {
 		$v eq "narb"?	(1 << NARB_DBG):
 		$v eq "rce"?	(1 << RCE_DBG):
 		$v eq "net"?	(1 << NET_DBG):
-		$v eq "api"?	(1 << API_DBG):0
+		$v eq "api"?	(1 << API_DBG):
+		$v eq "data"?	(1 << DATA_DBG):0
 		;
 }
 
@@ -55,6 +57,13 @@ sub dbg_cfg() {
 sub dbg_api() {
 	if(defined($dbg_sys)) {
 		return ($dbg_sys &(1 << API_DBG));
+	}
+	return 0;
+}
+
+sub dbg_data() {
+	if(defined($dbg_sys)) {
+		return ($dbg_sys &(1 << DATA_DBG));
 	}
 	return 0;
 }
@@ -80,6 +89,10 @@ sub print_dbg_net($;@) {
 
 sub print_dbg_api($;@) {
 	print_dbg(API_DBG, @_);
+}
+
+sub print_dbg_data($;@) {
+	print_dbg(DATA_DBG, @_);
 }
 
 sub dump_config($;$) {

@@ -31,7 +31,7 @@ use API;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,10 +41,13 @@ our @EXPORT_OK;
 
 my $name = undef;
 my $sock = undef;
+my $ctrl_sock = undef;
+my $peer_ip = undef;
+my $peer_port = undef;
 
 sub new {
 	shift;
-	$sock = shift;
+	($sock, $peer_ip, $peer_port)  = shift;
 	my $self = {};
 	bless $self;
 	$self->initialize();
@@ -54,7 +57,7 @@ sub new {
 sub initialize() {
 	my %msg;
 	my $sn = API::get_msg($sock, \%msg);
-	#guess who's calling ....
+	#guess who's calling ... (we really don't know)
 	if($msg{$sn}{hdr}{tag2} eq 2693) {
 		$name = "narb";
 	}
@@ -64,9 +67,14 @@ sub initialize() {
 	else {
 		$name = "unidentified";
 	}
-	Aux::print_dbg_run("started (%s) server thread\n", $name);
+	Aux::print_dbg_run("starting (%s) server thread\n", $name);
 	
-#	process_msg($s, \%msg);
+	eval {
+		API::process_msg($sock, $msg{$sn}, \$ctrl_sock);
+	};
+	if($@) {
+		die "$@\n";
+	}
 }
 
 sub run() {
@@ -75,6 +83,7 @@ sub run() {
 		sleep(1);
 	}
 	Aux::print_dbg_run("exiting (%s) server thread\n", $name);
+	close($sock);
 }
 
 1;

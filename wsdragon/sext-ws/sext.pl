@@ -106,9 +106,17 @@ sub init_cfg($) {
 
 # NOTE: running in a different thread here ...
 sub spawn_server($) {
-	my ($s) = @_;
-	my $srvr = new Server($s);
-	$srvr->run();
+	my ($s, $pa, $pp) = @_;
+	my $srvr;
+	eval {
+		$srvr = new Server($s, $pa, $pp);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
+	}
+	else {
+		$srvr->run();
+	}
 }
 
 sub clenup_servers() {
@@ -125,9 +133,7 @@ $SIG{HUP} = \&catch_term;
 $| = 1;
 
 share($::ctrlC);
-
 #$::d = 0; # a global to use in regex embedded command execution
-
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -215,8 +221,10 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $client_sock);
-		push(@servers, $thr);
+		my $thr = threads->create(\&spawn_server, $client_sock, $peer_ip, $peer_port);
+		if($thr) {
+			push(@servers, $thr);
+		}
 	}
 	clenup_servers();
 
