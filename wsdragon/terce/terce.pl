@@ -50,7 +50,7 @@ sub usage() {
 	print("  Long options:\n");
 	print("       --port <port>: listen on this port (default 2690)\n");
 	print("       --log: <log file> log file (default: /var/log/terce.log)\n");
-	print("       --dbg: <list> of components to debug (run config narb rce net)\n");
+	print("       --dbg: <list> of components to debug (run config narb rce net api data)\n");
 	print("              with no agrument, all the components will become very verbose\n");
 	print("              and the program will not fork.\n");
 	print("       --help: prints this message\n");
@@ -61,7 +61,7 @@ sub usage() {
 
 sub catch_term {
 	my $signame = shift;
-	Log::log("info", "caught SIG$signame:");
+	Log::log("info", "caught SIG$signame\n");
 	$::ctrlC = 1;
 }
 
@@ -231,7 +231,7 @@ eval {
 	$serv_sock->shutdown(SHUT_RDWR);
 };
 if($@) {
-	Log::log("err", $@);
+	Log::log("err", "$@\n");
 }
 
 Log::close();

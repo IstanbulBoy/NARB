@@ -9,7 +9,7 @@ use Fcntl ':flock';
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -134,11 +134,10 @@ sub log ($@) {
     if($log_dest & SYSLOG) { syslog $level, @args; }
     # now that we have syslogged, feel free to clobber @args
     my $msg = ($#args ? sprintf shift @args, @args : $args[0]);
-    chomp $msg;
-    if($log_dest & ERR) { print STDERR "$msg\n"; }
-    if($log_dest & OUT) { print STDOUT "$msg\n"; }
+    if($log_dest & ERR) { print STDERR "$msg"; }
+    if($log_dest & OUT) { print STDOUT "$msg"; }
     # if we print to a file, add syslog-like timestamp
-    $msg = scalar(localtime) . " $0\[$$\]: $msg\n";
+    $msg = scalar(localtime) . " $0\[$$\]: $msg";
     if($log_dest & FILE) { 
       flock $log_fh, LOCK_EX or die "Log::log";
       print $log_fh $msg; 

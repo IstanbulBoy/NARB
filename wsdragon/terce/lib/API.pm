@@ -31,7 +31,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -80,9 +80,13 @@ sub dump_data($) {
 		if(defined($$mr{data})) {
 			my @tmp = unpack("C*", $$mr{data});
 			my $len = $$mr{hdr}{length};
+			if($len != @tmp) {
+				Log::log "warning", "corrupted message: ".$len." <-> ".(@tmp+0)."\n";
+				return;
+			}
 			for(my $i=0; $i<$len; $i++) {
 				Aux::print_dbg_data("%02X ", $tmp[$i]);
-				if(($i+1)%16 && (($i+1)<$len)) {
+				if(!(($i+1)%16) || (($i+1)==$len)) {
 					Aux::print_dbg_data("\n");
 				}
 			}
@@ -107,11 +111,11 @@ sub open_ctrl_channel($$) {
 
 sub ack_msg($$) {
 	my ($s, $mr) = @_;
-	my $block = pack("CCSNN", TERCE_TOPO_SYNC, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
+	my $block = pack("CCnNN", $$mr{hdr}{type}, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
 	my $chksum = unpack("%32N3", $block);
 	my $ack_msg = {
 		"hdr" => {
-			"type" => TERCE_TOPO_SYNC,
+			"type" => $$mr{hdr}{type},
 			"action" => ACT_ACK,
 			"length" => 0,
 			"ucid" => $$mr{hdr}{ucid},
@@ -122,7 +126,7 @@ sub ack_msg($$) {
 		},
 		"data" => undef
 	};
-	my $ack_msg_bin = pack("CCSNNNNN", 
+	my $ack_msg_bin = pack("CCnNNNNN", 
 		$$ack_msg{hdr}{type}, 
 		$$ack_msg{hdr}{action}, 
 		$$ack_msg{hdr}{length}, 
@@ -138,6 +142,12 @@ sub ack_msg($$) {
 		);
 		dump_data($ack_msg);
 	}
+	else {
+		Aux::print_dbg_api("failed to send ACK for %s to %s:%s\n", $msg_action{$$mr{hdr}{action}},
+			$s->peerhost(), $s->peerport()
+		);
+	}
+	$mr = {};
 }
 
 sub get_msg($$) {
@@ -146,8 +156,18 @@ sub get_msg($$) {
 	my $hdr;
 	my $data;
 	my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2);
+
+	my $rin = ""; 
+	my $rout;
+	vec($rin, fileno($s), 1) = 1;
+
+	my $nfound = select($rout=$rin, undef, undef, 0.25);
+	if(!$nfound) {
+		return undef;
+	}
+
 	if(defined($s->recv($hdr, 24, 0))) {
-		($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCSNNNNN", $hdr);	
+		($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
 		$$mr{$sn} = {
 			"hdr" => {
 				"type" => $type,
@@ -165,6 +185,7 @@ sub get_msg($$) {
 	}
 	else {
 		Log::log("err", "recv hdr: $@\n");
+		return undef;
 	}
 	# and the body
 	if($len > 0) {
@@ -173,6 +194,7 @@ sub get_msg($$) {
 		}
 		else {
 			Log::log("err", "recv body: $@\n");
+			return undef;
 		}
 	}
 	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action{$$mr{$sn}{hdr}{action}},
@@ -182,28 +204,9 @@ sub get_msg($$) {
 	return $sn;
 }
 
-sub process_msg($$$) {
-	my ($s, $mr, $csr) = @_;
-	if($$mr{hdr}{type} == TERCE_TOPO_SYNC) {
-		if($$mr{hdr}{action} == ACT_INIT) {
-			# open the control channel
-			eval{
-				$$csr = open_ctrl_channel($s, $$mr{hdr}{tag2});
-			};
-			if($@) {
-				die "ACT_INIT: $@\n";
-			}
-			# ack the message
-			eval{
-				ack_msg($s, $mr);
-			};
-			if($@) {
-				die "ACK ACT_INIT: $@\n";
-			}
-		}
-	}
-	#nuke the message
-	$mr = {};
+sub is_sync_init($) {
+	my ($mr) = @_;
+	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INIT));
 }
 
 1;

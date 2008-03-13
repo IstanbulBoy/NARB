@@ -31,7 +31,7 @@ use API;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -50,37 +50,39 @@ sub new {
 	($sock, $peer_ip, $peer_port)  = shift;
 	my $self = {};
 	bless $self;
-	$self->initialize();
 	return $self;
 }
 
-sub initialize() {
-	my %msg;
-	my $sn = API::get_msg($sock, \%msg);
-	#guess who's calling ... (we really don't know)
-	if($msg{$sn}{hdr}{tag2} eq 2693) {
-		$name = "narb";
-	}
-	elsif($msg{$sn}{hdr}{tag2} eq 2695) {
-		$name = "rce";
-	}
-	else {
-		$name = "unidentified";
-	}
-	Aux::print_dbg_run("starting (%s) server thread\n", $name);
-	
-	eval {
-		API::process_msg($sock, $msg{$sn}, \$ctrl_sock);
-	};
-	if($@) {
-		die "$@\n";
-	}
-}
-
 sub run() {
+	my %msg;
+	my $sn;
 	while(!$::ctrlC) {
+		$sn = API::get_msg($sock, \%msg);
+		if(!defined($sn)) {
+			next;
+		}
+		eval {
+			if(API::is_sync_init($msg{$sn})) {
+				#guess who's calling ... (we really don't know)
+				if($msg{$sn}{hdr}{tag2} eq 2693) {
+					$name = "narb";
+				}
+				elsif($msg{$sn}{hdr}{tag2} eq 2695) {
+					$name = "rce";
+				}
+				else {
+					$name = "unidentified";
+				}
+				Aux::print_dbg_run("starting (%s) server thread\n", $name);
+				# open the control channel
+				$ctrl_sock = API::open_ctrl_channel($sock, $msg{$sn}{hdr}{tag2});
+			}
+			API::ack_msg($sock, $msg{$sn});
+		};
+		if($@) {
+			die "$@\n";
+		}
 		threads->yield();
-		sleep(1);
 	}
 	Aux::print_dbg_run("exiting (%s) server thread\n", $name);
 	close($sock);
