@@ -707,7 +707,7 @@ int TerceApiTopoWriter::OriginateLsa(in_addr adv_id, u_char lsa_type, u_char opa
     memcpy (((u_char *) lsah) + sizeof (lsa_header), opaquedata, opaquelen);
 
     u_int32_t ucid = server->DomainId();
-    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INSERT, lsah, ucid, get_rce_seqnum(), server->DomainId(), htons(lsah->length));
+    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_INSERT, lsah, ucid, get_rce_seqnum(), htons(lsah->length), server->DomainId());
 
     if (!msg)
     {
@@ -757,7 +757,7 @@ int TerceApiTopoWriter::DeleteLsa(in_addr adv_id, u_char lsa_type, u_char opaque
     //empty lsa body
 
     u_int32_t ucid = server->DomainId();
-    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_DELETE, lsah, ucid, get_rce_seqnum(), server->DomainId(), htons(lsah->length));
+    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_DELETE, lsah, ucid, get_rce_seqnum(), htons(lsah->length), server->DomainId());
 
     if (!msg)
     {
@@ -809,7 +809,7 @@ int TerceApiTopoWriter::UpdateLsa(in_addr adv_id, u_char lsa_type, u_char opaque
     memcpy (((u_char *) lsah) + sizeof (lsa_header), opaquedata, opaquelen);
 
     u_int32_t ucid = server->DomainId();
-    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_UPDATE, lsah, ucid, get_rce_seqnum(), server->DomainId(), htons(lsah->length));
+    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_UPDATE, lsah, ucid, get_rce_seqnum(), htons(lsah->length), server->DomainId());
 
     if (!msg)
     {
