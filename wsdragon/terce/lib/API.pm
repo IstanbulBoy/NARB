@@ -31,7 +31,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -151,22 +151,25 @@ sub ack_msg($$) {
 }
 
 sub get_msg($$) {
-	my ($s, $mr) = @_;
+	my ($sel, $mr) = @_;
 	#get the header
 	my $hdr;
 	my $data;
 	my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2);
 
-	my $rin = ""; 
-	my $rout;
-	vec($rin, fileno($s), 1) = 1;
-
-	my $nfound = select($rout=$rin, undef, undef, 0.25);
-	if(!$nfound) {
+	my @fh = $sel->can_read(0.25);
+	if(@fh != 1) {
 		return undef;
 	}
-
-	if(defined($s->recv($hdr, 24, 0))) {
+	my $n = $fh[0]->sysread($hdr, 24);
+	if(!defined($n)) {
+		Log::log("err", "recv hdr: $!\n");
+		die "client error: $!\n";
+	}
+	if($n==0) {
+		die "client disconnected\n";
+	}
+	if($fh[0]->connected()) {
 		($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
 		$$mr{$sn} = {
 			"hdr" => {
@@ -185,20 +188,20 @@ sub get_msg($$) {
 	}
 	else {
 		Log::log("err", "recv hdr: $@\n");
-		return undef;
+		die "client disconnect\n";
 	}
 	# and the body
 	if($len > 0) {
-		if(defined($s->recv($data, $len, 0))) {
+		if(defined($fh[0]->sysread($data, $len))) {
 			$$mr{$sn}{data} =  $data;
 		}
 		else {
 			Log::log("err", "recv body: $@\n");
-			return undef;
+			die "client disconnect\n";
 		}
 	}
 	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action{$$mr{$sn}{hdr}{action}},
-		$s->peerhost(), $s->peerport()
+		$fh[0]->peerhost(), $fh[0]->peerport()
 	);
 	dump_data($$mr{$sn});
 	return $sn;

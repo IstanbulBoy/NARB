@@ -93,7 +93,7 @@ sub process_opts($$) {
 # r1: daemonize
 sub init_cfg($) {
 	my ($r1) = @_;
-	Aux::init_dbg($::cfg{dbg}{v});
+	Aux::set_dbg_sys($::cfg{dbg}{v});
 	if(Aux::dbg_cfg()) {
 		print("LEGEND: (d) - default value, (f) - file supplied,\n");
 		print("        (c) - cli override, (i) - stdin override\n");
@@ -105,11 +105,12 @@ sub init_cfg($) {
 }
 
 # NOTE: running in a different thread here ...
-sub spawn_server($) {
-	my ($s, $pa, $pp) = @_;
+sub spawn_server($$) {
+	my ($ss, $cs) = @_;
 	my $srvr;
+	$ss->close();
 	eval {
-		$srvr = new Server($s, $pa, $pp);
+		$srvr = new Server($cs);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -131,7 +132,6 @@ $SIG{TERM} = \&catch_term;
 $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $| = 1;
-
 share($::ctrlC);
 #$::d = 0; # a global to use in regex embedded command execution
 
@@ -221,7 +221,8 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $client_sock, $peer_ip, $peer_port);
+		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock);
+		$client_sock->close();
 		if($thr) {
 			push(@servers, $thr);
 		}

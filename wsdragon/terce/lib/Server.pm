@@ -27,11 +27,12 @@ use strict;
 use warnings;
 use Aux;
 use API;
+use IO::Select;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,13 +42,13 @@ our @EXPORT_OK;
 
 my $name = undef;
 my $sock = undef;
+my $select = undef;
 my $ctrl_sock = undef;
-my $peer_ip = undef;
-my $peer_port = undef;
 
 sub new {
 	shift;
-	($sock, $peer_ip, $peer_port)  = shift;
+	($sock)  = @_;
+	$select = new IO::Select($sock);
 	my $self = {};
 	bless $self;
 	return $self;
@@ -57,7 +58,18 @@ sub run() {
 	my %msg;
 	my $sn;
 	while(!$::ctrlC) {
-		$sn = API::get_msg($sock, \%msg);
+		if(!$sock->connected()) {
+			Log::log "err", "client disconnect\n";
+			last;
+		}
+
+		eval {
+			$sn = API::get_msg($select, \%msg);
+		};
+		if($@) {
+			Log::log "err", "$@\n";
+			last;
+		}
 		if(!defined($sn)) {
 			next;
 		}
@@ -85,6 +97,9 @@ sub run() {
 		threads->yield();
 	}
 	Aux::print_dbg_run("exiting (%s) server thread\n", $name);
+	if(defined($ctrl_sock)) {
+		close($ctrl_sock);
+	}
 	close($sock);
 }
 

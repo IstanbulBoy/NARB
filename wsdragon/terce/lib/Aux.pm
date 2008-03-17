@@ -10,7 +10,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -27,12 +27,18 @@ use constant RCE_DBG => 3;
 use constant NET_DBG => 4;
 use constant API_DBG => 5;
 use constant DATA_DBG => 6;
+use constant RAW_DBG => 7;
 
 my $dbg_sys = undef;
 
-sub init_dbg($) {
+sub set_dbg_sys($) {
 	my ($v) = @_;
 	$dbg_sys = $v;
+}
+
+sub add_dbg_sys($) {
+	my ($v) = @_;
+	$dbg_sys |= (1 << $v);
 }
 
 sub get_dbg_sys($) {
@@ -64,6 +70,13 @@ sub dbg_api() {
 sub dbg_data() {
 	if(defined($dbg_sys)) {
 		return ($dbg_sys &(1 << DATA_DBG));
+	}
+	return 0;
+}
+
+sub dbg_raw() {
+	if(defined($dbg_sys)) {
+		return ($dbg_sys &(1 << RAW_DBG));
 	}
 	return 0;
 }
