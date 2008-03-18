@@ -1162,19 +1162,19 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
     case TE_LINK_SUBTLV_LINK_IFSWCAP:
         {
             int i; float x;
-
-			ISCD* iscd = (ISCD*)value;
-            sub_tlv_size = sizeof(te_link_subtlv_link_ifswcap);
-			if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-			&& (htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
-			{
-			  sub_tlv_size += (sizeof(link_ifswcap_specific_vlan) - 8);
-			}
-			else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-			&& (htons(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
-			{
-			  sub_tlv_size += (sizeof(link_ifswcap_specific_subnet_uni) - 8);
-			}
+            
+            ISCD* iscd = (ISCD*)value;
+            sub_tlv_size = IFSWCAP_BASE_SIZE;
+            if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            && (htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+              sub_tlv_size += (sizeof(link_ifswcap_specific_vlan) - 8);
+            }
+            else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            && (htons(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+            {
+              sub_tlv_size += (sizeof(link_ifswcap_specific_subnet_uni) - 8);
+            }
 
             te_link_subtlv_link_ifswcap *ifswcap = (te_link_subtlv_link_ifswcap*)(buf+tlv_size);
             ifswcap->header.type = htons(TE_LINK_SUBTLV_LINK_IFSWCAP);

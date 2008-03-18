@@ -289,9 +289,7 @@ Resource* LSAHandler::Parse()
                                     if (ntohs(swcap->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z)
                                     {
                                         u_int32_t bitmask_len = sizeof(link_ifswcap_specific_vlan) -4;
-                                        u_char* zbuffer2 = new u_char[ZBUFSIZE];
-                                        memcpy(zbuffer2, swcap->vlan_info.bitmask, MAX_VLAN_NUM/8*2);
-                                        uncompress(zbuffer, (uLongf*)&bitmask_len, zbuffer2, ntohs(swcap->vlan_info.length) - 4);
+                                        uncompress(zbuffer, (uLongf*)&bitmask_len, swcap->vlan_info.bitmask, ntohs(swcap->vlan_info.length) - 4);
                                         assert (bitmask_len == sizeof(link_ifswcap_specific_vlan) - 4); //debug...
                                         memcpy(swcap->vlan_info.bitmask, zbuffer, bitmask_len);
                                         swcap->vlan_info.length = htons(bitmask_len + 4);
