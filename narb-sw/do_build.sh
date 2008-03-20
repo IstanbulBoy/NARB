@@ -90,12 +90,12 @@ case `uname` in
 	echo 'making narb...'
     make
     if test $? != 0; then
-        echo "narb-sw-builder-builder: narb make error!"
+        echo "narb-sw-builder: narb make error!"
         exit 1
     fi
 
     echo '' && \
-	echo 'dragon-sw build finished.'
+	echo 'narb-sw-builder build finished.'
 
     echo '' && \
         echo "Now, as root, run 'sh do_install.sh' to complete the installation."
