@@ -21,18 +21,18 @@
 # File: Server.pm
 #
 
-package Server;
+package GMPLS::Server;
 
 use strict;
 use warnings;
 use Aux;
-use API;
+use GMPLS::API;
 use IO::Select;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -64,7 +64,7 @@ sub run() {
 		}
 
 		eval {
-			$sn = API::get_msg($select, \%msg);
+			$sn = GMPLS::API::get_msg($select, \%msg);
 		};
 		if($@) {
 			Log::log "err", "$@\n";
@@ -74,7 +74,7 @@ sub run() {
 			next;
 		}
 		eval {
-			if(API::is_sync_init($msg{$sn})) {
+			if(GMPLS::API::is_sync_init($msg{$sn})) {
 				#guess who's calling ... (we really don't know)
 				if($msg{$sn}{hdr}{tag2} eq 2693) {
 					$name = "narb";
@@ -87,9 +87,9 @@ sub run() {
 				}
 				Aux::print_dbg_run("starting (%s) server thread\n", $name);
 				# open the control channel
-				$ctrl_sock = API::open_ctrl_channel($sock, $msg{$sn}{hdr}{tag2});
+				$ctrl_sock = GMPLS::API::open_ctrl_channel($sock, $msg{$sn}{hdr}{tag2});
 			}
-			API::ack_msg($sock, $msg{$sn});
+			GMPLS::API::ack_msg($sock, $msg{$sn});
 		};
 		if($@) {
 			die "$@\n";

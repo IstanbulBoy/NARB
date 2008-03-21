@@ -29,7 +29,7 @@ use threads::shared;
 
 use Aux;
 use Log;
-use Server;
+use GMPLS::Server;
 use strict;
 use sigtrap;
 use POSIX;
@@ -110,7 +110,7 @@ sub spawn_server($$) {
 	my $srvr;
 	$ss->close();
 	eval {
-		$srvr = new Server($cs);
+		$srvr = new GMPLS::Server($cs);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -120,7 +120,10 @@ sub spawn_server($$) {
 	}
 }
 
-sub clenup_servers() {
+sub start_ws_server() {
+}
+
+sub cleanup_servers() {
 	foreach my $s (@servers) {
 		$s->join();
 	}
@@ -203,6 +206,9 @@ if($daemonize) {
 		or die "Can't start a new session: $!";
 }
 eval {
+	# start the SOAP/HTTP server
+	my $sw_server = threads->create(\&start_ws_server);
+
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
 		LocalAddr => inet_ntoa(INADDR_ANY),
 		LocalPort => $::cfg{port}{v},
@@ -227,7 +233,7 @@ eval {
 			push(@servers, $thr);
 		}
 	}
-	clenup_servers();
+	cleanup_servers();
 
 	$serv_sock->shutdown(SHUT_RDWR);
 };
