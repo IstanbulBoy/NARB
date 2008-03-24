@@ -30,6 +30,7 @@ use threads::shared;
 use Aux;
 use Log;
 use GMPLS::Server;
+use WS::Server;
 use strict;
 use sigtrap;
 use POSIX;
@@ -49,6 +50,7 @@ sub usage() {
 	print("       -h: prints this message\n");
 	print("  Long options:\n");
 	print("       --port <port>: listen on this port (default 2690)\n");
+	print("       --wsport <port>: listen on this web services port (default 80)\n");
 	print("       --log: <log file> log file (default: /var/log/terce.log)\n");
 	print("       --dbg: <list> of components to debug (run config narb rce net api data)\n");
 	print("              with no agrument, all the components will become very verbose\n");
@@ -76,6 +78,7 @@ sub process_opts($$) {
 	if(($n eq "p") || ($n eq "port")) 	{$k1 = "port";}
 	if(($n eq "l") || ($n eq "log")) 	{$k1 = "log";}
 	if($n eq "dbg")			 	{$k1 = "dbg";}
+	if($n eq "wsport")			{$k1 = "ws"; $k2 = "port"}
 
 	if(defined($k1) && !defined($k2) && !$is_array) {
 		if($k1 eq "dbg") {
@@ -86,6 +89,10 @@ sub process_opts($$) {
 			$::cfg{$k1}{v} = $v;
 			$::cfg{$k1}{s} = 'c';
 		}
+	}
+	elsif(defined($k1) && defined($k2) && !$is_array) {
+		$::cfg{$k1}{$k2}{v} = $v;
+		$::cfg{$k1}{$k2}{s} = 'c';
 	}
 }
 
@@ -120,7 +127,18 @@ sub spawn_server($$) {
 	}
 }
 
-sub start_ws_server() {
+sub start_ws_server($) {
+	my ($p) = @_;
+	my $srvr;
+	eval {
+		$srvr = new WS::Server($p);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
+	}
+	else {
+		$srvr->run();
+	}
 }
 
 sub cleanup_servers() {
@@ -157,6 +175,12 @@ share($::ctrlC);
 		"v" => "2690", 
 		"s" => 'd'
 	},
+	"ws" => {
+		"port" => {
+			"v" => "80", 
+			"s" => 'd'
+		}
+	},
 	"log" => 	{
 		"v" => "/var/log/terce.log", 
 		"s" => 'd'
@@ -172,6 +196,7 @@ if(!GetOptions ('d' =>			\&process_opts,
 		'config=s' =>		\&process_opts,
 		'p=s' =>		\&process_opts,
 		'port=s' =>		\&process_opts,
+		'wsport=s' =>		\&process_opts,
 		'l=s' =>		\&process_opts,
 		'log=s' =>		\&process_opts,
 		'dbg:s{,}' =>		\&process_opts,
@@ -207,7 +232,10 @@ if($daemonize) {
 }
 eval {
 	# start the SOAP/HTTP server
-	my $sw_server = threads->create(\&start_ws_server);
+	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v});
+	if($sw_server) {
+		push(@servers, $sw_server);
+	}
 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
 		LocalAddr => inet_ntoa(INADDR_ANY),
