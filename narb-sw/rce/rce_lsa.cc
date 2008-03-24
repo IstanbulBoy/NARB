@@ -34,6 +34,7 @@
 #include "rce_lsa.hh"
 #include "rce_log.hh"
 #include "rce_config.hh"
+#include "terce_apiclient.hh"
 
 void LSAHandler::Run()
 {
@@ -408,3 +409,200 @@ Resource* LSAHandler::Parse()
         rc->domainMask = domain_mask;
     return rc;
 }
+
+/////////////////////////////////////////
+
+void LSARetriever::Run()
+{
+    assert (api_writer);
+    assert (api_reader);
+    int ret;
+    int action_ret = ACT_NOOP;
+    if (query_options & LSA_QUERY_PHY)
+    {
+        if ((ret = RetrieveTopology(true)) != 0)
+        {
+            action_ret = ACT_ERROR;
+            goto _out;
+        }
+    }
+    else if (query_options & LSA_QUERY_ABS)
+    {
+        if ((ret = RetrieveTopology(false)) != 0)
+        {
+            action_ret = ACT_ERROR;
+            goto _out;
+        }
+    }
+
+_out:
+    api_msg * msg = api_msg_new(MSG_LSA, action_ret, &ret, ucid, seqnum, action_ret == ACT_NOOP ? 0 : 4, domain_mask);
+    api_writer->PostMessage(msg);
+}
+
+bool LSARetriever::Parse(api_msg* msg)
+{
+    action = (api_action)msg->hdr.action;
+    if (action != ACT_QUERY || ntohs(msg->hdr.msglen) !=0)
+        return false;
+    ucid = ntohl(msg->hdr.ucid);
+    seqnum = ntohl(msg->hdr.msgseq);
+    query_options = ntohl(msg->hdr.options);
+    if (query_options = 0)
+        return false;
+    domain_mask = ntohl(msg->hdr.tag);
+    api_msg_delete(msg);
+}
+
+int LSARetriever::RetrieveTopology (bool physical)
+{
+    int ret = 0, retx;
+
+    RadixTree<Resource>* tree;
+    RadixNode<Resource> *node;
+
+    // originate router-id LSA's
+    tree = RDB.Tree(physical ? RTYPE_LOC_RTID : RTYPE_GLO_RTID);
+    node = tree->Root();
+    while (node)
+    {
+        RouterId* router_id = (RouterId*)node->Data();
+        if (router_id != NULL)
+        {
+            if (domain_mask != 0 && (domain_mask & router_id->DomainId()) == domain_mask)
+                continue;
+
+            retx = this->RetrieveRouterId(router_id);
+            if (ret == 0 && retx != 0)
+                ret = retx;
+        }
+
+        node = tree->NextNode(node);
+    }
+
+    // originate  te-link LSA's
+    tree = RDB.Tree(physical ? RTYPE_LOC_PHY_LNK : RTYPE_GLO_ABS_LNK);
+    node = tree->Root();
+    while (node)
+    {
+        Link* link = (Link*)node->Data();
+        if (link != NULL)
+        {
+            if (domain_mask != 0 && (domain_mask & link->DomainId()) == domain_mask)
+                continue;
+            if (link->Iscds().size() == 0)
+                continue;
+            IfSwCapDesc *iscd = link->Iscds().front();
+            if ((query_options&LSA_QUERY_FSC) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC
+              ||(query_options&LSA_QUERY_LSC) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
+              ||(query_options&LSA_QUERY_TDM) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM
+              ||(query_options&LSA_QUERY_L2SC) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+              ||(query_options&LSA_QUERY_PSC1) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC1
+              ||(query_options&LSA_QUERY_PSC2) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC2
+              ||(query_options&LSA_QUERY_PSC3) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC3
+              ||(query_options&LSA_QUERY_PSC4) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
+            {
+                retx = this->RetrieveTeLink(link);
+                if (ret == 0 && retx != 0)
+                    ret = retx;
+            }
+        }
+
+        node = tree->NextNode(node);
+    }
+
+    return ret;
+}
+
+
+int LSARetriever::RetrieveLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen)
+{  
+    u_char buf[API_MAX_MSG_SIZE];
+    struct lsa_header *lsah;
+    u_int32_t tmp;
+
+    // Make a new LSA from parameters 
+    lsah = (lsa_header *) buf;
+    lsah->ls_age = 0;
+    lsah->options = 0;
+    lsah->type = lsa_type;
+  
+    tmp = SET_OPAQUE_LSID (opaque_type, opaque_id);
+    lsah->id.s_addr = htonl (tmp);
+    lsah->adv_router = adv_id;
+    lsah->ls_age = 0;
+    lsah->ls_seqnum = 0;
+    lsah->checksum = 0;
+    lsah->length = htons (sizeof (lsa_header) + opaquelen);
+  
+    memcpy (((u_char *) lsah) + sizeof (lsa_header), opaquedata, opaquelen);
+
+    u_int32_t ucid = ucid;
+    api_msg * msg = api_msg_new(MSG_LSA, ACT_INSERT, lsah, ucid, get_rce_seqnum(), htons(lsah->length), domain_mask);
+
+    if (!msg)
+    {
+        LOG("api_msg_new failed"<<endl);
+        return -1;
+    }
+
+    if (api_writer->WriteMessage(msg) < 0)
+    {
+        LOG ("LSARetriever::RetrieveLsa / WriteMessage failed\n" << endl);
+        return -1;
+    }
+
+    msg = api_reader->ReadMessage();
+    if (!msg)
+    {
+        LOG ("LSARetriever::RetrieveLsa / ReadMessage failed\n" << endl);
+        return -1;
+    }
+
+    int ret = 0;
+    if (msg->hdr.action == ACT_ERROR) 
+    {
+        ret = ntohl(msg->hdr.tag);
+    }
+    api_msg_delete(msg);
+    return ret;
+}
+
+int LSARetriever::RetrieveRouterId (RouterId* rtid)
+{
+    int ret = 0;
+
+    void *opaquedata;
+    int opaquelen;
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+
+    opaquedata = (void *)TerceApiTopoOriginator::BuildRouterIdOpaqueData(rtid); 
+    opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                  + sizeof (struct te_tlv_header);
+
+    //using Router ID as the opaque ID, which TERCE should not care
+	u_int32_t adv_rt_id = rtid->AdvRtId();
+    ret = RetrieveLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, rtid->Id(), opaquedata, opaquelen);
+    free(opaquedata);
+    return ret;
+}
+
+int LSARetriever::RetrieveTeLink (Link* link)
+{
+    int ret = 0;
+  
+    u_char lsa_type = 10;
+    u_char opaque_type = 1;
+    
+    void *opaquedata = TerceApiTopoOriginator::BuildTeLinkOpaqueData(link);
+    int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
+                      + sizeof (struct te_tlv_header);
+
+    //using Link Local IfAddr as the opaque ID, which TERCE should not care
+	u_int32_t adv_rt_id = link->AdvRtId();
+    ret = RetrieveLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);
+    free(opaquedata);
+    return ret;
+}
+

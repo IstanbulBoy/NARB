@@ -158,8 +158,8 @@ public:
     int OriginateTeLink (Link* link);
     int UpdateTeLink (Link* link);
 
-    void* BuildRouterIdOpaqueData(RouterId* rtid);
-    void* BuildTeLinkOpaqueData(Link* link);
+    static void* BuildRouterIdOpaqueData(RouterId* rtid);
+    static void* BuildTeLinkOpaqueData(Link* link);
 };
 
 #endif

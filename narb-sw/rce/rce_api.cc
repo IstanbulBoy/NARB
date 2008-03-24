@@ -135,9 +135,10 @@ api_msg * APIReader::ReadMessage ()
 void APIReader::HandleMessage (api_msg *msg)
 {
     LSAHandler * lsaEvent;
+    LSARetriever * lsarEvent;
     LSPHandler * lspEvent;
     api_msg *rmsg;
-    u_int32_t ack_id = 0x0f;
+    u_int32_t ack_id;
             
     switch (msg->hdr.msgtype)
     {
@@ -146,10 +147,10 @@ void APIReader::HandleMessage (api_msg *msg)
         switch(msg->hdr.action)
         {
         case ACT_UPDATE:
-            rmsg = api_msg_new(MSG_LSA, ACT_ACK, &ack_id, ntohl(msg->hdr.ucid), ntohl(msg->hdr.msgseq), 4);
             assert(api_writer);
+            ack_id = 0x0f;
+            rmsg = api_msg_new(MSG_LSA, ACT_ACK, &ack_id, ntohl(msg->hdr.ucid), ntohl(msg->hdr.msgseq), 4);
             api_writer->PostMessage(rmsg); //temp: always return a MSG_ACK
-
             lsaEvent = new LSAHandler;
             lsaEvent->Load(msg);
             if (lsaEvent->Parse())
@@ -160,9 +161,30 @@ void APIReader::HandleMessage (api_msg *msg)
             else
                 delete lsaEvent;
             break;
-        }
-        
+        case ACT_QUERY:
+            assert(api_writer);
+            lsarEvent = new LSARetriever;
+            if (lsarEvent->Parse(msg))
+            {
+                ack_id = 0;
+                rmsg = api_msg_new(MSG_LSA, ACT_ACK, &ack_id, ntohl(msg->hdr.ucid), ntohl(msg->hdr.msgseq), 4);
+                api_writer->PostMessage(rmsg); //temp: always return a MSG_ACK
+                lsarEvent->SetApiReader(this);
+                lsarEvent->SetApiWriter(api_writer);
+                lsarEvent->SetAutoDelete(true);
+                eventMaster.Schedule(lsarEvent);
+            }
+            else
+            {
+                ack_id = 0;
+                rmsg = api_msg_new(MSG_LSA, ACT_ERROR, &ack_id, ntohl(msg->hdr.ucid), ntohl(msg->hdr.msgseq), 4);
+                api_writer->PostMessage(rmsg); //temp: always return a MSG_ACK
+                delete lsarEvent;
+            }
+            break;
+        } // end of inner switch
         break;
+
      case MSG_LSP:
         switch(msg->hdr.action)
         {

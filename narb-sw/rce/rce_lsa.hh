@@ -390,4 +390,44 @@ public:
     Resource* Parse();
 };
 
+
+#define	LSA_QUERY_PHY 0x0001
+#define	LSA_QUERY_ABS 0x0002
+#define	LSA_QUERY_FSC 0x0010
+#define	LSA_QUERY_LSC 0x0020
+#define	LSA_QUERY_TDM 0x0040
+#define	LSA_QUERY_L2SC 0x0080
+#define	LSA_QUERY_PSC1 0x0100
+#define	LSA_QUERY_PSC2 0x0200
+#define	LSA_QUERY_PSC3 0x0400
+#define	LSA_QUERY_PSC4 0x0800
+
+class RouterId;
+class Link;
+class LSARetriever: public Event
+{
+public:
+    LSARetriever(): action(ACT_NOOP), ucid(0), seqnum(0), query_options(0), domain_mask(0), api_reader(NULL), api_writer(NULL) {}
+    virtual ~LSARetriever() {}
+    virtual void Run();
+    void SetApiReader(APIReader* reader) {api_reader = reader;}
+    void SetApiWriter(APIWriter* writer) {api_writer = writer;}
+    bool Parse(api_msg* msg);
+
+    int RetrieveLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
+    int RetrieveTopology (bool physical=true);
+    int RetrieveRouterId (RouterId* rtid);
+    int RetrieveTeLink (Link* link);
+
+private:
+    api_action action;
+    u_int32_t ucid;
+    u_int32_t seqnum;
+    u_int32_t query_options;
+    u_int32_t domain_mask;
+    APIReader* api_reader;
+    APIWriter* api_writer;
+};
+
+
 #endif
