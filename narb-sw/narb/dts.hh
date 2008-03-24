@@ -122,9 +122,22 @@ public:
 //Flag indicating whether the link is originated by automatic probing 
 //This is not indicating a TE parameter
 #define LINK_PARA_FLAG_AUTO_PROBED 0x1000 
+#define LINK_PARA_FLAG_INTRADOMAIN_DUP 0x2000
 //macros to access link_info flag 
 #define SET_LINK_PARA_FLAG(X, F) ((X) = (X) | (F))
 #define LINK_PARA_FLAG(X, F) ((X) & (F))
+
+//values of option bits for LSA query/retrieval
+#define	LSA_QUERY_PHY 0x0001
+#define	LSA_QUERY_ABS 0x0002
+#define	LSA_QUERY_FSC 0x0010
+#define	LSA_QUERY_LSC 0x0020
+#define	LSA_QUERY_TDM 0x0040
+#define	LSA_QUERY_L2SC 0x0080
+#define	LSA_QUERY_PSC1 0x0100
+#define	LSA_QUERY_PSC2 0x0200
+#define	LSA_QUERY_PSC3 0x0400
+#define	LSA_QUERY_PSC4 0x0800
 
 // data structure describing associating of remote if_addr of an  inter-domain 
 // TE-link with the narb in a neighboring domain
@@ -247,6 +260,7 @@ public:
     void CleanupAutoLinks();
     void HideTopology ();
     void ExposeTopology ();
+    void DuplicateIntradomainTopology();
 
     //Zebra OSPFd API
     bool IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer);

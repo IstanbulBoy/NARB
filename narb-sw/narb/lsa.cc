@@ -59,6 +59,7 @@ void LSAHandler::Load(api_msg* msg)
     domain_mask = msg->header.msgtag[0];
     api_msg_delete(msg);
 }
+
 Resource* LSAHandler::Parse()
 {
     if (lsa == NULL)

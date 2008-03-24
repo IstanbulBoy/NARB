@@ -944,6 +944,130 @@ void DomainInfo::CleanupAutoLinks()
     }
 }
 
+void DomainInfo::DuplicateIntradomainTopology()
+{
+    //Connecting to RCE APIClient
+    RCE_APIClient rce_client((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+    if (rce_client.Connect() < 0)
+    {
+        LOGF("DomainInfo::RetrieveIntraDomainTopology: Cannot connect to RCE client %s:%d\n", (char*)SystemConfig::rce_sec_host.c_str(), SystemConfig::rce_sec_port);
+        return;
+    }
+
+    api_msg* msg = api_msg_new(MSG_LSA, ACT_QUERY, 0, NULL, NarbDomainInfo.domain_id, get_narb_seqnum(), NarbDomainInfo.domain_id);
+    msg->header.options = (LSA_QUERY_PHY |LSA_QUERY_L2SC);
+    msg->header.chksum = MSG_CHKSUM(msg->header);
+
+    rce_client.GetWriter()->WriteMessage(msg);
+    api_msg* rmsg = rce_client.ReadMessage();
+
+    if (!rmsg)
+    {
+        return;
+    }
+    else if (rmsg->header.type != MSG_LSA || rmsg->header.action != ACT_ERROR && rmsg->header.action != ACT_ACK)
+    {
+        LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unexpected messae (type: %d, action: %d)\n", rmsg->header.type, rmsg->header.action);
+        api_msg_delete(rmsg);
+        return;
+    }
+    else if (rmsg->header.action == ACT_ERROR)
+    {
+        LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned error code %d\n", ntohl(*(u_int32_t*)rmsg->body));
+        api_msg_delete(rmsg);
+        return;
+    }
+    else
+    {
+        api_msg_delete(rmsg);
+    }
+
+    while (1)
+    {
+        rmsg = rce_client.ReadMessage();
+        if (!rmsg)
+        {
+            break;
+        }
+        else if (rmsg->header.action == ACT_ERROR)
+        {
+            LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned error code %d\n", ntohl(*(u_int32_t*)rmsg->body));
+            break;
+        }
+        else if (rmsg->header.action == ACT_NOOP)
+        {
+            LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client finished returning LSA/s\n");
+            break;
+        }
+        else if (rmsg->header.action == ACT_INSERT)
+        {
+            lsa_header* lsa = (lsa_header*)rmsg->body;
+            if (lsa->type != 10)
+                continue;
+            LSAHandler lsaHandler;
+            lsaHandler.Load(rmsg);
+            Resource *rc = lsaHandler.Parse();
+            if (!rc)
+                continue;
+            if (rc->Type() == RTYPE_LOC_RTID)
+            {
+                in_addr id; id.s_addr = rc->Id();
+                router_id_info* router = new router_id_info(NarbDomainInfo.domain_id, id);
+                AddRouter(router);
+            }
+            else if (rc->Type() == RTYPE_LOC_PHY_LNK)
+            {
+                in_addr adv_id; adv_id.s_addr = rc->AdvRtId();
+                in_addr id; id.s_addr = rc->Id();
+                link_info* link = new link_info(NarbDomainInfo.domain_id, adv_id, id);
+                link->linkType = 1;
+                Link* link_rc = (Link*)rc;
+                link->lclIfAddr = link_rc->LclIfAddr();
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
+                link->rmtIfAddr = link_rc->RmtIfAddr();
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
+                link->maxBandwidth = link_rc->MaxBandwidth();
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
+                link->maxReservableBandwidth = link_rc->MaxReservableBandwidth();
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_RSV_BW);
+                link->metric = link_rc->Metric();
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
+                if (link_rc->Iscds().size() > 0)
+                {
+                    IfSwCapDesc* iscd = link_rc->Iscds().front();
+                    link->ifswcap->swtype = iscd->swtype;
+                    link->ifswcap->encoding = iscd->encoding;
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
+                    for (int i = 0; i < 8; i ++)
+                    {
+                        link->unreservedBandwidth[i] = link->ifswcap->max_lsp_bw[i] = iscd->max_lsp_bw[i];
+                    }
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_UNRSV_BW);
+
+                    link_ifswcap_specific_vlan* vlan_info = (link_ifswcap_specific_vlan*)((char*)iscd + sizeof(IfSwCapDesc) - 4);
+                    if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons(vlan_info->version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
+                    {
+                        memcpy(link->vtagBitMask, vlan_info->bitmask, MAX_VLAN_NUM/8);
+                        SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
+                    }
+                }
+                AddLink(link);
+                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_INTRADOMAIN_DUP);
+                delete rc;
+            }
+            else
+            {
+                LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown LSA type %d\n", lsa->type);
+                api_msg_delete(rmsg);
+            }
+        }
+        else
+        {
+            LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unexpected message action type %d\n", rmsg->header.action);
+            break;
+        }            
+    }
+}
 
 /////////////////////////////////////////
 // TERCE related domain topology operations //
