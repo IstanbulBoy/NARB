@@ -955,7 +955,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
     }
 
     api_msg* msg = api_msg_new(MSG_LSA, ACT_QUERY, 0, NULL, NarbDomainInfo.domain_id, get_narb_seqnum(), NarbDomainInfo.domain_id);
-    msg->header.options = SystemConfig::auto_topo_rce_options == 0 ? (LSA_QUERY_PHY |LSA_QUERY_L2SC | LSA_QUERY_ANY_DOMAIN) : SystemConfig::auto_topo_rce_options;
+    msg->header.options = SystemConfig::auto_topo_rce_options;
     msg->header.chksum = MSG_CHKSUM(msg->header);
 
     rce_client.GetWriter()->WriteMessage(msg);
@@ -1142,11 +1142,20 @@ int DomainInfo::UpdateTeLink (TerceApiTopoWriter* tc_writer, link_info* link)
 
 int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
 {
+    static int counter_auto_topo =1;
     int ret = 0;
     
-    //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
-    //NarbDomainInfo.CleanupAutoLinks();
-    NarbDomainInfo.ProbeAutoLinks();
+    if (NarbDomainInfo.auto_links.size() > 0 && counter_auto_topo > 0)
+    {//$$$$ Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
+        //NarbDomainInfo.CleanupAutoLinks();
+        NarbDomainInfo.ProbeAutoLinks();
+        counter_auto_topo--;
+    }
+    else if (SystemConfig::auto_topo_rce_options != 0 && counter_auto_topo > 0)
+    {//$$$$ Retrieve topology from RCE and duplicate it into the NARB abstract topology.
+        NarbDomainInfo.RetrieveAndDuplicateIntradomainTopology();
+        counter_auto_topo--;
+    }
 
     // originate router-id LSA's
     router_id_info * router_id = NarbDomainInfo.FirstRouterId();
