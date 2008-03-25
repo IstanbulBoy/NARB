@@ -1,3 +1,6 @@
+#ifndef __RCE_KSP_HH__
+#define __RCE_KSP_HH__
+
 #include <iostream>
 #include <vector>
 #include <list>
@@ -15,8 +18,19 @@ protected:
     vector<PathT*> KSP;
 
 public:
-    PCEN_KSP(in_addr src, in_addr dest, u_int8_t sw_type, u_int8_t encoding, float bw, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum):
-        PCEN(src, dest, sw_type, encoding, bw, opts, ucid,  msg_seqnum) {}
+    PCEN_KSP(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
+                float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t lspb_id = 0, u_int32_t tag = 0, u_int32_t hopback = 0, 
+                 u_int32_t src_lclid = 0,  u_int32_t dest_lclid = 0, narb_lsp_vtagmask_tlv* vtm = NULL):
+        PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
+        bw_egress,opts, ucid, msg_seqnum, lspb_id, tag, hopback, src_lclid, dest_lclid, vtm) {}
+
+//old one
+ /* PCEN_KSP(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, 
+        float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, float bw_egress, u_int32_t opts, 
+        u_int32_t lspq_id, u_int32_t msg_seqnum, u_int32_t tag, narb_lsp_vtagmask_tlv* vtm):
+        PCEN(src, dest, sw_type_ingress, encoding_ingress, bw_ingress,  sw_type_egress, encoding_egress, 
+        bw_egress,opts, lspq_id, msg_seqnum, tag, vtm) {}*/
+		
     ~PCEN_KSP();
     void AddLink(int linkid, int localNodeId, int remoteNodeId);
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric);
@@ -57,4 +71,6 @@ public:
     bool operator< (const PathT& p) const { return cost<p.cost; }
     int GetERO(list<ero_subobj>& ero);
 };
+
+#endif
 

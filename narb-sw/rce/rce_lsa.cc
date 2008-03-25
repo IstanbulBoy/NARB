@@ -426,7 +426,7 @@ void LSARetriever::Run()
             goto _out;
         }
     }
-    else if (query_options & LSA_QUERY_ABS)
+    if (query_options & LSA_QUERY_ABS)
     {
         if ((ret = RetrieveTopology(false)) != 0)
         {
@@ -469,7 +469,7 @@ int LSARetriever::RetrieveTopology (bool physical)
         RouterId* router_id = (RouterId*)node->Data();
         if (router_id != NULL)
         {
-            if (domain_mask != 0 && (domain_mask & router_id->DomainId()) == domain_mask)
+            if ((query_options & LSA_QUERY_ANY_DOMAIN) == 0 && domain_mask != 0 && (domain_mask & router_id->DomainId()) == domain_mask)
                 continue;
 
             retx = this->RetrieveRouterId(router_id);
@@ -488,7 +488,7 @@ int LSARetriever::RetrieveTopology (bool physical)
         Link* link = (Link*)node->Data();
         if (link != NULL)
         {
-            if (domain_mask != 0 && (domain_mask & link->DomainId()) == domain_mask)
+            if ((query_options & LSA_QUERY_ANY_DOMAIN) == 0 && domain_mask != 0 && (domain_mask & link->DomainId()) == domain_mask)
                 continue;
             if (link->Iscds().size() == 0)
                 continue;

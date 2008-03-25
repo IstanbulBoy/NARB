@@ -119,6 +119,7 @@ public:
     friend class PCENNode;
     friend class PCENLink;
     friend class PCEN_KSP;
+    friend class PCEN_MRN_CG;
     friend class PCEN_MRN;
     friend class router_id_info;
     friend class link_info;
@@ -147,6 +148,7 @@ public:
     friend class PCENNode;
     friend class PCENLink;
     friend class PCEN_KSP;
+    friend class PCEN_MRN_CG;
     friend class PCEN_MRN;
     friend class router_id_info;
     friend class link_info;
@@ -444,6 +446,7 @@ public:
     friend class PCEN_KSP;
     friend class PathT;
     friend class PCEN_MRN;
+    friend class PCEN_MRN_CG;
     friend class router_info;
     friend class link_info;
     friend class Subnet;

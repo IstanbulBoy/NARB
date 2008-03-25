@@ -37,6 +37,8 @@
 string SystemConfig::config_file;
 string SystemConfig::schema_file;
 
+PceAlgorithm SystemConfig::pce_algorithm = PCE_NONE;
+
 string SystemConfig::ospfd_inter_host("localhost");
 int SystemConfig::ospfd_inter_port = 2607;
 int SystemConfig::ospfd_inter_port_local = 4607;
@@ -252,6 +254,24 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case CONFIG_ALGORITHM:
+          {
+            if (strstr(blk_body, "mrn-default") == 0)
+                SystemConfig::pce_algorithm = MRN_DEFAULT;
+            else if (strstr(blk_body, "mrn-cg") == 0)
+                SystemConfig::pce_algorithm = MRN_CG;
+            else if (strstr(blk_body, "mrn-oscars") == 0)
+                SystemConfig::pce_algorithm = MRN_OSCARS;
+            else if (strstr(blk_body, "spf") == 0)
+                SystemConfig::pce_algorithm = SPF;
+            else
+            {
+                SystemConfig::pce_algorithm = MRN_DEFAULT;
+                LOG("ReadConfigParameter failed on pce-algorithm, set to 'mrn-default'"<<endl);
+            }
+          }
+          break;
+
         case CONFIG_SUBNET:
           {
               char filename[MAXPATHLEN];
@@ -392,6 +412,8 @@ int SystemConfig::blk_code (char *buf)
 {
     if (strstr(buf, "domain-id"))
         return CONFIG_DOMAIN_ID;
+    else if (strstr(buf, "pce-algorithm"))
+        return CONFIG_ALGORITHM;
     else if (strstr(buf, "include-subnet-topology"))
         return CONFIG_SUBNET;
     else if (strstr(buf, "include-tedb-schema"))

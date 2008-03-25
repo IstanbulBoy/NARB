@@ -52,6 +52,7 @@ enum config_code {
   CONFIG_ROUTER,
   CONFIG_LINK,
   CONFIG_DOMAIN_ID,
+  CONFIG_ALGORITHM,
   CONFIG_SUBNET,
   CONFIG_SCHEMA,
   CONFIG_TERCE,
@@ -75,11 +76,22 @@ typedef struct eos_map_entry
 } EosMapEntry;
 typedef list<EosMapEntry> EosMapList;
 
+enum PceAlgorithm
+{
+    PCE_NONE = 0,
+    SPF = 1,
+    MRN_DEFAULT,
+    MRN_CG,
+    MRN_OSCARS,
+};
+
 class SystemConfig
 {
 public:
     static string config_file;
     static string schema_file;
+
+    static PceAlgorithm pce_algorithm;
 
     static string ospfd_inter_host;
     static int ospfd_inter_port;

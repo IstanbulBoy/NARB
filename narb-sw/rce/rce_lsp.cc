@@ -36,6 +36,7 @@
 #include "rce_pcen.hh"
 #include "pcen_ksp.hh"
 #include "pcen_mrn.hh"
+#include "pcen_mrn_cg.hh"
 #include "pcen_oscars.hh"
 #include "rce_lsp.hh"
 
@@ -141,26 +142,61 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
 void LSPHandler::Run()
 {
     PCEN * pcen_event;
-    //@@@@ Enforce all requests being handled by MRN routing module
-    options |= LSP_OPT_MRN;
-    if ((options & LSP_OPT_MRN) == 0)
+
+    if (SystemConfig::pce_algorithm == PCE_NONE)
     {
-        pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
-            ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
-    }
-    else if ((options & LSP_OPT_MRN) != 0 && (options & LSP_OPT_ALT_PATHS) != 0)
-    {
-        pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
-            src_lcl_id, dest_lcl_id, vtag_mask);
+        //enforce all requests being handled by MRN routing module
+        options |= LSP_OPT_MRN;
+        if ((options & LSP_OPT_MRN) == 0)
+        {
+            /*
+            pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
+                ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+            */
+            pcen_event = new PCEN_MRN_CG(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress,
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
+        else if ((options & LSP_OPT_MRN) != 0 && (options & LSP_OPT_ALT_PATHS) != 0)
+        {
+            pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
+        else
+        {
+            pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
     }
     else
     {
-        pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
-            switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
-            src_lcl_id, dest_lcl_id, vtag_mask);
+        switch (SystemConfig::pce_algorithm)
+        {
+            case SPF:
+                pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
+                    ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+                break;
+            case MRN_CG:
+                pcen_event = new PCEN_MRN_CG(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress,
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
+                break;
+             case MRN_OSCARS:
+                pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
+                break;
+            case MRN_DEFAULT:
+            default:
+                pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
+                break;
+        }
     }
-
+    
     pcen_event->AssociateWriter (api_writer);
     pcen_event->SetAutoDelete(true);
     if (is_subnet_ero2dtl_enabled)

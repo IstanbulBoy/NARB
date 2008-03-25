@@ -390,7 +390,7 @@ public:
     Resource* Parse();
 };
 
-
+//Values of option bits for LSA Query/Retrieval
 #define	LSA_QUERY_PHY 0x0001
 #define	LSA_QUERY_ABS 0x0002
 #define	LSA_QUERY_FSC 0x0010
@@ -401,6 +401,7 @@ public:
 #define	LSA_QUERY_PSC2 0x0200
 #define	LSA_QUERY_PSC3 0x0400
 #define	LSA_QUERY_PSC4 0x0800
+#define	LSA_QUERY_ANY_DOMAIN 0x1000
 
 class RouterId;
 class Link;
