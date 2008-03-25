@@ -75,7 +75,7 @@ int RCE_APIClient::HandleMessage(api_msg * rce_msg)
      case MSG_RM:
         break;
     default:
-        LOGF("Unkonwn msg type %d \n", rce_msg->header.type_8);
+        LOGF("Unknown msg type %d \n", rce_msg->header.type_8);
          api_msg_delete(rce_msg);
         return -1;
         break;

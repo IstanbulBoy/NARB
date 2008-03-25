@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include <arpa/inet.h>
 #include "narb_apiserver.hh"
 #include "lsp_broker.hh"
 
@@ -72,7 +73,10 @@ void NARB_APIServer::Run()
     lsp_brokers.push_back(lspb);
     eventMaster.Schedule(lspb);
 
-    LOG_DEBUG("Accepted an LSPQ connection on socket(" <<new_sock <<")" << endl);
+    char addr[20];
+    LOGF("Accepted API connection from %s port %d on socket %d for LSP Query\n",
+        inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
+        ntohs(sa_in.sin_port), new_sock);
 }
 
 LSP_Broker* NARB_APIServer::LspBrokerLookup (u_int32_t id)

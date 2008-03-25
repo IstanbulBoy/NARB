@@ -209,7 +209,7 @@ void APIReader::HandleMessage (api_msg *msg)
      case MSG_RM:
         break;
     default:
-        LOG_CERR<<"Unkonwn msg type "<<msg->hdr.msgtype<<endl;
+        LOG_CERR<<"Unknown msg type "<<msg->hdr.msgtype<<endl;
     }
     
 }

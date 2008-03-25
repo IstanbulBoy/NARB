@@ -591,7 +591,7 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
         break;
 
     default:
-        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->hdr.msgtype)
+        LOG("Unknown/Unprocessed terce messsage (type=" << (int)(msg->hdr.msgtype)
             << ", action=" << (int)msg->hdr.action << ")." << endl);
         api_msg_delete(msg);
     }    

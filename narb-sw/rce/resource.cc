@@ -779,7 +779,7 @@ void ResourceDB::WalkTree(ResourceType type)
             ((RouterId*)node->Data())->Dump();
             break;
         default:
-            LOG_CERR<<"Unkown RESOURCE TYPE "<<type<<endl;
+            LOG_CERR<<"Unknown RESOURCE TYPE "<<type<<endl;
         }
 
         tree.UnlockNode(node);

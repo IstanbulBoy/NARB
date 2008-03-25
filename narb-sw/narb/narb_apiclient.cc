@@ -61,7 +61,7 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
         api_msg_delete(msg);
         break;
     default:
-        LOGF("Peer NARB returned unkonwn msg type %d \n", ntohs(msg->header.type));
+        LOGF("Peer NARB returned unknown msg type %d \n", ntohs(msg->header.type));
          api_msg_delete(msg);
         return -1;
         break;

@@ -92,9 +92,9 @@ void usage()
     cout<<"NARB Tester Usage:"<<endl;
     cout<<"\t narb_test [-H host] [-P port] [-S source] [-D dest] [-B] [-b bandwidth] [-x switching type] [-e encoding type] ";
     cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
-    cout<<"  [ [-M] multi-region network [-v]: E2E VLAN with speicified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
-    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all avalialbe VLAN tags ]" <<endl;
-    cout<<" [ [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
+    cout<<"  [ [-M] multi-region network [-v tag]: E2E VLAN with specified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
+    cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all available VLAN tags ]" <<endl;
+    cout<<"  [ [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
 }
 
 // SIGINT handler.

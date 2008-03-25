@@ -94,6 +94,10 @@ void NARB_XMLServer::Run()
     eventMaster.Schedule(broker);
 
     LOG_DEBUG("Accepted an XML API connection on socket(" <<new_sock <<")" << endl);
+    char addr[20];
+    LOGF("Accepted XML API connection from %s port %d on socket %d\n",
+         inet_ntop(AF_INET, &sa_in.sin_addr, addr, sizeof(addr)),
+         ntohs(sa_in.sin_port), new_sock);
 }
 
 //////////////////////////////////
