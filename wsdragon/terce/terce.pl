@@ -52,7 +52,7 @@ sub usage() {
 	print("       --port <port>: listen on this port (default 2690)\n");
 	print("       --wsport <port>: listen on this web services port (default 80)\n");
 	print("       --log: <log file> log file (default: /var/log/terce.log)\n");
-	print("       --dbg: <list> of components to debug (run config narb rce net api data)\n");
+	print("       --dbg: <list> of components to debug (run config narb rce net api data lsa)\n");
 	print("              with no agrument, all the components will become very verbose\n");
 	print("              and the program will not fork.\n");
 	print("       --help: prints this message\n");

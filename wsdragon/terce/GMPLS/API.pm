@@ -31,7 +31,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -52,6 +52,52 @@ use constant ACT_ERROR => 0x07;
 use constant ACT_INIT => 0x0A;
 use constant ACT_ALIVE => 0x0B;
 
+# OSPF LSA Types
+use constant OSPF_ROUTER_LSA => 1;
+use constant OSPF_NETWORK_LSA => 2;
+use constant OSPF_SUMMARY_LSA => 3;
+use constant OSPF_ASBR_SUMMARY_LSA => 4;
+use constant OSPF_AS_EXTERNAL_LSA => 5;
+use constant OSPF_AS_NSSA_LSA => 7;
+use constant OSPF_OPAQUE_LINK_LSA => 9;
+use constant OSPF_OPAQUE_AREA_LSA => 10;
+use constant OSPF_OPAQUE_AS_LSA => 11;
+
+# TE LSA Types
+use constant NOT_TE_LSA => 0;
+use constant ROUTER_ID_TE_LSA => 1;
+use constant LINK_TE_LSA => 2;
+use constant LINK_LOCAL_TE_LSA => 3;
+
+# Opaque LSA types
+use constant OPAQUE_TYPE_TE_LINKLOCAL_LSA => 1;
+use constant OPAQUE_TYPE_TE_AREA_LSA => 1;
+use constant OPAQUE_TYPE_SYCAMORE_OPTICAL_TOPOLOGY_DESC => 2;
+use constant OPAQUE_TYPE_GRACE_LSA => 3;
+
+use constant HDR_SIZE => 20;
+
+# TLVs
+use constant TLV_HDR_SIZE => 4;
+use constant TE_TLV_ROUTER_ADDR => 1;
+use constant TE_TLV_LINK => 2;
+use constant TE_LINK_SUBTLV_LINK_TYPE => 1;
+use constant TE_LINK_SUBTLV_LINK_ID => 2;
+use constant TE_LINK_SUBTLV_LCLIF_IPADDR => 3; # Local Interface IP Address
+use constant TE_LINK_SUBTLV_RMTIF_IPADDR => 4; # Remote Interface IP Address
+use constant TE_LINK_SUBTLV_TE_METRIC => 5; # Traffic Engineering Metric
+use constant TE_LINK_SUBTLV_MAX_BW => 6; # Maximum Bandwidth
+use constant TE_LINK_SUBTLV_MAX_RSV_BW => 7; # Maximum Reservable Bandwidth
+use constant TE_LINK_SUBTLV_UNRSV_BW => 8; # Unreserved Bandwidth
+use constant TE_LINK_SUBTLV_RSC_CLSCLR => 9; # Administrative Group, a.k.a. Resource Class/Color
+use constant TE_LINK_SUBTLV_LINK_LCRMT_ID => 11; # Link Local/Remote Identifiers
+use constant TE_LINK_SUBTLV_LINK_IFSWCAP => 15;
+
+use constant DRAGON_TLV_TYPE_BASE => 0x4000;
+use constant TE_LINK_SUBTLV_RESV_SCHEDULE => DRAGON_TLV_TYPE_BASE + 1;
+use constant TE_LINK_SUBTLV_LINK_IFADCAP => DRAGON_TLV_TYPE_BASE + 2;
+use constant TE_LINK_SUBTLV_DOMAIN_ID => DRAGON_TLV_TYPE_BASE + 0x10;
+
 my %msg_type = 	(	0x11 => "TERCE_TOPO_SYNC",
 			0x12 => "TERCE_TOPO_ASYNC");
 
@@ -65,18 +111,36 @@ my %msg_action =	(
 			0x07 => "ACT_ERROR",
 			0x0A => "ACT_INIT",
 			0x0B => "ACT_ALIVE");
+sub dump_hdr($) {
+	my ($mr) = @_;
+	Aux::print_dbg_data("----------------------- header -----------------------\n");
+	Aux::print_dbg_data("(%s, %s)\n", $msg_type{$$mr{hdr}{type}}, $msg_action{$$mr{hdr}{action}});
+	Aux::print_dbg_data("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{hdr}{type}, $$mr{hdr}{type}, $$mr{hdr}{action}, $$mr{hdr}{action}, $$mr{hdr}{length}, $$mr{hdr}{length});
+	Aux::print_dbg_data("ucid:\t\t\t0x%08X (%u)\n", $$mr{hdr}{ucid}, $$mr{hdr}{ucid});
+	Aux::print_dbg_data("seq. number:\t\t0x%08X (%u)\n", $$mr{hdr}{seqn}, $$mr{hdr}{seqn});
+	Aux::print_dbg_data("checksum:\t\t0x%08X (%u)\n", $$mr{hdr}{chksum}, $$mr{hdr}{chksum});
+	Aux::print_dbg_data("tag1:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag1}, $$mr{hdr}{tag1});
+	Aux::print_dbg_data("tag2:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag2}, $$mr{hdr}{tag2});
+}
+
+sub parse_lsa($) {
+	my ($dr) = @_;
+}
+
+sub dump_lsa($) {
+	my ($mr) = @_;
+	if(Aux::dbg_lsa()) {
+		dump_hdr($mr);
+		Aux::print_dbg_data("----------------- parsed data ------------------------\n");
+		Aux::print_dbg_data("------------------------------------------------------\n");
+	}
+}
+
 sub dump_data($) {
 	my ($mr) = @_;
 	if(Aux::dbg_data()) {
-		Aux::print_dbg_data("----------------------- header -----------------------\n");
-		Aux::print_dbg_data("(%s, %s)\n", $msg_type{$$mr{hdr}{type}}, $msg_action{$$mr{hdr}{action}});
-		Aux::print_dbg_data("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{hdr}{type}, $$mr{hdr}{type}, $$mr{hdr}{action}, $$mr{hdr}{action}, $$mr{hdr}{length}, $$mr{hdr}{length});
-		Aux::print_dbg_data("ucid:\t\t\t0x%08X (%u)\n", $$mr{hdr}{ucid}, $$mr{hdr}{ucid});
-		Aux::print_dbg_data("seq. number:\t\t0x%08X (%u)\n", $$mr{hdr}{seqn}, $$mr{hdr}{seqn});
-		Aux::print_dbg_data("checksum:\t\t0x%08X (%u)\n", $$mr{hdr}{chksum}, $$mr{hdr}{chksum});
-		Aux::print_dbg_data("tag1:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag1}, $$mr{hdr}{tag1});
-		Aux::print_dbg_data("tag2:\t\t\t0x%08X (%u)\n", $$mr{hdr}{tag2}, $$mr{hdr}{tag2});
-		Aux::print_dbg_data("------------------------ data ------------------------\n");
+		dump_hdr($mr);
+		Aux::print_dbg_data("-------------------- raw data ------------------------\n");
 		if(defined($$mr{data})) {
 			my @tmp = unpack("C*", $$mr{data});
 			my $len = $$mr{hdr}{length};
@@ -109,20 +173,24 @@ sub open_ctrl_channel($$) {
 	return $ctrl_sock;
 }
 
-sub ack_msg($$) {
-	my ($s, $mr) = @_;
+sub ack_msg($$;$) {
+	my ($s, $mr, $e) = @_;
+	my $err = 0; 
+	if(defined($e)) {
+		$err = $e;
+	}
 	my $block = pack("CCnNN", $$mr{hdr}{type}, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
 	my $chksum = unpack("%32N3", $block);
 	my $ack_msg = {
 		"hdr" => {
 			"type" => $$mr{hdr}{type},
-			"action" => ACT_ACK,
+			"action" => ($err==0)?ACT_ACK:ACT_ERROR,
 			"length" => 0,
 			"ucid" => $$mr{hdr}{ucid},
 			"seqn" => $$mr{hdr}{seqn},
 			"chksum" => $chksum,
 			"tag1" => 0,
-			"tag2" => 0
+			"tag2" => $err
 		},
 		"data" => undef
 	};
@@ -203,13 +271,35 @@ sub get_msg($$) {
 	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action{$$mr{$sn}{hdr}{action}},
 		$fh[0]->peerhost(), $fh[0]->peerport()
 	);
-	dump_data($$mr{$sn});
+	if(Aux::dbg_lsa()) {
+		dump_lsa($$mr{$sn});
+	}
+	else {
+		dump_data($$mr{$sn});
+	}
 	return $sn;
+}
+
+sub parse_msg($) {
+	my ($md) = @_;
+	# LSA header
+	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
+	if(!(defined($age) && defined($age) && defined($age) && defined($age) && 
+			defined($age) && defined($age) && defined($age) && defined($age))) {
+		Log::log "err", "corrupted LSA\n";
+		return (-1);
+	}
+	printf("%04x %02x %02x %08x  %08x  %08x  %04x  %04x \n", $age, $opts, $type, $id, $rtr, $seqn, $chksum, $len);
 }
 
 sub is_sync_init($) {
 	my ($mr) = @_;
 	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INIT));
+}
+
+sub is_sync_insert($) {
+	my ($mr) = @_;
+	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INSERT));
 }
 
 1;
