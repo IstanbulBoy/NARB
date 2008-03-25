@@ -944,7 +944,7 @@ void DomainInfo::CleanupAutoLinks()
     }
 }
 
-void DomainInfo::DuplicateIntradomainTopology()
+void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
 {
     //Connecting to RCE APIClient
     RCE_APIClient rce_client((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
@@ -955,7 +955,7 @@ void DomainInfo::DuplicateIntradomainTopology()
     }
 
     api_msg* msg = api_msg_new(MSG_LSA, ACT_QUERY, 0, NULL, NarbDomainInfo.domain_id, get_narb_seqnum(), NarbDomainInfo.domain_id);
-    msg->header.options = (LSA_QUERY_PHY |LSA_QUERY_L2SC);
+    msg->header.options = SystemConfig::auto_topo_rce_options == 0 ? (LSA_QUERY_PHY |LSA_QUERY_L2SC | LSA_QUERY_ANY_DOMAIN) : SystemConfig::auto_topo_rce_options;
     msg->header.chksum = MSG_CHKSUM(msg->header);
 
     rce_client.GetWriter()->WriteMessage(msg);

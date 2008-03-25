@@ -49,6 +49,8 @@ int SystemConfig::rce_pri_port = 2678;
 string SystemConfig::rce_sec_host;
 int SystemConfig::rce_sec_port = 0;
 
+u_int32_t SystemConfig::auto_topo_rce_options = 0;
+
 int SystemConfig::narb_ospfd_local_port_inter = 5000;
 int SystemConfig::narb_ospfd_local_port_intra = 5010;
 
@@ -189,6 +191,8 @@ static int blk_code (char *buf)
         return CONFIG_TE_PROFILE;
     else if (strstr(buf, "auto-link"))
         return CONFIG_AUTO_LINK;
+    else if (strstr(buf, "auto-topo-rce"))
+        return CONFIG_AUTO_TOPO_RCE;
     else if (strstr(buf, "cli"))
         return CONFIG_CLI;
     else
@@ -664,6 +668,32 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             }
         }
         break;
+      case  CONFIG_AUTO_TOPO_RCE:
+        {
+            if (strstr(blk_body, "abs") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_ABS;
+            if (strstr(blk_body, "phy") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PHY;
+            if (strstr(blk_body, "any-domain") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_ANY_DOMAIN;
+            if (strstr(blk_body, "fsc") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_FSC;
+            if (strstr(blk_body, "lsc") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_LSC;
+            if (strstr(blk_body, "tdm") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_TDM;
+            if (strstr(blk_body, "l2sc") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_L2SC;
+            if (strstr(blk_body, "psc1") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC1;
+            if (strstr(blk_body, "psc2") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC2;
+            if (strstr(blk_body, "psc3") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC3;
+            if (strstr(blk_body, "psc4") == 0)
+                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC4;
+        }
+        break;
       case CONFIG_CLI:
         {
             char pass[20];
@@ -762,7 +792,10 @@ int ConfigFile::ReadConfigParameter(char * buf, char * id, char * fmt, void * pa
     str = strstr(buf, id);
     if (!str)
         return 0;
-  
+
+    if (!fmt)
+        return 1;
+
     // return 1 if successful, otherwise 0
     return sscanf(str + strlen(id) + 1, fmt, parameter);
 }

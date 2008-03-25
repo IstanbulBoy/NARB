@@ -121,6 +121,8 @@ class SystemConfig
     static string rce_sec_host;
     static int rce_sec_port;
 
+    static u_int32_t auto_topo_rce_options;
+
     static int narb_ospfd_local_port_inter;
     static int narb_ospfd_local_port_intra;
 
@@ -169,6 +171,7 @@ enum config_code {
   CONFIG_LINK,
   CONFIG_TE_PROFILE,
   CONFIG_AUTO_LINK,
+  CONFIG_AUTO_TOPO_RCE,
   CONFIG_INTER_DOMAIN_TE_LINK,
   CONFIG_CLI,
   CONFIG_DOMAIN_ID,

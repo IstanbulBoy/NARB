@@ -138,6 +138,7 @@ public:
 #define	LSA_QUERY_PSC2 0x0200
 #define	LSA_QUERY_PSC3 0x0400
 #define	LSA_QUERY_PSC4 0x0800
+#define	LSA_QUERY_ANY_DOMAIN 0x1000
 
 // data structure describing associating of remote if_addr of an  inter-domain 
 // TE-link with the narb in a neighboring domain
@@ -260,7 +261,7 @@ public:
     void CleanupAutoLinks();
     void HideTopology ();
     void ExposeTopology ();
-    void DuplicateIntradomainTopology();
+    void RetrieveAndDuplicateIntradomainTopology();
 
     //Zebra OSPFd API
     bool IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer);
