@@ -1063,7 +1063,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
             }
             else
             {
-                LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown LSA type %d\n", lsa->type);
+                LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown/un-parsable LSA type %d\n");
                 delete rc;
             }
         }
