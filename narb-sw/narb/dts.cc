@@ -972,7 +972,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
         return;
     }
     else if (rmsg->header.action == ACT_ERROR)
-    {
+    {
         LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned error code %d\n", ntohl(*(u_int32_t*)rmsg->body));
         api_msg_delete(rmsg);
         return;
