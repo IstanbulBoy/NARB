@@ -664,11 +664,20 @@ bool DomainInfo::IsOriginateInterfaceReady (ZebraOspfWriter* oc_writer)
 // different advertising router ids instead of using the id of OSPFd only.
 int DomainInfo::OriginateTopology (ZebraOspfWriter* oc_writer)
 {
+    static int counter_auto_topo = 1;
     int ret = 0;
     
-    //Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
-    //NarbDomainInfo.CleanupAutoLinks();
-    NarbDomainInfo.ProbeAutoLinks();
+    if (NarbDomainInfo.auto_links.size() > 0 && counter_auto_topo > 0)
+    {//$$$$ Automatically probing/refreshing virtual te links using intRA-domain OSPFd CSPF requests
+        //NarbDomainInfo.CleanupAutoLinks();
+        NarbDomainInfo.ProbeAutoLinks();
+        counter_auto_topo--;
+    }
+    else if (SystemConfig::auto_topo_rce_options != 0 && counter_auto_topo > 0)
+    {//$$$$ Retrieve topology from RCE and duplicate it into the NARB abstract topology.
+        NarbDomainInfo.RetrieveAndDuplicateIntradomainTopology();
+        counter_auto_topo--;
+    }
 
     // originate router-id LSA's
     router_id_info * router_id = NarbDomainInfo.FirstRouterId();
@@ -972,7 +981,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
         return;
     }
     else if (rmsg->header.action == ACT_ERROR)
-    {
+    {
         LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned error code %d\n", ntohl(*(u_int32_t*)rmsg->body));
         api_msg_delete(rmsg);
         return;
