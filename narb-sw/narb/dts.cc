@@ -1051,7 +1051,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
                     SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_UNRSV_BW);
 
                     link_ifswcap_specific_vlan* vlan_info = (link_ifswcap_specific_vlan*)((char*)iscd + sizeof(IfSwCapDesc) - 4);
-                    if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons(vlan_info->version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
+                    if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons(vlan_info->version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
                     {
                         memcpy(link->vtagBitMask, vlan_info->bitmask, MAX_VLAN_NUM/8);
                         SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
