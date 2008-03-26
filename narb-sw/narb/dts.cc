@@ -1010,9 +1010,6 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
         }
         else if (rmsg->header.action == ACT_INSERT)
         {
-            lsa_header* lsa = (lsa_header*)rmsg->body;
-            if (lsa->type != 10)
-                continue;
             LSAHandler lsaHandler;
             lsaHandler.Load(rmsg);
             Resource *rc = lsaHandler.Parse();
@@ -1067,6 +1064,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
             else
             {
                 LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown LSA type %d\n", lsa->type);
+                delete rc;
             }
         }
         else
