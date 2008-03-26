@@ -974,9 +974,9 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
     {
         return;
     }
-    else if (rmsg->header.type != MSG_LSA || rmsg->header.action != ACT_ERROR && rmsg->header.action != ACT_ACK)
+    else if (rmsg->header.type_8 != MSG_LSA || rmsg->header.action != ACT_ERROR && rmsg->header.action != ACT_ACK)
     {
-        LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unexpected messae (type: %d, action: %d)\n", rmsg->header.type, rmsg->header.action);
+        LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unexpected messae (type: %d, action: %d)\n", rmsg->header.type_8, rmsg->header.action);
         api_msg_delete(rmsg);
         return;
     }
