@@ -112,7 +112,7 @@ router_id_info* DomainInfo::LookupRouterById(in_addr id)
     return NULL;
 }
 
-link_info::link_info(): opaque_id(0), hide(true), info_flag(0)
+link_info::link_info(): opaque_id(0), hide(false), info_flag(0)
 {
     ISCD * iscd = new ISCD;
     memset(iscd, 0, sizeof(ISCD));

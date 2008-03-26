@@ -671,27 +671,27 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
       case  CONFIG_AUTO_TOPO_RCE:
         {
             if (strstr(blk_body, "abs") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_ABS;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_ABS;
             if (strstr(blk_body, "phy") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PHY;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_PHY;
             if (strstr(blk_body, "any-domain") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_ANY_DOMAIN;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_ANY_DOMAIN;
             if (strstr(blk_body, "fsc") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_FSC;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_FSC;
             if (strstr(blk_body, "lsc") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_LSC;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_LSC;
             if (strstr(blk_body, "tdm") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_TDM;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_TDM;
             if (strstr(blk_body, "l2sc") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_L2SC;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_L2SC;
             if (strstr(blk_body, "psc1") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC1;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC1;
             if (strstr(blk_body, "psc2") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC2;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC2;
             if (strstr(blk_body, "psc3") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC3;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC3;
             if (strstr(blk_body, "psc4") == 0)
-                SystemConfig::auto_topo_rce_options &= LSA_QUERY_PSC4;
+                SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC4;
         }
         break;
       case CONFIG_CLI:
