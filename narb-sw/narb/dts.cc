@@ -1059,12 +1059,10 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
                 }
                 AddLink(link);
                 SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_INTRADOMAIN_DUP);
-                delete rc;
             }
             else
             {
                 LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown/un-parsable LSA type %d\n");
-                delete rc;
             }
         }
         else
