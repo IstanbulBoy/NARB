@@ -448,7 +448,7 @@ bool LSARetriever::Parse(api_msg* msg)
     ucid = ntohl(msg->hdr.ucid);
     seqnum = ntohl(msg->hdr.msgseq);
     query_options = ntohl(msg->hdr.options);
-    if (query_options = 0)
+    if (query_options == 0)
         return false;
     domain_mask = ntohl(msg->hdr.tag);
     api_msg_delete(msg);
