@@ -452,6 +452,7 @@ bool LSARetriever::Parse(api_msg* msg)
         return false;
     domain_mask = ntohl(msg->hdr.tag);
     api_msg_delete(msg);
+    return true;
 }
 
 int LSARetriever::RetrieveTopology (bool physical)

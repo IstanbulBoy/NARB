@@ -100,8 +100,8 @@ rce_test_SOURCES = \
 	rce_test.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_oscars.cc rce_subnet.cc terce_apiclient.cc
 
 
-rce_LDADD = -lc -lstdc++ -lz
-rce_test_LDADD = -lc -lstdc++ -lz
+rce_LDADD = -lc -lstdc++ -lz -L/usr/lib -L/usr/local/lib
+rce_test_LDADD = -lc -lstdc++ -lz -L/usr/lib -L/usr/local/lib
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
