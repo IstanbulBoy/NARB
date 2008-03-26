@@ -964,7 +964,7 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
     }
 
     api_msg* msg = api_msg_new(MSG_LSA, ACT_QUERY, 0, NULL, NarbDomainInfo.domain_id, get_narb_seqnum(), NarbDomainInfo.domain_id);
-    msg->header.options = SystemConfig::auto_topo_rce_options;
+    msg->header.options = htonl(SystemConfig::auto_topo_rce_options);
     msg->header.chksum = MSG_CHKSUM(msg->header);
 
     rce_client.GetWriter()->WriteMessage(msg);
