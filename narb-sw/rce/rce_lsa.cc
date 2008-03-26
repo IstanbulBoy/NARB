@@ -553,13 +553,7 @@ int LSARetriever::RetrieveLsa(in_addr adv_id, u_char lsa_type, u_char opaque_typ
         return -1;
     }
 
-    int ret = 0;
-    if (msg->hdr.action == ACT_ERROR) 
-    {
-        ret = ntohl(msg->hdr.tag);
-    }
-    api_msg_delete(msg);
-    return ret;
+    return 0;
 }
 
 int LSARetriever::RetrieveRouterId (RouterId* rtid)

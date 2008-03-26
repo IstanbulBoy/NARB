@@ -1067,7 +1067,6 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
             else
             {
                 LOGF("DomainInfo::RetrieveIntraDomainTopology: RCE client returned unknown LSA type %d\n", lsa->type);
-                api_msg_delete(rmsg);
             }
         }
         else
