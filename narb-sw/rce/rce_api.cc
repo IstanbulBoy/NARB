@@ -168,7 +168,7 @@ void APIReader::HandleMessage (api_msg *msg)
             {
                 ack_id = 0;
                 rmsg = api_msg_new(MSG_LSA, ACT_ACK, &ack_id, ntohl(msg->hdr.ucid), ntohl(msg->hdr.msgseq), 4);
-                api_writer->PostMessage(rmsg); //temp: always return a MSG_ACK
+                api_writer->WriteMessage(rmsg); //temp: always return a MSG_ACK
                 lsarEvent->SetApiReader(this);
                 lsarEvent->SetApiWriter(api_writer);
                 lsarEvent->SetAutoDelete(true);

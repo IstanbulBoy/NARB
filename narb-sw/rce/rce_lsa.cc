@@ -553,13 +553,6 @@ int LSARetriever::RetrieveLsa(in_addr adv_id, u_char lsa_type, u_char opaque_typ
         return -1;
     }
 
-    msg = api_reader->ReadMessage();
-    if (!msg)
-    {
-        LOG ("LSARetriever::RetrieveLsa / ReadMessage failed\n" << endl);
-        return -1;
-    }
-
     int ret = 0;
     if (msg->hdr.action == ACT_ERROR) 
     {
