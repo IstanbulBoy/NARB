@@ -256,13 +256,13 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
 
         case CONFIG_ALGORITHM:
           {
-            if (strstr(blk_body, "mrn-default") == 0)
+            if (strstr(blk_body, "mrn-default") != NULL)
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
-            else if (strstr(blk_body, "mrn-cg") == 0)
+            else if (strstr(blk_body, "mrn-cg") != NULL)
                 SystemConfig::pce_algorithm = MRN_CG;
-            else if (strstr(blk_body, "mrn-oscars") == 0)
+            else if (strstr(blk_body, "mrn-oscars") != NULL)
                 SystemConfig::pce_algorithm = MRN_OSCARS;
-            else if (strstr(blk_body, "spf") == 0)
+            else if (strstr(blk_body, "spf") != NULL)
                 SystemConfig::pce_algorithm = SPF;
             else
             {

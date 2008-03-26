@@ -670,27 +670,27 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
         break;
       case  CONFIG_AUTO_TOPO_RCE:
         {
-            if (strstr(blk_body, "abs") == 0)
+            if (strstr(blk_body, "abs") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_ABS;
-            if (strstr(blk_body, "phy") == 0)
+            if (strstr(blk_body, "phy") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_PHY;
-            if (strstr(blk_body, "any-domain") == 0)
+            if (strstr(blk_body, "any-domain") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_ANY_DOMAIN;
-            if (strstr(blk_body, "fsc") == 0)
+            if (strstr(blk_body, "fsc") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_FSC;
-            if (strstr(blk_body, "lsc") == 0)
+            if (strstr(blk_body, "lsc") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_LSC;
-            if (strstr(blk_body, "tdm") == 0)
+            if (strstr(blk_body, "tdm") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_TDM;
-            if (strstr(blk_body, "l2sc") == 0)
+            if (strstr(blk_body, "l2sc") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_L2SC;
-            if (strstr(blk_body, "psc1") == 0)
+            if (strstr(blk_body, "psc1") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC1;
-            if (strstr(blk_body, "psc2") == 0)
+            if (strstr(blk_body, "psc2") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC2;
-            if (strstr(blk_body, "psc3") == 0)
+            if (strstr(blk_body, "psc3") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC3;
-            if (strstr(blk_body, "psc4") == 0)
+            if (strstr(blk_body, "psc4") != NULL)
                 SystemConfig::auto_topo_rce_options |= LSA_QUERY_PSC4;
         }
         break;
