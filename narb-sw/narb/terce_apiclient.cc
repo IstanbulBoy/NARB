@@ -685,6 +685,13 @@ void TerceApiTopoWriter::PostMessage (api_msg *msg)
         eventMaster.Schedule(this);
 }
 
+int TerceApiTopoWriter::SendNoop()
+{
+    u_int32_t ucid = server->DomainId();
+    api_msg * msg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_NOOP, 0, NULL, ucid, get_narb_seqnum(), server->DomainId());
+    return WriteMessage(msg);
+}
+
 int TerceApiTopoWriter::OriginateLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen)
 {
     //$$$$ no originating interface and area number required in NARB-TERCE API

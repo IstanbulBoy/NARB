@@ -135,6 +135,7 @@ public:
     virtual void Run ();
     int WriteMessage(api_msg *msg);
     void PostMessage(api_msg *msg);
+    int SendNoop();
     int OriginateLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);
     int DeleteLsa(in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id);
     int UpdateLsa( in_addr adv_id, u_char lsa_type, u_char opaque_type, u_int32_t opaque_id, void * opaquedata, int opaquelen);

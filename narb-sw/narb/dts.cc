@@ -1183,6 +1183,8 @@ int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
         link = NarbDomainInfo.NextLink();
     }
 
+    tc_writer->SendNoop();
+
     return ret;
 }
 
