@@ -319,6 +319,7 @@ struct te_link_subtlv_link_ifswcap
        } ifswcap_specific_info;
   } link_ifswcap_data;
 };
+#define ISCD_MADATORY_SIZE 36
 
 #define DRAGON_TLV_TYPE_BASE 0x8800
 #define TE_LINK_SUBTLV_RESV_SCHEDULE  DRAGON_TLV_TYPE_BASE + 1

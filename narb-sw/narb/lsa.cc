@@ -32,6 +32,7 @@
  */
 #include "lsa.hh"
 #include "log.hh"
+#include "toolbox.hh"
 
 void LSAHandler::Run()
 {
@@ -219,7 +220,9 @@ Resource* LSAHandler::Parse()
         			break;
         		case TE_LINK_SUBTLV_LINK_IFSWCAP:
                             swcap = new ISCD;
-                            memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, sizeof(ISCD));
+                            memcpy(swcap, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
+                            for (i = 0; i < 8; i++)
+                                ntohf_mbps(swcap->max_lsp_bw[i]); 
                             link->iscds.push_back(swcap);
         		       #ifdef HAVE_EXT_ATTR
                                 assert (a_index > 0);
@@ -231,7 +234,7 @@ Resource* LSAHandler::Parse()
                                 link->attrTable[a_index].l = pe->dataLen;
                                 link->attrTable[a_index].p = &link->iscds;
                             #endif
-        			break;
+        			break;                           
                     case TE_LINK_SUBTLV_LINK_IFADCAP:
                             adcap = new IACD;
                             memcpy(adcap, (char*)sub_tlvh+TLV_HDR_SIZE, sizeof(IACD));
