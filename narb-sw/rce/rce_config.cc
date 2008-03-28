@@ -56,7 +56,7 @@ int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;
 
 int SystemConfig::delta_expire_query = 10;
-int SystemConfig::delta_expire_reserve = 0;
+int SystemConfig::delta_expire_reserve = 30;
 int SystemConfig::delta_expire_subnet_reserve = 86400; // 86400 seconds == 24 hours
 
 string SystemConfig::narb_host("localhost");
