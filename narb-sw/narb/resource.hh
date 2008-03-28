@@ -146,9 +146,34 @@ struct IfSwCapDesc
     u_char	reserved[2];
     float max_lsp_bw[8];
 // ISCD specific information defined below
-    float min_lsp_bw;
-    u_char padding[4];
+    union {
+        float min_lsp_bw;
+	 struct {
+            u_int16_t	length;
+            u_int16_t	version;
+            u_char      bitmask[MAX_VLAN_NUM/8];
+            u_char      bitmask_alloc[MAX_VLAN_NUM/8];
+        }vlan_info;
+        struct {
+        	u_int16_t		length;
+        	u_int16_t	 	version;
+        	u_int8_t		subnet_uni_id;
+        	u_int8_t		first_timeslot;
+        	u_char		swtype_ext;
+        	u_char		encoding_ext;
+        	u_int32_t		tna_ipv4;
+        	u_int32_t		nid_ipv4;
+        	u_int32_t		data_ipv4;
+        	u_int32_t		logical_port_number;
+        	u_int32_t		egress_label_downstream;
+        	u_int32_t		egress_label_upstream;
+        	char			control_channel[12];
+        	char			node_name[16];
+        	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8];
+        } subnet_uni_info;
+    }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
+#define ISCD_MADATORY_SIZE 36
 
 struct IfAdptCapDesc
 {

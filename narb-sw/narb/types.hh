@@ -56,5 +56,8 @@
 #ifndef MAX_WAVE_NUM
 #define MAX_WAVE_NUM 40
 #endif
+#ifndef MAX_TIMESLOTS_NUM
+#define MAX_TIMESLOTS_NUM 192
+#endif
 
 #endif
