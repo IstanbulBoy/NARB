@@ -370,18 +370,17 @@ private:
     struct timeval modifiedTime;
 
 public:
-    Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId) {Init();}
-    Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId) {Init();}
+    Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId): Resource(type_val, domain, advRt, lnkId), lclIfAddr(0), rmtIfAddr(0) { Init(); }
+    Link(u_int32_t advRtId, u_int32_t lnkId): Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId), lclIfAddr(0), rmtIfAddr(0)  { Init(); }
     Link(ResourceType type_val, u_int32_t domain, u_int32_t advRt, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf):
-        Resource(type_val, domain, advRt, lnkId) {Init(); lclIfAddr = lclIf; rmtIfAddr = rmtIf; }
+        Resource(type_val, domain, advRt, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf) { Init(); }
     Link(u_int32_t advRtId, u_int32_t lnkId, u_int32_t lclIf, u_int32_t rmtIf): 
-        Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId)  {Init(); lclIfAddr = lclIf; rmtIfAddr = rmtIf; }
+        Resource(RTYPE_LOC_PHY_LNK, SystemConfig::domainMask, advRtId, lnkId), lclIfAddr(lclIf), rmtIfAddr(rmtIf)   { Init(); }
     Link(Link* link);
     void Init()  
         { 
             linkType = 0; maxBandwidth = maxReservableBandwidth = minReservableBandwidth = 0; metric = 0;
-            lclId = rmtId = 0; lclIfAddr = rmtIfAddr = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0;
-            pDeltaList = NULL; gettimeofday (&modifiedTime, NULL);
+            lclId = rmtId = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0; pDeltaList = NULL; gettimeofday (&modifiedTime, NULL);
         }
     virtual ~Link();
     u_int32_t LclIfAddr() {return lclIfAddr;}
