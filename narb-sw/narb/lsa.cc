@@ -159,19 +159,23 @@ Resource* LSAHandler::Parse()
                             #endif
         			break;
         		case TE_LINK_SUBTLV_MAX_BW:
-        			link->maxBandwidth = ntohl((u_int32_t)((struct te_link_subtlv_max_bw *)sub_tlvh)->value);
+        			link->maxBandwidth = ((struct te_link_subtlv_max_bw *)sub_tlvh)->value;
+                            ntohf_mbps(link->maxReservableBandwidth);
         		       #ifdef HAVE_EXT_ATTR
                                 link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, &link->maxBandwidth);
                             #endif
         			break;
         		case TE_LINK_SUBTLV_MAX_RSV_BW:
-        			link->maxReservableBandwidth = ntohl((u_int32_t)((struct te_link_subtlv_max_rsv_bw *)sub_tlvh)->value);
+        			link->maxReservableBandwidth =((struct te_link_subtlv_max_rsv_bw *)sub_tlvh)->value;
+                            ntohf_mbps(link->maxReservableBandwidth);
         		       #ifdef HAVE_EXT_ATTR
                                 link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, &link->maxReservableBandwidth);
                             #endif
         			break;
         		case TE_LINK_SUBTLV_UNRSV_BW:
         			memcpy(link->unreservedBandwidth, ((struct te_link_subtlv_unrsv_bw *)sub_tlvh)->value, sizeof(float) * 8);
+                            for (i = 0; i < 8; i++)
+                                ntohf_mbps(link->unreservedBandwidth[i]);
         		       #ifdef HAVE_EXT_ATTR
                                 link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, link->unreservedBandwidth);
                             #endif
