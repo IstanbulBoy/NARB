@@ -1029,9 +1029,11 @@ void DomainInfo::RetrieveAndDuplicateIntradomainTopology()
                 link->linkType = 1;
                 Link* link_rc = (Link*)rc;
                 link->lclIfAddr = link_rc->LclIfAddr();
-                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
+                if (link->lclIfAddr !=0)
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
                 link->rmtIfAddr = link_rc->RmtIfAddr();
-                SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
+                if (link->rmtIfAddr !=0)
+                    SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
                 link->maxBandwidth = link_rc->MaxBandwidth();
                 SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
                 link->maxReservableBandwidth = link_rc->MaxReservableBandwidth();
