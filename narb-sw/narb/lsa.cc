@@ -160,7 +160,7 @@ Resource* LSAHandler::Parse()
         			break;
         		case TE_LINK_SUBTLV_MAX_BW:
         			link->maxBandwidth = ((struct te_link_subtlv_max_bw *)sub_tlvh)->value;
-                            ntohf_mbps(link->maxReservableBandwidth);
+                            ntohf_mbps(link->maxBandwidth);
         		       #ifdef HAVE_EXT_ATTR
                                 link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, &link->maxBandwidth);
                             #endif
