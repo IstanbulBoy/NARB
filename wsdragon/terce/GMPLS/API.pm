@@ -27,11 +27,13 @@ use strict;
 use warnings;
 use Aux;
 use Log;
+use Socket;
+use Compress::Zlib;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -42,6 +44,7 @@ our @EXPORT_OK;
 use constant TERCE_TOPO_SYNC => 0x11;
 use constant TERCE_TOPO_ASYNC => 0x12;
 
+use constant ACT_NOP => 0x00;
 use constant ACT_QUERY => 0x01;
 use constant ACT_INSERT => 0x02; 
 use constant ACT_DELETE => 0x03;
@@ -70,17 +73,16 @@ use constant LINK_TE_LSA => 2;
 use constant LINK_LOCAL_TE_LSA => 3;
 
 # Opaque LSA types
-use constant OPAQUE_TYPE_TE_LINKLOCAL_LSA => 1;
 use constant OPAQUE_TYPE_TE_AREA_LSA => 1;
 use constant OPAQUE_TYPE_SYCAMORE_OPTICAL_TOPOLOGY_DESC => 2;
 use constant OPAQUE_TYPE_GRACE_LSA => 3;
-
-use constant HDR_SIZE => 20;
+use constant OPAQUE_TYPE_RTR_INFO_LSA => 4;
 
 # TLVs
-use constant TLV_HDR_SIZE => 4;
 use constant TE_TLV_ROUTER_ADDR => 1;
 use constant TE_TLV_LINK => 2;
+
+# sub-TLVs
 use constant TE_LINK_SUBTLV_LINK_TYPE => 1;
 use constant TE_LINK_SUBTLV_LINK_ID => 2;
 use constant TE_LINK_SUBTLV_LCLIF_IPADDR => 3; # Local Interface IP Address
@@ -92,16 +94,41 @@ use constant TE_LINK_SUBTLV_UNRSV_BW => 8; # Unreserved Bandwidth
 use constant TE_LINK_SUBTLV_RSC_CLSCLR => 9; # Administrative Group, a.k.a. Resource Class/Color
 use constant TE_LINK_SUBTLV_LINK_LCRMT_ID => 11; # Link Local/Remote Identifiers
 use constant TE_LINK_SUBTLV_LINK_IFSWCAP => 15;
-
-use constant DRAGON_TLV_TYPE_BASE => 0x4000;
+use constant DRAGON_TLV_TYPE_BASE => 0x8800;
 use constant TE_LINK_SUBTLV_RESV_SCHEDULE => DRAGON_TLV_TYPE_BASE + 1;
 use constant TE_LINK_SUBTLV_LINK_IFADCAP => DRAGON_TLV_TYPE_BASE + 2;
 use constant TE_LINK_SUBTLV_DOMAIN_ID => DRAGON_TLV_TYPE_BASE + 0x10;
 
-my %msg_type = 	(	0x11 => "TERCE_TOPO_SYNC",
+# sub-TLV fields
+use constant LINK_TYPE_SUBTLV_VALUE_PTP => 1;
+use constant LINK_TYPE_SUBTLV_VALUE_MA => 2;
+
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 => 1;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_PSC2 => 2;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_PSC3 => 3;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_PSC4 => 4;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_L2SC => 51;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_TDM => 100;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_LSC => 150;
+use constant LINK_IFSWCAP_SUBTLV_SWCAP_FSC => 200;
+
+use constant IFSWCAP_SPECIFIC_VLAN_BASIC => 0x0002;
+use constant IFSWCAP_SPECIFIC_VLAN_ALLOC => 0x0004;
+use constant IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z => 0x8000;
+use constant IFSWCAP_SPECIFIC_SUBNET_UNI => 0x4000;
+
+use constant LSA_HDR_SIZE => 20;
+use constant TLV_HDR_SIZE => 4;
+use constant TLV_ALIGN => 4;
+
+
+# _X translators
+my %msg_type_X = 	(
+			0x11 => "TERCE_TOPO_SYNC",
 			0x12 => "TERCE_TOPO_ASYNC");
 
-my %msg_action =	(	
+my %msg_action_X =	(	
+			0x00 => "ACT_NOP",
 			0x01 => "ACT_QUERY",
 			0x02 => "ACT_INSERT", 
 			0x03 => "ACT_DELETE",
@@ -111,10 +138,83 @@ my %msg_action =	(
 			0x07 => "ACT_ERROR",
 			0x0A => "ACT_INIT",
 			0x0B => "ACT_ALIVE");
+
+my %lsa_type_X = 	(
+			1 => "OSPF_ROUTER_LSA",
+			2 => "OSPF_NETWORK_LSA",
+			3 => "OSPF_SUMMARY_LSA",
+			4 => "OSPF_ASBR_SUMMARY_LSA",
+			5 => "OSPF_AS_EXTERNAL_LSA",
+			7 => "OSPF_AS_NSSA_LSA",
+			9 => "OSPF_OPAQUE_LINK_LSA",
+			10 => "OSPF_OPAQUE_AREA_LSA",
+			11 => "OSPF_OPAQUE_AS_LSA");
+
+my %te_lsa_type_X = 	(
+			0 => "NOT_TE_LSA",
+			1 => "ROUTER_ID_TE_LSA",
+			2 => "LINK_TE_LSA",
+			3 => "LINK_LOCAL_TE_LSA");
+		
+my %opaque_lsa_type_X =	(
+			1 => "OPAQUE_TYPE_TE_AREA_LSA",
+			2 => "OPAQUE_TYPE_SYCAMORE_OPTICAL_TOPOLOGY_DESC",
+			3 => "OPAQUE_TYPE_GRACE_LSA",
+			4 => "OPAQUE_TYPE_RTR_INFO_LSA");
+
+my %tlvs_X = 		(
+			1 => "TE_TLV_ROUTER_ADDR",
+			2 => "TE_TLV_LINK");
+
+my %sub_tlvs_link_X = 	(
+			1 => "TE_LINK_SUBTLV_LINK_TYPE",
+			2 => "TE_LINK_SUBTLV_LINK_ID",
+			3 => "TE_LINK_SUBTLV_LCLIF_IPADDR", # Local Interface IP Address
+			4 => "TE_LINK_SUBTLV_RMTIF_IPADDR", # Remote Interface IP Address
+			5 => "TE_LINK_SUBTLV_TE_METRIC", # Traffic Engineering Metric
+			6 => "TE_LINK_SUBTLV_MAX_BW", # Maximum Bandwidth
+			7 => "TE_LINK_SUBTLV_MAX_RSV_BW", # Maximum Reservable Bandwidth
+			8 => "TE_LINK_SUBTLV_UNRSV_BW", # Unreserved Bandwidth
+			9 => "TE_LINK_SUBTLV_RSC_CLSCLR", # Administrative Group, a.k.a. Resource Class/Color
+			11 => "TE_LINK_SUBTLV_LINK_LCRMT_ID", # Link Local/Remote Identifiers
+			15 => "TE_LINK_SUBTLV_LINK_IFSWCAP",
+			0x8801 => "TE_LINK_SUBTLV_RESV_SCHEDULE",
+			0x8802 => "TE_LINK_SUBTLV_LINK_IFADCAP",
+			0x8810 => "TE_LINK_SUBTLV_DOMAIN_ID");
+
+my %sub_tlvs_link_type_X = 	(
+			1 => "PTP",
+			2 => "MA");
+
+my %sub_tlvs_link_swcap_cap = 	(
+			1 => "LINK_IFSWCAP_SUBTLV_SWCAP_PSC1",
+			2 => "LINK_IFSWCAP_SUBTLV_SWCAP_PSC2",
+			3 => "LINK_IFSWCAP_SUBTLV_SWCAP_PSC3",
+			4 => "LINK_IFSWCAP_SUBTLV_SWCAP_PSC4",
+			51 => "LINK_IFSWCAP_SUBTLV_SWCAP_L2SC",
+			100 => "LINK_IFSWCAP_SUBTLV_SWCAP_TDM",
+			150 => "LINK_IFSWCAP_SUBTLV_SWCAP_LSC",
+			200 => "LINK_IFSWCAP_SUBTLV_SWCAP_FSC");
+
+my %sub_tlvs_link_swcap_enc = 	(
+			1 => "LINK_IFSWCAP_SUBTLV_ENC_PKT",
+			2 => "LINK_IFSWCAP_SUBTLV_ENC_ETH",
+			3 => "LINK_IFSWCAP_SUBTLV_ENC_PDH",
+			4 => "LINK_IFSWCAP_SUBTLV_ENC_RESV1",
+			5 => "LINK_IFSWCAP_SUBTLV_ENC_SONETSDH",
+			6 => "LINK_IFSWCAP_SUBTLV_ENC_RESV2",
+			7 => "LINK_IFSWCAP_SUBTLV_ENC_DIGIWRAP",
+			8 => "LINK_IFSWCAP_SUBTLV_ENC_LAMBDA",
+			9 => "LINK_IFSWCAP_SUBTLV_ENC_FIBER",
+			10 => "LINK_IFSWCAP_SUBTLV_ENC_RESV3",
+			11 => "LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL");
+
+sub parse_tlv($$;$);
+
 sub dump_hdr($) {
 	my ($mr) = @_;
 	Aux::print_dbg_data("----------------------- header -----------------------\n");
-	Aux::print_dbg_data("(%s, %s)\n", $msg_type{$$mr{hdr}{type}}, $msg_action{$$mr{hdr}{action}});
+	Aux::print_dbg_data("(%s, %s)\n", $msg_type_X{$$mr{hdr}{type}}, $msg_action_X{$$mr{hdr}{action}});
 	Aux::print_dbg_data("type action length:\t0x%02X (%u)  0x%02X (%u)  0x%04X (%u)\n", $$mr{hdr}{type}, $$mr{hdr}{type}, $$mr{hdr}{action}, $$mr{hdr}{action}, $$mr{hdr}{length}, $$mr{hdr}{length});
 	Aux::print_dbg_data("ucid:\t\t\t0x%08X (%u)\n", $$mr{hdr}{ucid}, $$mr{hdr}{ucid});
 	Aux::print_dbg_data("seq. number:\t\t0x%08X (%u)\n", $$mr{hdr}{seqn}, $$mr{hdr}{seqn});
@@ -125,15 +225,6 @@ sub dump_hdr($) {
 
 sub parse_lsa($) {
 	my ($dr) = @_;
-}
-
-sub dump_lsa($) {
-	my ($mr) = @_;
-	if(Aux::dbg_lsa()) {
-		dump_hdr($mr);
-		Aux::print_dbg_data("----------------- parsed data ------------------------\n");
-		Aux::print_dbg_data("------------------------------------------------------\n");
-	}
 }
 
 sub dump_data($) {
@@ -179,8 +270,7 @@ sub ack_msg($$;$) {
 	if(defined($e)) {
 		$err = $e;
 	}
-	my $block = pack("CCnNN", $$mr{hdr}{type}, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
-	my $chksum = unpack("%32N3", $block);
+	my $chksum = Aux::chksum("CCnNN", "%32N3", $$mr{hdr}{type}, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
 	my $ack_msg = {
 		"hdr" => {
 			"type" => $$mr{hdr}{type},
@@ -205,13 +295,13 @@ sub ack_msg($$;$) {
 		$$ack_msg{hdr}{tag2}
 	);
 	if(defined($s->send($ack_msg_bin, 0))) {
-		Aux::print_dbg_api("sent ACK for %s to %s:%s\n", $msg_action{$$mr{hdr}{action}},
+		Aux::print_dbg_api("sent ACK for %s to %s:%s\n", $msg_action_X{$$mr{hdr}{action}},
 			$s->peerhost(), $s->peerport()
 		);
 		dump_data($ack_msg);
 	}
 	else {
-		Aux::print_dbg_api("failed to send ACK for %s to %s:%s\n", $msg_action{$$mr{hdr}{action}},
+		Aux::print_dbg_api("failed to send ACK for %s to %s:%s\n", $msg_action_X{$$mr{hdr}{action}},
 			$s->peerhost(), $s->peerport()
 		);
 	}
@@ -260,41 +350,318 @@ sub get_msg($$) {
 	}
 	# and the body
 	if($len > 0) {
-		if(defined($fh[0]->sysread($data, $len))) {
-			$$mr{$sn}{data} =  $data;
+		$n = $fh[0]->sysread($data, $len);
+		if(!defined($n)) {
+			Log::log("err", "recv hdr: $!\n");
+			die "client error: $!\n";
 		}
-		else {
-			Log::log("err", "recv body: $@\n");
-			die "client disconnect\n";
+		if($n==0) {
+			die "client disconnected\n";
 		}
+		$$mr{$sn}{data} =  $data;
 	}
-	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action{$$mr{$sn}{hdr}{action}},
+	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action_X{$$mr{$sn}{hdr}{action}},
 		$fh[0]->peerhost(), $fh[0]->peerport()
 	);
-	if(Aux::dbg_lsa()) {
-		dump_lsa($$mr{$sn});
-	}
-	else {
-		dump_data($$mr{$sn});
-	}
+	dump_data($$mr{$sn});
 	return $sn;
+}
+
+sub parse_tlv_data($$$$) {
+	my ($md, $o, $tmpl, $ar) = @_;
+	#expand the template first
+	while($tmpl =~ /(\D)(\d+)/) {
+		$tmpl = $`;
+		for(my $i=0; $i<$2; $i++) {
+			$tmpl.=$1;
+		}
+		$tmpl .=$';
+	}
+	my $n = length($tmpl);
+	$tmpl = "x[$o]".$tmpl;
+	@$ar = unpack($tmpl, $md);
+	if(@$ar != $n) {
+		return (-1);
+	}
+	for(my $i=0; $i<@$ar; $i++) {
+		if(!defined($$ar[$i])) {
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+# NOTE: wildly recursive
+sub parse_tlv($$;$) {
+	my ($md, $o, $p) = @_;
+	my $ret = 0;
+	my $l = LSA_HDR_SIZE - 2;
+	my ($lsa_len) = unpack("x[$l]n", $md);	
+	# TLV header
+	my ($tlv_type, $tlv_len) = unpack("x[$o]nn", $md);	
+	if(!(defined($tlv_type) && defined($tlv_len))) {
+		Log::log "err", "corrupted LSA (TLV Header)\n";
+		return (-1);
+	}
+	$o += TLV_HDR_SIZE;
+	# top level TLV
+	if(!defined($p)) {
+		if($tlv_type == TE_TLV_ROUTER_ADDR) {
+			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
+			my @res;
+			parse_tlv_data($md, $o, "N", \@res);
+			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
+			return (0);
+		}
+		elsif($tlv_type == TE_TLV_LINK) {
+			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
+			return(parse_tlv($md, $o, TE_TLV_LINK));
+		}
+		else {
+			Log::log "warning", "unknown TLV type ($tlv_type)\n";
+			return (0);
+		}
+	}
+	# sub level TLVs
+	else {
+		# traverse to the end of the sub-TLVs first to see
+		# if all the data are consistent (allign to 4-byte boundary)
+		my $o1 = $o + (($tlv_len+TLV_ALIGN-1)&(~(TLV_ALIGN-1)));
+		if($o1<$lsa_len) {
+			if(parse_tlv($md, $o1, $p)<0) {
+				# this will invalidate the entire chain
+				# before anything gets parsed if error occurs
+				return -1;
+			}
+		}
+		if(exists($sub_tlvs_link_X{$tlv_type})) {
+			Aux::print_dbg_lsa("    sub-TLV: %s(%d)\n", $sub_tlvs_link_X{$tlv_type}, $tlv_len);
+		}
+		my @res;
+		if($tlv_type == TE_LINK_SUBTLV_LINK_TYPE) {
+			if(parse_tlv_data($md, $o, "C", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_type_X{$res[0]});
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_LINK_ID) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       0x%08x\n", $res[0]);
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_LCLIF_IPADDR) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", inet_ntoa(pack("N", $res[0])));
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_RMTIF_IPADDR) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", inet_ntoa(pack("N", $res[0])));
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_TE_METRIC) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %d\n", $res[0]);
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_MAX_BW) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[0])));
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_MAX_RSV_BW) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[0])));
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_UNRSV_BW) {
+			if(parse_tlv_data($md, $o, "N8", \@res)<0) {
+				return (-1);
+			}
+			if(Aux::dbg_lsa()) {
+				for(my $i=0; $i<@res; $i++) {
+					Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[$i])));
+				}
+			}
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_RSC_CLSCLR) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %d\n", $res[0]);
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_LINK_LCRMT_ID) {
+			if(parse_tlv_data($md, $o, "NN", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       0x%08x\n", $res[0]);
+			Aux::print_dbg_lsa("       0x%08x\n", $res[1]);
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_LINK_IFSWCAP) {
+			# common part
+			if(parse_tlv_data($md, $o, "C4N8", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_cap{$res[0]});
+			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_enc{$res[1]});
+			if(Aux::dbg_lsa()) {
+				for(my $i=0; $i<8; $i++) {
+					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, unpack("f", pack("V", $res[$i+4])));
+				}
+			}
+			$o += 36;
+			if($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 ||
+				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC2 ||
+				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC3 ||
+				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4) {
+				if(parse_tlv_data($md, $o, "Nn", \@res)<0) {
+					return (-1);
+				}
+				Aux::print_dbg_lsa("       min. bw: %s\n", unpack("f", pack("V", $res[0])));
+				Aux::print_dbg_lsa("       mtu: %d\n", $res[1]);
+			}
+			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) {
+				if(parse_tlv_data($md, $o, "nn", \@res)<0) {
+					return (-1);
+				}
+				my ($len, $ver) = @res;
+				my $vlan_bitmaps = "";
+				my $tmp_len = 0;
+				if($ver & IFSWCAP_SPECIFIC_SUBNET_UNI) {
+					if(parse_tlv_data($md, $o+4, "nnCCCCNNNNNN", \@res)<0) {
+						return (-1);
+					}
+					Log::log "warning", "subnet UNI TLV. Not parsed.";
+				}
+				else {
+					# uncompress first if needed
+					if($ver & IFSWCAP_SPECIFIC_VLAN_BASIC) {
+						$tmp_len += 512;
+					}
+					if($ver & IFSWCAP_SPECIFIC_VLAN_ALLOC) {
+						$tmp_len += 512;
+					}
+					if($ver & IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z) {
+						$vlan_bitmaps = uncompress(substr($md, $o+4, $len));
+						if(!defined($vlan_bitmaps)) {
+							Log::log "err", "vlan compression error\n";
+							return (-1);
+						}
+					}
+					else {
+						$vlan_bitmaps = substr($md, $o+4, $len);
+					}
+					if(length($vlan_bitmaps) != $tmp_len) {
+						Log::log "err", "vlan bitmask error (length)\n";
+						return (-1);
+					}
+					my $vlans = "";
+					my $alloc_vlans = "";
+					if($tmp_len > 512) {
+						$vlans = substr($vlan_bitmaps, 0, 512);
+						$alloc_vlans = substr($vlan_bitmaps, 512, 512);
+					}
+					else {
+						$vlans = $vlan_bitmaps;
+					}
+					if(Aux::dbg_lsa()) {
+						if(length($vlans)>0) {
+							Aux::print_dbg_lsa("       vlans:");
+							my $bin_s = join("", unpack("B*", $vlans));
+							my $p = 0;
+							while($bin_s =~ s/(1+)//) {
+								Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
+								$p = $+[0] - $-[0];
+							}
+							Aux::print_dbg_lsa("\n");
+						}
+						if(length($alloc_vlans)>0) {
+							Aux::print_dbg_lsa("       alloc. vlans:");
+							my $bin_s = join("", unpack("B*", $alloc_vlans));
+							my $p = 0;
+							while($bin_s =~ s/(1+)//) {
+								Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
+								$p = $+[0] - $-[0];
+							}
+							Aux::print_dbg_lsa("\n");
+						}
+					}
+				}
+			}
+			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) {
+				if(parse_tlv_data($md, $o, "NC", \@res)<0) {
+					return (-1);
+				}
+				Aux::print_dbg_lsa("       min. bw: %s\n", unpack("f", pack("V", $res[0])));
+				Aux::print_dbg_lsa("       indication: %d\n", $res[1]);
+			}
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_RESV_SCHEDULE) {
+			Log::log "warning", "Resv. schedule TLV. Not parsed.";
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_LINK_IFADCAP) {
+			if(parse_tlv_data($md, $o, "C4N8", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       swcap lower: %d\n", $res[0]);
+			Aux::print_dbg_lsa("       enc lower: %d\n", $res[1]);
+			Aux::print_dbg_lsa("       swcap upper: %d\n", $res[2]);
+			Aux::print_dbg_lsa("       enc upper: %d\n", $res[3]);
+			if(Aux::dbg_lsa()) {
+				for(my $i=0; $i<8; $i++) {
+					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, unpack("f", pack("V", $res[$i+4])));
+				}
+			}
+		}
+		elsif($tlv_type == TE_LINK_SUBTLV_DOMAIN_ID) {
+			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+				return (-1);
+			}
+			Aux::print_dbg_lsa("       domain ID: 0x%08x\n", $res[0]);
+		}
+		else{
+			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
+			return (-1);
+		}
+	}
+	return(0);
 }
 
 sub parse_msg($) {
 	my ($md) = @_;
+	my $ret = 0;
 	# LSA header
 	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
 	if(!(defined($age) && defined($age) && defined($age) && defined($age) && 
 			defined($age) && defined($age) && defined($age) && defined($age))) {
-		Log::log "err", "corrupted LSA\n";
+		Log::log "err", "corrupted LSA (LSA Header)\n";
 		return (-1);
 	}
-	printf("%04x %02x %02x %08x  %08x  %08x  %04x  %04x \n", $age, $opts, $type, $id, $rtr, $seqn, $chksum, $len);
+	if($type != OSPF_OPAQUE_AREA_LSA) {
+		Log::log "warning", "unexpected LSA type ($lsa_type_X{$type})\n";
+		return (0);
+	}
+	Aux::print_dbg_lsa("----------------- parsed data ------------------------\n");
+	Aux::print_dbg_lsa("%s from %s (%d)\n", $lsa_type_X{$type}, inet_ntoa(pack("N", $rtr)), $len);
+	$ret = parse_tlv($md, LSA_HDR_SIZE);
+	Aux::print_dbg_lsa("------------------------------------------------------\n");
+	return($ret);
 }
 
 sub is_sync_init($) {
 	my ($mr) = @_;
 	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INIT));
+}
+
+sub is_delim($) {
+	my ($mr) = @_;
+	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_NOP));
 }
 
 sub is_sync_insert($) {

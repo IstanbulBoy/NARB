@@ -32,7 +32,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -99,13 +99,18 @@ sub run() {
 				}
 				GMPLS::API::ack_msg($sock, $msg{$sn}, $err);
 			}
+			elsif(GMPLS::API::is_delim($msg{$sn})) {
+			}
+			else {
+				GMPLS::API::ack_msg($sock, $msg{$sn});
+			}
 		};
 		if($@) {
 			die "$@\n";
 		}
 		threads->yield();
 	}
-	Aux::print_dbg_run("exiting (%s) server thread\n", $name);
+	Aux::print_dbg_run("exiting %s server thread\n", $name);
 	if(defined($ctrl_sock)) {
 		close($ctrl_sock);
 	}

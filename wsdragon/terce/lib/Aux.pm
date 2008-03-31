@@ -10,7 +10,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -51,7 +51,7 @@ sub get_dbg_sys($) {
 		$v eq "net"?	(1 << NET_DBG):
 		$v eq "api"?	(1 << API_DBG):
 		$v eq "data"?	(1 << DATA_DBG):
-		$v eq "lsa"?	(1 << LSA_DBG) | (1 << DATA_DBG):0
+		$v eq "lsa"?	(1 << LSA_DBG):0
 		;
 }
 
@@ -114,7 +114,13 @@ sub print_dbg_api($;@) {
 }
 
 sub print_dbg_data($;@) {
-	print_dbg(DATA_DBG, @_);
+	if(!dbg_lsa()) {
+		print_dbg(DATA_DBG, @_);
+	}
+}
+
+sub print_dbg_lsa($;@) {
+	print_dbg(LSA_DBG, @_);
 }
 
 sub dump_config($;$) {
@@ -137,6 +143,13 @@ sub dump_config($;$) {
 			dump_config($$hr{$k}, defined($u)?"$u:$k":$k);
 		}
 	}
+}
+
+sub chksum($$@) {
+	my ($ppat, $upat, @d) = @_;
+	my $block = pack($ppat, @d);
+	my $chksum = unpack($upat, $block);
+	return $chksum;
 }
 
 1;
