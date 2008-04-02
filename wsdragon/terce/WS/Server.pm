@@ -25,13 +25,14 @@ package WS::Server;
 
 use strict;
 use warnings;
-use Aux;
+use WS::API;
+use IO::Socket::INET;
 use SOAP::Transport::HTTP;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -47,14 +48,20 @@ sub new {
 	($lport)  = @_;
 	my $self = {};
 	bless $self;
-	$srvr = new SOAP::Transport::HTTP::Daemon(LocalAddr => 'localhost', LocalPort => 80)->dispatch_to('/Your/Path/To/Deployed/Modules', 'Module::Name', 'Module::method');
+	$srvr = new SOAP::Transport::HTTP::Daemon(
+		LocalAddr => inet_ntoa(INADDR_ANY),
+		LocalPort => $lport,
+		ReuseAddr => 1,
+		Timeout => 5)->dispatch_to(qw(WS::API::findPath WS::API::selectNetworkTopology WS::API::insertNetworkTopology));
 	return $self;
 }
 
 sub run() {
 	while(!$::ctrlC) {
+		$srvr->handle;
 		threads->yield();
 	}
+	$srvr->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting web services thread\n");
 }
 

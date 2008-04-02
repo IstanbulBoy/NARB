@@ -46,6 +46,7 @@ $::ctrlC = 0;
 sub usage() {
 	print("usage: terce [-h] [-d] [-p <port>]\n");
 	print("       -d: daemonize\n");
+	print("       -l: <log file> log file (default: /var/log/terce.log)\n");
 	print("       -p <port>: listen on this port (default 2690)\n");
 	print("       -h: prints this message\n");
 	print("  Long options:\n");
