@@ -32,7 +32,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,10 +44,11 @@ my $name = undef;
 my $sock = undef;
 my $select = undef;
 my $ctrl_sock = undef;
+my $tq = undef;
 
 sub new {
 	shift;
-	($sock)  = @_;
+	($sock, $tq)  = @_;
 	$select = new IO::Select($sock);
 	my $self = {};
 	bless $self;
@@ -94,7 +95,7 @@ sub run() {
 				GMPLS::API::ack_msg($sock, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $tq) <0) {
 					$err = 1;
 				}
 				GMPLS::API::ack_msg($sock, $msg{$sn}, $err);

@@ -10,7 +10,7 @@
 
 	<wsdl:documentation>
 		This is WSDL for the path computation service provided by the DRAGON TERCE.
-		VERSION 0.1
+		VERSION 0.9
 	</wsdl:documentation>
 
 	<!-- Element definitons -->
@@ -21,8 +21,8 @@
 			xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/WS"
 			xmlns:rce="http://hopi.internet2.edu/DRAGON/TERCE/RCE"
 	        xmlns:tedb="http://hopi.internet2.edu/DRAGON/TERCE/TEDB">
-			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="TERCE-RCE.xsd"/>
-			<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="TERCE-TEDB.xsd"/>
+		<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/wsdl/TERCE-RCE.xsd"/>
+		<xsd:import namespace="http://hopi.internet2.edu/DRAGON/TERCE/TEDB" schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/wsdl/TERCE-TEDB.xsd"/>
 		</xsd:schema>
 	</wsdl:types>
 	

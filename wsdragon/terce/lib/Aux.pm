@@ -10,7 +10,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -28,7 +28,8 @@ use constant NET_DBG => 4;
 use constant API_DBG => 5;
 use constant DATA_DBG => 6;
 use constant LSA_DBG => 7;
-use constant RAW_DBG => 8;
+use constant WS_DBG => 8;
+use constant RAW_DBG => 9;
 
 my $dbg_sys = undef;
 
@@ -51,7 +52,8 @@ sub get_dbg_sys($) {
 		$v eq "net"?	(1 << NET_DBG):
 		$v eq "api"?	(1 << API_DBG):
 		$v eq "data"?	(1 << DATA_DBG):
-		$v eq "lsa"?	(1 << LSA_DBG):0
+		$v eq "lsa"?	(1 << LSA_DBG):
+		$v eq "ws"?	(1 << WS_DBG):0
 		;
 }
 
@@ -79,6 +81,13 @@ sub dbg_data() {
 sub dbg_lsa() {
 	if(defined($dbg_sys)) {
 		return ($dbg_sys &(1 << LSA_DBG));
+	}
+	return 0;
+}
+
+sub dbg_ws() {
+	if(defined($dbg_sys)) {
+		return ($dbg_sys &(1 << WS_DBG));
 	}
 	return 0;
 }
@@ -121,6 +130,10 @@ sub print_dbg_data($;@) {
 
 sub print_dbg_lsa($;@) {
 	print_dbg(LSA_DBG, @_);
+}
+
+sub print_dbg_ws($;@) {
+	print_dbg(WS_DBG, @_);
 }
 
 sub dump_config($;$) {

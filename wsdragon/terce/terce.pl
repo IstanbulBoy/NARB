@@ -26,9 +26,11 @@ use lib ("/usr/share/dragon/lib", "./lib");
 
 use threads;
 use threads::shared;
+use Thread::Queue;
 
 use Aux;
 use Log;
+use GMPLS::TEDB;
 use GMPLS::Server;
 use WS::Server;
 use strict;
@@ -44,19 +46,22 @@ my @servers = ();
 $::ctrlC = 0;
 
 sub usage() {
-	print("usage: terce [-h] [-d] [-p <port>]\n");
-	print("       -d: daemonize\n");
-	print("       -l: <log file> log file (default: /var/log/terce.log)\n");
-	print("       -p <port>: listen on this port (default 2690)\n");
-	print("       -h: prints this message\n");
-	print("  Long options:\n");
-	print("       --port <port>: listen on this port (default 2690)\n");
-	print("       --wsport <port>: listen on this web services port (default 80)\n");
-	print("       --log: <log file> log file (default: /var/log/terce.log)\n");
-	print("       --dbg: <list> of components to debug (run config narb rce net api data lsa)\n");
-	print("              with no agrument, all the components will become very verbose\n");
-	print("              and the program will not fork.\n");
-	print("       --help: prints this message\n");
+	print <<USG;
+usage: terce [-h] [-d] [-p <port>]
+       -d: daemonize
+       -l: <log file> log file (default: /var/log/terce.log)
+       -p <port>: listen on this port (default 2690)
+       -h: prints this message
+  Long options:
+       --port <port>: listen on this port (default 2690)
+       --wsport <port>: listen on this web services port (default 80)
+       --log: <log file> log file (default: /var/log/terce.log)
+       --dbg: <list> of components to debug:
+              (run config narb rce net api data lsa ws)
+              with no agrument, all the components will become very verbose
+              and the program will not fork.
+       --help: prints this message
+USG
 	exit;
 }
 
@@ -64,7 +69,8 @@ sub usage() {
 
 sub catch_term {
 	my $signame = shift;
-	Log::log("info", "caught SIG$signame\n");
+	Log::log("info", "terminating threads... (SIG$signame)\n");
+	Log::log("info", "(NOTE: the ws server may take up to 5s to terminate)\n");
 	$::ctrlC = 1;
 }
 
@@ -113,12 +119,12 @@ sub init_cfg($) {
 }
 
 # NOTE: running in a different thread here ...
-sub spawn_server($$) {
-	my ($ss, $cs) = @_;
+sub spawn_server($$$) {
+	my ($ss, $cs, $tq) = @_;
 	my $srvr;
 	$ss->close();
 	eval {
-		$srvr = new GMPLS::Server($cs);
+		$srvr = new GMPLS::Server($cs, $tq);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -127,6 +133,21 @@ sub spawn_server($$) {
 		$srvr->run();
 	}
 }
+
+sub start_tedb_th($$) {
+	my ($tqin, $tqout) = @_;
+	my $tedb_th;
+	eval {
+		$tedb_th = new GMPLS::TEDB($tqin, $tqout);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
+	}
+	else {
+		$tedb_th->run();
+	}
+}
+
 
 sub start_ws_server($) {
 	my ($p) = @_;
@@ -232,6 +253,14 @@ if($daemonize) {
 		or die "Can't start a new session: $!";
 }
 eval {
+	# start TEDB thread
+	my $tqin = new Thread::Queue;
+	my $tqout = new Thread::Queue;
+	my $tedb_th = threads->create(\&start_tedb_th, $tqin, $tqout);
+	if($tedb_th) {
+		push(@servers, $tedb_th);
+	}
+
 	# start the SOAP/HTTP server
 	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v});
 	if($sw_server) {
@@ -256,7 +285,7 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock);
+		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, $tqin);
 		$client_sock->close();
 		if($thr) {
 			push(@servers, $thr);
