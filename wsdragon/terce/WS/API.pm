@@ -28,18 +28,20 @@ use warnings;
 use Aux;
 use Log;
 use Socket;
+use GMPLS::Constants;
 use subs qw(findPath selectNetworkTopology insertNetworkTopology);
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
 	@EXPORT_OK   = qw();
 }
 our @EXPORT_OK;
+my ($tqin, $tqout) = (undef, undef);
 
 sub findPath {
 	shift;
@@ -52,11 +54,24 @@ sub selectNetworkTopology {
 	if(!defined($scope)) {
 	}
 	Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
+	my @cmd = ({"cmd"=>TEDB_GET});
+	Aux::send_to_tedb($tqin, @cmd);
+	my $res = Aux::recv_from_tedb($tqout);
+	if($res eq "timeout") {
+		Log::log "warning", "selectNetworkTopology($scope) request timed out\n";
+	}
+	else {
+		return $res;
+	}
 }
 
 sub insertNetworkTopology {
 	shift;
 	Aux::print_dbg_ws("insertNetworkTopology()\n");
+}
+
+sub set_queues($$) {
+	($tqin, $tqout) = @_;
 }
 
 1;

@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -43,9 +43,6 @@ BEGIN {
 our @EXPORT_OK;
 
 sub parse_tlv($$$;$);
-
-sub update_tedb($) {
-}
 
 sub dump_hdr($) {
 	my ($mr) = @_;
@@ -247,8 +244,8 @@ sub parse_tlv($$$;$) {
 			my @res;
 			parse_tlv_data($md, $o, "N", \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
-			unshift(@res, {"tlv"=>$tlv_type});
-			update_tedb(@res);
+			unshift(@res, {"cmd"=>TEDB_RTR_ON}, "type"=>$tlv_type);
+			Aux::send_to_tedb($tq, @res);
 			return (0);
 		}
 		elsif($tlv_type == TE_TLV_LINK) {
@@ -467,6 +464,8 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
+		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type});
+		Aux::send_to_tedb($tq, @res);
 	}
 	return(0);
 }

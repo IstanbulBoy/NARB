@@ -150,10 +150,10 @@ sub start_tedb_th($$) {
 
 
 sub start_ws_server($) {
-	my ($p) = @_;
+	my ($p, $tqin, $tqout) = @_;
 	my $srvr;
 	eval {
-		$srvr = new WS::Server($p);
+		$srvr = new WS::Server($p, $tqin, $tqout);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -262,7 +262,7 @@ eval {
 	}
 
 	# start the SOAP/HTTP server
-	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v});
+	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
 	if($sw_server) {
 		push(@servers, $sw_server);
 	}

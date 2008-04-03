@@ -1,5 +1,7 @@
 package Aux;
 
+use threads;
+use threads::shared;
 use strict;
 use sigtrap;
 use FileHandle;
@@ -10,7 +12,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -28,8 +30,9 @@ use constant NET_DBG => 4;
 use constant API_DBG => 5;
 use constant DATA_DBG => 6;
 use constant LSA_DBG => 7;
-use constant WS_DBG => 8;
-use constant RAW_DBG => 9;
+use constant TEDB_DBG => 8;
+use constant WS_DBG => 9;
+use constant RAW_DBG => 10;
 
 my $dbg_sys = undef;
 
@@ -53,6 +56,7 @@ sub get_dbg_sys($) {
 		$v eq "api"?	(1 << API_DBG):
 		$v eq "data"?	(1 << DATA_DBG):
 		$v eq "lsa"?	(1 << LSA_DBG):
+		$v eq "tedb"?	(1 << TEDB_DBG):
 		$v eq "ws"?	(1 << WS_DBG):0
 		;
 }
@@ -81,6 +85,13 @@ sub dbg_data() {
 sub dbg_lsa() {
 	if(defined($dbg_sys)) {
 		return ($dbg_sys &(1 << LSA_DBG));
+	}
+	return 0;
+}
+
+sub dbg_tedb() {
+	if(defined($dbg_sys)) {
+		return ($dbg_sys &(1 << TEDB_DBG));
 	}
 	return 0;
 }
@@ -132,6 +143,10 @@ sub print_dbg_lsa($;@) {
 	print_dbg(LSA_DBG, @_);
 }
 
+sub print_dbg_tedb($;@) {
+	print_dbg(TEDB_DBG, @_);
+}
+
 sub print_dbg_ws($;@) {
 	print_dbg(WS_DBG, @_);
 }
@@ -163,6 +178,41 @@ sub chksum($$@) {
 	my $block = pack($ppat, @d);
 	my $chksum = unpack($upat, $block);
 	return $chksum;
+}
+
+sub send_to_tedb($@) {
+	my $q = shift;
+	my $t  = shift;
+	my(@d) = @_;
+	my $ref = &share({});
+	$$ref{cmd} = $$t{cmd};
+	$$ref{type} = $$t{type}; 
+	$$ref{data} = &share([]);
+	for(my $i=0; $i<@d; $i++) {
+		${$$ref{data}}[$i] = $d[$i]; 
+	}
+	$q->enqueue($ref);
+}
+
+sub recv_from_tedb($;$) {
+	my ($q, $to) = @_;
+	my $d;
+	$to = 5 if !defined($to);
+
+	eval {
+		local $SIG{ALRM} = sub { die "timeout"};
+		alarm $to;
+		$::timeout = 0;
+
+		while(!defined($d)) {
+			$d = $q->dequeue();
+		}
+		alarm 0;
+	};
+	if($@) {
+		return "timeout";
+	}
+	return $d;
 }
 
 1;

@@ -32,7 +32,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -42,10 +42,13 @@ our @EXPORT_OK;
 
 my $srvr = undef;
 my $lport = undef;
+my $tqin = undef;
+my $tqout = undef;
 
 sub new {
 	shift;
-	($lport)  = @_;
+	($lport, $tqin, $tqout)  = @_;
+	WS::API::set_queues($tqin, $tqout);
 	my $self = {};
 	bless $self;
 	$srvr = new SOAP::Transport::HTTP::Daemon(

@@ -23,16 +23,19 @@
 
 package GMPLS::TEDB;
 
+use threads;
+use threads::shared;
 use strict;
 use warnings;
 use Aux;
-use GMPLS::API;
+use GMPLS::Constants;
 use IO::Select;
+use SOAP::Lite;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -46,16 +49,33 @@ my $tqout;
 sub new {
 	shift;
 	($tqin, $tqout)  = @_;
-	my $self = {};
+	my $self = {
+	      _tedb => {},
+	};
 	bless $self;
 	return $self;
 }
 
 sub run() {
 	my $d;
+	my $self = shift;
 	while(!$::ctrlC) {
 		$d = $tqin->dequeue_nb();
-		printf("%08x\n", $d) if $d;
+		if(defined($d)) {
+			#add a valid OSPF-TE talker to TEDB
+			# (these will serve as validation for the sub-tlv insertions)
+			if($$d{cmd} == TEDB_RTR_ON) {
+				$$self{_tedb}{${$$d{data}}[0]}{id} = ${$$d{data}}[0];
+				Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
+			}
+			elsif($$d{cmd} == TEDB_INSERT) {
+				Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
+			}
+			elsif($$d{cmd} == TEDB_GET) {
+				Aux::print_dbg_tedb("TEDB_GET request\n");
+				$tqout->enqueue();
+			}
+		}
 	}
 	Aux::print_dbg_run("exiting TEDB thread\n");
 }
