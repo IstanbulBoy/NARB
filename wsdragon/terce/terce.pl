@@ -30,7 +30,6 @@ use Thread::Queue;
 
 use Aux;
 use Log;
-use GMPLS::TEDB;
 use GMPLS::Server;
 use WS::Server;
 use strict;
@@ -70,7 +69,6 @@ USG
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating threads... (SIG$signame)\n");
-	Log::log("info", "(NOTE: the ws server may take up to 5s to terminate)\n");
 	$::ctrlC = 1;
 }
 
@@ -133,21 +131,6 @@ sub spawn_server($$$) {
 		$srvr->run();
 	}
 }
-
-sub start_tedb_th($$) {
-	my ($tqin, $tqout) = @_;
-	my $tedb_th;
-	eval {
-		$tedb_th = new GMPLS::TEDB($tqin, $tqout);
-	};
-	if($@) {
-		Log::log "err",  "$@\n";
-	}
-	else {
-		$tedb_th->run();
-	}
-}
-
 
 sub start_ws_server($) {
 	my ($p, $tqin, $tqout) = @_;
@@ -256,10 +239,6 @@ eval {
 	# start TEDB thread
 	my $tqin = new Thread::Queue;
 	my $tqout = new Thread::Queue;
-	my $tedb_th = threads->create(\&start_tedb_th, $tqin, $tqout);
-	if($tedb_th) {
-		push(@servers, $tedb_th);
-	}
 
 	# start the SOAP/HTTP server
 	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
