@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema targetNamespace="http://hopi.internet2.edu/DRAGON/TERCE/RCE" 
+<xsd:schema targetNamespace="http://dcn.internet2.edu/DRAGON/TERCE/RCE" 
 	elementFormDefault="qualified"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	xmlns:tns="http://hopi.internet2.edu/DRAGON/TERCE/RCE"
+	xmlns:tns="http://dcn.internet2.edu/DRAGON/TERCE/RCE"
 	xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/">
 	
 	<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" 
@@ -30,7 +30,6 @@
 			<xsd:element name="swcap" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
 			<xsd:element name="gpid" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
 			<xsd:element name="vtag" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
-			<xsd:element name="exclude" type="tns:exclude"  minOccurs="0" maxOccurs="unbounded" />
 		</xsd:all>
 		<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="strict" type="xsd:boolean" use="optional"/>

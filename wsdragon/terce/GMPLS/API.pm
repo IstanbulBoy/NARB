@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -228,8 +228,7 @@ sub parse_tlv_data($$$$) {
 sub parse_tlv($$$;$) {
 	my ($md, $o, $tq, $p) = @_;
 	my $ret = 0;
-	my $l = LSA_HDR_SIZE - 2;
-	my ($lsa_len) = unpack("x[$l]n", $md);	
+	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
 	# TLV header
 	my ($tlv_type, $tlv_len) = unpack("x[$o]nn", $md);	
 	if(!(defined($tlv_type) && defined($tlv_len))) {
@@ -244,7 +243,7 @@ sub parse_tlv($$$;$) {
 			my @res;
 			parse_tlv_data($md, $o, "N", \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
-			unshift(@res, {"cmd"=>TEDB_RTR_ON}, "type"=>$tlv_type);
+			unshift(@res, {"cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr});
 			Aux::send_to_tedb($tq, @res);
 			return (0);
 		}
@@ -464,7 +463,7 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
-		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type});
+		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "rtr"=>$adv_rtr});
 		Aux::send_to_tedb($tq, @res);
 	}
 	return(0);

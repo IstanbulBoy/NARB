@@ -1,8 +1,8 @@
 POST / HTTP/1.1
 Content-Type: text/xml; charset=utf-8
-SOAPAction: "http://hopi.internet2.edu/WS/Server/selectNetworkTopology"
+SOAPAction: "http://dcn.internet2.edu/WS/Server/selectNetworkTopology"
 User-Agent: Axis/#axisVersion#
 Host: pssc6.dragon.maxgigapop.net
 Content-Length:247
 
-<?xml version="1.0" encoding="UTF-8"?><env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Body><selectNetworkTopology xmlns="http://hopi.internet2.edu/WS/Server"><from>all</from></selectNetworkTopology></env:Body></env:Envelope>
+<?xml version="1.0" encoding="UTF-8"?><env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Body><selectNetworkTopology xmlns="http://dcn.internet2.edu/WS/Server"><from>all</from></selectNetworkTopology></env:Body></env:Envelope>

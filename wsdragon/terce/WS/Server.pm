@@ -33,13 +33,22 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
 our @EXPORT_OK;
+
+use constant TERCE_TOPO_ID => "dcn.internet2.edu-1202827532";
+use constant TERCE_TOPO_XMLNS => "http://ogf.ogf/schema/network/topology/ctrlPlane/20071023";
+use constant TERCE_IDC_ID => "https://ndb3-blmt.abilene.ucaid.edu:8443/axis2/services/OSCARS";
+use constant TERCE_ID_PREF => "urn:ogf:network";
+use constant TERCE_DOMAIN_ID => "domain=dcn.internet2.edu";
+use constant TERCE_NODE_ID => "node=%s";
+use constant TERCE_PORT_ID => "port=%s";
+use constant TERCE_LINK_ID => "link=%s";
 
 my $srvr = undef;
 my $lport = undef;
@@ -51,7 +60,7 @@ sub new {
 	($lport, $tqin, $tqout)  = @_;
 	my $self = {
 	      _tedb => {},
-	      _xml => SOAP::Data->name('topology' => 'poodog')
+	      _xml => SOAP::Data->name('topology' => undef)
 	};
 	bless $self;
 	$srvr = new SOAP::Transport::HTTP::Daemon(
@@ -60,6 +69,15 @@ sub new {
 		ReuseAddr => 1,
 		Blocking => 0
 		)->dispatch_to($self);
+	$$self{_xml}->attr({ id => TERCE_TOPO_ID,
+			xmlns => TERCE_TOPO_XMLNS });
+	my $xml_idcID = SOAP::Data->name('idcId' => TERCE_IDC_ID);
+	my $xml_domain = SOAP::Data->name('domain' => undef);
+	$xml_domain->attr({ id => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
+
+	my @topo_a = ($xml_idcID, $xml_domain);
+
+	$$self{_xml}->name('topology')->value(\@topo_a);
 	return $self;
 }
 
@@ -89,10 +107,10 @@ sub run() {
 	my $self = shift;
 	my $d = undef;
 	while(!$::ctrlC) {
-		# WS
+		# WS server
 		$srvr->handle;
 
-		# TEDB assembly
+		# TEDB queue
 		$d = $tqin->dequeue_nb();
 		if(defined($d)) {
 			#add a valid OSPF-TE talker to TEDB
@@ -102,7 +120,13 @@ sub run() {
 				Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 			}
 			elsif($$d{cmd} == TEDB_INSERT) {
-				Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
+				if(exists($$self{_tedb}{$$d{rtr}})) {
+					Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
+				}
+				else {
+					Log::log "warning", "attempting to insert sub-tlv from unknown advertiser: $$d{rtr}\n";
+					Log::log "warning", "... sub-tlv discarded\n";
+				}
 			}
 		}
 	}
