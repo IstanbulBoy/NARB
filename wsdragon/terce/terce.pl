@@ -44,6 +44,7 @@ use IO::Socket::INET;
 
 my @servers = ();
 $::ctrlC = 0;
+$::d = 0; # a global to use in regex embedded command execution
 
 sub usage() {
 	print <<USG;
@@ -89,9 +90,9 @@ sub process_opts($$) {
 	my $is_array = 0;
 	if($n eq "d") 				{$k1 = "daemonize";}
 	if(($n eq "c") || ($n eq "config")) 	{$k1 = "config";}
-	if(($n eq "p") || ($n eq "gmpls_port"))	{$k1 = "port";}
 	if(($n eq "l") || ($n eq "log")) 	{$k1 = "log";}
 	if($n eq "dbg")			 	{$k1 = "dbg";}
+	if(($n eq "p") || ($n eq "gmpls_port"))	{$k1 = "gmpls"; $k2 = "port";}
 	if($n eq "www_port")			{$k1 = "http"; $k2 = "port"}
 	if($n eq "wsdl")			{$k1 = "http"; $k2 = "wsdl"}
 	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port"}
@@ -278,8 +279,8 @@ sub process_cfg() {
 	}
 }
 
-sub parse_cfg($$) {
-	my ($fn, $ext) = @_;
+sub parse_cfg($) {
+	my ($fn) = @_;
 	my $cfg_s = "";
 	#remove comments and newlines
 	open(FH, "<", $fn) or die "Can't open $fn: $!";
@@ -321,16 +322,17 @@ sub parse_cfg($$) {
 		else {
 			die "syntax error in $fn (missing home_vlsr)";
 		}
-		my $rtr_name = ($r[$i]=~/[\s{]dtl_name\s+(.*?)[\s}]/)?$1:"unknown";
+		my $rtr_name = ($r[$i]=~/[\s{]dtl_name\s+(.*?)[\s}]/)?$1:undef;
 		my $link_id = "";
 		my $port_name = "";
 		for(my $j=0; $j<@l; $j++) {
 			if($l[$j] =~ /[\s{]id\s+(.*?)[\s}]/) {
 				$link_id = $1;
+				$port_name = undef;
 				if($l[$j] =~ /[\s{]dtl_id\s+(.*?)[\s}]/) {
 					$port_name = $1;
-					$ext->add($rtr_id, $rtr_name, $link_id, $port_name);
 				} 
+				WS::External::add($rtr_id, $rtr_name, $link_id, $port_name);
 			} 
 			else {
 				die "syntax error in $fn (missing link id)";
@@ -339,13 +341,13 @@ sub parse_cfg($$) {
 	}
 }
 
-sub load_configuration($$) {
-	my ($fn, $er) = @_;
+sub load_configuration($) {
+	my ($fn) = @_;
 	# test the file
 	open(SUB_H, "<", $fn) or die "Can't open $fn: $!";
 	close(SUB_H) or die "Can't close $fn: $!";
-	Log::log "info", "loading $fn",
-	parse_cfg($fn, $er);
+	Log::log "info", "loading $fn\n",
+	parse_cfg($fn);
 }
 
 ################################################################################
@@ -355,7 +357,7 @@ $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $| = 1;
 share($::ctrlC);
-$::d = 0; # a global to use in regex embedded command execution
+share($::d);
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -446,13 +448,16 @@ my $daemonize = undef;
 
 init_cfg(\$daemonize);
 
-my $ext_defs = new WS::External();
-
 eval {
-	load_configuration($::cfg{ws}{subnet_cfg}{v}, $ext_defs);
+	#load_configuration($::cfg{ws}{subnet_cfg}{v});
 };
 if($@) {
-	Log::log("err", "$@\n");
+	$::cfg{ws}{subnet_cfg}{v} = undef;	
+}
+
+if(!defined($::cfg{ws}{subnet_cfg}{v})) {
+	Log::log "warning", "WARNING: subnet config file was not loaded\n";
+	Log::log "warning", "WARNING: some data such as router names will be generated\n";
 }
 
 
@@ -483,17 +488,17 @@ eval {
 	my $tqout = new Thread::Queue;
 
 	# start the HTTP server
-	if(0) {
-		my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
-		if($sw_server) {
-			push(@servers, $sw_server);
-		}
-	}
+	#if(0) {
+#		my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
+#		if($sw_server) {
+#			push(@servers, $sw_server);
+#		}
+#	}
 
 	# start the SOAP/HTTP server
-	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
-	if($sw_server) {
-		push(@servers, $sw_server);
+	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
+	if($ws_server) {
+		push(@servers, $ws_server);
 	}
 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -502,7 +507,7 @@ eval {
 		ReuseAddr => 1,
 		Blocking => 1,
 		Proto     => 'tcp') or die "socket: $@\n";
-	Aux::print_dbg_net("listening on port $::cfg{gmpls}{port}{v}");
+	Aux::print_dbg_net("listening on port $::cfg{gmpls}{port}{v}\n");
 	while(!$::ctrlC) {
 		my @conn = $serv_sock->accept();
 		if(!@conn) {

@@ -29,7 +29,7 @@ use warnings;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -37,18 +37,34 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-sub new {
-	shift;
-	my $self = {
-		_defs => undef,
-	};
-	bless $self;
-	return $self;
-}
+my $defs = {};
 
 sub add($$$$) {
-	my $self = shift;
+	my($rtr_id, $rtr_name, $link_id, $port_name) = @_;
+	return if !(defined($rtr_id) && defined($rtr_name) && defined($link_id) && defined($port_name));
+	$$defs{$rtr_id} = {
+		"name"=> uc($rtr_name), 
+		$link_id => {
+			"name"=>("DTL".$port_name)
+		}
+	}
+}
 
+sub flush () {
+	$defs = {};
+}
+
+sub get_rtr_name($) {
+	my($rtr_id) = @_;
+	return undef if(!exists($$defs{$rtr_id}));
+	return $$defs{$rtr_id}{name};
+}
+
+sub get_port_name($$) {
+	my($rtr_id, $link_id) = @_;
+	return undef if(!exists($$defs{$rtr_id}));
+	return undef if(!exists($$defs{$rtr_id}{$link_id}));
+	return $$defs{$rtr_id}{$link_id}{name};
 }
 
 1;
