@@ -30,6 +30,7 @@ use Thread::Queue;
 
 use Aux;
 use Log;
+use Parser;
 use GMPLS::Server;
 use WS::Server;
 use WS::External;
@@ -43,8 +44,8 @@ use Getopt::Long;
 use IO::Socket::INET;
 
 my @servers = ();
+%::cfg = ();
 $::ctrlC = 0;
-$::d = 0; # a global to use in regex embedded command execution
 
 sub usage() {
 	print <<USG;
@@ -169,186 +170,6 @@ sub cleanup_servers() {
 	}
 }
 
-sub process_cfg() {
-	my $cfg_s = "";
-	my $f = $::cfg{config}{v};
-	if(!(-e $f)) {
-		if($::cfg{config}{s} eq 'd') {
-			return;
-		}
-		else {
-			die("could not find $f\n");
-		}
-	}
-	my $l = 1;
-	open(FH, "<", $f) or die "Can't open $f: $!\n";
-	while(<FH>) {
-		s/#.*$//;
-		chomp($_);	
-		$cfg_s .= $_;
-		$l++;
-	}
-	close(FH) or die "Can't close $f: $!\n";
-
-	# check for unbalanced brackets
-	$cfg_s =~ /^(?{$::d=0})((?:(?(?{$::d<0})$|{(?{$::d++}))|(?(?{$::d<0})$|}(?{$::d--}))|(?(?{$::d<0})$|[^{}]*))*)$/;
-	die "syntax error in $f (unbalanced curly)\n" unless $::d==0;
-
-	if($cfg_s =~ /daemonize\s*;/) {
-		if($::cfg{daemonize}{s} ne 'c') {
-			$::cfg{daemonize}{v} = 1;
-			$::cfg{daemonize}{s} = 'f';
-		}
-	}
-	if($cfg_s =~ /log\s+(\S+)\s*;/) {
-		if($::cfg{log}{s} ne 'c') {
-			$::cfg{log}{v} = $1;
-			$::cfg{log}{s} = 'f';
-		}
-	}
-	if($cfg_s =~ /dbg\s+(.*?)\s*;/) {
-		my @tmp = split(/\s+/, $1);
-		if($::cfg{dbg}{s} ne 'c') {
-			for(my $j=0; $j<@tmp; $j++) {
-				$::cfg{dbg}{v} |= Aux::get_dbg_sys($tmp[$j]);
-				$::cfg{dbg}{s} = 'f';
-			}
-		}
-	}
-
-	# get the gmpls configuration
-	my @gmpls = $cfg_s =~ /gmpls\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-	if(defined(pos)) { pos = 0;};
-	if(@gmpls > 1) {
-		die "syntax error in $f (gmpls block can be defined only once)\n";
-	}
-	elsif(@gmpls == 1) {
-		if($gmpls[0] =~ /port\s+(\S+)\s*;/) { 
-			if($::cfg{gmpls}{port}{s} ne 'c') {
-				$::cfg{gmpls}{port}{v} = $1;
-				$::cfg{gmpls}{port}{s} = 'f';
-			}
-		}
-	}
-
-	# get the http configuration
-	my @http = $cfg_s =~ /http\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-	if(defined(pos)) { pos = 0;};
-	if(@http > 1) {
-		die "syntax error in $f (http block can be defined only once)\n";
-	}
-	elsif(@http == 1) {
-		if($http[0] =~ /port\s+(\S+)\s*;/) { 
-			if($::cfg{http}{port}{s} ne 'c') {
-				$::cfg{http}{port}{v} = $1;
-				$::cfg{http}{port}{s} = 'f';
-			}
-		}
-		if($http[0] =~ /root\s+(\S+)\s*;/) { 
-			if($::cfg{http}{root}{s} ne 'c') {
-				$::cfg{http}{root}{v} = $1;
-				$::cfg{http}{root}{s} = 'f';
-			}
-		}
-	}
-	# get the ws configuration
-	my @ws = $cfg_s =~ /ws\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-	if(defined(pos)) { pos = 0;};
-	if(@ws > 1) {
-		die "syntax error in $f (ws block can be defined only once)\n";
-	}
-	elsif(@ws == 1) {
-		if($ws[0] =~ /port\s+(\S+)\s*;/) { 
-			if($::cfg{ws}{port}{s} ne 'c') {
-				$::cfg{ws}{port}{v} = $1;
-				$::cfg{ws}{port}{s} = 'f';
-			}
-		}
-		if($ws[0] =~ /wsdl\s+(\S+)\s*;/) { 
-			if($::cfg{ws}{wsdl}{s} ne 'c') {
-				$::cfg{ws}{wsdl}{v} = $1;
-				$::cfg{ws}{wsdl}{s} = 'f';
-			}
-		}
-		if($ws[0] =~ /subnet_config\s+(\S+)\s*;/) { 
-			if($::cfg{ws}{subnet_cfg}{s} ne 'c') {
-				$::cfg{ws}{subnet_cfg}{v} = $1;
-				$::cfg{ws}{subnet_cfg}{s} = 'f';
-			}
-		}
-	}
-}
-
-sub parse_cfg($) {
-	my ($fn) = @_;
-	my $cfg_s = "";
-	#remove comments and newlines
-	open(FH, "<", $fn) or die "Can't open $fn: $!";
-	while(<FH>) {
-		if(/^!/) {
-			if(/(<\s*ext.*?>)/) {
-				$cfg_s .= " $1 "; #the spaces are necessary
-			}
-			next;
-		}
-		chomp($_);	
-		$cfg_s .= " $_ ";
-	}
-	close(FH) or die "Can't close $fn: $!";
-	# check for unbalanced brackets
-	$cfg_s =~ /^(?{$::d=0})((?:(?(?{$::d<0})$|{(?{$::d++}))|(?(?{$::d<0})$|}(?{$::d--}))|(?(?{$::d<0})$|[^{}]*))*)$/;
-	die "syntax error in $fn (unbalanced curly)\n" unless $::d==0;
-
-	#get the domain id
-	my @did = $cfg_s =~ /domain-id\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-	if(defined(pos)) { pos = 0;};
-
-	#get the router blocks and balance the brackets
-	my @r = $cfg_s =~ /router\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-	if(defined(pos)) { pos = 0;};
-	#get the link blocks and parse them
-	for(my $i=0; $i<@r; $i++) {
-		my @l = $r[$i] =~ /link\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
-		if(defined(pos)) { pos = 0;};
-		$r[$i] =~ s/link\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)//g;
-		if(defined(pos)) { pos = 0;};
-		die "syntax error in $fn (missing router id)" unless $r[$i] =~ /id\s+(.*?)\s/;
-		my $rtr_id = $1;
-		my $rtr_ctrlr = "none";
-		my $rtr_ctrlip = "none";
-		if($r[$i] =~ /[\s{]home_vlsr\s+(.*?)[\s}]/) {
-			$rtr_ctrlr = $1;
-		} 
-		else {
-			die "syntax error in $fn (missing home_vlsr)";
-		}
-		my $rtr_name = ($r[$i]=~/[\s{]dtl_name\s+(.*?)[\s}]/)?$1:undef;
-		my $link_id = "";
-		my $port_name = "";
-		for(my $j=0; $j<@l; $j++) {
-			if($l[$j] =~ /[\s{]id\s+(.*?)[\s}]/) {
-				$link_id = $1;
-				$port_name = undef;
-				if($l[$j] =~ /[\s{]dtl_id\s+(.*?)[\s}]/) {
-					$port_name = $1;
-				} 
-				WS::External::add($rtr_id, $rtr_name, $link_id, $port_name);
-			} 
-			else {
-				die "syntax error in $fn (missing link id)";
-			}
-		}
-	}
-}
-
-sub load_configuration($) {
-	my ($fn) = @_;
-	# test the file
-	open(SUB_H, "<", $fn) or die "Can't open $fn: $!";
-	close(SUB_H) or die "Can't close $fn: $!";
-	Log::log "info", "loading $fn\n",
-	parse_cfg($fn);
-}
 
 ################################################################################
 ################################################################################
@@ -357,7 +178,7 @@ $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $| = 1;
 share($::ctrlC);
-share($::d);
+share(%::cfg);
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -365,54 +186,45 @@ share($::d);
 #     		 f: from config file, 
 #     		 c: overriden from the cli
 #		 i: from stdin
-%::cfg = (
-	"daemonize" => 	{
-		"v" => 0, 
-		"s" => 'd'
-	},
-	"config" => {
-		"v" => "/etc/terce/terce.conf", 
-		"s" => 'd'
-	},
-	"gmpls" => {
-		"port" => {
-			"v" => "2690", 
-			"s" => 'd'
-		}
-	},
-	"http" => {
-		"port" => {
-			"v" => "80", 
-			"s" => 'd'
-		},
-		"root" => {
-			"v" => "./www", 
-			"s" => 'd'
-		}
-	},
-	"ws" => {
-		"port" => {
-			"v" => "8080", 
-			"s" => 'd'
-		},
-		"wsdl" => {
-			"v" => undef, 
-			"s" => 'd'
-		},
-		"subnet_cfg" => {
-			"v" => undef, 
-			"s" => 'd'
-		}
-	},
-	"log" => 	{
-		"v" => "/var/log/terce.log", 
-		"s" => 'd'
-	},
-	"dbg" => 	{
-		"v" => 0, 
-		"s" => 'd'
-	}
-);
+$::cfg{daemonize} = &share({});
+$::cfg{daemonize}{v} = 0;
+$::cfg{daemonize}{s} = 'd';
+
+$::cfg{config} = &share({});
+$::cfg{config}{v} = "/etc/terce/terce.conf";
+$::cfg{config}{s} = 'd';
+
+$::cfg{gmpls} = &share({});
+$::cfg{gmpls}{port} = &share({});
+$::cfg{gmpls}{port}{v} = "2690";
+$::cfg{gmpls}{port}{s} = 'd';
+
+$::cfg{http} = &share({});
+$::cfg{http}{port} = &share({});
+$::cfg{http}{port}{v} = "80";
+$::cfg{http}{port}{s} = 'd';
+$::cfg{http}{root} = &share({});
+$::cfg{http}{root}{v} = "./www";
+$::cfg{http}{root}{s} = 'd';
+
+$::cfg{ws} = &share({});
+$::cfg{ws}{port} = &share({});
+$::cfg{ws}{port}{v} = "8080";
+$::cfg{ws}{port}{s} = 'd';
+$::cfg{ws}{wsdl} = &share({});
+$::cfg{ws}{wsdl}{v} = undef;
+$::cfg{ws}{wsdl}{s} = 'd';
+$::cfg{ws}{subnet_cfg} = &share({});
+$::cfg{ws}{subnet_cfg}{v} = undef;
+$::cfg{ws}{subnet_cfg}{s} = 'd';
+
+$::cfg{log} = &share({});
+$::cfg{log}{v} = "/var/log/terce.log";
+$::cfg{log}{s} = 'd';
+
+$::cfg{dbg} = &share({});
+$::cfg{dbg}{v} = 0;
+$::cfg{dbg}{s} = 'd';
 
 if(!GetOptions ('d' =>			\&process_opts,
 		'c=s' =>		\&process_opts,
@@ -432,9 +244,16 @@ if(!GetOptions ('d' =>			\&process_opts,
 	usage();
 }
 
+# NOTE: the following code is a workaround for perl/libc bug which causes
+# a complex rexeg engine state incorrect freeing of the allocated memory
+# cloned across multiple threads. To prevent the crash, all complex regex
+# expression are run in a separate thread so they don't get cloned to other
+# threads. As a result the main $::cfg structure had to be made shared.
+
 # process the main config file
 eval {
-	process_cfg();
+	my $th = async{Parser::process_cfg();};
+	$th->join();
 };	
 if($@) {
 	Log::log "err", $@;
@@ -449,7 +268,8 @@ my $daemonize = undef;
 init_cfg(\$daemonize);
 
 eval {
-	#load_configuration($::cfg{ws}{subnet_cfg}{v});
+	my $th = async{Parser::load_configuration($::cfg{ws}{subnet_cfg}{v});};
+	$th->join();
 };
 if($@) {
 	$::cfg{ws}{subnet_cfg}{v} = undef;	
@@ -459,7 +279,6 @@ if(!defined($::cfg{ws}{subnet_cfg}{v})) {
 	Log::log "warning", "WARNING: subnet config file was not loaded\n";
 	Log::log "warning", "WARNING: some data such as router names will be generated\n";
 }
-
 
 if($daemonize) {
 	Log::open(Log::FILE, "info warning err", $::cfg{log}{v});
