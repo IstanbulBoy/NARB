@@ -12,7 +12,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -34,7 +34,7 @@ use constant TEDB_DBG => 8;
 use constant WS_DBG => 9;
 use constant RAW_DBG => 10;
 
-my $dbg_sys = undef;
+my $dbg_sys = 0;
 
 sub set_dbg_sys($) {
 	my ($v) = @_;
@@ -46,8 +46,9 @@ sub add_dbg_sys($) {
 	$dbg_sys |= (1 << $v);
 }
 
-sub get_dbg_sys($) {
+sub get_dbg_sys(;$) {
 	my ($v) = @_;
+	return $dbg_sys if(!defined($v));
 	return(	$v eq "run")?	(1 << RUN_DBG):
 		$v eq "config"?	(1 << CFG_DBG):
 		$v eq "narb"?	(1 << NARB_DBG):
@@ -186,8 +187,8 @@ sub send_to_tedb($@) {
 	my(@d) = @_;
 	my $ref = &share({});
 	$$ref{cmd} = $$t{cmd};
-	$$ref{type} = $$t{type}; 
-	$$ref{rtr} = $$t{rtr}; 
+	$$ref{type} = $$t{type} if exists($$t{type}); 
+	$$ref{rtr} = $$t{rtr} if exists($$t{rtr}); 
 	$$ref{data} = &share([]);
 	for(my $i=0; $i<@d; $i++) {
 		${$$ref{data}}[$i] = $d[$i]; 

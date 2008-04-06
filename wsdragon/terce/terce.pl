@@ -32,6 +32,7 @@ use Aux;
 use Log;
 use GMPLS::Server;
 use WS::Server;
+use WS::External;
 use strict;
 use sigtrap;
 use POSIX;
@@ -46,19 +47,27 @@ $::ctrlC = 0;
 
 sub usage() {
 	print <<USG;
-usage: terce [-h] [-d] [-p <port>]
+usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
        -d: daemonize
-       -l: <log file> log file (default: /var/log/terce.log)
-       -p <port>: listen on this port (default 2690)
+       -c <config file>: (defaults to /etc/terce/terce.conf)
+       -l <log file>: log file (default: /var/log/terce.log)
+       -p <port>: listen on this port for narb and rce data
+              (default 2690)
        -h: prints this message
   Long options:
-       --port <port>: listen on this port (default 2690)
-       --wsport <port>: listen on this web services port (default 80)
+       --config <config file>: (defaults to /etc/terce/terce.conf)
+       --gmpls_port <port>: listen on this port for narb and rce data
+              (default 2690)
+       --ws_port <port>: listen on this web services port (default 8080)
+       --wsdl <wsdl file>: serve TERCE wsdl file (default undefined)
+       --subnet_cfg <subnet config file>: load some additional info 
+              from the file 
+       --www_port <port>: serve the wsdl file on this port (default 80)
+              (only if te wsdl file is specified)
+       --www_root <dir>: root of the web server
        --log: <log file> log file (default: /var/log/terce.log)
        --dbg: <list> of components to debug:
               (run config narb rce net api data lsa ws)
-              with no agrument, all the components will become very verbose
-              and the program will not fork.
        --help: prints this message
 USG
 	exit;
@@ -80,10 +89,14 @@ sub process_opts($$) {
 	my $is_array = 0;
 	if($n eq "d") 				{$k1 = "daemonize";}
 	if(($n eq "c") || ($n eq "config")) 	{$k1 = "config";}
-	if(($n eq "p") || ($n eq "port")) 	{$k1 = "port";}
+	if(($n eq "p") || ($n eq "gmpls_port"))	{$k1 = "port";}
 	if(($n eq "l") || ($n eq "log")) 	{$k1 = "log";}
 	if($n eq "dbg")			 	{$k1 = "dbg";}
-	if($n eq "wsport")			{$k1 = "ws"; $k2 = "port"}
+	if($n eq "www_port")			{$k1 = "http"; $k2 = "port"}
+	if($n eq "wsdl")			{$k1 = "http"; $k2 = "wsdl"}
+	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port"}
+	if($n eq "wsdl")			{$k1 = "ws"; $k2 = "wsdl"}
+	if($n eq "subnet_cfg")			{$k1 = "ws"; $k2 = "subnet_cfg"}
 
 	if(defined($k1) && !defined($k2) && !$is_array) {
 		if($k1 eq "dbg") {
@@ -113,7 +126,10 @@ sub init_cfg($) {
 		Aux::dump_config(\%::cfg);
 		print("------------------------------------------------------------\n");
 	}
-	$$r1 = $::cfg{daemonize}{v};
+	if(Aux::get_dbg_sys() > 0) {
+		Log::log "warning", "running in foreground\n";
+		$$r1 = 0;
+	}
 }
 
 # NOTE: running in a different thread here ...
@@ -152,6 +168,186 @@ sub cleanup_servers() {
 	}
 }
 
+sub process_cfg() {
+	my $cfg_s = "";
+	my $f = $::cfg{config}{v};
+	if(!(-e $f)) {
+		if($::cfg{config}{s} eq 'd') {
+			return;
+		}
+		else {
+			die("could not find $f\n");
+		}
+	}
+	my $l = 1;
+	open(FH, "<", $f) or die "Can't open $f: $!\n";
+	while(<FH>) {
+		s/#.*$//;
+		chomp($_);	
+		$cfg_s .= $_;
+		$l++;
+	}
+	close(FH) or die "Can't close $f: $!\n";
+
+	# check for unbalanced brackets
+	$cfg_s =~ /^(?{$::d=0})((?:(?(?{$::d<0})$|{(?{$::d++}))|(?(?{$::d<0})$|}(?{$::d--}))|(?(?{$::d<0})$|[^{}]*))*)$/;
+	die "syntax error in $f (unbalanced curly)\n" unless $::d==0;
+
+	if($cfg_s =~ /daemonize\s*;/) {
+		if($::cfg{daemonize}{s} ne 'c') {
+			$::cfg{daemonize}{v} = 1;
+			$::cfg{daemonize}{s} = 'f';
+		}
+	}
+	if($cfg_s =~ /log\s+(\S+)\s*;/) {
+		if($::cfg{log}{s} ne 'c') {
+			$::cfg{log}{v} = $1;
+			$::cfg{log}{s} = 'f';
+		}
+	}
+	if($cfg_s =~ /dbg\s+(.*?)\s*;/) {
+		my @tmp = split(/\s+/, $1);
+		if($::cfg{dbg}{s} ne 'c') {
+			for(my $j=0; $j<@tmp; $j++) {
+				$::cfg{dbg}{v} |= Aux::get_dbg_sys($tmp[$j]);
+				$::cfg{dbg}{s} = 'f';
+			}
+		}
+	}
+
+	# get the gmpls configuration
+	my @gmpls = $cfg_s =~ /gmpls\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+	if(@gmpls > 1) {
+		die "syntax error in $f (gmpls block can be defined only once)\n";
+	}
+	elsif(@gmpls == 1) {
+		if($gmpls[0] =~ /port\s+(\S+)\s*;/) { 
+			if($::cfg{gmpls}{port}{s} ne 'c') {
+				$::cfg{gmpls}{port}{v} = $1;
+				$::cfg{gmpls}{port}{s} = 'f';
+			}
+		}
+	}
+
+	# get the http configuration
+	my @http = $cfg_s =~ /http\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+	if(@http > 1) {
+		die "syntax error in $f (http block can be defined only once)\n";
+	}
+	elsif(@http == 1) {
+		if($http[0] =~ /port\s+(\S+)\s*;/) { 
+			if($::cfg{http}{port}{s} ne 'c') {
+				$::cfg{http}{port}{v} = $1;
+				$::cfg{http}{port}{s} = 'f';
+			}
+		}
+		if($http[0] =~ /root\s+(\S+)\s*;/) { 
+			if($::cfg{http}{root}{s} ne 'c') {
+				$::cfg{http}{root}{v} = $1;
+				$::cfg{http}{root}{s} = 'f';
+			}
+		}
+	}
+	# get the ws configuration
+	my @ws = $cfg_s =~ /ws\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+	if(@ws > 1) {
+		die "syntax error in $f (ws block can be defined only once)\n";
+	}
+	elsif(@ws == 1) {
+		if($ws[0] =~ /port\s+(\S+)\s*;/) { 
+			if($::cfg{ws}{port}{s} ne 'c') {
+				$::cfg{ws}{port}{v} = $1;
+				$::cfg{ws}{port}{s} = 'f';
+			}
+		}
+		if($ws[0] =~ /wsdl\s+(\S+)\s*;/) { 
+			if($::cfg{ws}{wsdl}{s} ne 'c') {
+				$::cfg{ws}{wsdl}{v} = $1;
+				$::cfg{ws}{wsdl}{s} = 'f';
+			}
+		}
+		if($ws[0] =~ /subnet_config\s+(\S+)\s*;/) { 
+			if($::cfg{ws}{subnet_cfg}{s} ne 'c') {
+				$::cfg{ws}{subnet_cfg}{v} = $1;
+				$::cfg{ws}{subnet_cfg}{s} = 'f';
+			}
+		}
+	}
+}
+
+sub parse_cfg($$) {
+	my ($fn, $ext) = @_;
+	my $cfg_s = "";
+	#remove comments and newlines
+	open(FH, "<", $fn) or die "Can't open $fn: $!";
+	while(<FH>) {
+		if(/^!/) {
+			if(/(<\s*ext.*?>)/) {
+				$cfg_s .= " $1 "; #the spaces are necessary
+			}
+			next;
+		}
+		chomp($_);	
+		$cfg_s .= " $_ ";
+	}
+	close(FH) or die "Can't close $fn: $!";
+	# check for unbalanced brackets
+	$cfg_s =~ /^(?{$::d=0})((?:(?(?{$::d<0})$|{(?{$::d++}))|(?(?{$::d<0})$|}(?{$::d--}))|(?(?{$::d<0})$|[^{}]*))*)$/;
+	die "syntax error in $fn (unbalanced curly)\n" unless $::d==0;
+
+	#get the domain id
+	my @did = $cfg_s =~ /domain-id\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+
+	#get the router blocks and balance the brackets
+	my @r = $cfg_s =~ /router\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+	#get the link blocks and parse them
+	for(my $i=0; $i<@r; $i++) {
+		my @l = $r[$i] =~ /link\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)/g;
+		if(defined(pos)) { pos = 0;};
+		$r[$i] =~ s/link\s*({(?{$::d=1})(?:{(?{$::d++})|(?(?{$::d>0})}(?{$::d--})|$)|(?(?{$::d>0})[^{}]*|$))*)//g;
+		if(defined(pos)) { pos = 0;};
+		die "syntax error in $fn (missing router id)" unless $r[$i] =~ /id\s+(.*?)\s/;
+		my $rtr_id = $1;
+		my $rtr_ctrlr = "none";
+		my $rtr_ctrlip = "none";
+		if($r[$i] =~ /[\s{]home_vlsr\s+(.*?)[\s}]/) {
+			$rtr_ctrlr = $1;
+		} 
+		else {
+			die "syntax error in $fn (missing home_vlsr)";
+		}
+		my $rtr_name = ($r[$i]=~/[\s{]dtl_name\s+(.*?)[\s}]/)?$1:"unknown";
+		my $link_id = "";
+		my $port_name = "";
+		for(my $j=0; $j<@l; $j++) {
+			if($l[$j] =~ /[\s{]id\s+(.*?)[\s}]/) {
+				$link_id = $1;
+				if($l[$j] =~ /[\s{]dtl_id\s+(.*?)[\s}]/) {
+					$port_name = $1;
+					$ext->add($rtr_id, $rtr_name, $link_id, $port_name);
+				} 
+			} 
+			else {
+				die "syntax error in $fn (missing link id)";
+			}
+		}
+	}
+}
+
+sub load_configuration($$) {
+	my ($fn, $er) = @_;
+	# test the file
+	open(SUB_H, "<", $fn) or die "Can't open $fn: $!";
+	close(SUB_H) or die "Can't close $fn: $!";
+	Log::log "info", "loading $fn",
+	parse_cfg($fn, $er);
+}
+
 ################################################################################
 ################################################################################
 $SIG{TERM} = \&catch_term;
@@ -159,7 +355,7 @@ $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
 $| = 1;
 share($::ctrlC);
-#$::d = 0; # a global to use in regex embedded command execution
+$::d = 0; # a global to use in regex embedded command execution
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -173,16 +369,36 @@ share($::ctrlC);
 		"s" => 'd'
 	},
 	"config" => {
-		"v" => "/etc/dcn/terce.conf", 
+		"v" => "/etc/terce/terce.conf", 
 		"s" => 'd'
 	},
-	"port" => {
-		"v" => "2690", 
-		"s" => 'd'
+	"gmpls" => {
+		"port" => {
+			"v" => "2690", 
+			"s" => 'd'
+		}
+	},
+	"http" => {
+		"port" => {
+			"v" => "80", 
+			"s" => 'd'
+		},
+		"root" => {
+			"v" => "./www", 
+			"s" => 'd'
+		}
 	},
 	"ws" => {
 		"port" => {
-			"v" => "80", 
+			"v" => "8080", 
+			"s" => 'd'
+		},
+		"wsdl" => {
+			"v" => undef, 
+			"s" => 'd'
+		},
+		"subnet_cfg" => {
+			"v" => undef, 
 			"s" => 'd'
 		}
 	},
@@ -200,8 +416,12 @@ if(!GetOptions ('d' =>			\&process_opts,
 		'c=s' =>		\&process_opts,
 		'config=s' =>		\&process_opts,
 		'p=s' =>		\&process_opts,
-		'port=s' =>		\&process_opts,
-		'wsport=s' =>		\&process_opts,
+		'gmpls_port=s' =>	\&process_opts,
+		'www_port=s' =>		\&process_opts,
+		'www_root=s' =>		\&process_opts,
+		'ws_port=s' =>		\&process_opts,
+		'wsdl=s' =>		\&process_opts,
+		'subnet_cfg=s' =>	\&process_opts,
 		'l=s' =>		\&process_opts,
 		'log=s' =>		\&process_opts,
 		'dbg:s{,}' =>		\&process_opts,
@@ -210,9 +430,31 @@ if(!GetOptions ('d' =>			\&process_opts,
 	usage();
 }
 
+# process the main config file
+eval {
+	process_cfg();
+};	
+if($@) {
+	Log::log "err", $@;
+	Log::log "info", "process terminating";
+	print("ERROR: $@\n");
+	print("process terminating\n");
+	exit;
+}
+
 my $daemonize = undef;
 
 init_cfg(\$daemonize);
+
+my $ext_defs = new WS::External();
+
+eval {
+	load_configuration($::cfg{ws}{subnet_cfg}{v}, $ext_defs);
+};
+if($@) {
+	Log::log("err", "$@\n");
+}
+
 
 if($daemonize) {
 	Log::open(Log::FILE, "info warning err", $::cfg{log}{v});
@@ -240,6 +482,14 @@ eval {
 	my $tqin = new Thread::Queue;
 	my $tqout = new Thread::Queue;
 
+	# start the HTTP server
+	if(0) {
+		my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
+		if($sw_server) {
+			push(@servers, $sw_server);
+		}
+	}
+
 	# start the SOAP/HTTP server
 	my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
 	if($sw_server) {
@@ -248,11 +498,11 @@ eval {
 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
 		LocalAddr => inet_ntoa(INADDR_ANY),
-		LocalPort => $::cfg{port}{v},
+		LocalPort => $::cfg{gmpls}{port}{v},
 		ReuseAddr => 1,
 		Blocking => 1,
 		Proto     => 'tcp') or die "socket: $@\n";
-	Aux::print_dbg_net("listening on port $::cfg{port}{v}");
+	Aux::print_dbg_net("listening on port $::cfg{gmpls}{port}{v}");
 	while(!$::ctrlC) {
 		my @conn = $serv_sock->accept();
 		if(!@conn) {

@@ -27,12 +27,13 @@ use strict;
 use warnings;
 use Aux;
 use GMPLS::API;
+use GMPLS::Constants;
 use IO::Select;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -45,6 +46,11 @@ my $sock = undef;
 my $select = undef;
 my $ctrl_sock = undef;
 my $tq = undef;
+
+sub activate_tedb() {
+	my @cmd = ({"cmd"=>TEDB_ACTIVATE});
+	Aux::send_to_tedb($tq, @cmd);
+}
 
 sub new {
 	shift;
@@ -101,6 +107,8 @@ sub run() {
 				GMPLS::API::ack_msg($sock, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
+				activate_tedb();
+				$msg{$sn} = {};
 			}
 			else {
 				GMPLS::API::ack_msg($sock, $msg{$sn});

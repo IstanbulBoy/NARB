@@ -33,7 +33,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -59,8 +59,8 @@ sub new {
 	shift;
 	($lport, $tqin, $tqout)  = @_;
 	my $self = {
-	      _tedb => {},
-	      _xml => SOAP::Data->name('topology' => undef)
+		_tedb => undef,
+		_xml => undef
 	};
 	bless $self;
 	$srvr = new SOAP::Transport::HTTP::Daemon(
@@ -69,15 +69,6 @@ sub new {
 		ReuseAddr => 1,
 		Blocking => 0
 		)->dispatch_to($self);
-	$$self{_xml}->attr({ id => TERCE_TOPO_ID,
-			xmlns => TERCE_TOPO_XMLNS });
-	my $xml_idcID = SOAP::Data->name('idcId' => TERCE_IDC_ID);
-	my $xml_domain = SOAP::Data->name('domain' => undef);
-	$xml_domain->attr({ id => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
-
-	my @topo_a = ($xml_idcID, $xml_domain);
-
-	$$self{_xml}->name('topology')->value(\@topo_a);
 	return $self;
 }
 
@@ -93,6 +84,7 @@ sub selectNetworkTopology {
 	if(!defined($scope)) {
 	}
 	Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
+	generate_soap_resp();
 	return $$self{_xml}; 
 }
 
@@ -103,9 +95,35 @@ sub insertNetworkTopology {
 
 ####################################################################
 
+sub generate_soap_resp() {
+	my $self = shift;
+	my $xml = {};
+
+	if(!defined($$self{_tedb})) {
+		die SOAP::Fault->faultcode('Receiver') 
+		->faultstring('topology not ready')
+		->faultdetail(SOAP::Data->name('TerceTedbFault')
+			->value(\SOAP::Data->name('msg' => 'TERCE has not received all the necesary information from narb/rce to form the response')));
+	}
+	else {
+		$xml = SOAP::Data->name('topology' => undef);
+		$xml->attr({ id => TERCE_TOPO_ID,
+				xmlns => TERCE_TOPO_XMLNS });
+		my $xml_idcID = SOAP::Data->name('idcId' => TERCE_IDC_ID);
+		my $xml_domain = SOAP::Data->name('domain' => undef);
+		$xml_domain->attr({ id => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
+
+		my @topo_a = ($xml_idcID, $xml_domain);
+
+		$xml->name('topology')->value(\@topo_a);
+	}
+	$$self{_xml} = $xml;
+}
+
 sub run() {
 	my $self = shift;
 	my $d = undef;
+	my $tedb = {};
 	while(!$::ctrlC) {
 		# WS server
 		$srvr->handle;
@@ -116,17 +134,24 @@ sub run() {
 			#add a valid OSPF-TE talker to TEDB
 			# (these will serve as validation for the sub-tlv insertions)
 			if($$d{cmd} == TEDB_RTR_ON) {
-				$$self{_tedb}{${$$d{data}}[0]}{id} = ${$$d{data}}[0];
+				$$tedb{${$$d{data}}[0]}{id} = ${$$d{data}}[0];
 				Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 			}
 			elsif($$d{cmd} == TEDB_INSERT) {
-				if(exists($$self{_tedb}{$$d{rtr}})) {
+				if(exists($$tedb{$$d{rtr}})) {
+					if(1) {
+					}
 					Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
 				}
 				else {
 					Log::log "warning", "attempting to insert sub-tlv from unknown advertiser: $$d{rtr}\n";
 					Log::log "warning", "... sub-tlv discarded\n";
 				}
+			}
+			elsif($$d{cmd} == TEDB_ACTIVATE) {
+				Aux::print_dbg_tedb("activating TEDB\n");
+				$$self{_tedb} = $tedb;
+				$tedb = {};
 			}
 		}
 	}
