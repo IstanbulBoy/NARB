@@ -33,7 +33,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -121,9 +121,8 @@ sub generate_soap_resp() {
 	$$self{_xml} = $xml;
 }
 
-sub process_q($$$) {
-	my($d, $tedb, $dbr) = @_;
-	my $lblock = undef;
+sub process_q($$$$) {
+	my($d, $tedb, $dbr, $blk_r) = @_;
 	#add a valid OSPF-TE talker to TEDB
 	# (these will serve as validation for the sub-tlv insertions)
 	if($$d{cmd} == TEDB_RTR_ON) {
@@ -133,8 +132,8 @@ sub process_q($$$) {
 	#link subtlv delimiter
 	elsif($$d{cmd} == TEDB_LINK_MARK) {
 		if(exists($$tedb{$$d{rtr}})) {
-			Aux::print_dbg_tedb("  }\n") if defined($lblock);
-			$lblock = $$d{rtr};
+			Aux::print_dbg_tedb("  }\n") if defined($$blk_r);
+			$$blk_r = $$d{rtr};
 			Aux::print_dbg_tedb("  LINK BLOCK {\n");
 		}
 		else {
@@ -155,7 +154,7 @@ sub process_q($$$) {
 		}
 	}
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
-		Aux::print_dbg_tedb("activating TEDB\n");
+		Aux::print_dbg_tedb("  }\nactivating TEDB\n");
 		$dbr = $tedb;
 		$tedb = {};
 	}
@@ -166,6 +165,8 @@ sub run() {
 	my $d = undef;
 	my $tedb1 = {};
 	my $tedb2 = {};
+	my $lblock1 = undef;
+	my $lblock2 = undef;
 	while(!$::ctrlC) {
 		# WS server
 		$srvr->handle;
@@ -173,12 +174,12 @@ sub run() {
 		# rce or narb TEDB queue
 		$d = $tq1->dequeue_nb();
 		if(defined($d)) {
-			process_q($d, $tedb1, $$self{_tedb1});
+			process_q($d, $tedb1, $$self{_tedb1}, \$lblock1);
 		}
 		# rce or narb TEDB queue
 		$d = $tq2->dequeue_nb();
 		if(defined($d)) {
-			process_q($d, $tedb2, $$self{_tedb2});
+			process_q($d, $tedb2, $$self{_tedb2}, \$lblock2);
 		}
 	}
 	$srvr->shutdown(SHUT_RDWR);
