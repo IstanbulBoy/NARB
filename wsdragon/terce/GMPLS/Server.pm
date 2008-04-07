@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,38 +41,40 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-my $name = undef;
-my $sock = undef;
-my $select = undef;
-my $ctrl_sock = undef;
-my $tq = undef;
-
-sub activate_tedb() {
+sub activate_tedb($) {
+	my ($tq) = @_;
 	my @cmd = ({"cmd"=>TEDB_ACTIVATE});
 	Aux::send_to_tedb($tq, @cmd);
 }
 
 sub new {
 	shift;
-	($sock, $tq)  = @_;
-	$select = new IO::Select($sock);
-	my $self = {};
+	my ($sock, $tq)  = @_;
+	my $select = new IO::Select($sock);
+	my $self = {
+		"name" => undef,
+		"sock" => $sock,
+		"select" => $select,
+		"ctrl_sock" => undef,
+		"tq" => $tq
+	};
 	bless $self;
 	return $self;
 }
 
 sub run() {
+	my $self = shift;
 	my %msg;
 	my $sn;
 	my $err;
 	while(!$::ctrlC) {
-		if(!$sock->connected()) {
+		if(!$$self{sock}->connected()) {
 			Log::log "err", "client disconnect\n";
 			last;
 		}
 
 		eval {
-			$sn = GMPLS::API::get_msg($select, \%msg);
+			$sn = GMPLS::API::get_msg($$self{select}, \%msg);
 		};
 		if($@) {
 			Log::log "err", "$@\n";
@@ -87,31 +89,31 @@ sub run() {
 			if(GMPLS::API::is_sync_init($msg{$sn})) {
 				#guess who's calling ... (we really don't know)
 				if($msg{$sn}{hdr}{tag2} eq 2693) {
-					$name = "narb";
+					$$self{name} = "narb";
 				}
 				elsif($msg{$sn}{hdr}{tag2} eq 2695) {
-					$name = "rce";
+					$$self{name} = "rce";
 				}
 				else {
-					$name = "unidentified";
+					$$self{name} = "unidentified";
 				}
-				Aux::print_dbg_run("starting (%s) server thread\n", $name);
+				Aux::print_dbg_run("starting (%s) server thread\n", $$self{name});
 				# open the control channel
-				$ctrl_sock = GMPLS::API::open_ctrl_channel($sock, $msg{$sn}{hdr}{tag2});
-				GMPLS::API::ack_msg($sock, $msg{$sn});
+				$$self{ctrl_sock} = GMPLS::API::open_ctrl_channel($$self{sock}, $msg{$sn}{hdr}{tag2});
+				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}, $tq) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{tq}) <0) {
 					$err = 1;
 				}
-				GMPLS::API::ack_msg($sock, $msg{$sn}, $err);
+				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
-				activate_tedb();
+				activate_tedb($$self{tq});
 				$msg{$sn} = {};
 			}
 			else {
-				GMPLS::API::ack_msg($sock, $msg{$sn});
+				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 		};
 		if($@) {
@@ -119,11 +121,11 @@ sub run() {
 		}
 		threads->yield();
 	}
-	Aux::print_dbg_run("exiting %s server thread\n", $name);
-	if(defined($ctrl_sock)) {
-		close($ctrl_sock);
+	Aux::print_dbg_run("exiting %s server thread\n", $$self{name});
+	if(defined($$self{ctrl_sock})) {
+		close($$self{ctrl_sock});
 	}
-	close($sock);
+	close($$self{sock});
 }
 
 1;
