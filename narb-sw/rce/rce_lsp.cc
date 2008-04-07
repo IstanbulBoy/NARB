@@ -393,7 +393,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             //$$$$ special handling for subnet-interface local-id subobject
             if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
             {
-                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_src)) != NULL)
+                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, lclid_src)) != NULL)
                 {
                     HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
                 }
@@ -405,7 +405,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             //$$$$ special handling for subnet-interface local-id subobject
             if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
             {
-                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_dest)) != NULL)
+                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, lclid_dest)) != NULL)
                 {
                     HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
                 }
