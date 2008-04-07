@@ -388,8 +388,28 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         subobj = &(*it);
         vtag = 0;
 
-        if (subobj->addr.s_addr == req_data.src.s_addr || subobj->addr.s_addr == req_data.dest.s_addr)
+        if (subobj->addr.s_addr == req_data.src.s_addr)
         {
+            //$$$$ special handling for subnet-interface local-id subobject
+            if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+            {
+                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_src)) != NULL)
+                {
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+                }
+            }
+            continue;
+        }
+        if (subobj->addr.s_addr == req_data.dest.s_addr)
+        {
+            //$$$$ special handling for subnet-interface local-id subobject
+            if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+            {
+                if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_dest)) != NULL)
+                {
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+                }
+            }
             continue;
         }
         if (subobj->hop_type == ERO_TYPE_LOOSE_HOP)
@@ -402,19 +422,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             continue;
         }
         link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
-        if (link1 == NULL && (lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
-        {
-            //1--> special handling for subnet-interface local-id subobject
-            if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_src)) != NULL)
-            {
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
-            }
-            else if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_dest)) != NULL)
-            {
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
-            }
-        }
-        else while (link1 != NULL) // updating all links with the same local interface address
+        while (link1 != NULL) // updating all links with the same local interface address
         {
             vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG

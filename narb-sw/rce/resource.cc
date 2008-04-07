@@ -372,6 +372,8 @@ void Link::hook_PreUpdate(Resource * oldResource)
         struct timeval timeDiff = timeNow - delta->create_time;
         if (timeDiff < delta->expiration)
         { // keep the delta
+           // this may result in double-reduction of bandwdith if ospfd has already received update for this detla
+           // we keep this in case that ospfd has not received the update so that we have to adjust it by the delta here.
             (*this) -= (*delta);
             iter++;
         }
