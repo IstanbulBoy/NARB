@@ -395,7 +395,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             {
                 if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, lclid_src)) != NULL)
                 {
-                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), NULL, holding_time);
                 }
             }
             continue;
@@ -407,7 +407,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             {
                 if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, lclid_dest)) != NULL)
                 {
-                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), NULL, holding_time);
                 }
             }
             continue;
