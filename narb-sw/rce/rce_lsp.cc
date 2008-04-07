@@ -535,25 +535,23 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         break;
 
     case ACT_CONFIRM:
-        /*
-        delta = link1->lookupDeltaByOwner(ucid, seqnum);
-        if (delta)
+        if (holding_time == 0)
+            holding_time = SystemConfig::delta_expire_reserve;
+        if (holding_time == 0)
         {
-            //simply removing without put back the held resources
-            link1->DeltaListPointer()->remove(delta); 
-            delete delta;
+            delta = link1->lookupDeltaByOwner(ucid, seqnum);
+            if (delta)
+            {
+                //simply removing without putting back the held resources
+                link1->DeltaListPointer()->remove(delta); 
+                delete delta;
+            }
+            break; // not to contniue if holding_time for reservation is zero
         }
-        */
         // removing the query delta and puting back held resources.
         delta = link1->removeDeltaByOwner(ucid, seqnum);
         if (delta)
             delete delta;
-
-        if (holding_time == 0)
-            holding_time = SystemConfig::delta_expire_reserve;
-        if (holding_time == 0)
-            break; // not to contniue if still zero
-
         delta = new LinkStateDelta;
         memset(delta, 0, sizeof(LinkStateDelta));
         delta->owner_ucid = ucid;
