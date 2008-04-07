@@ -490,6 +490,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
+        delta->flags |= DELTA_QUERIED;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
             delta->flags |= DELTA_TIMESLOTS;
@@ -538,6 +539,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
+        delta->flags |= DELTA_RESERVED;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
             delta->flags |= DELTA_TIMESLOTS;
@@ -569,6 +571,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         delta->owner_ucid = ucid;
         delta->owner_seqnum = seqnum;
         delta->bandwidth = req_data.bandwidth;
+        delta->flags |= DELTA_UPDATED;
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         {
             delta->flags |= DELTA_TIMESLOTS;

@@ -334,7 +334,11 @@ struct LinkStateDelta
       u_int32_t wavelength;
     };
 };
-
+// delta status
+#define DELTA_QUERIED 0x1000
+#define DELTA_RESERVED 0x2000
+#define DELTA_UPDATED 0x4000
+// delta data type
 #define DELTA_VLANTAG 0x0001
 #define DELTA_VTAGMASK 0x0002
 #define DELTA_TIMESLOTS 0x0004
