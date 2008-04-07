@@ -42,6 +42,8 @@ use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
 use Getopt::Long;
 use IO::Socket::INET;
+use HTTP::Daemon;
+use HTTP::Status;
 
 my @servers = ();
 %::cfg = ();
@@ -62,6 +64,7 @@ usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
               (default 2690)
        --ws_port <port>: listen on this web services port (default 8080)
        --wsdl <wsdl file>: serve TERCE wsdl file (default undefined)
+              NOTE: its location is relative to www_root
        --subnet_cfg <subnet config file>: load some additional info 
               from the file 
        --www_port <port>: serve the wsdl file on this port (default 80)
@@ -80,6 +83,7 @@ USG
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating threads... (SIG$signame)\n");
+	Log::log("info", "   (http server can take up to 5s to exit)\n");
 	$::ctrlC = 1;
 }
 
@@ -132,6 +136,33 @@ sub init_cfg($) {
 		Log::log "warning", "running in foreground\n";
 		$$r1 = 0;
 	}
+	if(defined($::cfg{http}{root}{v})) {
+		eval {
+			if(!(-e $::cfg{http}{root}{v} && -d $::cfg{http}{root}{v} && -r $::cfg{http}{root}{v})) {
+				die "http root problem\n";
+			}
+		};
+		if($@) {
+			$::cfg{http}{root}{v} = undef;
+			$::cfg{ws}{wsdl}{v} = undef;
+			Log::log "warning", "$@\n",
+			Log::log "warning", "HTTP server will not be started\n",
+			return;
+		}
+	}
+	if(defined($::cfg{ws}{wsdl}{v})) {
+		my $wsdl = join("/", $::cfg{http}{root}{v}, $::cfg{ws}{wsdl}{v});
+		eval {
+			open(SUB_H, "<", $wsdl) or die "Can't open $wsdl: $!\n";
+			close(SUB_H) or die "Can't close $wsdl: $!\n";
+		};
+		if($@) {
+			$::cfg{http}{root}{v} = undef;
+			$::cfg{ws}{wsdl}{v} = undef;
+			Log::log "warning", "$@\n",
+			Log::log "warning", "HTTP server will not be started\n",
+		}
+	}
 }
 
 # NOTE: running in a different thread here ...
@@ -162,6 +193,72 @@ sub start_ws_server($) {
 	else {
 		$srvr->run();
 	}
+}
+
+sub start_http_server() {
+	my $http = new HTTP::Daemon(
+		LocalAddr => inet_ntoa(INADDR_ANY),
+		LocalPort => $::cfg{http}{port}{v},
+		ReuseAddr => 1,
+		Timeout => 5,
+		Blocking => 1
+	);
+	Log::log "info",  "starting HTTP server on port $::cfg{http}{port}{v}\n";
+	my $c;
+	while(!$::ctrlC) {
+		while ($c = $http->accept) {
+			while (my $r = $c->get_request) {
+				if ($r->method eq 'GET') {
+					my $f;
+					if($r->uri eq "/") {
+						$f = $::cfg{http}{root}{v}."/index.html";
+					}
+					else {
+						$f = $::cfg{http}{root}{v}.$r->uri;
+					}
+					if(-d $f) {
+						$c->send_error(RC_FORBIDDEN);
+					}
+					elsif(-e $f && -r $f) {
+						if($f =~ /(\.[Ww][Ss][Dd][Ll]\s*$|[Xx][Ss][Dd]\s*$)/) {
+							my $code = RC_OK;
+							my $msg = "";
+							my $content = "";
+							eval {
+								open(FH, "<", $f) or die "Can't open $f: $!\n";
+								while(<FH>) {
+									$content .= $_;
+								}
+								close(FH) or die "Can't close $f: $!\n";
+							};
+							if($@) {
+								Log::log "warning", "wsdl file reading error: $@\n";
+								$c->send_error(RC_BAD_REQUEST);
+							}
+							else {
+								my $h = new HTTP::Headers();
+								$h->header('Content-Type' => 'text/xml');
+								my $res = new HTTP::Response( $code, $msg, $h, $content );
+								$c->send_response($res);
+							}
+						}
+						else {
+							$c->send_file_response($f);
+						}
+					}
+					else {
+						$c->send_error(RC_NOT_FOUND);
+					}
+				}
+				else {
+					$c->send_error(RC_METHOD_NOT_ALLOWED);
+				}
+			}
+		}
+	}
+	$c->close if defined;
+	undef($c);
+	Aux::print_dbg_run("exiting http server thread\n");
 }
 
 sub cleanup_servers() {
@@ -244,22 +341,23 @@ if(!GetOptions ('d' =>			\&process_opts,
 	usage();
 }
 
+# tmp logging facility
+Log::open(Log::OUT, "info warning err");
+
 # NOTE: the following code is a workaround for perl/libc bug which causes
 # a complex rexeg engine state incorrect freeing of the allocated memory
 # cloned across multiple threads. To prevent the crash, all complex regex
-# expression are run in a separate thread so they don't get cloned to other
+# expression are run in a separate thread (async block)so they don't get cloned to other
 # threads. As a result the main $::cfg structure had to be made shared.
 
 # process the main config file
 eval {
-	my $th = async{Parser::process_cfg();};
-	$th->join();
+	my $th = async{Parser::process_cfg_wrapper();};
+	die "cfg" if($th->join());
 };	
 if($@) {
 	Log::log "err", $@;
-	Log::log "info", "process terminating";
-	print("ERROR: $@\n");
-	print("process terminating\n");
+	Log::log "info", "process terminating\n";
 	exit;
 }
 
@@ -267,19 +365,23 @@ my $daemonize = undef;
 
 init_cfg(\$daemonize);
 
-eval {
-	my $th = async{Parser::load_configuration($::cfg{ws}{subnet_cfg}{v});};
-	$th->join();
-};
-if($@) {
-	$::cfg{ws}{subnet_cfg}{v} = undef;	
+if(defined($::cfg{ws}{subnet_cfg}{v})) {
+	eval {
+		my $th = async{Parser::load_config_wrapper($::cfg{ws}{subnet_cfg}{v});};
+		die "cfg" if($th->join());
+	};
+	if($@) {
+		$::cfg{ws}{subnet_cfg}{v} = undef;	
+	}
 }
 
 if(!defined($::cfg{ws}{subnet_cfg}{v})) {
 	Log::log "warning", "WARNING: subnet config file was not loaded\n";
 	Log::log "warning", "WARNING: some data such as router names will be generated\n";
 }
+Log::close();
 
+# reopen logging 
 if($daemonize) {
 	Log::open(Log::FILE, "info warning err", $::cfg{log}{v});
 }
@@ -302,17 +404,16 @@ if($daemonize) {
 		or die "Can't start a new session: $!";
 }
 eval {
-	# start TEDB thread
 	my $tqin = new Thread::Queue;
 	my $tqout = new Thread::Queue;
 
 	# start the HTTP server
-	#if(0) {
-#		my $sw_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
-#		if($sw_server) {
-#			push(@servers, $sw_server);
-#		}
-#	}
+	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
+		my $http_server = threads->create(\&start_http_server);
+		if($http_server) {
+			push(@servers, $http_server);
+		}
+	}
 
 	# start the SOAP/HTTP server
 	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
