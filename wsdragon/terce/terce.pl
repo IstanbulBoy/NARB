@@ -181,11 +181,12 @@ sub spawn_server($$$) {
 	}
 }
 
-sub start_ws_server($) {
-	my ($p, $tqin, $tqout) = @_;
+sub start_ws_server($$$) {
+	my ($p, $tq1, $tq2) = @_;
 	my $srvr;
+	Log::log "info",  "starting ws server on port $p\n";
 	eval {
-		$srvr = new WS::Server($p, $tqin, $tqout);
+		$srvr = new WS::Server($p, $tq1, $tq2);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -404,8 +405,9 @@ if($daemonize) {
 		or die "Can't start a new session: $!";
 }
 eval {
-	my $tqin = new Thread::Queue;
-	my $tqout = new Thread::Queue;
+	my $tq1 = new Thread::Queue;
+	my $tq2 = new Thread::Queue;
+	my @tqs = ($tq1, $tq2);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
@@ -416,7 +418,7 @@ eval {
 	}
 
 	# start the SOAP/HTTP server
-	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tqin, $tqout);
+	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tq1, $tq2);
 	if($ws_server) {
 		push(@servers, $ws_server);
 	}
@@ -439,7 +441,7 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, $tqin);
+		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, shift(@tqs));
 		$client_sock->close();
 		if($thr) {
 			push(@servers, $thr);

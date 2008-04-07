@@ -33,7 +33,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -52,14 +52,15 @@ use constant TERCE_LINK_ID => "link=%s";
 
 my $srvr = undef;
 my $lport = undef;
-my $tqin = undef;
-my $tqout = undef;
+my $tq1 = undef;
+my $tq2 = undef;
 
 sub new {
 	shift;
-	($lport, $tqin, $tqout)  = @_;
+	($lport, $tq1, $tq2)  = @_;
 	my $self = {
-		_tedb => undef,
+		_tedb1 => undef,
+		_tedb2 => undef,
 		_xml => undef
 	};
 	bless $self;
@@ -120,39 +121,64 @@ sub generate_soap_resp() {
 	$$self{_xml} = $xml;
 }
 
+sub process_q($$$) {
+	my($d, $tedb, $dbr) = @_;
+	my $lblock = undef;
+	#add a valid OSPF-TE talker to TEDB
+	# (these will serve as validation for the sub-tlv insertions)
+	if($$d{cmd} == TEDB_RTR_ON) {
+		$$tedb{${$$d{data}}[0]}{rtr_id} = ${$$d{data}}[0];
+		Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
+	}
+	#link subtlv delimiter
+	elsif($$d{cmd} == TEDB_LINK_MARK) {
+		if(exists($$tedb{$$d{rtr}})) {
+			Aux::print_dbg_tedb("  }\n") if defined($lblock);
+			$lblock = $$d{rtr};
+			Aux::print_dbg_tedb("  LINK BLOCK {\n");
+		}
+		else {
+			Log::log "warning", "receiving link subtlvs from unknown advertiser: $$d{rtr}\n";
+			Log::log "warning", "... sub-tlv discarded\n";
+		}
+	}
+	elsif($$d{cmd} == TEDB_INSERT) {
+		if(exists($$tedb{$$d{rtr}})) {
+			if($$d{type} == TE_LINK_SUBTLV_LINK_ID) {
+				$$tedb{$$d{rtr}}{${$$d{data}}[0]}{link_id} = ${$$d{data}}[0];
+			}
+			Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
+		}
+		else {
+			Log::log "warning", "attempting to insert sub-tlv from unknown advertiser: $$d{rtr}\n";
+			Log::log "warning", "... sub-tlv discarded\n";
+		}
+	}
+	elsif($$d{cmd} == TEDB_ACTIVATE) {
+		Aux::print_dbg_tedb("activating TEDB\n");
+		$dbr = $tedb;
+		$tedb = {};
+	}
+}
+
 sub run() {
 	my $self = shift;
 	my $d = undef;
-	my $tedb = {};
+	my $tedb1 = {};
+	my $tedb2 = {};
 	while(!$::ctrlC) {
 		# WS server
 		$srvr->handle;
 
-		# TEDB queue
-		$d = $tqin->dequeue_nb();
+		# rce or narb TEDB queue
+		$d = $tq1->dequeue_nb();
 		if(defined($d)) {
-			#add a valid OSPF-TE talker to TEDB
-			# (these will serve as validation for the sub-tlv insertions)
-			if($$d{cmd} == TEDB_RTR_ON) {
-				$$tedb{${$$d{data}}[0]}{id} = ${$$d{data}}[0];
-				Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
-			}
-			elsif($$d{cmd} == TEDB_INSERT) {
-				if(exists($$tedb{$$d{rtr}})) {
-					if(1) {
-					}
-					Aux::print_dbg_tedb("    sub-level insert: %s\n", $sub_tlvs_link_X{$$d{type}});
-				}
-				else {
-					Log::log "warning", "attempting to insert sub-tlv from unknown advertiser: $$d{rtr}\n";
-					Log::log "warning", "... sub-tlv discarded\n";
-				}
-			}
-			elsif($$d{cmd} == TEDB_ACTIVATE) {
-				Aux::print_dbg_tedb("activating TEDB\n");
-				$$self{_tedb} = $tedb;
-				$tedb = {};
-			}
+			process_q($d, $tedb1, $$self{_tedb1});
+		}
+		# rce or narb TEDB queue
+		$d = $tq2->dequeue_nb();
+		if(defined($d)) {
+			process_q($d, $tedb2, $$self{_tedb2});
 		}
 	}
 	$srvr->shutdown(SHUT_RDWR);
