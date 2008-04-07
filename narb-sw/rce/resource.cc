@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 #include "resource.hh"
+#include "rce_lsp.hh"
 
 ResourceDB ResourceDB::r_db;
 RadixTree<Resource> ResourceDB::r_trees[8];
@@ -709,6 +710,25 @@ Link* ResourceDB::LookupNextLinkByLclRmtIf(Link* prev_link)
     return NULL;
 }
 
+Link* ResourceDB::LookupLinkByLocalId(in_addr rtId, u_int32_t lclId)
+{
+    RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    RadixNode<Resource>* node = link_tree->Root();
+    Link* link;
+    while (node)
+    {
+        if (link = (Link*)node->Data())
+        {
+            if (link->advRtId == rtId.s_addr && (lclId >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID
+                && link->Iscds().size() > 0 && link->Iscds().front()
+                && (link->Iscds().front()->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
+                && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((lclId >> 8) & 0xf))
+                return link;
+        }
+        node = link_tree->NextNode(node);
+    }
+    return NULL;
+}
 
 RadixNode<Resource>* ResourceDB::LookupIncompleteLinkNode(ResourceType rcType, Prefix* prefix)
 {

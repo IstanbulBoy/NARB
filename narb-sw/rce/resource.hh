@@ -504,6 +504,7 @@ public:
     static Link* LookupNextLinkByLclIf(Link* prev_link);
     static Link* LookupLinkByLclRmtIf(ResourceType rcType, in_addr lclIf, in_addr rmtIf);
     static Link* LookupNextLinkByLclRmtIf(Link* prev_link);
+    static Link* LookupLinkByLocalId(in_addr rtId, u_int32_t lclId);
 
     //Hanlding incomplete local physical links
     static RadixNode<Resource>* LookupIncompleteLinkNode(ResourceType rcType, Prefix* prefix);

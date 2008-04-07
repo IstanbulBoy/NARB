@@ -416,6 +416,26 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         }
     }
 
+    //$$$$ handling extra local-id costraints for intra-domain topology updates
+    //1--> special for subnet-interface local-id's
+    //1--> note: when subnet-interface local-id is present, there should be no transit subnet interface.
+    if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        link1 = RDB.LookupLinkByLocalId(req_data.src, &lclid_src);
+        if (link1)
+        {
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+        }
+    }
+    if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        link1 = RDB.LookupLinkByLocalId(req_data.dest, &lclid_dest);
+        if (link1)
+        {
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+        }
+    }
+
     //mapping ero_subobj to loose hop links (a.k.a. interdomain abstract links)
     is_forward_link = is_starting_backward;
     for (it = ero_reply.begin(); it != ero_reply.end();  it++)
