@@ -402,7 +402,19 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             continue;
         }
         link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
-        while (link1 != NULL) // updating all links with the same local interface address
+        if (link1 == NULL && (lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+        {
+            //1--> special handling for subnet-interface local-id subobject
+            if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_src)) != NULL)
+            {
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+            }
+            else if ((link1 = RDB.LookupLinkByLocalId(subobj->addr, &lclid_dest)) != NULL)
+            {
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+            }
+        }
+        else while (link1 != NULL) // updating all links with the same local interface address
         {
             vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG
@@ -413,26 +425,6 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
 
             HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask, holding_time);
             link1 = RDB.LookupNextLinkByLclIf(link1);
-        }
-    }
-
-    //$$$$ handling extra local-id costraints for intra-domain topology updates
-    //1--> special for subnet-interface local-id's
-    //1--> note: when subnet-interface local-id is present, there should be no transit subnet interface.
-    if ((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
-    {
-        link1 = RDB.LookupLinkByLocalId(req_data.src, &lclid_src);
-        if (link1)
-        {
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
-        }
-    }
-    if ((lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
-    {
-        link1 = RDB.LookupLinkByLocalId(req_data.dest, &lclid_dest);
-        if (link1)
-        {
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
         }
     }
 
