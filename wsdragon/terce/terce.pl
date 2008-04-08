@@ -83,7 +83,7 @@ USG
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating threads... (SIG$signame)\n");
-	Log::log("info", "   (http server can take up to 5s to exit)\n");
+	Log::log("info", "   (http server can take up to 10s to exit)\n");
 	$::ctrlC = 1;
 }
 
