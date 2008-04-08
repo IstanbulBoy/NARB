@@ -33,7 +33,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -49,6 +49,13 @@ use constant TERCE_DOMAIN_ID => "domain=dcn.internet2.edu";
 use constant TERCE_NODE_ID => "node=%s";
 use constant TERCE_PORT_ID => "port=%s";
 use constant TERCE_LINK_ID => "link=%s";
+
+use constant SCOPE_ALL => "all";
+use constant SCOPE_ADJ => "adjacentDomains";
+use constant SCOPE_DLT => "delta";
+use constant SCOPE_NDS => "nodes";
+use constant SCOPE_LNK => "internetworkLinks";
+
 
 use constant STAT_LINK_ID => 		(1<<0);
 use constant STAT_LINK_TYPE => 		(1<<1);
@@ -94,34 +101,94 @@ sub new {
 sub findPath {
 	my $self = shift;
 	Aux::print_dbg_ws("findPath()\n");
+	$self->generate_soap_fault('Receiver', 
+		'method not implemented', 
+		'TerceTedbFault', 
+		'findPath is not implemented');
 }
 
 sub selectNetworkTopology {
 	my $self = shift;
 	my($scope) = @_;
 	if(!defined($scope)) {
+		$self->generate_soap_fault('Sender', 
+			'no topology set specified', 
+			'TerceTedbFault', 
+			'<from> must be specified');
 	}
-	Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
-	generate_soap_resp();
+	elsif(
+		lc($scope) ne SCOPE_ALL && 
+		lc($scope) ne SCOPE_ADJ && 
+		lc($scope) ne SCOPE_DLT && 
+		lc($scope) ne SCOPE_NDS && 
+		lc($scope) ne SCOPE_LNK ) {
+		$self->generate_soap_fault('Sender', 
+			'unknown topology set', 
+			'TerceTedbFault', 
+			'$scope not defined in the service description');
+	}
+	elsif(
+		lc($scope) eq SCOPE_ADJ ||
+		lc($scope) eq SCOPE_DLT ||
+		lc($scope) eq SCOPE_NDS ) {
+		$self->generate_soap_fault('Receiver', 
+			'set not implemented', 
+			'TerceTedbFault', 
+			'$scope is not implemented');
+	}
+	else {
+		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
+		$self->generate_soap_resp();
+	}
 	return $$self{_xml}; 
 }
 
 sub insertNetworkTopology {
 	my $self = shift;
 	Aux::print_dbg_ws("insertNetworkTopology()\n");
+	$self->generate_soap_fault('Receiver', 
+		'method not implemented', 
+		'TerceTedbFault', 
+		'insertNetworkTopology is not implemented');
 }
 
 ####################################################################
 
+sub generate_soap_fault($$$$) {
+	my $self = shift;
+	die SOAP::Fault->faultcode($_[0])
+	->faultstring($_[1])
+	->faultdetail(SOAP::Data->name($_[2])
+		->value(\SOAP::Data->name('msg' => $_[3])));
+}
+
 sub generate_soap_resp() {
 	my $self = shift;
 	my $xml = {};
+	my $db = undef;
+	my $done = 0;
 
-	if(!defined($$self{_tedb})) {
-		die SOAP::Fault->faultcode('Receiver') 
-		->faultstring('topology not ready')
-		->faultdetail(SOAP::Data->name('TerceTedbFault')
-			->value(\SOAP::Data->name('msg' => 'TERCE has not received all the necesary information from narb/rce to form the response')));
+	# find the tedb with the subnet links
+	foreach my $i ($$self{_tedb1}, $$self{_tedb2}) {
+		if(defined($i)) {
+			foreach my $rtr (keys %$i) {
+				foreach my $link (keys %{$$i{$rtr}}) {
+					if($$i{$rtr}{$link}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_SONETSDH) {
+						$done = 1;
+						$db = $i;
+						last;
+					}
+				}
+				last if $done;
+			}
+		}
+		last if $done;
+	}
+	if(!defined($db) || !$done) {
+		$self->generate_soap_fault('Receiver', 
+			'topology not ready', 
+			'TerceTedbFault', 
+			'TERCE has not received all the necesary information from narb/rce to form the response');
 	}
 	else {
 		$xml = SOAP::Data->name('topology' => undef);
@@ -180,7 +247,7 @@ sub process_q($$$$$) {
 	#add a valid OSPF-TE talker to TEDB
 	# (these will serve as validation for the sub-tlv insertions)
 	if($$d{cmd} == TEDB_RTR_ON) {
-		$$dr{$data[0]}{rtr_id} = $data[0];
+		$$dr{$data[0]} = undef;
 		Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 		return 0;
 	}
