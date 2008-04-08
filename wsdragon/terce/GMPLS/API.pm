@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -274,6 +274,7 @@ sub parse_tlv($$$;$) {
 			Aux::print_dbg_lsa("    sub-TLV: %s(%d)\n", $sub_tlvs_link_X{$tlv_type}, $tlv_len);
 		}
 		my @res;
+		my @info = ();
 		if($tlv_type == TE_LINK_SUBTLV_LINK_TYPE) {
 			if(parse_tlv_data($md, $o, "C", \@res)<0) {
 				return (-1);
@@ -308,13 +309,15 @@ sub parse_tlv($$$;$) {
 			if(parse_tlv_data($md, $o, "N", \@res)<0) {
 				return (-1);
 			}
-			Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[0])));
+			$res[0] = unpack("f", pack("V", $res[0]));
+			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_MAX_RSV_BW) {
 			if(parse_tlv_data($md, $o, "N", \@res)<0) {
 				return (-1);
 			}
-			Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[0])));
+			$res[0] = unpack("f", pack("V", $res[0]));
+			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_UNRSV_BW) {
 			if(parse_tlv_data($md, $o, "N8", \@res)<0) {
@@ -322,7 +325,8 @@ sub parse_tlv($$$;$) {
 			}
 			if(Aux::dbg_lsa()) {
 				for(my $i=0; $i<@res; $i++) {
-					Aux::print_dbg_lsa("       %s\n", unpack("f", pack("V", $res[$i])));
+					$res[0] = unpack("f", pack("V", $res[0]));
+					Aux::print_dbg_lsa("       %s\n", $res[0]);
 				}
 			}
 		}
@@ -348,7 +352,8 @@ sub parse_tlv($$$;$) {
 			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_enc{$res[1]});
 			if(Aux::dbg_lsa()) {
 				for(my $i=0; $i<8; $i++) {
-					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, unpack("f", pack("V", $res[$i+4])));
+					$res[0] = unpack("f", pack("V", $res[0]));
+					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[0]);
 				}
 			}
 			$o += 36;
@@ -356,24 +361,25 @@ sub parse_tlv($$$;$) {
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC2 ||
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC3 ||
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4) {
-				if(parse_tlv_data($md, $o, "Nn", \@res)<0) {
+				if(parse_tlv_data($md, $o, "Nn", \@info)<0) {
 					return (-1);
 				}
-				Aux::print_dbg_lsa("       min. bw: %s\n", unpack("f", pack("V", $res[0])));
-				Aux::print_dbg_lsa("       mtu: %d\n", $res[1]);
+				$info[0] = unpack("f", pack("V", $info[0]));
+				Aux::print_dbg_lsa("       min. bw: %s\n", $info[0]);
+				Aux::print_dbg_lsa("       mtu: %d\n", $info[1]);
 			}
 			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) {
-				if(parse_tlv_data($md, $o, "nn", \@res)<0) {
+				if(parse_tlv_data($md, $o, "nn", \@info)<0) {
 					return (-1);
 				}
-				my ($len, $ver) = @res;
+				my ($len, $ver) = @info;
 				my $vlan_bitmaps = "";
 				my $tmp_len = 0;
 				if($ver & IFSWCAP_SPECIFIC_SUBNET_UNI) {
-					if(parse_tlv_data($md, $o+4, "nnCCCCNNNNNN", \@res)<0) {
+					if(parse_tlv_data($md, $o+4, "nnCCCCNNNNNN", \@info)<0) {
 						return (-1);
 					}
-					Log::log "warning", "subnet UNI TLV. Not parsed.";
+					Log::log "warning", "subnet UNI TLV. Not parsed.\n";
 				}
 				else {
 					# uncompress first if needed
@@ -431,12 +437,14 @@ sub parse_tlv($$$;$) {
 				}
 			}
 			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) {
-				if(parse_tlv_data($md, $o, "NC", \@res)<0) {
+				if(parse_tlv_data($md, $o, "NC", \@info)<0) {
 					return (-1);
 				}
-				Aux::print_dbg_lsa("       min. bw: %s\n", unpack("f", pack("V", $res[0])));
-				Aux::print_dbg_lsa("       indication: %d\n", $res[1]);
+				$info[0] = unpack("f", pack("V", $info[0]));
+				Aux::print_dbg_lsa("       min. bw: %s\n", $info[0]);
+				Aux::print_dbg_lsa("       indication: %d\n", $info[1]);
 			}
+			push(@res, @info);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_RESV_SCHEDULE) {
 			Log::log "warning", "Resv. schedule TLV. Not parsed.";
@@ -451,7 +459,8 @@ sub parse_tlv($$$;$) {
 			Aux::print_dbg_lsa("       enc upper: %d\n", $res[3]);
 			if(Aux::dbg_lsa()) {
 				for(my $i=0; $i<8; $i++) {
-					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, unpack("f", pack("V", $res[$i+4])));
+					$res[0] = unpack("f", pack("V", $res[0]));
+					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[0]);
 				}
 			}
 		}
