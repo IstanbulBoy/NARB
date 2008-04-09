@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -379,7 +379,7 @@ sub parse_tlv($$$;$) {
 					if(parse_tlv_data($md, $o+4, "nnCCCCNNNNNN", \@info)<0) {
 						return (-1);
 					}
-					Log::log "warning", "subnet UNI TLV. Not parsed.\n";
+					Aux::print_dbg_lsa("       subnet UNI TLV. Not parsed.\n");
 				}
 				else {
 					# uncompress first if needed

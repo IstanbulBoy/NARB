@@ -6,7 +6,7 @@
 	xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/">
 	
 	<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" 
-		schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/wsdl/nmtopo-ctrlp.xsd"/>
+		schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/www/nmtopo-ctrlp.xsd"/>
 	
 	
 	<!-- element definitions -->

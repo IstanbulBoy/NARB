@@ -25,7 +25,9 @@ package WS::Server;
 
 use strict;
 use warnings;
+use Socket;
 use GMPLS::Constants;
+use WS::External;
 use IO::Socket::INET;
 use SOAP::Lite;
 use SOAP::Transport::HTTP;
@@ -33,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -49,6 +51,12 @@ use constant TERCE_DOMAIN_ID => "domain=dcn.internet2.edu";
 use constant TERCE_NODE_ID => "node=%s";
 use constant TERCE_PORT_ID => "port=%s";
 use constant TERCE_LINK_ID => "link=%s";
+
+
+use constant CTRLP_NODE_T => "CtrlPlane:CtrlPlaneNodeContent";
+use constant CTRLP_PORT_T => "CtrlPlane:CtrlPlanePortContent";
+use constant CTRLP_LINK_T => "CtrlPlane:CtrlPlaneLinkContent";
+use constant CTRLP_SWCAP_T => "CtrlPlane:CtrlPlaneSwcapContent";
 
 use constant SCOPE_ALL => "all";
 use constant SCOPE_ADJ => "adjacentDomains";
@@ -154,6 +162,53 @@ sub insertNetworkTopology {
 
 ####################################################################
 
+sub get_nodes($$) {
+	my $self = shift;
+	my ($db, $enc) = @_;
+	my @xml_nodes = ();
+	foreach my $rtr (keys %$db) {
+		my $xml_n = SOAP::Data->name('node' => undef);
+		my $rn = WS::External::get_rtr_name($rtr);
+		my $rtr_id = sprintf(TERCE_NODE_ID, defined($rn)?$rn:sprintf("%08x", $rtr));
+		my $id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id;
+		$xml_n->attr({ id => $id})->type(CTRLP_NODE_T);
+		my $xml_addr = SOAP::Data->name('address' => inet_ntoa(pack("N", $rtr)));
+		my @xml_ports = ();
+		foreach my $link (keys %{$$db{$rtr}}) {
+			#port
+			my $pn = WS::External::get_port_name($rtr, $link);
+			my $fpn = exists($$db{$rtr}{$link}{remote})?
+			("DTL".(defined($pn)?$pn:sprintf("%08x", $link))):
+			("S".(defined($pn)?$pn:sprintf("%08x", $link)));
+			my $p_id = sprintf(TERCE_PORT_ID, $fpn);
+			my $id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id;
+			my $xml_p = SOAP::Data->name('port' => undef);
+			$xml_p->attr({ id => $id})->type(CTRLP_PORT_T);
+			#link
+			my $l_id = sprintf(TERCE_LINK_ID, inet_ntoa(pack("N", $$db{$rtr}{$link}{local})));
+			$id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id.":".$l_id;
+			my $xml_l = SOAP::Data->name('link' => undef);
+			$xml_l->attr({ id => $id})->type(CTRLP_LINK_T);
+			#swcap
+			my $xml_swcap = SOAP::Data->name('SwitchingCapabilityDescriptors');
+#			encodingType
+#			switchingcapType
+#			switchingCapabilitySpecficInfo
+#			capability
+#			unimplemented
+
+			my @swcap_v = ();
+			my @link_v = ();
+			my @port_v = ($xml_l);
+			$xml_p->name('port')->value(\@port_v);	
+			push(@xml_ports, $xml_p);
+		}
+		$xml_n->name('node')->value([$xml_addr, @xml_ports]);
+		push(@xml_nodes, $xml_n);
+	}
+	return @xml_nodes;
+}
+
 sub generate_soap_fault($$$$) {
 	my $self = shift;
 	die SOAP::Fault->faultcode($_[0])
@@ -194,12 +249,19 @@ sub generate_soap_resp() {
 		$xml = SOAP::Data->name('topology' => undef);
 		$xml->attr({ id => TERCE_TOPO_ID,
 				xmlns => TERCE_TOPO_XMLNS });
+		# <idcID>
 		my $xml_idcID = SOAP::Data->name('idcId' => TERCE_IDC_ID);
+
+		# <domain>
 		my $xml_domain = SOAP::Data->name('domain' => undef);
 		$xml_domain->attr({ id => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
 
-		my @topo_a = ($xml_idcID, $xml_domain);
+		# <node> array of
+		my @nodes = $self->get_nodes($db, LINK_IFSWCAP_SUBTLV_ENC_SONETSDH);
 
+		# construct the document
+		$xml_domain->name('domain')->value(\@nodes);
+		my @topo_a = ($xml_idcID, $xml_domain);
 		$xml->name('topology')->value(\@topo_a);
 	}
 	$$self{_xml} = $xml;

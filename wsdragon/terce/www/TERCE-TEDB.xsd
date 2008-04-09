@@ -5,7 +5,7 @@
 	xmlns:tns="http://dcn.internet2.edu/DRAGON/TERCE/TEDB"
 	xmlns:ctrlp="http://ogf.org/schema/network/topology/ctrlPlane/20070626/">
 	
-	<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/wsdl/nmtopo-ctrlp.xsd"/>
+	<xsd:import namespace="http://ogf.org/schema/network/topology/ctrlPlane/20070626/" schemaLocation="file:///home/jflidr/dragon/wsdragon/terce/www/nmtopo-ctrlp.xsd"/>
 	
 	
 	<!-- element definitions -->
@@ -31,7 +31,7 @@
             
             <!-- FROM indicates the set of topology information that will be returned. the types
             for this field are based on the types in Tom's document-->
-            <xsd:element name="from" type="tns:selectTypes" /> 
+            <xsd:element name="from" minOccurs="1" type="tns:selectTypes" /> 
         </xsd:sequence>
     </xsd:complexType>
     
