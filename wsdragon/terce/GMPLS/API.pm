@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -325,8 +325,8 @@ sub parse_tlv($$$;$) {
 			}
 			if(Aux::dbg_lsa()) {
 				for(my $i=0; $i<@res; $i++) {
-					$res[0] = unpack("f", pack("V", $res[0]));
-					Aux::print_dbg_lsa("       %s\n", $res[0]);
+					$res[$i] = unpack("f", pack("V", $res[$i]));
+					Aux::print_dbg_lsa("       %s\n", $res[$i]);
 				}
 			}
 		}
@@ -352,8 +352,8 @@ sub parse_tlv($$$;$) {
 			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_enc{$res[1]});
 			if(Aux::dbg_lsa()) {
 				for(my $i=0; $i<8; $i++) {
-					$res[0] = unpack("f", pack("V", $res[0]));
-					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[0]);
+					$res[$i+4] = unpack("f", pack("V", $res[$i+4]));
+					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[$i+4]);
 				}
 			}
 			$o += 36;
@@ -412,27 +412,26 @@ sub parse_tlv($$$;$) {
 					else {
 						$vlans = $vlan_bitmaps;
 					}
-					if(Aux::dbg_lsa()) {
-						if(length($vlans)>0) {
-							Aux::print_dbg_lsa("       vlans:");
-							my $bin_s = join("", unpack("B*", $vlans));
-							my $p = 0;
-							while($bin_s =~ s/(1+)//) {
-								Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
-								$p = $+[0] - $-[0];
-							}
-							Aux::print_dbg_lsa("\n");
+					if(length($vlans)>0) {
+						Aux::print_dbg_lsa("       vlans:");
+						my $bin_s = join("", unpack("B*", $vlans));
+						my $p = 0;
+						while($bin_s =~ s/(1+)//) {
+							push(@info, sprintf("%d-%d", $-[0]+$p+1, $+[0]+$p));
+							Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
+							$p = $+[0] - $-[0];
 						}
-						if(length($alloc_vlans)>0) {
-							Aux::print_dbg_lsa("       alloc. vlans:");
-							my $bin_s = join("", unpack("B*", $alloc_vlans));
-							my $p = 0;
-							while($bin_s =~ s/(1+)//) {
-								Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
-								$p = $+[0] - $-[0];
-							}
-							Aux::print_dbg_lsa("\n");
+						Aux::print_dbg_lsa("\n");
+					}
+					if(length($alloc_vlans)>0) {
+						Aux::print_dbg_lsa("       alloc. vlans:");
+						my $bin_s = join("", unpack("B*", $alloc_vlans));
+						my $p = 0;
+						while($bin_s =~ s/(1+)//) {
+							Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
+							$p = $+[0] - $-[0];
 						}
+						Aux::print_dbg_lsa("\n");
 					}
 				}
 			}
