@@ -18,18 +18,21 @@
 # Author: Jaroslav Flidr
 # March 1, 2008
 #
-# File: Constants.pm
+# File: External.pm
 #
 
 package WS::External;
 
+use threads;
+use threads::shared;
 use strict;
 use warnings;
+use Socket;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -37,17 +40,15 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-my $defs = {};
+my $defs = &share({});
 
 sub add($$$$) {
 	my($rtr_id, $rtr_name, $link_id, $port_name) = @_;
 	return if !(defined($rtr_id) && defined($rtr_name) && defined($link_id) && defined($port_name));
-	$$defs{$rtr_id} = {
-		"name"=> uc($rtr_name), 
-		$link_id => {
-			"name"=>("DTL".$port_name)
-		}
-	}
+	$$defs{$rtr_id} = &share({});
+	$$defs{$rtr_id}{$link_id} = &share({});
+	$$defs{$rtr_id}{name} = uc($rtr_name);
+	$$defs{$rtr_id}{$link_id}{name} = uc($port_name);
 }
 
 sub flush () {
@@ -56,15 +57,18 @@ sub flush () {
 
 sub get_rtr_name($) {
 	my($rtr_id) = @_;
-	return undef if(!exists($$defs{$rtr_id}));
-	return $$defs{$rtr_id}{name};
+	my $idIP = inet_ntoa(pack("N", $rtr_id));
+	return undef if(!exists($$defs{$idIP}));
+	return $$defs{$idIP}{name};
 }
 
 sub get_port_name($$) {
 	my($rtr_id, $link_id) = @_;
-	return undef if(!exists($$defs{$rtr_id}));
-	return undef if(!exists($$defs{$rtr_id}{$link_id}));
-	return $$defs{$rtr_id}{$link_id}{name};
+	my $idIP = inet_ntoa(pack("N", $rtr_id));
+	my $lidIP = inet_ntoa(pack("N", $link_id));
+	return undef if(!exists($$defs{$idIP}));
+	return undef if(!exists($$defs{$idIP}{$lidIP}));
+	return $$defs{$idIP}{$lidIP}{name};
 }
 
 1;
