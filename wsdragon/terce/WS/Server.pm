@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -82,6 +82,8 @@ use constant STAT_LINK_COMPLETE => 	(
 	STAT_LINK_MAX_BW | 
 	STAT_LINK_SWCAP);
 
+use constant MIN_RES_BW => 50000000;
+
 my $srvr = undef;
 my $lport = undef;
 my $tq1 = undef;
@@ -91,9 +93,9 @@ sub new {
 	shift;
 	($lport, $tq1, $tq2)  = @_;
 	my $self = {
-		_tedb1 => undef,
-		_tedb2 => undef,
-		_xml => undef
+		tedb1 => undef,
+		tedb2 => undef,
+		xml => undef
 	};
 	bless $self;
 	$srvr = new SOAP::Transport::HTTP::Daemon(
@@ -148,7 +150,7 @@ sub selectNetworkTopology {
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
 		$self->generate_soap_resp();
 	}
-	return $$self{_xml}; 
+	return $$self{xml}; 
 }
 
 sub insertNetworkTopology {
@@ -167,55 +169,84 @@ sub insertNetworkTopology {
 sub get_swcap_xml($) {
 	my $self = shift;
 	my ($lr) = @_;
-	my $swcap_xml = SOAP::Data->name('SwitchingCapabilityDescriptors');
 	my $enc_xml = SOAP::Data->name('encodingType' => $link_swcap_enc_xml{$$lr{sw_cap}{enc}});
 	my $swtype_xml = SOAP::Data->name('switchingcapType' => $link_swcap_cap_xml{$$lr{sw_cap}{cap}});
-	my $info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => undef);
+	my $info_xml;
+	if($$lr{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_ETH) {
+		my @vtags_xml = ();
+		for(my $i=0; $i<@{$$lr{sw_cap}{vtags}}; $i++) {
+			push(@vtags_xml, SOAP::Data->name('vlanRangeAvailability' => ${$$lr{sw_cap}{vtags}}[$i]));
+		}
+		push(@vtags_xml, SOAP::Data->name('interfaceMTU' => "9000")->type("xsd:string"));
+		$info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => \SOAP::Data->value(@vtags_xml));
+	}
+	else {
+		$info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => 
+			\SOAP::Data->value(SOAP::Data->name('capability' => 'unimplemented')));
+	}
+	return SOAP::Data->name('SwitchingCapabilityDescriptors' => \SOAP::Data->value($enc_xml, $swtype_xml, $info_xml));
 }
 
-sub get_nodes_xml($$) {
+sub get_nodes_xml($) {
 	my $self = shift;
-	my ($db, $enc) = @_;
+	my ($db) = @_;
 	my @nodes_xml = ();
 	foreach my $rtr (keys %$db) {
-		my $node_xml = SOAP::Data->name('node' => undef);
 		my $rn = WS::External::get_rtr_name($rtr);
 		my $rtr_id = sprintf(TERCE_NODE_ID, defined($rn)?$rn:sprintf("%08x", $rtr));
-		my $id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id;
-		$node_xml->attr({ id => $id})->type(CTRLP_NODE_T);
-		my $addr_xml = SOAP::Data->name('address' => inet_ntoa(pack("N", $rtr)));
 		my @ports_xml = ();
 		foreach my $link (keys %{$$db{$rtr}}) {
 			#port
 			my $pn = WS::External::get_port_name($rtr, $link);
-			my $fpn = exists($$db{$rtr}{$link}{remote})?
+			$pn = exists($$db{$rtr}{$link}{remote})?
 			("DTL".(defined($pn)?$pn:sprintf("%08x", $link))):
 			("S".(defined($pn)?$pn:sprintf("%08x", $link)));
-			my $p_id = sprintf(TERCE_PORT_ID, $fpn);
-			my $id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id;
-			my $port_xml = SOAP::Data->name('port' => undef);
-			$port_xml->attr({ id => $id})->type(CTRLP_PORT_T);
+			my $p_id = sprintf(TERCE_PORT_ID, $pn);
+			my $fqp_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id;
 			#link
 			my $l_id = sprintf(TERCE_LINK_ID, inet_ntoa(pack("N", $$db{$rtr}{$link}{local})));
-			$id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id.":".$l_id;
-			my $link_xml = SOAP::Data->name('link' => undef);
-			$link_xml->attr({ id => $id})->type(CTRLP_LINK_T);
+			my $fql_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id.":".$l_id;
 			#swcap
-			$self->get_swcap_xml($$db{$rtr}{$link});
-			my $swcap_xml = SOAP::Data->name('SwitchingCapabilityDescriptors');
-#			encodingType
-#			switchingcapType
-#			switchingCapabilitySpecficInfo
-#			capability
-#			unimplemented
+			my $swcap_xml = $self->get_swcap_xml($$db{$rtr}{$link});
 
-			my @swcap_v = ();
-			my @link_v = ();
-			my @port_v = ($link_xml);
-			$port_xml->name('port')->value(\@port_v);	
+			#the rest
+			my $cap_xml = SOAP::Data->name('capacity' => $$db{$rtr}{$link}{capacity})->type("xsd:string");
+			my $maxrb_xml = SOAP::Data->name('maximumReservableCapacity' => $$db{$rtr}{$link}{max_bw})->type("xsd:string");
+			my $minrb_xml = SOAP::Data->name('minimumReservableCapacity' => MIN_RES_BW)->type("xsd:string");
+			my $gran_xml = SOAP::Data->name('granularity' => MIN_RES_BW)->type("xsd:string");
+			my $met_xml = SOAP::Data->name('trafficEngineeringMetric' => $$db{$rtr}{$link}{metric})->type("xsd:string");
+			my $rmt_xml;
+			if(exists($$db{$rtr}{$link}{remote})) {
+				my $rlink = $$db{$rtr}{$link}{remote};
+				my $rrn = WS::External::get_rtr_name($$rlink{rtr_id});
+				my $rrtr_id = sprintf(TERCE_NODE_ID, defined($rrn)?$rrn:sprintf("%08x", $$rlink{rtr_id}));
+				my $rpn = WS::External::get_port_name($$rlink{rtr_id}, $$rlink{link_id});
+				$rpn = "DTL".(defined($rpn)?$rpn:sprintf("%08x", $$rlink{link_id}));
+				my $rp_id = sprintf(TERCE_PORT_ID, $rpn);
+				my $fqp_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rrtr_id.":".$rp_id;
+				#link
+				my $rl_id = sprintf(TERCE_LINK_ID, inet_ntoa(pack("N", $$rlink{local})));
+				my $rfql_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rrtr_id.":".$rp_id.":".$rl_id;
+				$rmt_xml = SOAP::Data->name('remoteLinkId' => $rfql_id)->type("xsd:string");
+			}
+			else {
+				$rmt_xml = SOAP::Data->name('remoteLinkId' => 'urn:ogf:network:domain=*:node=*:port=*:link=*')->type("xsd:string");
+			}
+
+			my $link_xml = SOAP::Data->name('link' => \SOAP::Data->value($swcap_xml, $cap_xml, $maxrb_xml, $minrb_xml, $gran_xml, $met_xml, $rmt_xml))->type(CTRLP_LINK_T);
+			$link_xml->attr({ ' id' => $fql_id});
+			$cap_xml = SOAP::Data->name('capacity' => $$db{$rtr}{$link}{capacity})->type("xsd:string");
+			$maxrb_xml = SOAP::Data->name('maximumReservableCapacity' => $$db{$rtr}{$link}{max_bw})->type("xsd:string");
+			$minrb_xml = SOAP::Data->name('minimumReservableCapacity' => MIN_RES_BW)->type("xsd:string");
+			$gran_xml = SOAP::Data->name('granularity' => MIN_RES_BW)->type("xsd:string");
+			my $port_xml = SOAP::Data->name('port' => \SOAP::Data->value($link_xml, $cap_xml, $maxrb_xml, $minrb_xml, $gran_xml))->type(CTRLP_PORT_T);
+			$port_xml->attr({ ' id' => $fqp_id});
 			push(@ports_xml, $port_xml);
 		}
-		$node_xml->name('node')->value([$addr_xml, @ports_xml]);
+		my $id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id;
+		my $addr_xml = SOAP::Data->name('address' => inet_ntoa(pack("N", $rtr)));
+		my $node_xml = SOAP::Data->name('node' => \SOAP::Data->value($addr_xml, @ports_xml))->type(CTRLP_NODE_T);
+		$node_xml->attr({ ' id' => $id});
 		push(@nodes_xml, $node_xml);
 	}
 	return @nodes_xml;
@@ -232,59 +263,73 @@ sub generate_soap_fault($$$$) {
 sub generate_soap_resp() {
 	my $self = shift;
 	my $xml = {};
-	my $db = undef;
 	my $done = 0;
 
-	# find the tedb with the subnet links
-	foreach my $i ($$self{_tedb1}, $$self{_tedb2}) {
-		if(defined($i)) {
-			foreach my $rtr (keys %$i) {
-				foreach my $link (keys %{$$i{$rtr}}) {
-					if($$i{$rtr}{$link}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_SONETSDH) {
-						$done = 1;
-						$db = $i;
-						last;
-					}
-				}
-				last if $done;
-			}
-		}
-		last if $done;
-	}
-	if(!defined($db) || !$done) {
+	if(!defined($$self{tedb1}) && !defined($$self{tedb2})) {
 		$self->generate_soap_fault('Receiver', 
 			'topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necesary information from narb/rce to form the response');
 	}
 	else {
-		$xml = SOAP::Data->name('topology' => undef);
-		$xml->attr({ id => TERCE_TOPO_ID,
-				xmlns => TERCE_TOPO_XMLNS });
+		my @nodes = ();
+		foreach my $db ($$self{tedb1}, $$self{tedb2}) {
+			if(defined($db)) {
+				# <node> array of
+				push(@nodes, $self->get_nodes_xml($db));
+			}
+		}
 		# <idcID>
 		my $idcID_xml = SOAP::Data->name('idcId' => TERCE_IDC_ID);
-
 		# <domain>
-		my $domain_xml = SOAP::Data->name('domain' => undef);
-		$domain_xml->attr({ id => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
-
-		# <node> array of
-		my @nodes = $self->get_nodes_xml($db, LINK_IFSWCAP_SUBTLV_ENC_SONETSDH);
+		my $domain_xml = SOAP::Data->name('domain' => \SOAP::Data->value($idcID_xml, @nodes));
+		$domain_xml->attr({ ' id' => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
 
 		# construct the document
-		$domain_xml->name('domain')->value(\@nodes);
-		my @topo_a = ($idcID_xml, $domain_xml);
-		$xml->name('topology')->value(\@topo_a);
+		$xml = SOAP::Data->name('topology' => \SOAP::Data->value($domain_xml));
+		$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
+		$$self{xml} = $xml;
 	}
-	$$self{_xml} = $xml;
 }
 
 ####################################################################
+
+sub find_remote($$) {
+	my $self = shift;
+	my($dr, $ip) = @_;
+	foreach my $rtr (keys %$dr) {
+		foreach my $link (keys %{$$dr{$rtr}}) {
+			#replace the id with the actual ref to the remote link block
+			if($$dr{$rtr}{$link}{local} eq $ip) {
+				return $$dr{$rtr}{$link};
+			}
+		}
+	}
+	return undef;
+}
+
+sub create_graph($) {
+	my $self = shift;
+	my($dr) = @_;
+	foreach my $rtr (keys %$dr) {
+		foreach my $link (keys %{$$dr{$rtr}}) {
+			#replace the id with the actual ref to the remote link block
+			if(exists($$dr{$rtr}{$link}{remote})) {
+				$$dr{$rtr}{$link}{remote} = $self->find_remote($dr, $$dr{$rtr}{$link}{remote});
+				if(!defined($$dr{$rtr}{$link}{remote})) {
+					delete($$dr{$rtr}{$link}{remote});
+				}
+			}
+		}
+	}
+}
+
 
 #
 # inserts the temporary link block into the temporary tedb (if complete)
 #
 sub insert_link_blk($$$) {
+	my $self = shift;
 	my($dr, $br, $hr) = @_;
 	if(exists($$dr{$$br})) {
 		# check if we have a link_id
@@ -318,6 +363,7 @@ sub insert_link_blk($$$) {
 # $sr: reference to a variable which holds the parser status
 #
 sub process_q($$$$$) {
+	my $self = shift;
 	my($d, $dr, $br, $tr, $sr) = @_;
 	my @data = @{$$d{data}};
 	#add a valid OSPF-TE talker to TEDB
@@ -332,7 +378,7 @@ sub process_q($$$$$) {
 		if(exists($$dr{$$d{rtr}})) {
 			if(defined($$br)) {
 				# insert the old link block to the dr
-				my $err = insert_link_blk($dr, $br, $tr) if defined($$tr);
+				my $err = $self->insert_link_blk($dr, $br, $tr) if defined($$tr);
 				# and start a new one
 				$$tr = {"status" => 0};
 				$$br = $$d{rtr};
@@ -368,6 +414,7 @@ sub process_q($$$$$) {
 					if($$d{type} == TE_LINK_SUBTLV_LINK_ID) {
 						${$$tr}{status} |= STAT_LINK_ID; 
 						${$$tr}{link_id} = $data[0];
+						${$$tr}{rtr_id} = $$br; # parent router ID
 						$v = sprintf(" (%08x)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LINK_TYPE) {
@@ -406,10 +453,10 @@ sub process_q($$$$$) {
 						$v = sprintf("\n      (%s, %s)", 
 							$sub_tlvs_link_swcap_cap{$data[0]},
 							$sub_tlvs_link_swcap_enc{$data[1]}) if Aux::dbg_tedb();
-						${$$tr}{sw_cap}{vlans} = [];
+						${$$tr}{sw_cap}{vtags} = [];
 						for(my $i = 14; $i<@data; $i++) {
 							$v .= sprintf("\n      (%s)", $data[$i]) if Aux::dbg_tedb();
-							push(@{${$$tr}{sw_cap}{vlans}}, $data[$i]);
+							push(@{${$$tr}{sw_cap}{vtags}}, $data[$i]);
 						}
 						${$$tr}{status} |= STAT_LINK_SWCAP; 
 					}
@@ -433,7 +480,7 @@ sub process_q($$$$$) {
 	}
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
 		# insert the last link block to the tedb
-		my $err = insert_link_blk($dr, $br, $tr) if defined($$tr);
+		my $err = $self->insert_link_blk($dr, $br, $tr) if defined($$tr);
 		$$tr = {"status" => 0};
 		Aux::print_dbg_tedb("  }\n");
 		if(!$err) {
@@ -462,12 +509,14 @@ sub run() {
 		# rce or narb TEDB queue
 		$d = $tq1->dequeue_nb();
 		if(defined($d)) {
-			my $res = process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
+			my $res = $self->process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
 			if($res == 1) {
 				if($stat1 == 0) {
+					# create net graph
+					$self->create_graph($tedb1);
 					# transfer the completed TEDB
 					Aux::print_dbg_tedb("updating TEDB1\n");
-					$$self{_tedb1} = $tedb1;
+					$$self{tedb1} = $tedb1;
 				}
 				else {
 					Aux::print_dbg_tedb("TEDB1 not updated\n");
@@ -479,12 +528,14 @@ sub run() {
 		# rce or narb TEDB queue
 		$d = $tq2->dequeue_nb();
 		if(defined($d)) {
-			my $res = process_q($d, $tedb2, \$lblock2, \$tmp2, \$stat2);
+			my $res = $self->process_q($d, $tedb2, \$lblock2, \$tmp2, \$stat2);
 			if($res == 1) {
 				if($stat2 == 0) {
+					# create net graph
+					$self->create_graph($tedb2);
 					# transfer the completed TEDB
 					Aux::print_dbg_tedb("updating TEDB2\n");
-					$$self{_tedb2} = $tedb2;
+					$$self{tedb2} = $tedb2;
 				}
 				else {
 					Aux::print_dbg_tedb("TEDB2 not updated\n");
