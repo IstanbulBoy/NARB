@@ -151,6 +151,8 @@ public class dcsNodeSet extends Vector<dcsNode> {
                 n1 = get(j);
                 linkFound = false;
                 te_l1 = n1.getTELinkLabels();
+                int fcnt = 0;
+                Vector<dcsFiber> tmp = new Vector<dcsFiber>();
                 for (int k = 0; k < te_l0.size(); k++) {
                     tes0 = te_l0.get(k);
                     for (int l = 0; l < te_l1.size(); l++) {
@@ -158,14 +160,17 @@ public class dcsNodeSet extends Vector<dcsNode> {
                         if(isTELinked(tes0, tes1)) {
                             dcsNode[] np = {n0, n1};
                             String[] tep = {tes0, tes1};
-                            dcsGlobals.dcsFibers.add(new dcsFiber(np, tep));
+                            fcnt++;
+                            dcsFiber f = new dcsFiber(np, tep);
+                            dcsGlobals.dcsFibers.add(f);
+                            tmp.add(f);
                             linkFound = true;
                             break;
                         }
                     }
-                    if(linkFound) {
-                        break;
-                    }
+                }
+                for(int m = tmp.size()-1; m >= 0; m--) {
+                    tmp.get(m).setCount(fcnt);
                 }
             }
         }

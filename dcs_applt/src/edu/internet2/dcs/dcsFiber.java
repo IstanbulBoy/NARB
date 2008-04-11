@@ -15,6 +15,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.geom.CubicCurve2D;
 import java.util.prefs.Preferences;
 import javax.swing.JLabel;
@@ -31,11 +32,14 @@ public class dcsFiber extends CubicCurve2D.Double {
     private dcsNode endPoint2 = null;
     private dcsTELabel teLabel1 = null;
     private dcsTELabel teLabel2 = null;
-    
+    private int fcount = 1;
+    private int strokeWeight = 2;
     private String id;
     
     private final Color PHY_LH_COLOR = new Color(255, 217, 0, 220);
     private final Color PHY_SH_COLOR = new Color(255, 127, 0, 220);
+    private final Color PHY_LH_THICK_COLOR = new Color(255, 217, 0, 128);
+    private final Color PHY_SH_THICK_COLOR = new Color(255, 127, 0, 128);
     private final Color SHADOW_COLOR = new Color(64, 64, 64, 90);
     private final Color TE_LABEL_COLOR = new Color(64, 64, 64, 60);
     
@@ -63,6 +67,7 @@ public class dcsFiber extends CubicCurve2D.Double {
         
         Color currentColor;
         Graphics2D g2d = (Graphics2D)g;
+        Stroke str = g2d.getStroke();
         
         int p;
         
@@ -103,6 +108,14 @@ public class dcsFiber extends CubicCurve2D.Double {
         lx2 = cx2 - p*(lr2) * Math.cos(alpha);
         ly2 = cy2 - p*(lr2) * Math.sin(alpha);
         
+        if(fcount==1) {
+            strokeWeight = 2;
+        } else if(fcount==2) {
+            strokeWeight = 4;
+        } else {
+            strokeWeight = 6;
+        }
+        
         d = Math.sqrt((y2 - y1)*(y2 - y1) + (x2 - x1)*(x2 - x1));
         
         ctrlx1 = x1 + p*((d/4) * Math.cos((alpha + BETA)));
@@ -134,13 +147,21 @@ public class dcsFiber extends CubicCurve2D.Double {
         shadow.paint(g);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        g2d.setStroke(new BasicStroke(2));
+        g2d.setStroke(new BasicStroke(strokeWeight));
+        
+        currentColor = SHADOW_COLOR;
+        g2d.setPaint(currentColor);
         g2d.draw(g2d.getStroke().createStrokedShape(this));
         
         currentColor = PHY_LH_COLOR;
         
         g2d.setPaint(currentColor);
         g2d.draw(this);
+        g2d.setStroke(str);
+    }
+    
+    public void setCount(int c) {
+        fcount = c;
     }
     
     //getters
@@ -156,16 +177,17 @@ public class dcsFiber extends CubicCurve2D.Double {
         
         public void paint(Graphics g) {
             Graphics2D g2d = (Graphics2D)g;
+            Stroke s = g2d.getStroke();
             Color currentColor;
             double x1 = caster.x1; double y1 = caster.y1; double x2 = caster.x2; double y2 = caster.y2;
             double ctrlx1 = caster.ctrlx1; double ctrly1 = caster.ctrly1; double ctrlx2 = caster.ctrlx2; double ctrly2 = caster.ctrly2;
             setCurve(x1+2, y1+2, ctrlx1, ctrly1, ctrlx2, ctrly2, x2+2, y2+2);
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             currentColor = SHADOW_COLOR;
-            
             g2d.setPaint(currentColor);
-            
+            g2d.setStroke(new BasicStroke(2));
             g2d.draw(this);
+            g2d.setStroke(s);
         }
     }
     
