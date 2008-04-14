@@ -124,6 +124,7 @@ sub process_opts($$) {
 # r1: daemonize
 sub init_cfg($) {
 	my ($r1) = @_;
+	$$r1 = $::cfg{daemonize}{v};
 	Aux::set_dbg_sys($::cfg{dbg}{v});
 	if(Aux::dbg_cfg()) {
 		print("LEGEND: (d) - default value, (f) - file supplied,\n");
@@ -362,8 +363,8 @@ if($@) {
 	exit;
 }
 
-my $daemonize = undef;
 
+my $daemonize = undef;
 init_cfg(\$daemonize);
 
 if(defined($::cfg{ws}{subnet_cfg}{v})) {
