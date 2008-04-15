@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -269,7 +269,7 @@ sub generate_soap_resp() {
 		$self->generate_soap_fault('Receiver', 
 			'topology not ready', 
 			'TerceTedbFault', 
-			'TERCE has not received all the necesary information from narb/rce to form the response');
+			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
 	else {
 		my @nodes = ();

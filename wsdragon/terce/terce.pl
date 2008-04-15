@@ -22,7 +22,7 @@
 # File: terce.pl
 #
 
-use lib ("~/dragon/lib", "./lib");
+use lib ("$ENV{HOME}/dragon/lib", "./lib");
 
 use threads;
 use threads::shared;
