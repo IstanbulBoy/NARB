@@ -11,7 +11,7 @@ use WS::External;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -101,6 +101,18 @@ sub process_cfg() {
 			if($::cfg{gmpls}{port}{s} ne 'c') {
 				$::cfg{gmpls}{port}{v} = $1;
 				$::cfg{gmpls}{port}{s} = 'f';
+			}
+		}
+		if($gmpls[0] =~ /narb_sport\s+(\S+)\s*;/) { 
+			if($::cfg{gmpls}{narb_sport}{s} ne 'c') {
+				$::cfg{gmpls}{narb_sport}{v} = $1;
+				$::cfg{gmpls}{narb_sport}{s} = 'f';
+			}
+		}
+		if($gmpls[0] =~ /rce_sport\s+(\S+)\s*;/) { 
+			if($::cfg{gmpls}{rce_sport}{s} ne 'c') {
+				$::cfg{gmpls}{rce_sport}{v} = $1;
+				$::cfg{gmpls}{rce_sport}{s} = 'f';
 			}
 		}
 	}

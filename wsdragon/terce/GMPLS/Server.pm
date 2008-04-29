@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -49,14 +49,16 @@ sub activate_tedb($) {
 
 sub new {
 	shift;
-	my ($sock, $tq)  = @_;
+	my ($sock, $tq, $narb_sp, $rce_sp)  = @_;
 	my $select = new IO::Select($sock);
 	my $self = {
 		"name" => undef,
 		"sock" => $sock,
 		"select" => $select,
 		"ctrl_sock" => undef,
-		"tq" => $tq
+		"tq" => $tq,
+		"narb_sp" => $narb_sp,
+		"rce_sp" => $rce_sp,
 	};
 	bless $self;
 	return $self;
@@ -88,14 +90,15 @@ sub run() {
 			$err = 0;
 			if(GMPLS::API::is_sync_init($msg{$sn})) {
 				#guess who's calling ... (we really don't know)
-				if($msg{$sn}{hdr}{tag2} eq 2693) {
+				if($$self{sock}->peerport() eq $::cfg{gmpls}{narb_sport}{v}) {
 					$$self{name} = "narb";
 				}
-				elsif($msg{$sn}{hdr}{tag2} eq 2695) {
+				elsif($$self{sock}->peerport() eq $::cfg{gmpls}{rce_sport}{v}) {
 					$$self{name} = "rce";
 				}
 				else {
-					$$self{name} = "unidentified";
+					Log::log "err", "narb/rce is not using a known source port\n";
+					last;
 				}
 				Aux::print_dbg_run("starting (%s) server thread\n", $$self{name});
 				# open the control channel

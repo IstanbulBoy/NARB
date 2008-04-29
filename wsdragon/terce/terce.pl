@@ -62,6 +62,10 @@ usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
        --config <config file>: (defaults to /etc/terce/terce.conf)
        --gmpls_port <port>: listen on this port for narb and rce data
               (default 2690)
+       --narb_sport <port>: expect connection from this narb source port
+              (default 2692)
+       --rce_sport <port>: expect connection from this rce source port
+              (default 2694)
        --ws_port <port>: listen on this web services port (default 8080)
        --wsdl <wsdl file>: serve TERCE wsdl file (default undefined)
               NOTE: its location is relative to www_root
@@ -98,6 +102,8 @@ sub process_opts($$) {
 	if(($n eq "l") || ($n eq "log")) 	{$k1 = "log";}
 	if($n eq "dbg")			 	{$k1 = "dbg";}
 	if(($n eq "p") || ($n eq "gmpls_port"))	{$k1 = "gmpls"; $k2 = "port";}
+	if($n eq "narb_sport")			{$k1 = "gmpls"; $k2 = "narb_sport";}
+	if($n eq "rce_sport")			{$k1 = "gmpls"; $k2 = "rce_sport";}
 	if($n eq "www_port")			{$k1 = "http"; $k2 = "port"}
 	if($n eq "wsdl")			{$k1 = "http"; $k2 = "wsdl"}
 	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port"}
@@ -167,12 +173,12 @@ sub init_cfg($) {
 }
 
 # NOTE: running in a different thread here ...
-sub spawn_server($$$) {
-	my ($ss, $cs, $tq) = @_;
+sub spawn_server($$$$$) {
+	my ($ss, $cs, $tq, $narb_sp, $rce_sp) = @_;
 	my $srvr;
 	$ss->close();
 	eval {
-		$srvr = new GMPLS::Server($cs, $tq);
+		$srvr = new GMPLS::Server($cs, $tq, $narb_sp, $rce_sp);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -297,6 +303,12 @@ $::cfg{gmpls} = &share({});
 $::cfg{gmpls}{port} = &share({});
 $::cfg{gmpls}{port}{v} = "2690";
 $::cfg{gmpls}{port}{s} = 'd';
+$::cfg{gmpls}{narb_sport} = &share({});
+$::cfg{gmpls}{narb_sport}{v} = "2692";
+$::cfg{gmpls}{narb_sport}{s} = 'd';
+$::cfg{gmpls}{rce_sport} = &share({});
+$::cfg{gmpls}{rce_sport}{v} = "2694";
+$::cfg{gmpls}{rce_sport}{s} = 'd';
 
 $::cfg{http} = &share({});
 $::cfg{http}{port} = &share({});
@@ -330,6 +342,8 @@ if(!GetOptions ('d' =>			\&process_opts,
 		'config=s' =>		\&process_opts,
 		'p=s' =>		\&process_opts,
 		'gmpls_port=s' =>	\&process_opts,
+		'narb_sport=s' =>	\&process_opts,
+		'rce_sport=s' =>	\&process_opts,
 		'www_port=s' =>		\&process_opts,
 		'www_root=s' =>		\&process_opts,
 		'ws_port=s' =>		\&process_opts,
@@ -442,7 +456,7 @@ eval {
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, shift(@tqs));
+		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, shift(@tqs), $::cfg{gmpls}{narb_sport}{v}, $::cfg{gmpls}{rce_sport}{v});
 		$client_sock->close();
 		if($thr) {
 			push(@servers, $thr);
