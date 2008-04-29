@@ -23,17 +23,14 @@
 	
 	<!-- type definitions -->
 	  <!--  Types  -->
-    <xsd:complexType name="selectNetworkTopologyContent">
-        <xsd:sequence>   
-            <!-- if something is storing multiple topology databases(i.e. intra and interdomain) 
-            this is where the database to query is specified -->
-            <xsd:element name="database" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-            
-            <!-- FROM indicates the set of topology information that will be returned. the types
-            for this field are based on the types in Tom's document-->
-            <xsd:element name="from" minOccurs="1" type="tns:selectTypes" /> 
-        </xsd:sequence>
-    </xsd:complexType>
+    <xsd:simpleType name="selectNetworkTopologyContent">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="all" />
+            <xsd:enumeration value="abstract" />
+            <xsd:enumeration value="control" />
+            <xsd:enumeration value="data" />
+        </xsd:restriction>
+    </xsd:simpleType>
     
     <xsd:complexType name="selectNetworkTopologyResponseContent">
         <xsd:sequence>
@@ -55,15 +52,4 @@
             <xsd:element name="resultMessage" type="xsd:string" minOccurs="0" />
         </xsd:sequence>
     </xsd:complexType>
-    
-     <xsd:simpleType name="selectTypes">
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="all" />
-            <xsd:enumeration value="adjacentDomains" />
-            <xsd:enumeration value="delta" />
-            <xsd:enumeration value="nodes" />
-            <xsd:enumeration value="internetworkLinks" />
-        </xsd:restriction>
-    </xsd:simpleType>
-	
 </xsd:schema>
