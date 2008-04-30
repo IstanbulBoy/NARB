@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -188,6 +188,10 @@ sub get_nodes_xml($) {
 		my $rtr_id = sprintf(TERCE_NODE_ID, defined($rn)?$rn:sprintf("%08x", $rtr));
 		my @ports_xml = ();
 		foreach my $link (keys %{$$db{$rtr}}) {
+			# skip the top-level descriptors
+			if(ref($$db{$rtr}{$link}) ne "HASH") {
+				next;
+			}
 			#port
 			my $pn = WS::External::get_port_name($rtr, $link);
 			$pn = exists($$db{$rtr}{$link}{remote})?
@@ -291,6 +295,10 @@ sub find_remote($$) {
 	my($dr, $ip) = @_;
 	foreach my $rtr (keys %$dr) {
 		foreach my $link (keys %{$$dr{$rtr}}) {
+			# skip the top-level descriptors
+			if(ref($$dr{$rtr}{$link}) ne "HASH") {
+				next;
+			}
 			#replace the id with the actual ref to the remote link block
 			if($$dr{$rtr}{$link}{local} eq $ip) {
 				return $$dr{$rtr}{$link};
@@ -305,6 +313,10 @@ sub create_graph($) {
 	my($dr) = @_;
 	foreach my $rtr (keys %$dr) {
 		foreach my $link (keys %{$$dr{$rtr}}) {
+			# skip the top-level descriptors
+			if(ref($$dr{$rtr}{$link}) ne "HASH") {
+				next;
+			}
 			#replace the id with the actual ref to the remote link block
 			if(exists($$dr{$rtr}{$link}{remote})) {
 				$$dr{$rtr}{$link}{remote} = $self->find_remote($dr, $$dr{$rtr}{$link}{remote});
@@ -316,41 +328,21 @@ sub create_graph($) {
 	}
 }
 
-sub get_tag($$) {
-	my $self = shift;
-	my($dr, $rtr) = @_;
-	my $t = undef;
-	foreach my $link (keys %{$$dr{$rtr}}) {
-		my $l = $$dr{$rtr}{$link};
-		if(defined($$l{tag})) {
-			if(defined($t) && ($$l{tag} != $t)) {
-				return undef;
-			}
-			$t = $$l{tag};
-		}
-	}
-	return $t;
-}
-
-sub is_tagged($$) {
-	my $self = shift;
-	my($dr, $rtr) = @_;
-	foreach my $link (keys %{$$dr{$rtr}}) {
-		my $l = $$dr{$rtr}{$link};
-		if(defined($$l{tag})) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 sub tag($$$) {
 	my $self = shift;
 	my($dr, $rtr, $t) = @_;
 	
 	foreach my $link (keys %{$$dr{$rtr}}) {
+		# skip the top-level descriptors
+		if(ref($$dr{$rtr}{$link}) ne "HASH") {
+			next;
+		}
 		my $l = $$dr{$rtr}{$link};
 		if(!defined($$l{tag})) {
+			if(defined($$dr{$rtr}{tag}) && ($$dr{$rtr}{tag} ne $t)) {
+				die "inconsistent network graph\n";
+			}
+			$$dr{$rtr}{tag} = $t;
 			$$l{tag} = $t;
 			# follow the link
 			if(ref($$l{remote}) eq "HASH") {
@@ -368,22 +360,75 @@ sub traverse($) {
 	my($dr) = @_;
 	my $t = 0;
 	foreach my $rtr (keys %$dr) {
-		if(!($self->is_tagged($dr, $rtr))) {
+		if(!defined($$dr{$rtr}{tag})) {
 			$self->tag($dr, $rtr, $t);
 			$t++;
 		}
 	}
 	if($t > 2) {
-		Log::log "warning", "unexpected number of disconnected network graphs: $t\n";
+		die "unexpected number of disconnected network graphs: $t\n";
 	}
 }
 
 sub split_graph($) {
 	my $self = shift;
 	my($dr) = @_;
+	my $t = undef;
+	my @ret = ();
+	my $tedb_ref = {};
+	foreach my $rtr (sort({$$dr{$a}{tag} <=> $$dr{$b}{tag}} (keys %$dr))) {
+		if(!defined($$dr{$rtr}{tag})) {
+			next;
+		}
+		if(defined($t) && ($$dr{$rtr}{tag} != $t)) {
+			push(@ret, $tedb_ref);
+			$tedb_ref = {};
+		}
+		else {
+			$t = $$dr{$rtr}{tag};
+		}
+		$$tedb_ref{$rtr} = $$dr{$rtr};
+	}
+	push(@ret, $tedb_ref);
+	return @ret;
+}
+
+sub get_topo_type($) {
+	my $self = shift;
+	my($dr) = @_;
+	my $sonet = 0;
+	my $eth = 0;
 	foreach my $rtr (keys %$dr) {
-		my $t = $self->get_tag($dr, $rtr);
-		if(defined($t)) {
+		if($$dr{src} eq "narb") {
+			#abstract topology
+			return "abstract";
+		}
+		elsif($$dr{src} eq "rce") {
+			# the only way to get the type is to statistically 
+			# evaluate the encoding types
+			foreach my $r (keys %$dr) {
+				foreach my $l (keys %{$$dr{$r}}) {
+					# skip the top-level descriptors
+					if(ref($$dr{$rtr}{$l}) ne "HASH") {
+						next;
+					}
+					if($$dr{$r}{$l}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_SONETSDH) {
+						$sonet++;
+					}
+					elsif($$dr{$r}{$l}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_ETH) {
+						$eth++;
+					}
+				}
+			}
+			if($sonet >= $eth) {
+				return "data";
+			}
+			else {
+				return "control";
+			}
+		}
+		else {
+			return undef;
 		}
 	}
 }
@@ -400,7 +445,10 @@ sub insert_link_blk($$$$) {
 		if(exists(${$$hr}{status})) {
 			if((${$$hr}{status} & STAT_LINK_COMPLETE) == STAT_LINK_COMPLETE) {
 				$$dr{$$br}{${$$hr}{link_id}} = $$hr;
-				$$dr{$$br}{${$$hr}{link_id}}{src} = $cn;
+				if(defined($$dr{$$br}{src}) && ($$dr{$$br}{src} ne $cn)) {
+					Log::log "warning", "incoherent router block\n";
+				}
+				$$dr{$$br}{src} = $cn;
 			}
 			else {
 				Log::log "warning", "incomplete link block\n";
@@ -434,7 +482,7 @@ sub process_q($$$$$) {
 	#add a valid OSPF-TE talker to TEDB
 	# (these will serve as validation for the sub-tlv insertions)
 	if($$d{cmd} == TEDB_RTR_ON) {
-		$$dr{$data[0]} = undef;
+		$$dr{$data[0]} = {"src" => undef, "tag" => undef};
 		Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 		return 0;
 	}
@@ -568,6 +616,8 @@ sub run() {
 	my $tmp2 = undef; #temporary storage for the link block data
 	my $stat1 = 0;
 	my $stat2 = 0;
+	my @ret1 = ();
+	my @ret2 = ();
 	while(!$::ctrlC) {
 		# WS server
 		$srvr->handle;
@@ -580,11 +630,40 @@ sub run() {
 				if($stat1 == 0) {
 					# create net graph
 					$self->create_graph($tedb1);
-					$self->traverse($tedb1);
-					$self->split_graph($tedb1);
-					# transfer the completed TEDB
-					Aux::print_dbg_tedb("updating TEDB1\n");
-					$$self{tedb1} = $tedb1;
+					eval {
+						$self->traverse($tedb1);
+						@ret1 = $self->split_graph($tedb1);
+					};
+					if($@) {
+						Log::log("err", "$@\n");
+						Aux::print_dbg_tedb("TEDB1 not updated\n");
+					}
+					else {
+						# loop through all the disconnected graphs
+						for(my $i=0; $i<@ret1; $i++) {
+							# first, look at the source
+							my $type = $self->get_topo_type($ret1[$i]);
+							if(defined($type)) {
+								# transfer the completed TEDBs
+								if($type eq "abstract") {
+									$$self{abstract} = $ret1[$i];
+									Aux::print_dbg_tedb("updating abstract TEDB\n");
+								}
+								elsif($type eq "control") {
+									$$self{control} = $ret1[$i];
+									Aux::print_dbg_tedb("updating control TEDB\n");
+								}
+								elsif($type eq "data") {
+									$$self{data} = $ret1[$i];
+									Aux::print_dbg_tedb("updating data TEDB\n");
+								}
+							}
+							else {
+								Log::log("err", "unknown source\n");
+								Aux::print_dbg_tedb("TEDB1 not updated\n");
+							}
+						}
+					}
 				}
 				else {
 					Aux::print_dbg_tedb("TEDB1 not updated\n");
@@ -601,11 +680,40 @@ sub run() {
 				if($stat2 == 0) {
 					# create net graph
 					$self->create_graph($tedb2);
-					$self->traverse($tedb2);
-					$self->split_graph($tedb2);
-					# transfer the completed TEDB
-					Aux::print_dbg_tedb("updating TEDB2\n");
-					$$self{tedb2} = $tedb2;
+					eval {
+						$self->traverse($tedb2);
+						@ret2 = $self->split_graph($tedb2);
+					};
+					if($@) {
+						Log::log("err", "$@\n");
+						Aux::print_dbg_tedb("TEDB2 not updated\n");
+					}
+					else {
+						# loop through all the disconnected graphs
+						for(my $i=0; $i<@ret2; $i++) {
+							# first, look at the source
+							my $type = $self->get_topo_type($ret2[$i]);
+							if(defined($type)) {
+								# transfer the completed TEDBs
+								if($type eq "abstract") {
+									$$self{abstract} = $ret2[$i];
+									Aux::print_dbg_tedb("updating abstract TEDB\n");
+								}
+								elsif($type eq "control") {
+									$$self{control} = $ret2[$i];
+									Aux::print_dbg_tedb("updating control TEDB\n");
+								}
+								elsif($type eq "data") {
+									$$self{data} = $ret2[$i];
+									Aux::print_dbg_tedb("updating data TEDB\n");
+								}
+							}
+							else {
+								Log::log("err", "unknown source\n");
+								Aux::print_dbg_tedb("TEDB2 not updated\n");
+							}
+						}
+					}
 				}
 				else {
 					Aux::print_dbg_tedb("TEDB2 not updated\n");
