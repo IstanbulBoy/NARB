@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -42,7 +42,7 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-sub parse_tlv($$$;$);
+sub parse_tlv($$$$;$);
 
 sub dump_hdr($) {
 	my ($mr) = @_;
@@ -225,8 +225,8 @@ sub parse_tlv_data($$$$) {
 }
 
 # NOTE: wildly recursive
-sub parse_tlv($$$;$) {
-	my ($md, $o, $tq, $p) = @_;
+sub parse_tlv($$$$;$) {
+	my ($md, $o, $tq, $cn, $p) = @_;
 	my $ret = 0;
 	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
 	# TLV header
@@ -243,15 +243,15 @@ sub parse_tlv($$$;$) {
 			my @res;
 			parse_tlv_data($md, $o, "N", \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
-			unshift(@res, {"cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+			unshift(@res, {"cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
 			Aux::send_to_tedb($tq, @res);
 			return (0);
 		}
 		elsif($tlv_type == TE_TLV_LINK) {
 			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
-			my @cmd = ({"cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+			my @cmd = ({"cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
 			Aux::send_to_tedb($tq, @cmd);
-			return(parse_tlv($md, $o, $tq, TE_TLV_LINK));
+			return(parse_tlv($md, $o, $tq, $cn, TE_TLV_LINK));
 		}
 		else {
 			Log::log "warning", "unknown TLV type ($tlv_type)\n";
@@ -264,7 +264,7 @@ sub parse_tlv($$$;$) {
 		# if all the data are consistent (allign to 4-byte boundary)
 		my $o1 = $o + (($tlv_len+TLV_ALIGN-1)&(~(TLV_ALIGN-1)));
 		if($o1<$lsa_len) {
-			if(parse_tlv($md, $o1, $tq, $p)<0) {
+			if(parse_tlv($md, $o1, $tq, $cn, $p)<0) {
 				# this will invalidate the entire chain
 				# before anything gets parsed if error occurs
 				return -1;
@@ -473,14 +473,14 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
-		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
 		Aux::send_to_tedb($tq, @res);
 	}
 	return(0);
 }
 
-sub parse_msg($$) {
-	my ($md, $tq) = @_;
+sub parse_msg($$$) {
+	my ($md, $tq, $cn) = @_;
 	my $ret = 0;
 	# LSA header
 	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
@@ -495,7 +495,7 @@ sub parse_msg($$) {
 	}
 	Aux::print_dbg_lsa("----------------- parsed data ------------------------\n");
 	Aux::print_dbg_lsa("%s from %s (%d)\n", $lsa_type_X{$type}, inet_ntoa(pack("N", $rtr)), $len);
-	$ret = parse_tlv($md, LSA_HDR_SIZE, $tq);
+	$ret = parse_tlv($md, LSA_HDR_SIZE, $tq, $cn);
 	Aux::print_dbg_lsa("------------------------------------------------------\n");
 	return($ret);
 }

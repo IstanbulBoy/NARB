@@ -23,14 +23,11 @@
 	
 	<!-- type definitions -->
 	  <!--  Types  -->
-    <xsd:simpleType name="selectNetworkTopologyContent">
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="all" />
-            <xsd:enumeration value="abstract" />
-            <xsd:enumeration value="control" />
-            <xsd:enumeration value="data" />
-        </xsd:restriction>
-    </xsd:simpleType>
+	  <xsd:complexType name="selectNetworkTopologyContent">
+		  <xsd:all>   
+			  <xsd:element name="scope" type="tns:scopeTypes" /> 
+		  </xsd:all>
+	  </xsd:complexType>
     
     <xsd:complexType name="selectNetworkTopologyResponseContent">
         <xsd:sequence>
@@ -45,7 +42,15 @@
             <xsd:element ref="ctrlp:topology" />
         </xsd:sequence>
     </xsd:complexType>
-    
+    <xsd:simpleType name="scopeTypes">
+	    <xsd:restriction base="xsd:string">
+		    <xsd:enumeration value="all" />
+		    <xsd:enumeration value="abstract" />
+		    <xsd:enumeration value="control" />
+		    <xsd:enumeration value="data" />
+	    </xsd:restriction>
+    </xsd:simpleType>
+
     <xsd:complexType name="insertNetworkTopologyResponseContent">
         <xsd:sequence>
             <xsd:element name="resultCode" type="xsd:int" minOccurs="0" />

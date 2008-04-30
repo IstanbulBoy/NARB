@@ -12,7 +12,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -189,6 +189,7 @@ sub send_to_tedb($@) {
 	$$ref{cmd} = $$t{cmd};
 	$$ref{type} = $$t{type} if exists($$t{type}); 
 	$$ref{rtr} = $$t{rtr} if exists($$t{rtr}); 
+	$$ref{client} = $$t{client} if exists($$t{client}); 
 	$$ref{data} = &share([]);
 	for(my $i=0; $i<@d; $i++) {
 		${$$ref{data}}[$i] = $d[$i]; 

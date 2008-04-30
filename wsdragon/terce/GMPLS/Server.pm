@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,9 +41,9 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-sub activate_tedb($) {
-	my ($tq) = @_;
-	my @cmd = ({"cmd"=>TEDB_ACTIVATE});
+sub activate_tedb($$) {
+	my ($tq, $cn) = @_;
+	my @cmd = ({"cmd"=>TEDB_ACTIVATE, "client"=>$cn});
 	Aux::send_to_tedb($tq, @cmd);
 }
 
@@ -106,13 +106,13 @@ sub run() {
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{tq}) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{tq}, $$self{name}) <0) {
 					$err = 1;
 				}
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
-				activate_tedb($$self{tq});
+				activate_tedb($$self{tq}, $$self{name});
 				$msg{$sn} = {};
 			}
 			else {

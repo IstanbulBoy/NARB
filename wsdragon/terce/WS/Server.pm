@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -59,10 +59,9 @@ use constant CTRLP_LINK_T => "CtrlPlane:CtrlPlaneLinkContent";
 use constant CTRLP_SWCAP_T => "CtrlPlane:CtrlPlaneSwcapContent";
 
 use constant SCOPE_ALL => "all";
-use constant SCOPE_ADJ => "adjacentDomains";
-use constant SCOPE_DLT => "delta";
-use constant SCOPE_NDS => "nodes";
-use constant SCOPE_LNK => "internetworkLinks";
+use constant SCOPE_ABS => "abstract";
+use constant SCOPE_CRL => "control";
+use constant SCOPE_DAT => "data";
 
 
 use constant STAT_LINK_ID => 		(1<<0);
@@ -89,12 +88,15 @@ my $lport = undef;
 my $tq1 = undef;
 my $tq2 = undef;
 
+sub tag($$$);
+
 sub new {
 	shift;
 	($lport, $tq1, $tq2)  = @_;
 	my $self = {
-		tedb1 => undef,
-		tedb2 => undef,
+		abstract_tedb => undef,
+		control_tedb => undef,
+		data_tedb => undef,
 		xml => undef
 	};
 	bless $self;
@@ -128,23 +130,13 @@ sub selectNetworkTopology {
 	}
 	elsif(
 		lc($scope) ne SCOPE_ALL && 
-		lc($scope) ne SCOPE_ADJ && 
-		lc($scope) ne SCOPE_DLT && 
-		lc($scope) ne SCOPE_NDS && 
-		lc($scope) ne SCOPE_LNK ) {
+		lc($scope) ne SCOPE_ABS && 
+		lc($scope) ne SCOPE_CRL && 
+		lc($scope) ne SCOPE_DAT ) {
 		$self->generate_soap_fault('Sender', 
-			'unknown topology set', 
+			'unknown topology type', 
 			'TerceTedbFault', 
 			'$scope not defined in the service description');
-	}
-	elsif(
-		lc($scope) eq SCOPE_ADJ ||
-		lc($scope) eq SCOPE_DLT ||
-		lc($scope) eq SCOPE_NDS ) {
-		$self->generate_soap_fault('Receiver', 
-			'set not implemented', 
-			'TerceTedbFault', 
-			'$scope is not implemented');
 	}
 	else {
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
@@ -324,18 +316,91 @@ sub create_graph($) {
 	}
 }
 
+sub get_tag($$) {
+	my $self = shift;
+	my($dr, $rtr) = @_;
+	my $t = undef;
+	foreach my $link (keys %{$$dr{$rtr}}) {
+		my $l = $$dr{$rtr}{$link};
+		if(defined($$l{tag})) {
+			if(defined($t) && ($$l{tag} != $t)) {
+				return undef;
+			}
+			$t = $$l{tag};
+		}
+	}
+	return $t;
+}
+
+sub is_tagged($$) {
+	my $self = shift;
+	my($dr, $rtr) = @_;
+	foreach my $link (keys %{$$dr{$rtr}}) {
+		my $l = $$dr{$rtr}{$link};
+		if(defined($$l{tag})) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+sub tag($$$) {
+	my $self = shift;
+	my($dr, $rtr, $t) = @_;
+	
+	foreach my $link (keys %{$$dr{$rtr}}) {
+		my $l = $$dr{$rtr}{$link};
+		if(!defined($$l{tag})) {
+			$$l{tag} = $t;
+			# follow the link
+			if(ref($$l{remote}) eq "HASH") {
+				if(!defined($$l{remote}{tag})) {
+					$$l{remote}{tag} = $t;
+					$self->tag($dr, $$l{remote}{rtr_id}, $t);
+				}
+			}
+		}
+	}
+}
+
+sub traverse($) {
+	my $self = shift;
+	my($dr) = @_;
+	my $t = 0;
+	foreach my $rtr (keys %$dr) {
+		if(!($self->is_tagged($dr, $rtr))) {
+			$self->tag($dr, $rtr, $t);
+			$t++;
+		}
+	}
+	if($t > 2) {
+		Log::log "warning", "unexpected number of disconnected network graphs: $t\n";
+	}
+}
+
+sub split_graph($) {
+	my $self = shift;
+	my($dr) = @_;
+	foreach my $rtr (keys %$dr) {
+		my $t = $self->get_tag($dr, $rtr);
+		if(defined($t)) {
+		}
+	}
+}
+
 
 #
 # inserts the temporary link block into the temporary tedb (if complete)
 #
-sub insert_link_blk($$$) {
+sub insert_link_blk($$$$) {
 	my $self = shift;
-	my($dr, $br, $hr) = @_;
+	my($dr, $br, $hr, $cn) = @_;
 	if(exists($$dr{$$br})) {
 		# check if we have a link_id
 		if(exists(${$$hr}{status})) {
 			if((${$$hr}{status} & STAT_LINK_COMPLETE) == STAT_LINK_COMPLETE) {
 				$$dr{$$br}{${$$hr}{link_id}} = $$hr;
+				$$dr{$$br}{${$$hr}{link_id}}{src} = $cn;
 			}
 			else {
 				Log::log "warning", "incomplete link block\n";
@@ -378,13 +443,13 @@ sub process_q($$$$$) {
 		if(exists($$dr{$$d{rtr}})) {
 			if(defined($$br)) {
 				# insert the old link block to the dr
-				my $err = $self->insert_link_blk($dr, $br, $tr) if defined($$tr);
+				my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
 				# and start a new one
 				$$tr = {"status" => 0};
 				$$br = $$d{rtr};
 				Aux::print_dbg_tedb("  }\n");
 				if(!$err) {
-					Aux::print_dbg_tedb("  => inserted to %08x\n", $$br);
+					Aux::print_dbg_tedb("  => inserted to %08x(%s)\n", $$br, $$d{client});
 				}
 				$$sr = $err;
 			}
@@ -415,6 +480,7 @@ sub process_q($$$$$) {
 						${$$tr}{status} |= STAT_LINK_ID; 
 						${$$tr}{link_id} = $data[0];
 						${$$tr}{rtr_id} = $$br; # parent router ID
+						${$$tr}{tag} = undef; # tag used for net-graph traversal
 						$v = sprintf(" (%08x)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LINK_TYPE) {
@@ -480,11 +546,11 @@ sub process_q($$$$$) {
 	}
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
 		# insert the last link block to the tedb
-		my $err = $self->insert_link_blk($dr, $br, $tr) if defined($$tr);
+		my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
 		$$tr = {"status" => 0};
 		Aux::print_dbg_tedb("  }\n");
 		if(!$err) {
-			Aux::print_dbg_tedb("  => inserted to %08x\n", $$br);
+			Aux::print_dbg_tedb("  => inserted to %08x(%s)\n", $$br, $$d{client});
 		}
 		$$br = undef; 
 		return 1;
@@ -514,6 +580,8 @@ sub run() {
 				if($stat1 == 0) {
 					# create net graph
 					$self->create_graph($tedb1);
+					$self->traverse($tedb1);
+					$self->split_graph($tedb1);
 					# transfer the completed TEDB
 					Aux::print_dbg_tedb("updating TEDB1\n");
 					$$self{tedb1} = $tedb1;
@@ -533,6 +601,8 @@ sub run() {
 				if($stat2 == 0) {
 					# create net graph
 					$self->create_graph($tedb2);
+					$self->traverse($tedb2);
+					$self->split_graph($tedb2);
 					# transfer the completed TEDB
 					Aux::print_dbg_tedb("updating TEDB2\n");
 					$$self{tedb2} = $tedb2;
