@@ -118,7 +118,7 @@ int SystemConfig::MapBandwidthToNumberOfTimeslots(float bandwidth)
         }
     }
 
-    return (int)(bandwidth/50.0);
+    return (int)ceilf(bandwidth/50.0);
 }
 
 /////////////////////////////////////////////////////
