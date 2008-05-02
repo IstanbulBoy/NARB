@@ -33,6 +33,7 @@
 #include "rce_types.hh"
 #include "rce_config.hh"
 #include "terce_apiclient.hh"
+#include <math.h>
 
 string SystemConfig::config_file;
 string SystemConfig::schema_file;
