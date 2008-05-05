@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -399,11 +399,11 @@ sub get_topo_type($) {
 	my $sonet = 0;
 	my $eth = 0;
 	foreach my $rtr (keys %$dr) {
-		if($$dr{src} eq "narb") {
+		if($$dr{$rtr}{src} eq "narb") {
 			#abstract topology
 			return "abstract";
 		}
-		elsif($$dr{src} eq "rce") {
+		elsif($$dr{$rtr}{src} eq "rce") {
 			# the only way to get the type is to statistically 
 			# evaluate the encoding types
 			foreach my $r (keys %$dr) {
@@ -492,13 +492,13 @@ sub process_q($$$$$) {
 			if(defined($$br)) {
 				# insert the old link block to the dr
 				my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
+				Aux::print_dbg_tedb("  }\n");
+				if(!$err) {
+					Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
+				}
 				# and start a new one
 				$$tr = {"status" => 0};
 				$$br = $$d{rtr};
-				Aux::print_dbg_tedb("  }\n");
-				if(!$err) {
-					Aux::print_dbg_tedb("  => inserted to %08x(%s)\n", $$br, $$d{client});
-				}
 				$$sr = $err;
 			}
 			# first run of the current TEDB batch
@@ -507,7 +507,7 @@ sub process_q($$$$$) {
 				$$br = $$d{rtr};
 			}
 			$$br = $$d{rtr};
-			Aux::print_dbg_tedb("  LINK BLOCK {\n");
+			Aux::print_dbg_tedb("  LINK BLOCK (%s) {\n", defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown");
 		}
 		else {
 			# reset link tlv delimiters
@@ -595,11 +595,11 @@ sub process_q($$$$$) {
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
 		# insert the last link block to the tedb
 		my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
+		if(!$err) {
+			Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
+		}
 		$$tr = {"status" => 0};
 		Aux::print_dbg_tedb("  }\n");
-		if(!$err) {
-			Aux::print_dbg_tedb("  => inserted to %08x(%s)\n", $$br, $$d{client});
-		}
 		$$br = undef; 
 		return 1;
 	}
