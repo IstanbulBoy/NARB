@@ -32,7 +32,7 @@ use Socket;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -44,7 +44,7 @@ my $defs = &share({});
 
 sub add($$$$) {
 	my($rtr_id, $rtr_name, $link_id, $port_name) = @_;
-	return if !(defined($rtr_id) && defined($rtr_name) && defined($link_id) && defined($port_name));
+	return if !(defined($rtr_id) && defined($rtr_name)); 
 	if(!exists($$defs{$rtr_id})) {
 		$$defs{$rtr_id} = &share({});
 	}
