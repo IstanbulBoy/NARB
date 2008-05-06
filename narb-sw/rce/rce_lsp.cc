@@ -124,6 +124,10 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
             break;
+        case TLV_TYPE_NARB_USER_SUPPLIED_ERO:
+            tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
+            GetERO_RFCStandard(tlv, user_ero);
+            break;
         case TLV_TYPE_NARB_SUBNET_ERO:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
             GetERO_RFCStandard(tlv, subnet_ero);

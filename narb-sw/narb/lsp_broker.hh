@@ -144,6 +144,7 @@ private:
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
     u_int32_t hop_back;
+    list<ero_subobj*> user_ero; // Optional user spplied ERO for TLV_TYPE_NARB_USER_SUPPLIED_ERO
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO
     list<dtl_hop> subnet_dtl; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_DTL
     bool is_recursive_req;
@@ -397,6 +398,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_HOLDING_TIME = 0x10,
     TLV_TYPE_NARB_ALTERNATE_ERO = 0x11,
     TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO = 0x12,
+    TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
 };
 
 // definitions of NARB error code as proccessing a request fails

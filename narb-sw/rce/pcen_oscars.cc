@@ -115,6 +115,18 @@ int PCEN_OSCARS::PerformComputation()
     return PCEN_MRN::PerformComputation();
 }
 
+int PCEN_OSCARS::VerifySubnetERO()
+{
+    // there must be subnet ero
+    if (subnet_ero.size() ==0)
+        return -1;
+    // there must be prepared topology
+    if (routers.size() == 0 || links.size() ==0)
+        return -2;
+    
+    
+}
+
 void PCEN_OSCARS::Run()
 {
     int ret;
@@ -163,16 +175,6 @@ void PCEN_OSCARS::Run()
     PCENNode * destNode = GetNodeByIp(routers, &destination);
     path_alts.push_back(destNode->path);
     ero_alts.push_back(ero);
-    /*
-    if (SystemConfig::should_incorporate_subnet)
-    {
-        HandleSubnetUNIEROTrack(ero);
-        if (ero.size() == 0)
-            ReplyErrorCode(ERR_PCEN_NO_ROUTE);
-    }
-    ero_vlsr_alts.push_back(ero);
-    ero_subnet_alts.push_back(subnet_ero);
-    */
 
     //Cleaning up and modifying topology
     //Reset node tspec and other interim variables
@@ -305,7 +307,7 @@ void PCEN_OSCARS::CreateMaxDisjointPaths()
     ero_subnet_alts.clear();
     for (int i = 0; i < ero_alts.size(); i++)
     {
-        subnet_ero.clear(); //??
+        subnet_ero.clear();
         ero_vlsr_alts.push_back(ero_alts[i]);
         if (SystemConfig::should_incorporate_subnet)
         {

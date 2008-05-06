@@ -121,6 +121,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_HOLDING_TIME = 0x10,
     TLV_TYPE_NARB_ALTERNATE_ERO = 0x11,
     TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO = 0x12,
+    TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
 };
 
@@ -230,6 +231,7 @@ private:
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    list<ero_subobj> user_ero;
     list<ero_subobj> subnet_ero;
     bool is_subnet_ero2dtl_enabled;
 

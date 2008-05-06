@@ -94,7 +94,7 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 
 
 void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
-    msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero)
+    msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero, list<ero_subobj*>* p_user_ero)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -135,6 +135,14 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
         tlv->type = htons(TLV_TYPE_NARB_SUBNET_ERO);
         mlen += ntohs(subnet_ero_msg->header.length);
         options |= LSP_OPT_SUBNET_DTL;
+    }
+    if (p_user_ero != NULL && p_user_ero->size() > 0)
+    {
+        api_msg *user_ero_msg = narb_new_msg_reply_ero(0, 0, *p_user_ero, NULL, 0);
+        memcpy(buf + mlen, user_ero_msg->body, ntohs(user_ero_msg->header.length));
+        te_tlv_header* tlv = (te_tlv_header*)(buf + mlen);
+        tlv->type = htons(TLV_TYPE_NARB_USER_SUPPLIED_ERO);
+        mlen += ntohs(user_ero_msg->header.length);
     }
     rce_msg = api_msg_new((u_char)MSG_LSP, (u_char)ACT_QUERY, mlen, buf, ucid, cspf_req.app_seqnum, vtag);
     rce_msg->header.options = htonl(options);
