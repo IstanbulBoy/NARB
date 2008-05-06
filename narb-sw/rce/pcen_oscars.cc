@@ -115,6 +115,9 @@ int PCEN_OSCARS::PerformComputation()
     return PCEN_MRN::PerformComputation();
 }
 
+// return 0: success
+// return < 0: internal logic error, for example no topology data generated
+// return > 0: path/ero verification failed
 int PCEN_OSCARS::VerifyPathWithERO()
 {
     // there must be user supplied ero
@@ -179,7 +182,7 @@ int PCEN_OSCARS::VerifyPathWithERO()
         { // regular vlsr level subobj
             return 4; //no sufficient bandwidth in forward direction
         }
-
+        //verifying capacity
         if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
         { // subnet interface as an intermediate subobj
             src_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
@@ -259,6 +262,9 @@ int PCEN_OSCARS::VerifyPathWithERO()
     return 0;
 }
 
+// return 0: success
+// return < 0: internal logic error, for example no topology data generated
+// return > 0: path/ero verification failed
 int PCEN_OSCARS::VerifySubnetERO()
 {
     // there must be subnet ero
@@ -267,6 +273,44 @@ int PCEN_OSCARS::VerifySubnetERO()
     // there must be incorporated subnet topology
     if (!SystemConfig::should_incorporate_subnet)
         return -4;
+
+    int ln;
+    PCENLink* pcen_link = NULL;
+    PCENNode* headNode = NULL;
+    list<ero_subobj>::iterator iter;
+    for (iter = user_ero.begin(); iter != subnet_ero.end(); iter++)
+    {
+        ero_subobj* subobj1 = &(*iter);
+        ++iter;
+        if (iter == user_ero.end())   return 7; //unpaired subnet ero subobj
+        ero_subobj* subobj2 = &(*iter);
+
+        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
+        {
+            if (headNode != NULL && links[ln]->lcl_end == headNode
+                && links[ln]->link->lclIfAddr == subobj1->addr.s_addr
+                && links[ln]->link->rmtIfAddr == subobj2->addr.s_addr
+                 && links[ln]->rmt_end != NULL)
+            {
+                pcen_link = links[ln];
+                headNode = pcen_link->rmt_end;
+                break;
+            }
+        }
+        if (pcen_link == NULL)
+            return 8; //continued link unfound!
+
+        //verifying capacity
+        if (pcen_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 9; //no sufficient bandwidth in forward direction
+        }
+        //verifying capacity
+        if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 10; //no sufficient bandwidth in backward direction
+        }
+    }
 
     return 0;
 }
