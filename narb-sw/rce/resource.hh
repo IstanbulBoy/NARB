@@ -455,7 +455,7 @@ public:
     friend class Subnet;
     friend class Subnet_ConfigFile;
     friend class TerceApiTopoOriginator;
-    friend class PCEN_OSCARS;
+    friend class PCEN_DCN;
 };
 
 //defining domain mask

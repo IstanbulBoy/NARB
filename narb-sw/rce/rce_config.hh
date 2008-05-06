@@ -82,7 +82,7 @@ enum PceAlgorithm
     SPF = 1,
     MRN_DEFAULT,
     MRN_CG,
-    MRN_OSCARS,
+    MRN_DCN,
 };
 
 class SystemConfig

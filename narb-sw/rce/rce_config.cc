@@ -261,8 +261,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
             else if (strstr(blk_body, "mrn-cg") != NULL)
                 SystemConfig::pce_algorithm = MRN_CG;
-            else if (strstr(blk_body, "mrn-oscars") != NULL)
-                SystemConfig::pce_algorithm = MRN_OSCARS;
+            else if (strstr(blk_body, "mrn-dcn") != NULL)
+                SystemConfig::pce_algorithm = MRN_DCN;
             else if (strstr(blk_body, "spf") != NULL)
                 SystemConfig::pce_algorithm = SPF;
             else

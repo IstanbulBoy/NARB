@@ -37,7 +37,7 @@
 #include "pcen_ksp.hh"
 #include "pcen_mrn.hh"
 #include "pcen_mrn_cg.hh"
-#include "pcen_oscars.hh"
+#include "pcen_dcn.hh"
 #include "rce_lsp.hh"
 
 void LSPHandler::Load(api_msg *msg)
@@ -163,7 +163,7 @@ void LSPHandler::Run()
         }
         else if ((options & LSP_OPT_MRN) != 0 && (options & LSP_OPT_ALT_PATHS) != 0)
         {
-            pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+            pcen_event = new PCEN_DCN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
                 switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                 src_lcl_id, dest_lcl_id, vtag_mask);
         }
@@ -188,9 +188,9 @@ void LSPHandler::Run()
                     switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                     src_lcl_id, dest_lcl_id, vtag_mask);
                 break;
-             case MRN_OSCARS:
+             case MRN_DCN:
                 options |= LSP_OPT_MRN;
-                pcen_event = new PCEN_OSCARS(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                pcen_event = new PCEN_DCN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
                     switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                     src_lcl_id, dest_lcl_id, vtag_mask);
                 break;
