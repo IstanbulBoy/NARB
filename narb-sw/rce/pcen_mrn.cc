@@ -820,7 +820,7 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
     return -1;
 }
 
-bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
+int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
 {
     // find the ISCD with subnetUniIf specific information
     ISCD * iscd = NULL;
@@ -835,8 +835,9 @@ bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
     }
 
     if (!iscd)
-        return true; // no subnetIf ISCD? never mind...
+        return 0; // no subnetIf ISCD? never mind...
 
+    int min_num_ts = SystemConfig::MapBandwidthToNumberOfTimeslots(bandwidth);
     u_int8_t ts, ts_num = 0;
     for (ts = 1; ts <= MAX_TIMESLOTS_NUM; ts++)
     {
@@ -844,11 +845,11 @@ bool PCEN_MRN::VerifyTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
             ts_num++;
         else
             ts_num = 0;
-        if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(bandwidth))
-            return true;
+        if (ts_num >= min_num_ts)
+            return (ts - min_num_ts+1);
     }
 
-    return false;
+    return 0;
 }
     
 int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
@@ -1433,13 +1434,13 @@ int PCEN_MRN::PerformComputation()
                     // $$$$ Checking available timeslots on the region-border interface getting out of TDM region
                     if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
                     {                    
-                        if (!VerifyTimeslotsAvailability(nextLink, nextNode->tspec.Bandwidth))
+                        if (CheckTimeslotsAvailability(nextLink, nextNode->tspec.Bandwidth) == 0)
                             continue;
                     }
                     // getting into TDM region
                     else if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM  && nextLink->reverse_link)
                     {
-                        if (!VerifyTimeslotsAvailability(nextLink->reverse_link, headNode->tspec.Bandwidth))
+                        if (CheckTimeslotsAvailability(nextLink->reverse_link, headNode->tspec.Bandwidth) == 0)
                             continue;
                     }
                 }

@@ -61,6 +61,8 @@ public:
     virtual int PerformComputation();
     virtual bool PostBuildTopology();
     virtual void Run();
+
+    int VerifyPathWithERO();
     int VerifySubnetERO();
 
     void CleanUpTopology();

@@ -115,16 +115,160 @@ int PCEN_OSCARS::PerformComputation()
     return PCEN_MRN::PerformComputation();
 }
 
-int PCEN_OSCARS::VerifySubnetERO()
+int PCEN_OSCARS::VerifyPathWithERO()
 {
-    // there must be subnet ero
-    if (subnet_ero.size() ==0)
+    // there must be user supplied ero
+    if (user_ero.size() ==0)
         return -1;
     // there must be prepared topology
     if (routers.size() == 0 || links.size() ==0)
         return -2;
-    
-    
+
+    bool should_verify_subnet_ero = false;
+
+    //handling stub subnet interface subobjects
+    int src_1st_ts = 0, dest_1st_ts = 0;
+    if ((htonl(user_ero.front().if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+    {
+        src_lcl_id = ((LOCAL_ID_TYPE_SUBNET_IF_ID<<16) | htonl(user_ero.front().if_id)&0xffff);
+        user_ero.pop_front();
+    }
+    if ((htonl(user_ero.back().if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+    {
+        dest_lcl_id = ((LOCAL_ID_TYPE_SUBNET_IF_ID<<16) | htonl(user_ero.front().if_id)&0xffff);
+        user_ero.pop_back();
+    }
+
+    int ln;
+    PCENLink* pcen_link = NULL;
+    PCENNode* headNode = NULL;
+    list<ero_subobj>::iterator iter;
+    for (iter = user_ero.begin(); iter != user_ero.end(); iter++)
+    {
+        ero_subobj* subobj1 = &(*iter);
+        ++iter;
+        if (iter == user_ero.end())   return 1; //unpaired ero subobj
+        ero_subobj* subobj2 = &(*iter);
+
+        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
+        {
+            if (headNode != NULL && links[ln]->lcl_end == headNode
+                && links[ln]->link->lclIfAddr == subobj1->addr.s_addr
+                && links[ln]->link->rmtIfAddr == subobj2->addr.s_addr
+                 && links[ln]->rmt_end != NULL)
+            {
+                pcen_link = links[ln];
+                headNode = pcen_link->rmt_end;
+                break;
+            }
+        }
+        if (pcen_link == NULL)
+            return 2; //continued link unfound!
+
+        //verifying capacity
+        if ((ntohl(subobj1->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        { // subnet interface as an intermediate subobj
+            dest_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+            if (dest_1st_ts == 0)
+                return 3; //no sufficient subnet ingress timeslots
+            //update 1st time slot
+            subobj1->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | ntohl(subobj2->if_id)&0xff00 | dest_1st_ts&0xff);
+            should_verify_subnet_ero = true;
+        }
+        else if (pcen_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 4; //no sufficient bandwidth in forward direction
+        }
+
+        if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+        { // subnet interface as an intermediate subobj
+            src_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+            if (src_1st_ts == 0)
+                return 5; //no sufficient subnet egress timeslots
+            //update 1st time slot
+            subobj2->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | ntohl(subobj2->if_id)&0xff00 | src_1st_ts&0xff);
+            should_verify_subnet_ero = true;
+        }
+        else if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 6; //no sufficient bandwidth in backward direction
+        }
+    }
+
+    //handling subnet interface local ids
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
+        {
+            if (links[ln]->link->advRtId == source.s_addr && links[ln]->link->Iscds().size() > 0 
+                && links[ln]->link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                && (htons(links[ln]->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
+                && links[ln]->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+            {
+                pcen_link = links[ln];
+                break;
+            }
+        }
+        if (pcen_link == NULL)
+            return 2; //no link found
+        src_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+        if (src_1st_ts == 0)
+            return 5; //no sufficient subnet ingress timeslots
+        ero_subobj subobj1;
+        memset(&subobj1, 0, sizeof(ero_subobj));
+        subobj1.hop_type = ERO_TYPE_STRICT_HOP;
+        subobj1.prefix_len = 32;
+        subobj1.addr.s_addr = pcen_link->link->LclIfAddr();
+        subobj1.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | src_lcl_id&0xff00 | src_1st_ts&0xff);
+        user_ero.push_front(subobj1);
+        should_verify_subnet_ero = true;
+    }
+    if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
+        {
+            if (links[ln]->link->advRtId == source.s_addr && links[ln]->link->Iscds().size() > 0 
+                && links[ln]->link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+                && (htons(links[ln]->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
+                && links[ln]->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+            {
+                pcen_link = links[ln];
+                break;
+            }
+        }
+        if (pcen_link == NULL)
+            return 2; //no link found
+        dest_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+        if (dest_1st_ts == 0)
+            return 3; //no sufficient subnet egress timeslots
+        ero_subobj subobj2;
+        memset(&subobj2, 0, sizeof(ero_subobj));
+        subobj2.hop_type = ERO_TYPE_STRICT_HOP;
+        subobj2.prefix_len = 32;
+        subobj2.addr.s_addr = pcen_link->link->LclIfAddr();
+        subobj2.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | dest_lcl_id&0xff00 | dest_1st_ts&0xff);
+        user_ero.push_back(subobj2);
+        should_verify_subnet_ero = true;
+    }
+
+    // success depends on further verification
+    if (should_verify_subnet_ero)
+        return VerifySubnetERO(); 
+
+    // success
+    return 0;
+}
+
+int PCEN_OSCARS::VerifySubnetERO()
+{
+    // there must be subnet ero
+    if (subnet_ero.size() ==0)
+        return -3;
+    // there must be incorporated subnet topology
+    if (!SystemConfig::should_incorporate_subnet)
+        return -4;
+
+    return 0;
 }
 
 void PCEN_OSCARS::Run()

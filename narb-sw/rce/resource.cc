@@ -712,7 +712,7 @@ Link* ResourceDB::LookupNextLinkByLclRmtIf(Link* prev_link)
     return NULL;
 }
 
-Link* ResourceDB::LookupLinkByLocalId(in_addr rtId, u_int32_t localId)
+Link* ResourceDB::LookupLinkBySubnetLocalId(in_addr rtId, u_int32_t localId)
 {
     RadixTree<Resource>* link_tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
     RadixNode<Resource>* node = link_tree->Root();

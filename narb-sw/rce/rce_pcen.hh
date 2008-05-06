@@ -344,6 +344,7 @@ protected:
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    list<ero_subobj> user_ero; // Optional user supplied ERO 
     list<ero_subobj> subnet_ero; // Optional TLV to carry an extra subnet ERO when LSP_OPT_SUBNET_ERO is present
 
     u_int32_t options;
@@ -441,6 +442,7 @@ public:
     void HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask=NULL);
     void EnableConvSubnetERO2DTL() { is_subnet_ero2dtl_enabled = true;}
     void SetSubnetERO(list<ero_subobj>& s_ero) { subnet_ero.assign(s_ero.begin(), s_ero.end()); }
+    void SetUserSuppliedERO(list<ero_subobj>& u_ero) { user_ero.assign(u_ero.begin(), u_ero.end()); }
 
     api_msg* NewEROReplyMessage ();
     
