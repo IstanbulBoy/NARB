@@ -281,11 +281,11 @@ int PCEN_DCN::VerifySubnetERO()
     PCENLink* pcen_link = NULL;
     PCENNode* headNode = NULL;
     list<ero_subobj>::iterator iter;
-    for (iter = user_ero.begin(); iter != subnet_ero.end(); iter++)
+    for (iter = subnet_ero.begin(); iter != subnet_ero.end(); iter++)
     {
         ero_subobj* subobj1 = &(*iter);
         ++iter;
-        if (iter == user_ero.end())   return 7; //unpaired subnet ero subobj
+        if (iter == subnet_ero.end())   return 7; //unpaired subnet ero subobj
         ero_subobj* subobj2 = &(*iter);
 
         for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
@@ -349,7 +349,7 @@ void PCEN_DCN::Run()
     {
         if ((ret = VerifyPathWithERO()) != 0)
         {
-            LOGF("PCEN_DCN::VerifyPathWithERO() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+            LOGF("PCEN_DCN::VerifyPathWithERO() failed for source[%X]-destination[%X] with code %d\n", source.s_addr, destination.s_addr, ret);
             ReplyErrorCode(ERR_PCEN_NO_ROUTE);
             return;
         }
@@ -384,7 +384,7 @@ void PCEN_DCN::Run()
     {
         if ((ret = VerifySubnetERO()) != 0)
         {
-            LOGF("PCEN_DCN::VerifySubnetERO() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+            LOGF("PCEN_DCN::VerifySubnetERO() failed with code %d \n", ret);
             ReplyErrorCode(ERR_PCEN_NO_ROUTE);
             return;
         }
