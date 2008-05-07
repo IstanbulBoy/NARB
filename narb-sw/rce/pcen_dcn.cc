@@ -85,7 +85,7 @@ bool PCEN_DCN::PostBuildTopology()
                 if (pcen_link->link->maxBandwidth > iscd->max_lsp_bw[j] )
                     iscd->max_lsp_bw[j] = pcen_link->link->maxBandwidth;
             }
-            //$$$$ all possible vtagss
+            //$$$$ all possible vtags
             if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
             {
                 for (j = 0; j < MAX_VLAN_NUM/8; j++)
@@ -178,10 +178,12 @@ int PCEN_DCN::VerifyPathWithERO()
             subobj1->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | ntohl(subobj2->if_id)&0xff00 | dest_1st_ts&0xff);
             should_verify_subnet_ero = true;
         }
+        //@@@@ VTAG ??
         else if (pcen_link->link->MaxReservableBandwidth() < bandwidth_ingress)
         { // regular vlsr level subobj
             return 4; //no sufficient bandwidth in forward direction
         }
+
         //verifying capacity
         if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
         { // subnet interface as an intermediate subobj
@@ -192,6 +194,7 @@ int PCEN_DCN::VerifyPathWithERO()
             subobj2->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | ntohl(subobj2->if_id)&0xff00 | src_1st_ts&0xff);
             should_verify_subnet_ero = true;
         }
+        //@@@@ VTAG ??
         else if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
         { // regular vlsr level subobj
             return 6; //no sufficient bandwidth in backward direction
@@ -341,6 +344,21 @@ void PCEN_DCN::Run()
         return;
     }
 
+    //$$$$ veriying path if user supplied ero is present
+    if (user_ero.size() > 0)
+    {
+        if ((ret = VerifyPathWithERO()) != 0)
+        {
+            LOGF("PCEN_DCN::VerifyPathWithERO() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+            ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+            return;
+        }
+        ero.assign(user_ero.begin(), user_ero.end());
+        ReplyERO();
+        return; //Done
+    }
+    //$$$$ otherwise, compute actual paths
+
     //modifying topology 
     //  1. subnet handling in PCEN_MRN::PostBuildTopology
     //  2. relaxing constraints for DCN requests
@@ -468,7 +486,6 @@ void PCEN_DCN::PrepareLinkDisjointSearch()
         }
     }
 }
-
 
 void PCEN_DCN::CreateMaxDisjointPaths()
 {
