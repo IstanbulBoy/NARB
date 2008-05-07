@@ -144,7 +144,7 @@ int PCEN_DCN::VerifyPathWithERO()
 
     int ln;
     PCENLink* pcen_link = NULL;
-    PCENNode* headNode = NULL;
+    PCENNode* head_node = NULL;
     list<ero_subobj>::iterator iter;
     for (iter = user_ero.begin(); iter != user_ero.end(); iter++)
     {
@@ -155,17 +155,17 @@ int PCEN_DCN::VerifyPathWithERO()
 
         for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
         {
-            if (headNode != NULL && links[ln]->lcl_end == headNode
+            if ((head_node == NULL || links[ln]->lcl_end == head_node)
                 && links[ln]->link->lclIfAddr == subobj1->addr.s_addr
                 && links[ln]->link->rmtIfAddr == subobj2->addr.s_addr
-                 && links[ln]->rmt_end != NULL)
+                && links[ln]->rmt_end != NULL)
             {
                 pcen_link = links[ln];
-                headNode = pcen_link->rmt_end;
+                head_node = pcen_link->rmt_end;
                 break;
             }
         }
-        if (pcen_link == NULL)
+        if (pcen_link == NULL || head_node == NULL)
             return 2; //continued link unfound!
 
         //verifying capacity
@@ -279,7 +279,7 @@ int PCEN_DCN::VerifySubnetERO()
 
     int ln;
     PCENLink* pcen_link = NULL;
-    PCENNode* headNode = NULL;
+    PCENNode* head_node = NULL;
     list<ero_subobj>::iterator iter;
     for (iter = subnet_ero.begin(); iter != subnet_ero.end(); iter++)
     {
@@ -290,17 +290,17 @@ int PCEN_DCN::VerifySubnetERO()
 
         for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
         {
-            if (headNode != NULL && links[ln]->lcl_end == headNode
+            if ((head_node == NULL || links[ln]->lcl_end == head_node)
                 && links[ln]->link->lclIfAddr == subobj1->addr.s_addr
                 && links[ln]->link->rmtIfAddr == subobj2->addr.s_addr
-                 && links[ln]->rmt_end != NULL)
+                && links[ln]->rmt_end != NULL)
             {
                 pcen_link = links[ln];
-                headNode = pcen_link->rmt_end;
+                head_node = pcen_link->rmt_end;
                 break;
             }
         }
-        if (pcen_link == NULL)
+        if (pcen_link == NULL || head_node == NULL)
             return 8; //continued link unfound!
 
         //verifying capacity
