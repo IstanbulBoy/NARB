@@ -390,6 +390,7 @@ void PCEN_DCN::Run()
         }
         //using the user supplied subnet ero (discard the computed one) !
         subnet_ero.assign(user_subnet_ero.begin(), user_subnet_ero.end());
+        HandleSubnetUNIEROTrack(ero);
         ReplyERO();
         return; //Done
     }
