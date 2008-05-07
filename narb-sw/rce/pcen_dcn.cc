@@ -366,6 +366,10 @@ void PCEN_DCN::Run()
     if (!PostBuildTopology())
         return;
 
+    //$$$$ preserve user supplied subnet ero
+    list<ero_subobj> user_subnet_ero;
+    user_subnet_ero.assign(subnet_ero.begin(), subnet_ero.end());
+
     //PerformComputation --> Generating initial CSPF path (shortest)
     //  return error code if failed
     if ((ret = PerformComputation()) != 0)
@@ -373,6 +377,21 @@ void PCEN_DCN::Run()
         LOGF("PCEN_DCN::PerformComputation() failed (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
         ReplyErrorCode(ret);
         return;
+    }
+
+    //$$$$ verifying user supplied subnet ero if any
+    if (user_subnet_ero.size() > 0)
+    {
+        if ((ret = VerifySubnetERO()) != 0)
+        {
+            LOGF("PCEN_DCN::VerifySubnetERO() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+            ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+            return;
+        }
+        //using the user supplied subnet ero (discard the computed one) !
+        subnet_ero.assign(user_subnet_ero.begin(), user_subnet_ero.end());
+        ReplyERO();
+        return; //Done
     }
 
     //Storing initial CSPF path 
