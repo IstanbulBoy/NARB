@@ -91,16 +91,10 @@ public:
     void SetAsyncFd(int x) { async_fd = x; }
     void SetAttemptNum(int x) { attempt = x; }
     u_int32_t DomainId()  { return domain_id; }
-    void Stop()
-        {
-            if (sync_fd > 0)
-                close(sync_fd);
-            if (async_fd > 0)
-                close(async_fd);
-        }
 
     virtual int RunWithoutSyncTopology();
     virtual void Run();
+    void Stop();
     void KeepAlive();
     void InitRceTerceComm();
     bool RceTerceApiReady() { return api_ready; }
@@ -121,6 +115,14 @@ public:
     api_msg * ReadMessage( ); // <==> HandleAsyncMessage
     void HandleMessage (api_msg *msg); // <==> HandleAsyncMessage
     api_msg * ReadSyncMessage ();
+    virtual void Close()
+        {
+            Selector::Close();
+            if (sync_fd < 0)
+                return;
+            close(sync_fd);
+            sync_fd = -1;
+        }
 };
 
 class TerceApiTopoWriter: public Writer

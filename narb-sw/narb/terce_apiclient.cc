@@ -40,6 +40,23 @@
 #include <errno.h>
 #include <vector>
 
+TerceApiTopoSync::~TerceApiTopoSync ()
+{  
+    if(reader) 
+    {
+        reader->Close();
+        delete reader;
+    }
+    if(writer)
+    {
+        writer->Close();
+        delete writer;
+    }
+
+    if (sync_fd > 0) close(sync_fd);
+    if (async_fd > 0) close(async_fd); 
+}
+
 void TerceApiTopoSync::InitNarbTerceComm()
 {
     if (sync_fd < 0)
@@ -286,7 +303,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
     //Check if the API is ready
     if (!api_ready)
     {
-        InitNarbTerceComm();
+       InitNarbTerceComm();
 	if (!api_ready)
 	    return -2;
     }
@@ -350,21 +367,21 @@ void TerceApiTopoSync::Run ()
     return;
 }
 
-TerceApiTopoSync::~TerceApiTopoSync ()
-{  
-    if(reader) 
+void TerceApiTopoSync::Stop()
+{
+    if (reader != NULL)
     {
         reader->Close();
-        delete reader;
+        reader = NULL;
     }
-    if(writer)
+    if (writer != NULL)
     {
         writer->Close();
-        delete writer;
+        writer = NULL;
     }
-
-    if (sync_fd > 0) close(sync_fd);
-    if (async_fd > 0) close(async_fd); 
+    sync_fd = async_fd = -1;
+    attempt = 0;
+    api_ready = false;
 }
 
 void TerceApiTopoReader::Run()
@@ -378,12 +395,15 @@ void TerceApiTopoReader::Run()
     {
         //closing connection
         LOG("Connection closed"<<endl);
+        /*
         Close();
         server->GetWriter()->Close();
         server->SetReader(NULL);
         server->SetWriter(NULL);
         server->SetSyncFd(-1);
         server->SetAttemptNum(0);
+        */
+        server->Stop();
         return;
     }
 
@@ -491,12 +511,13 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
     if (rlen < 0)
     {
         LOG("TerceApiTopoReader / Sync failed to read from"<<sync_fd<<endl);
+        server->Stop();
         return NULL;
     }
     else if (rlen == 0)
     {
         LOG("Connection closed for TerceApiTopoReader Sync(" << sync_fd <<") and Async(" << fd <<')'  << endl);
-
+        /*
         close(sync_fd);
         sync_fd = -1;
         if (fd > 0)
@@ -504,11 +525,14 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
             close(fd);
             fd = -1;
         }
+        */
+        server->Stop();
         return NULL;
     }
     else if (rlen != sizeof (api_msg_header))
     {
         LOG("TerceApiTopoReader /Sync(" << sync_fd << ") cannot read the message header" <<endl);
+        server->Stop();
         return NULL;
     }
 
@@ -517,6 +541,7 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
     if (bodylen > API_MAX_MSG_SIZE)
     {
         LOG("TerceApiTopoReader / Sync(" << sync_fd << ") cannot read oversized packet" <<endl);
+        server->Stop();
         return NULL;
     }
 
@@ -526,13 +551,14 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
         rlen = readn (sync_fd, buf, bodylen);
         if (rlen < 0)
         {
-             LOG("TerceApiTopoReader failed to read from / Sync" << sync_fd << endl);
+            LOG("TerceApiTopoReader failed to read from / Sync" << sync_fd << endl);
+            server->Stop();
             return NULL;
         }
         else if (rlen == 0)
         {
             LOG("Connection closed for TerceApiTopoReader Sync(" << sync_fd <<") and Async(" << fd <<')'  << endl);
-
+            /*
             close(sync_fd);
             sync_fd = -1;
             if (fd > 0)
@@ -540,10 +566,14 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
                 close(fd);
                 fd = -1;
             }
+            */
+            server->Stop();
+            return NULL;
         }
         else if (rlen != bodylen)
         {
              LOG("TerceApiTopoReader / Sync(" << sync_fd << ") cannot read the message body" <<endl);
+            server->Stop();
             return NULL;
         }
     }
@@ -624,12 +654,15 @@ void TerceApiTopoWriter::Run()
     {
         //closing connection.
         LOG("Connection closed"<<endl);
+        /*
         Close();
         server->GetReader()->Close();
         server->SetReader(NULL);
         server->SetWriter(NULL);
         server->SetSyncFd(-1);
         server->SetAttemptNum(0);
+        */
+        server->Stop();
         return;
     }        
     if (msgQueue.size() > 0)

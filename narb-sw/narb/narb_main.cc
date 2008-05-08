@@ -219,12 +219,11 @@ int main( int argc, char* argv[])
         {
             LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
-
-        // Polling for OSPF ajdacency (waiting for the origination interface up and in full adjacency with a neighbor)
         while (!terce_client->NarbTerceApiReady())
         {
             LOGF("NARB-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
             sleep(10);
+            terce_client->RunWithoutSyncTopology();
         }
         //Start abstract domain topology origination via TERCE
         TerceApiTopoWriter* terce_apiwriter = terce_client->GetWriter();

@@ -486,17 +486,26 @@ void DomainInfo::ClearLinks()
 //  Timer function to originate domain summary LSA's periodically
 void DomainTopologyOriginator::Run()
 {
-    //TERCE Server
+    // TERCE Server
+    // if TERCE client is enabled and the API died, resurrect NarbTerceComm
+    if (terce_client && !terce_client->NarbTerceApiReady())
+    {
+        if (terce_client->RunWithoutSyncTopology() < 0)
+        {
+            LOGF("TerceApiTopoSync failed to RESTART: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        }
+    }
+    // NARB-TERCE sync topology
     if (terce_client && terce_client->NarbTerceApiReady())
     {
-        NarbDomainInfo.DeleteTopology(terce_client->GetWriter()); //??
+        NarbDomainInfo.DeleteTopology(terce_client->GetWriter());
         NarbDomainInfo.OriginateTopology(terce_client->GetWriter());
     }
 
     //Zebra OSPFd
     if (!ospf_client || !ospf_client->Alive())
         return;
-    if (!ospf_client->GetReader() || !!ospf_client->GetWriter())
+    if (!ospf_client->GetReader() || !ospf_client->GetWriter())
     {
         if (ospf_client->RunWithoutSyncLsdb() < 0)
             return;

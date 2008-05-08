@@ -162,11 +162,11 @@ int main( int argc, char* argv[])
         {
             LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
         }
-
         while (!terce_client->RceTerceApiReady())
         {
             LOGF("RCE-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
             sleep(10);
+            terce_client->RunWithoutSyncTopology();
         }
 
         //Start abstract domain topology origination via TERCE
