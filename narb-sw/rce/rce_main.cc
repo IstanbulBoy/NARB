@@ -157,6 +157,7 @@ int main( int argc, char* argv[])
     TerceApiTopoSync terceClient((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port, DOMAIN_MASK_LOCAL, 0);
     if (SystemConfig::terce_host.size() > 0 && SystemConfig::terce_port > 0)
     {
+        LOG("Initiating RCE-TERCE API communication......" <<endl);
         terce_client = &terceClient;
         if (terce_client->RunWithoutSyncTopology() < 0)
         {

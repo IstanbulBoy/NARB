@@ -212,7 +212,7 @@ int main( int argc, char* argv[])
 
     if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port != 0)
     {
-        LOG("Initiating NARB-TERCE API connection......" <<endl);
+        LOG("Initiating NARB-TERCE API communication......" <<endl);
         //Start TERCE APIClient
         terce_client = new TerceApiTopoSync(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, DOMAIN_MASK_GLOBAL, 0);
         if (terce_client->RunWithoutSyncTopology() < 0)
