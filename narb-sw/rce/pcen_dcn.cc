@@ -222,56 +222,70 @@ int PCEN_DCN::VerifyPathWithERO()
     }
 
     //handling subnet interface local ids
+    PCENLink* lclid_link_src = NULL, *lclid_link_dest = NULL;
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID || (dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    {
+        RadixTree<Resource>* tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+        RadixNode<Resource>* node = tree->Root();
+        while (node)
+        {
+            Link* link = (Link*)node->Data();
+            if (link == NULL || link->Iscds().size() == 0 ||
+               (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+            {
+                node = tree->NextNode(node);
+                continue;
+            }
+            if (!lclid_link_src && link->AdvRtId() == source.s_addr
+                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+            {
+                link->removeDeltaByOwner(ucid, seqnum);
+                link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
+                link = new Link(link);
+                lclid_link_src = new PCENLink(link);
+                lclid_link_src->link_self_allocated = true;
+            }
+            else if (!lclid_link_dest && link->AdvRtId() == destination.s_addr
+                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+            {
+                link->removeDeltaByOwner(ucid, seqnum);
+                link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
+                link = new Link(link);
+                lclid_link_dest = new PCENLink(link);
+                lclid_link_dest->link_self_allocated = true;
+            }
+            node = tree->NextNode(node);
+        }
+        // verifying and adding the source lclid link into topology
+    }
     if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
     {
-        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
-        {
-            if (links[ln]->link->advRtId == source.s_addr && links[ln]->link->Iscds().size() > 0 
-                && links[ln]->link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                && (htons(links[ln]->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
-                && links[ln]->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
-            {
-                pcen_link = links[ln];
-                break;
-            }
-        }
-        if (pcen_link == NULL)
+        if (lclid_link_src == NULL)
             return 2; //no link found
-        src_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+        src_1st_ts = CheckTimeslotsAvailability(lclid_link_src, bandwidth_ingress);
         if (src_1st_ts == 0)
             return 5; //no sufficient subnet ingress timeslots
         ero_subobj subobj1;
         memset(&subobj1, 0, sizeof(ero_subobj));
         subobj1.hop_type = ERO_TYPE_STRICT_HOP;
         subobj1.prefix_len = 32;
-        subobj1.addr.s_addr = pcen_link->link->LclIfAddr();
+        subobj1.addr.s_addr = lclid_link_src->link->LclIfAddr();
         subobj1.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | src_lcl_id&0xff00 | src_1st_ts&0xff);
         user_ero.push_front(subobj1);
         should_verify_subnet_ero = true;
     }
     if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
     {
-        for ( pcen_link = NULL, ln = 0;  ln < links.size(); ln++ )
-        {
-            if (links[ln]->link->advRtId == source.s_addr && links[ln]->link->Iscds().size() > 0 
-                && links[ln]->link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                && (htons(links[ln]->link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
-                && links[ln]->link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
-            {
-                pcen_link = links[ln];
-                break;
-            }
-        }
-        if (pcen_link == NULL)
+        if (lclid_link_dest == NULL)
             return 2; //no link found
-        dest_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+        dest_1st_ts = CheckTimeslotsAvailability(lclid_link_dest, bandwidth_ingress);
         if (dest_1st_ts == 0)
             return 3; //no sufficient subnet egress timeslots
         ero_subobj subobj2;
         memset(&subobj2, 0, sizeof(ero_subobj));
         subobj2.hop_type = ERO_TYPE_STRICT_HOP;
         subobj2.prefix_len = 32;
-        subobj2.addr.s_addr = pcen_link->link->LclIfAddr();
+        subobj2.addr.s_addr = lclid_link_dest->link->LclIfAddr();
         subobj2.if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | dest_lcl_id&0xff00 | dest_1st_ts&0xff);
         user_ero.push_back(subobj2);
         should_verify_subnet_ero = true;
