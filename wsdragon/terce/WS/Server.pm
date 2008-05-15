@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -347,7 +347,6 @@ sub tag($$$) {
 			# follow the link
 			if(ref($$l{remote}) eq "HASH") {
 				if(!defined($$l{remote}{tag})) {
-					$$l{remote}{tag} = $t;
 					$self->tag($dr, $$l{remote}{rtr_id}, $t);
 				}
 			}
@@ -492,7 +491,7 @@ sub process_q($$$$$) {
 			if(defined($$br)) {
 				# insert the old link block to the dr
 				my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
-				Aux::print_dbg_tedb("  }\n");
+				Aux::print_dbg_tedb("  }");
 				if(!$err) {
 					Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
 				}
@@ -595,11 +594,11 @@ sub process_q($$$$$) {
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
 		# insert the last link block to the tedb
 		my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
+		Aux::print_dbg_tedb("  }");
 		if(!$err) {
 			Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
 		}
 		$$tr = {"status" => 0};
-		Aux::print_dbg_tedb("  }\n");
 		$$br = undef; 
 		return 1;
 	}
