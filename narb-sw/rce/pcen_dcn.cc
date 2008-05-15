@@ -158,7 +158,7 @@ int PCEN_DCN::VerifyPathWithERO()
     }
     if ((htonl(user_ero.back().if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
     {
-        dest_lcl_id = ((LOCAL_ID_TYPE_SUBNET_IF_ID<<16) | htonl(user_ero.front().if_id)&0xffff);
+        dest_lcl_id = ((LOCAL_ID_TYPE_SUBNET_IF_ID<<16) | htonl(user_ero.back().if_id)&0xffff);
         user_ero.pop_back();
     }
 
