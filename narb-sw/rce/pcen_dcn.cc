@@ -127,9 +127,29 @@ int PCEN_DCN::VerifyPathWithERO()
     if (routers.size() == 0 || links.size() ==0)
         return -2;
 
-    bool should_verify_subnet_ero = false;
+    //Init reverseLink
+    int i = 0, lNum = links.size();
+    for (; i < lNum; i++)
+    {
+        PCENLink* pcen_link = links[i];
+        PCENNode* pcen_node = pcen_link->rmt_end;
+        if (!pcen_node)
+            continue;
+        list<PCENLink *>::iterator it_link;
+        for (it_link = pcen_node->out_links.begin(); it_link != pcen_node->out_links.end(); it_link++)
+        {
+            assert(*it_link);
+            if ((*it_link)->rmt_end == pcen_link->lcl_end && (*it_link)->link->rmtIfAddr == pcen_link->link->lclIfAddr
+			&& (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
+            {
+                pcen_link->reverse_link = *it_link;
+                break;
+            }
+        }
+    }
 
     //handling stub subnet interface subobjects
+    bool should_verify_subnet_ero = false;
     int src_1st_ts = 0, dest_1st_ts = 0;
     if ((htonl(user_ero.front().if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
     {
