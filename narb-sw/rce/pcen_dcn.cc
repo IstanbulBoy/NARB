@@ -189,35 +189,34 @@ int PCEN_DCN::VerifyPathWithERO()
             return 2; //continued link unfound!
 
         //verifying capacity
-        if ((ntohl(subobj1->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        //@@@@ VTAG ??
+        if (pcen_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 3; //no sufficient bandwidth in forward direction
+        }
+        else if ((ntohl(subobj1->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         { // subnet interface as an intermediate subobj
             dest_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
             if (dest_1st_ts == 0)
-                return 3; //no sufficient subnet ingress timeslots
+                return 4; //no sufficient subnet ingress timeslots
             //update 1st time slot
             subobj1->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | ntohl(subobj2->if_id)&0xff00 | dest_1st_ts&0xff);
             should_verify_subnet_ero = true;
         }
-        //@@@@ VTAG ??
-        else if (pcen_link->link->MaxReservableBandwidth() < bandwidth_ingress)
-        { // regular vlsr level subobj
-            return 4; //no sufficient bandwidth in forward direction
-        }
-
         //verifying capacity
-        if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
+        //@@@@ VTAG ??
+        if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        { // regular vlsr level subobj
+            return 5; //no sufficient bandwidth in backward direction
+        }
+        else if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
         { // subnet interface as an intermediate subobj
-            src_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
+            src_1st_ts = CheckTimeslotsAvailability(pcen_link->reverse_link, bandwidth_ingress);
             if (src_1st_ts == 0)
-                return 5; //no sufficient subnet egress timeslots
+                return 6; //no sufficient subnet egress timeslots
             //update 1st time slot
             subobj2->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) | ntohl(subobj2->if_id)&0xff00 | src_1st_ts&0xff);
             should_verify_subnet_ero = true;
-        }
-        //@@@@ VTAG ??
-        else if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
-        { // regular vlsr level subobj
-            return 6; //no sufficient bandwidth in backward direction
         }
     }
 
