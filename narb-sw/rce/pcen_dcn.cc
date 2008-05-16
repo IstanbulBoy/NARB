@@ -200,7 +200,7 @@ int PCEN_DCN::VerifyPathWithERO()
             if (dest_1st_ts == 0)
                 return 4; //no sufficient subnet ingress timeslots
             //update 1st time slot
-            subobj1->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | ntohl(subobj2->if_id)&0xff00 | dest_1st_ts&0xff);
+            subobj1->if_id = htonl((LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) | ntohl(subobj1->if_id)&0xff00 | dest_1st_ts&0xff);
             should_verify_subnet_ero = true;
         }
         //verifying capacity
