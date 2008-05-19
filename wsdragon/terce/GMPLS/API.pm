@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -231,6 +231,7 @@ sub parse_tlv($$$$;$) {
 	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
 	# TLV header
 	my ($tlv_type, $tlv_len) = unpack("x[$o]nn", $md);	
+	my $tlv_stype = undef;
 	if(!(defined($tlv_type) && defined($tlv_len))) {
 		Log::log "err", "corrupted LSA (TLV Header)\n";
 		return (-1);
@@ -376,10 +377,38 @@ sub parse_tlv($$$$;$) {
 				my $vlan_bitmaps = "";
 				my $tmp_len = 0;
 				if($ver & IFSWCAP_SPECIFIC_SUBNET_UNI) {
-					if(parse_tlv_data($md, $o+4, "nnCCCCNNNNNN", \@info)<0) {
+					if(parse_tlv_data($md, $o+4, "CCCCNNNNNN", \@info)<0) {
 						return (-1);
 					}
-					Aux::print_dbg_lsa("       subnet UNI TLV. Not parsed.\n");
+					$tlv_stype = "uni";
+					Aux::print_dbg_lsa("       subnet uni id: %d\n", $info[0]);
+					Aux::print_dbg_lsa("       first timeslot: %d\n", $info[1]);
+					Aux::print_dbg_lsa("       swcap ext: %d\n", $info[2]);
+					Aux::print_dbg_lsa("       encoding ext: %d\n", $info[3]);
+					Aux::print_dbg_lsa("       tna ipv4: %08x\n", $info[4]);
+					Aux::print_dbg_lsa("       nid ipv4: %08x\n", $info[5]);
+					Aux::print_dbg_lsa("       data ipv4: %08x\n", $info[6]);
+					Aux::print_dbg_lsa("       logical port number: %d\n", $info[7]);
+					Aux::print_dbg_lsa("       egress label downstream: %d\n", $info[8]);
+					Aux::print_dbg_lsa("       egress label upstream: %d\n", $info[9]);
+					Aux::print_dbg_lsa("       control channel: %s\n", substr($md, $o + 4 + 28, 12));
+					Aux::print_dbg_lsa("       node name: %s\n", substr($md, $o + 4 + 40, 16));
+					push(@info, substr($md, $o + 4 + 40, 16));
+					my $ts = substr($md, $o + 4 + 56, 192/8);
+					my $tcnt = 0;
+					Aux::print_dbg_lsa("       time slots: ");
+					for(my $i=0; $i<192; $i++) {
+						if(vec($ts, $i, 1)) {
+							Aux::print_dbg_lsa("%03d ", $i);
+							$tcnt++;
+							if(!($tcnt%8)) {
+								Aux::print_dbg_lsa("\n                   ");
+							}
+						}
+					}
+					if(($tcnt%8) || !$tcnt) {
+						Aux::print_dbg_lsa("\n");
+					}
 				}
 				else {
 					# uncompress first if needed
@@ -473,7 +502,7 @@ sub parse_tlv($$$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
-		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
+		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr, "client"=>$cn});
 		Aux::send_to_tedb($tq, @res);
 	}
 	return(0);
