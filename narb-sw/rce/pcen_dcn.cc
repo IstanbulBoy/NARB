@@ -387,6 +387,12 @@ void PCEN_DCN::Run()
             return;
         }
         ero.assign(user_ero.begin(), user_ero.end());
+        if (is_e2e_tagged_vlan)
+        {
+            if (vtag == ANY_VTAG) {
+                vtag  = 0;
+            }
+        }
         ReplyERO();
         return; //Done
     }
