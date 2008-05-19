@@ -64,8 +64,9 @@ struct option longopts[] =
     { 0 }
 };
 
-ZebraOspfSync * zebra_client = NULL;
-TerceApiTopoSync * terce_client = NULL;
+NARB_APIServer* narb_server = NULL; 
+ZebraOspfSync* zebra_client = NULL;
+TerceApiTopoSync* terce_client = NULL;
 DomainTopologyOriginator* dts_originator = NULL;
 
 // SIGINT handler.
@@ -153,8 +154,8 @@ int main( int argc, char* argv[])
     configMaster.ReadConfig((char*)SystemConfig::config_file.c_str(), (char*)NARB_CURRENT_CONFIG_FILE, (char*)NARB_DEFAULT_CONFIG_FILE, NarbDomainInfo);
 
     //Start NARB API Server
-    NARB_APIServer server(NARB_API_PORT);
-    server.Start();
+    narb_server = new NARB_APIServer(NARB_API_PORT);
+    narb_server->Start();
 
     //Start NARB CLI
     CLIServer cli_server(NARB_CLI_PORT);

@@ -47,6 +47,8 @@
 #define MSG_TERCE_TOPO_SYNC ((u_int8_t)0x11)
 #define MSG_TERCE_TOPO_ASYNC ((u_int8_t)0x12)
 
+extern NARB_APIServer* narb_server;
+
 struct terce_topo_update
 {
     u_int16_t type;
@@ -57,11 +59,13 @@ struct terce_topo_update
 
 class TerceApiTopoReader;
 class TerceApiTopoWriter;
+class LSP_Broker;
 class TerceApiTopoSync: public Timer
 {
 private:
     TerceApiTopoReader* reader;
     TerceApiTopoWriter* writer;
+    LSP_Broker* lspb;
     int sync_fd;
     int async_fd;
     char* terce_host;
@@ -73,7 +77,7 @@ private:
 
 public:
     TerceApiTopoSync(char* host, int port, u_int32_t dmid, int sync_interval): Timer(sync_interval, 0, FOREVER), 
-        sync_fd(-1), async_fd(-1), reader(NULL), writer(NULL), terce_host(host), terce_port(port), attempt(0), 
+        sync_fd(-1), async_fd(-1), reader(NULL), writer(NULL), lspb(NULL), terce_host(host), terce_port(port), attempt(0), 
         domain_id(dmid), domain_mask(DOMAIN_MASK_GLOBAL), api_ready(false) { }
     virtual ~TerceApiTopoSync();
 
@@ -98,12 +102,14 @@ public:
     void KeepAlive();
     void InitNarbTerceComm();
     bool NarbTerceApiReady() { return api_ready; }
+    LSP_Broker* GetLSPBroker();
 };
 
 class TerceApiTopoReader: public Reader
 {
 private:
     TerceApiTopoSync *server;
+    LSP_Broker* lspb;
     int sync_fd;
 
 public:

@@ -37,6 +37,7 @@
 #include "event.hh"
 #include "toolbox.hh"
 #include "terce_apiclient.hh"
+#include "lsp_broker.hh"
 #include <errno.h>
 #include <vector>
 
@@ -379,9 +380,25 @@ void TerceApiTopoSync::Stop()
         writer->Close();
         writer = NULL;
     }
+    if (lspb != NULL)
+    {
+        NARB_APIServer::lsp_brokers.remove(lspb);
+        delete lspb;
+        lspb = NULL;
+    }
     sync_fd = async_fd = -1;
     attempt = 0;
     api_ready = false;
+}
+
+LSP_Broker* TerceApiTopoSync::GetLSPBroker()
+{
+    if (lspb == NULL)
+    {
+        lspb = new LSP_Broker(async_fd, narb_server);
+        NARB_APIServer::lsp_brokers.push_back(lspb);
+    }
+    return lspb;
 }
 
 void TerceApiTopoReader::Run()
@@ -621,6 +638,10 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
             //update keep-alive timer...
             break;
         }
+        break;
+
+    case NARB_MSG_LSPQ:
+        server->GetLSPBroker()->HandleMessage(msg);
         break;
 
     default:
