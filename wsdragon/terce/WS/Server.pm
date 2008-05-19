@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -561,19 +561,37 @@ sub process_q($$$$$) {
 						$v = sprintf(" (%f)", 8*$data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LINK_IFSWCAP) {
-						${$$tr}{sw_cap}{cap} = $data[0];
-						${$$tr}{sw_cap}{enc} = $data[1];
-						$v = sprintf("\n      (%s, %s)", 
-							$sub_tlvs_link_swcap_cap{$data[0]},
-							$sub_tlvs_link_swcap_enc{$data[1]}) if Aux::dbg_tedb();
-						${$$tr}{sw_cap}{vtags} = [];
-						for(my $i = 14; $i<@data; $i++) {
-							$v .= sprintf("\n      (%s)", $data[$i]) if Aux::dbg_tedb();
-							push(@{${$$tr}{sw_cap}{vtags}}, $data[$i]);
+						if(!defined($$d{subtype})) {
+							${$$tr}{sw_cap}{cap} = $data[0];
+							${$$tr}{sw_cap}{enc} = $data[1];
+							$v = sprintf("\n      (%s, %s)", 
+								$sub_tlvs_link_swcap_cap{$data[0]},
+								$sub_tlvs_link_swcap_enc{$data[1]}) if Aux::dbg_tedb();
+							${$$tr}{sw_cap}{vtags} = [];
+							for(my $i = 14; $i<@data; $i++) {
+								$v .= sprintf("\n      (%s)", $data[$i]) if Aux::dbg_tedb();
+								push(@{${$$tr}{sw_cap}{vtags}}, $data[$i]);
+							}
+						}
+						elsif($$d{subtype} eq "uni") {
+							${$$tr}{sw_cap}{uni}{id} = $data[0];
+							${$$tr}{sw_cap}{uni}{ts1} = $data[1];
+							${$$tr}{sw_cap}{uni}{swcap_ext} = $data[2];
+							${$$tr}{sw_cap}{uni}{enc_ext} = $data[3];
+							${$$tr}{sw_cap}{uni}{tna4} = $data[4];
+							${$$tr}{sw_cap}{uni}{nid4} = $data[5];
+							${$$tr}{sw_cap}{uni}{data4} = $data[6];
+							${$$tr}{sw_cap}{uni}{lpn} = $data[7];
+							${$$tr}{sw_cap}{uni}{eld} = $data[8];
+							${$$tr}{sw_cap}{uni}{elu} = $data[9];
+							${$$tr}{sw_cap}{uni}{node_name} = $data[10];
+							$v = sprintf("\n      (%s)", $data[10]) if Aux::dbg_tedb();
 						}
 						${$$tr}{status} |= STAT_LINK_SWCAP; 
 					}
-					Aux::print_dbg_tedb("    sub-level insert: %s%s\n", $sub_tlvs_link_X{$$d{type}}, $v);
+					Aux::print_dbg_tedb("    sub-level insert: %s%s%s\n", $sub_tlvs_link_X{$$d{type}}, 
+						defined($$d{subtype})?"($$d{subtype})":"",
+						$v);
 				}
 				else {
 					$$br = undef;
