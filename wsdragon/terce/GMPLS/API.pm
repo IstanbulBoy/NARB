@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -393,7 +393,11 @@ sub parse_tlv($$$$;$) {
 					Aux::print_dbg_lsa("       egress label upstream: %d\n", $info[9]);
 					Aux::print_dbg_lsa("       control channel: %s\n", substr($md, $o + 4 + 28, 12));
 					Aux::print_dbg_lsa("       node name: %s\n", substr($md, $o + 4 + 40, 16));
-					push(@info, substr($md, $o + 4 + 40, 16));
+					my $l = index(substr($md, $o + 4 + 40, 16), chr(0));
+					if($l < 0) {
+						$l = 16;
+					}
+					push(@info, substr($md, $o + 4 + 40, $l));
 					my $ts = substr($md, $o + 4 + 56, 192/8);
 					my $tcnt = 0;
 					Aux::print_dbg_lsa("       time slots: ");
