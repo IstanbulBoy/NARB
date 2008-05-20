@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -382,6 +382,7 @@ sub split_graph($) {
 		if(defined($t) && ($$dr{$rtr}{tag} != $t)) {
 			push(@ret, $tedb_ref);
 			$tedb_ref = {};
+			$t = $$dr{$rtr}{tag};
 		}
 		else {
 			$t = $$dr{$rtr}{tag};
