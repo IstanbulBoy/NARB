@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -396,41 +396,27 @@ sub split_graph($) {
 sub get_topo_type($) {
 	my $self = shift;
 	my($dr) = @_;
-	my $sonet = 0;
-	my $eth = 0;
 	foreach my $rtr (keys %$dr) {
 		if($$dr{$rtr}{src} eq "narb") {
 			#abstract topology
 			return "abstract";
 		}
 		elsif($$dr{$rtr}{src} eq "rce") {
-			# the only way to get the type is to statistically 
-			# evaluate the encoding types
-			foreach my $r (keys %$dr) {
-				foreach my $l (keys %{$$dr{$r}}) {
-					# skip the top-level descriptors
-					if(ref($$dr{$rtr}{$l}) ne "HASH") {
-						next;
-					}
-					if($$dr{$r}{$l}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_SONETSDH) {
-						$sonet++;
-					}
-					elsif($$dr{$r}{$l}{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_ETH) {
-						$eth++;
-					}
+			foreach my $l (keys %{$$dr{$rtr}}) {
+				# skip the top-level descriptors
+				if(ref($$dr{$rtr}{$l}) ne "HASH") {
+					next;
 				}
-			}
-			if($sonet >= $eth) {
-				return "data";
-			}
-			else {
-				return "control";
+				if(exists($$dr{$rtr}{$l}{sw_cap}{uni})) {
+					return "control";
+				}
 			}
 		}
 		else {
 			return undef;
 		}
 	}
+	return "data";
 }
 
 
