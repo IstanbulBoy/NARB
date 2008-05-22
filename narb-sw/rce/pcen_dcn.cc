@@ -185,7 +185,7 @@ int PCEN_DCN::VerifyPathWithERO()
                 break;
             }
         }
-        if (pcen_link == NULL || head_node == NULL)
+        if (pcen_link == NULL || pcen_link->link == NULL || head_node == NULL)
             return 2; //continued link unfound!
 
         //verifying capacity
@@ -196,6 +196,7 @@ int PCEN_DCN::VerifyPathWithERO()
         }
         else if ((ntohl(subobj1->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
         { // subnet interface as an intermediate subobj
+            pcen_link->link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
             dest_1st_ts = CheckTimeslotsAvailability(pcen_link, bandwidth_ingress);
             if (dest_1st_ts == 0)
                 return 4; //no sufficient subnet ingress timeslots
@@ -205,12 +206,13 @@ int PCEN_DCN::VerifyPathWithERO()
         }
         //verifying capacity
         //@@@@ VTAG ??
-        if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
+        if (pcen_link->reverse_link == NULL || pcen_link->reverse_link->link == NULL || pcen_link->reverse_link->link->MaxReservableBandwidth() < bandwidth_ingress)
         { // regular vlsr level subobj
             return 5; //no sufficient bandwidth in backward direction
         }
         else if ((ntohl(subobj2->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
         { // subnet interface as an intermediate subobj
+            pcen_link->reverse_link->link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
             src_1st_ts = CheckTimeslotsAvailability(pcen_link->reverse_link, bandwidth_ingress);
             if (src_1st_ts == 0)
                 return 6; //no sufficient subnet egress timeslots
