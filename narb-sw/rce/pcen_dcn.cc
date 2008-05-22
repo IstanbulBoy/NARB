@@ -94,15 +94,19 @@ bool PCEN_DCN::PostBuildTopology()
                     iscd->vlan_info.bitmask_alloc[j] = 0;
                 }
             }
-            //$$$$ all timeslots ???? (--> picked timeslots shoud be ignored by DCN!)
-            if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+            //$$$$ all timeslots  (--> picked timeslots (fixed: 1) shoud be ignored by DCN!)
+            if (user_ero.size() == 0) //$$$$ original path computation
             {
-                iscd->subnet_uni_info.first_timeslot = 0;
-                for (j = 0; j < MAX_TIMESLOTS_NUM/8; j++)
+                if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                 {
-                    iscd->subnet_uni_info.timeslot_bitmask[j] = 0xff;
+                    iscd->subnet_uni_info.first_timeslot = 0;
+                    for (j = 0; j < MAX_TIMESLOTS_NUM/8; j++)
+                    {
+                        iscd->subnet_uni_info.timeslot_bitmask[j] = 0xff;
+                    }
                 }
-            }            
+            }
+            //$$$$ otherwise, verification should consider dynamic (real-time available) time slots.
         }
             
     }
