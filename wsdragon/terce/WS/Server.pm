@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -144,9 +144,9 @@ sub selectNetworkTopology {
 	}
 	else {
 		my $scope_m = 0;
+		$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
 		$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
 		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
-		$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
 		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
 		$self->generate_soap_resp($scope_m);
@@ -172,20 +172,30 @@ sub get_swcap_xml($) {
 	my ($lr) = @_;
 	my $enc_xml = SOAP::Data->name('encodingType' => $link_swcap_enc_xml{$$lr{sw_cap}{enc}});
 	my $swtype_xml = SOAP::Data->name('switchingcapType' => $link_swcap_cap_xml{$$lr{sw_cap}{cap}});
-	my $info_xml;
+	my $info_xml = undef;
+	my @swcap = ();
 	if($$lr{sw_cap}{enc} == LINK_IFSWCAP_SUBTLV_ENC_ETH) {
-		my @vtags_xml = ();
-		for(my $i=0; $i<@{$$lr{sw_cap}{vtags}}; $i++) {
-			push(@vtags_xml, SOAP::Data->name('vlanRangeAvailability' => ${$$lr{sw_cap}{vtags}}[$i]));
+		if(exists($$lr{sw_cap}{vtags})) {
+			my $vtags = "";
+			my @vtags_xml = ();
+			for(my $i=0; $i<@{$$lr{sw_cap}{vtags}}; $i++) {
+				$vtags .= $$lr{sw_cap}{vtags}[$i];
+				if($i<(@{$$lr{sw_cap}{vtags}}-1)) {
+					$vtags .= ",";
+				}
+			}
+			push(@vtags_xml, SOAP::Data->name('vlanRangeAvailability' => $vtags));
+			push(@vtags_xml, SOAP::Data->name('interfaceMTU' => "9000")->type("xsd:string"));
+			$info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => \SOAP::Data->value(@vtags_xml));
 		}
-		push(@vtags_xml, SOAP::Data->name('interfaceMTU' => "9000")->type("xsd:string"));
-		$info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => \SOAP::Data->value(@vtags_xml));
 	}
 	else {
 		$info_xml = SOAP::Data->name('switchingCapabilitySpecficInfo' => 
 			\SOAP::Data->value(SOAP::Data->name('capability' => 'unimplemented')));
 	}
-	return SOAP::Data->name('SwitchingCapabilityDescriptors' => \SOAP::Data->value($enc_xml, $swtype_xml, $info_xml));
+	push(@swcap, $enc_xml, $swtype_xml);
+	push(@swcap, $info_xml) if defined($info_xml);
+	return SOAP::Data->name('SwitchingCapabilityDescriptors' => \SOAP::Data->value(@swcap));
 }
 
 sub get_nodes_xml($) {
@@ -296,8 +306,7 @@ sub generate_soap_resp($) {
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
 	else {
-		my @dbs = ($$self{abstract_tedb}, $$self{data_tedb}, $$self{control_tedb});
-		$$self{xml} = "";
+		my @dbs = ($$self{abstract_tedb}, $$self{control_tedb}, $$self{data_tedb});
 		for(my $i=0; $i<SCOPE_MAX; $i++) {
 			if(defined($dbs[$i]) && ($scope_m & (1<<$i))) {
 				my @nodes = ();
@@ -312,7 +321,7 @@ sub generate_soap_resp($) {
 				# construct the document
 				$xml = SOAP::Data->name('topology' => \SOAP::Data->value($idcID_xml, $domain_xml));
 				$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
-				$$self{xml} .= $xml;
+				$$self{xml} = $xml;
 			}
 		}
 	}
@@ -680,15 +689,15 @@ sub run() {
 							if(defined($type)) {
 								# transfer the completed TEDBs
 								if($type eq "abstract") {
-									$$self{abstract} = $ret1[$i];
+									$$self{abstract_tedb} = $ret1[$i];
 									Aux::print_dbg_tedb("updating abstract TEDB\n");
 								}
 								elsif($type eq "control") {
-									$$self{control} = $ret1[$i];
+									$$self{control_tedb} = $ret1[$i];
 									Aux::print_dbg_tedb("updating control TEDB\n");
 								}
 								elsif($type eq "data") {
-									$$self{data} = $ret1[$i];
+									$$self{data_tedb} = $ret1[$i];
 									Aux::print_dbg_tedb("updating data TEDB\n");
 								}
 							}
@@ -730,15 +739,15 @@ sub run() {
 							if(defined($type)) {
 								# transfer the completed TEDBs
 								if($type eq "abstract") {
-									$$self{abstract} = $ret2[$i];
+									$$self{abstract_tedb} = $ret2[$i];
 									Aux::print_dbg_tedb("updating abstract TEDB\n");
 								}
 								elsif($type eq "control") {
-									$$self{control} = $ret2[$i];
+									$$self{control_tedb} = $ret2[$i];
 									Aux::print_dbg_tedb("updating control TEDB\n");
 								}
 								elsif($type eq "data") {
-									$$self{data} = $ret2[$i];
+									$$self{data_tedb} = $ret2[$i];
 									Aux::print_dbg_tedb("updating data TEDB\n");
 								}
 							}
