@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -63,6 +63,10 @@ use constant SCOPE_ABS => "abstract";
 use constant SCOPE_CRL => "control";
 use constant SCOPE_DAT => "data";
 
+use constant SCOPE_ABS_M => (1<<0);
+use constant SCOPE_CRL_M => (1<<1);
+use constant SCOPE_DAT_M => (1<<2);
+use constant SCOPE_MAX => 3;
 
 use constant STAT_LINK_ID => 		(1<<0);
 use constant STAT_LINK_TYPE => 		(1<<1);
@@ -126,7 +130,7 @@ sub selectNetworkTopology {
 		$self->generate_soap_fault('Sender', 
 			'no topology set specified', 
 			'TerceTedbFault', 
-			'<from> must be specified');
+			'<scope> must be specified');
 	}
 	elsif(
 		lc($scope) ne SCOPE_ALL && 
@@ -139,8 +143,13 @@ sub selectNetworkTopology {
 			'$scope not defined in the service description');
 	}
 	else {
+		my $scope_m = 0;
+		$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
+		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
+		$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
+		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
-		$self->generate_soap_resp();
+		$self->generate_soap_resp($scope_m);
 	}
 	return $$self{xml}; 
 }
@@ -197,6 +206,12 @@ sub get_nodes_xml($) {
 			$pn = exists($$db{$rtr}{$link}{remote})?
 			("DTL".(defined($pn)?$pn:sprintf("%08x", $link))):
 			("S".(defined($pn)?$pn:sprintf("%08x", $link)));
+			#check for uni info
+			if(exists($$db{$rtr}{$link}{sw_cap}{uni})) {
+				if(defined($$db{$rtr}{$link}{sw_cap}{uni}{id})) {
+					$pn = "S".sprintf("%d", ($$db{$rtr}{$link}{sw_cap}{uni}{id}<<8) | 255);
+				}
+			}
 			my $p_id = sprintf(TERCE_PORT_ID, $pn);
 			my $fqp_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id;
 			#link
@@ -256,35 +271,50 @@ sub generate_soap_fault($$$$) {
 		->value(\SOAP::Data->name('msg' => $_[3])));
 }
 
-sub generate_soap_resp() {
+sub generate_soap_resp($) {
 	my $self = shift;
+	my ($scope_m) = @_;
 	my $xml = {};
 	my $done = 0;
 
-	if(!defined($$self{tedb1}) && !defined($$self{tedb2})) {
+	if(($scope_m & SCOPE_ABS_M) && !defined($$self{abstract_tedb})) {
 		$self->generate_soap_fault('Receiver', 
-			'topology not ready', 
+			'abstract topology not ready', 
+			'TerceTedbFault', 
+			'TERCE has not received all the necessary information from narb/rce to form the response');
+	}
+	elsif(($scope_m & SCOPE_CRL_M) && !defined($$self{control_tedb})) {
+		$self->generate_soap_fault('Receiver', 
+			'control topology not ready', 
+			'TerceTedbFault', 
+			'TERCE has not received all the necessary information from narb/rce to form the response');
+	}
+	elsif(($scope_m & SCOPE_DAT_M) && !defined($$self{data_tedb})) {
+		$self->generate_soap_fault('Receiver', 
+			'data topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
 	else {
-		my @nodes = ();
-		foreach my $db ($$self{tedb1}, $$self{tedb2}) {
-			if(defined($db)) {
+		my @dbs = ($$self{abstract_tedb}, $$self{data_tedb}, $$self{control_tedb});
+		$$self{xml} = "";
+		for(my $i=0; $i<SCOPE_MAX; $i++) {
+			if(defined($dbs[$i]) && ($scope_m & (1<<$i))) {
+				my @nodes = ();
 				# <node> array of
-				push(@nodes, $self->get_nodes_xml($db));
+				push(@nodes, $self->get_nodes_xml($dbs[$i]));
+				# <idcID>
+				my $idcID_xml = SOAP::Data->name('idcId' => TERCE_IDC_ID);
+				# <domain>
+				my $domain_xml = SOAP::Data->name('domain' => \SOAP::Data->value(@nodes));
+				$domain_xml->attr({ ' id' => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
+
+				# construct the document
+				$xml = SOAP::Data->name('topology' => \SOAP::Data->value($idcID_xml, $domain_xml));
+				$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
+				$$self{xml} .= $xml;
 			}
 		}
-		# <idcID>
-		my $idcID_xml = SOAP::Data->name('idcId' => TERCE_IDC_ID);
-		# <domain>
-		my $domain_xml = SOAP::Data->name('domain' => \SOAP::Data->value($idcID_xml, @nodes));
-		$domain_xml->attr({ ' id' => TERCE_ID_PREF.":".TERCE_DOMAIN_ID});
-
-		# construct the document
-		$xml = SOAP::Data->name('topology' => \SOAP::Data->value($domain_xml));
-		$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
-		$$self{xml} = $xml;
 	}
 }
 
