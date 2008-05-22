@@ -95,7 +95,7 @@ bool PCEN_DCN::PostBuildTopology()
                 }
             }
             //$$$$ all timeslots  (--> picked timeslots (fixed: 1) shoud be ignored by DCN!)
-            if (user_ero.size() == 0) //$$$$ original path computation
+            if (user_ero.size() == 0 && subnet_ero.size() == 0) //$$$$ original path computation
             {
                 if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                 {
