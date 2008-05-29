@@ -369,22 +369,6 @@ void Link::hook_PreUpdate(Resource * oldResource)
     this->pDeltaList = oldLink->pDeltaList;
     oldLink->pDeltaList = NULL;
 
-    //elimiating double holding by removing deltas owned by GRI's in OSPF TE link updates
-    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
-    if (iAttr > 0 && iAttr < this->attrTable.size())
-    {
-        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
-        if (p_list != NULL)
-        {
-            list<GRI*>::iterator iter_gri;
-            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
-            {
-                LinkStateDelta* delta = this->removeDeltaByOwner(ntohl((*iter_gri)->ucid), ntohl((*iter_gri)->seqnum));
-                if (delta != NULL) delete delta;
-            }
-        }
-    }
-
     //removing expired deltas
     list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
     while (iter != this->pDeltaList->end())
@@ -405,6 +389,22 @@ void Link::hook_PreUpdate(Resource * oldResource)
             iter = this->pDeltaList->erase(iter);
             if (this->pDeltaList->size() == 0)
                 break;
+        }
+    }
+
+    //elimiating double holding by removing deltas owned by GRI's in OSPF TE link updates
+    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
+    if (iAttr > 0 && iAttr < this->attrTable.size())
+    {
+        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
+        if (p_list != NULL)
+        {
+            list<GRI*>::iterator iter_gri;
+            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
+            {
+                LinkStateDelta* delta = this->removeDeltaByOwner(ntohl((*iter_gri)->ucid), ntohl((*iter_gri)->seqnum));
+                if (delta != NULL) delete delta;
+            }
         }
     }
     
