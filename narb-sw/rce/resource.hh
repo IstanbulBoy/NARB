@@ -440,7 +440,7 @@ public:
     Link& operator-= (LinkStateDelta& delta);
     void insertDelta(LinkStateDelta* delta, int expire_sec=SystemConfig::delta_expire_reserve, int expire_usec=0);
     LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
-    LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
+    LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool addBack=true);
     void deleteExpiredDeltas();
     virtual void hook_PreUpdate(Resource* oldResource);
 

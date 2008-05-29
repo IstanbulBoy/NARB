@@ -369,6 +369,22 @@ void Link::hook_PreUpdate(Resource * oldResource)
     this->pDeltaList = oldLink->pDeltaList;
     oldLink->pDeltaList = NULL;
 
+    //elimiating double holding by zero'ing bandwidth of the deltas owned by GRI's in OSPF TE link updates
+    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
+    if (iAttr > 0 && iAttr < this->attrTable.size())
+    {
+        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
+        if (p_list != NULL)
+        {
+            list<GRI*>::iterator iter_gri;
+            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
+            {
+                LinkStateDelta* delta = this->removeDeltaByOwner(ntohl((*iter_gri)->ucid), ntohl((*iter_gri)->seqnum), false);
+                if (delta != NULL) delete delta;
+            }
+        }
+    }
+    
     //removing expired deltas
     list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
     while (iter != this->pDeltaList->end())
@@ -378,8 +394,6 @@ void Link::hook_PreUpdate(Resource * oldResource)
         struct timeval timeDiff = timeNow - delta->create_time;
         if (timeDiff < delta->expiration)
         { // keep the delta
-           // this may result in double-reduction of bandwdith if ospfd has already received update for this detla
-           // we keep this in case that ospfd has not received the update so that we have to adjust it by the delta here.
             (*this) -= (*delta);
             iter++;
         }
@@ -392,22 +406,6 @@ void Link::hook_PreUpdate(Resource * oldResource)
         }
     }
 
-    //elimiating double holding by removing deltas owned by GRI's in OSPF TE link updates
-    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
-    if (iAttr > 0 && iAttr < this->attrTable.size())
-    {
-        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
-        if (p_list != NULL)
-        {
-            list<GRI*>::iterator iter_gri;
-            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
-            {
-                LinkStateDelta* delta = this->removeDeltaByOwner(ntohl((*iter_gri)->ucid), ntohl((*iter_gri)->seqnum));
-                if (delta != NULL) delete delta;
-            }
-        }
-    }
-    
     //reset the modified time for this link
     modifiedTime = timeNow;
 }
@@ -457,7 +455,7 @@ LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
     return NULL;
 }
 
-LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
+LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool addBack)
 {
     if (!pDeltaList)
         return NULL;
@@ -470,7 +468,8 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
         if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
         {
             this->pDeltaList->erase(iter);
-            (*this) += (*delta);
+            if (addBack)
+                (*this) += (*delta);
             return delta;
         }
     }
