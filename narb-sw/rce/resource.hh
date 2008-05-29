@@ -318,6 +318,13 @@ public:
         }
 };
 
+//General Resource Identifier
+struct GRI
+{
+    u_int32_t ucid;
+    u_int32_t seqnum;
+};
+
 //A LinkStateDelta keep the track record for an LSP provisioning
 struct LinkStateDelta 
 {

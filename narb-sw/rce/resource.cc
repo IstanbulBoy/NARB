@@ -95,7 +95,7 @@ TLP* Resource::GetAttribute(int attrIndex)
 
 Resource::~Resource()
 {
-    //clean and delete attrTable
+    //@@@@ clean and delete attrTable
 }
 
 
@@ -161,6 +161,11 @@ Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
    }
    else
        this->pDeltaList = NULL;
+
+#ifdef HAVE_EXT_ATTR
+   this->attrTable.assign(link->attrTable.begin(), link->attrTable.end());
+   //@@@@ should allocate/duplicate contents, and properly free them in ~Resource()
+#endif
 }
 
 Link::~Link()
@@ -364,6 +369,22 @@ void Link::hook_PreUpdate(Resource * oldResource)
     this->pDeltaList = oldLink->pDeltaList;
     oldLink->pDeltaList = NULL;
 
+    //elimiating double holding by removing deltas owned by GRI's in OSPF TE link updates
+    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
+    if (iAttr > 0 && iAttr < this->attrTable.size())
+    {
+        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
+        if (p_list != NULL)
+        {
+            list<GRI*>::iterator iter_gri;
+            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
+            {
+                this->removeDeltaByOwner((*iter_gri)->ucid, (*iter_gri)->seqnum);
+            }
+        }
+    }
+
+    //removing expired deltas
     list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
     while (iter != this->pDeltaList->end())
     {
@@ -385,7 +406,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
                 break;
         }
     }
-
+    
     //reset the modified time for this link
     modifiedTime = timeNow;
 }
