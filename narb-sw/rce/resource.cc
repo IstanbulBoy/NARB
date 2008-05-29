@@ -379,7 +379,8 @@ void Link::hook_PreUpdate(Resource * oldResource)
             list<GRI*>::iterator iter_gri;
             for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
             {
-                this->removeDeltaByOwner((*iter_gri)->ucid, (*iter_gri)->seqnum);
+                LinkStateDelta* delta = this->removeDeltaByOwner(ntohl((*iter_gri)->ucid), ntohl((*iter_gri)->seqnum));
+                if (delta != NULL) delete delta;
             }
         }
     }
