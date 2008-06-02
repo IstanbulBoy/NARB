@@ -418,23 +418,27 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
         pDeltaList = new list<LinkStateDelta*>;
     }
 
-    /*
-    list<LinkStateDelta*>::iterator iter = this->pDeltaList->begin();
-    for ( ; iter != this->pDeltaList->end(); iter++)
-    {
-        if ((*iter)->owner_ucid == delta->owner_ucid && (*iter)->owner_seqnum == delta->owner_seqnum)
-        {
-            LOGF("Warning: Link State Delta (LSD) already existed. (ucid=%d, seqnum=%d, create_time=%d.%d) bandwidth: %d vtag: %d\n", 
-              delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec, delta->bandwidth, delta->vlan_tag);
-        }
-    }
-    */
-
     gettimeofday(&delta->create_time, NULL);
     delta->expiration.tv_sec = expire_sec;
     delta->expiration.tv_usec = expire_usec;
 
-     pDeltaList->push_back(delta);
+    pDeltaList->push_back(delta);
+
+    int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
+    if (iAttr > 0 && iAttr < this->attrTable.size())
+    {
+        list<GRI*> *p_list = (list<GRI*>*)this->attrTable[iAttr].p;
+        if (p_list != NULL)
+        {
+            list<GRI*>::iterator iter_gri;
+            for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
+            {
+                if ((*iter_gri)->ucid == delta->owner_ucid && (*iter_gri)->seqnum == delta->owner_seqnum)
+                    return; //a TE Link LSA update for this GRI has arrived, no need to reduce the resource by this delta
+            }
+        }
+    }
+    //reducing link resource by the delta
     (*this) -= (*delta);
 }
 
@@ -455,7 +459,7 @@ LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
     return NULL;
 }
 
-LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool addBack)
+LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAddition)
 {
     if (!pDeltaList)
         return NULL;
@@ -468,7 +472,7 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool 
         if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
         {
             this->pDeltaList->erase(iter);
-            if (addBack)
+            if (doAddition)
                 (*this) += (*delta);
             return delta;
         }
