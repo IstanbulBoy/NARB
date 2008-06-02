@@ -433,7 +433,7 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
             list<GRI*>::iterator iter_gri;
             for (iter_gri = p_list->begin(); iter_gri != p_list->end(); iter_gri++)
             {
-                if ((*iter_gri)->ucid == delta->owner_ucid && (*iter_gri)->seqnum == delta->owner_seqnum)
+                if (ntohl((*iter_gri)->ucid) == delta->owner_ucid && ntohl((*iter_gri)->seqnum) == delta->owner_seqnum)
                     return; //a TE Link LSA update for this GRI has arrived, no need to reduce the resource by this delta
             }
         }
