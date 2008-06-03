@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -116,11 +116,22 @@ sub new {
 ############################## WS API ##############################
 sub findPath {
 	my $self = shift;
+	my($src, $dst, $bw, $enc, $swcap, $gpid, $vtag) = @_;
+	if(!(defined($src) && 
+			defined($dst) &&
+			defined($bw) &&
+			defined($enc) &&
+			defined($swcap) &&
+			defined($gpid) &&
+			defined($vtag))) {
+		$self->generate_soap_fault('Sender', 
+			'incomplete path request', 
+			'TerceRCEFault', 
+			'findPath must be fully specified');
+	}
+
+	
 	Aux::print_dbg_ws("findPath()\n");
-	$self->generate_soap_fault('Receiver', 
-		'method not implemented', 
-		'TerceTedbFault', 
-		'findPath is not implemented');
 }
 
 sub selectNetworkTopology {
