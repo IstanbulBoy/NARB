@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -679,7 +679,6 @@ sub run() {
 		# rce or narb TEDB queue
 		$d = $tq1->dequeue_nb();
 		if(defined($d)) {
-			#--------------------
 			my $res = $self->process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
 			if($res == 1) {
 				if($stat1 == 0) {
