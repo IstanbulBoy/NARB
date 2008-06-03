@@ -46,15 +46,15 @@ TLP * MAKE_TLP (u_int16_t T,  u_int16_t L, void* P)
     return tlp;
 }
 
-void Resource::SetAttribute(int attrIndex, u_int16_t type, u_int16_t len, void* data)
+void Resource::SetAttribute(int attrIndex, u_int16_t type, u_int16_t len, void* data, ResourceIndexingElement*pe)
 {
     if (attrIndex < 0)
         return;
     TLP *tlp = MAKE_TLP(type, len, data);
-    SetAttribute(attrIndex, tlp);
+    SetAttribute(attrIndex, tlp, pe);
 }
 
-void Resource::SetAttribute(int attrIndex, TLP *tlp)
+void Resource::SetAttribute(int attrIndex, TLP *tlp, ResourceIndexingElement*pe)
 {
     if (attrIndex < 0)
         return;
@@ -74,7 +74,6 @@ void Resource::SetAttribute(int attrIndex, TLP *tlp)
             attrTable[attrIndex].p = new list<void*>;
         }
 
-        ResourceIndexingElement*pe =  GET_ATTR((attrIndex >> 16) & 0xffff, attrIndex  & 0xffff);
         if (pe == NULL || pe->dataLen > tlp->l)
         {
             char* p_tmp = new char[tlp->l];

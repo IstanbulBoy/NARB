@@ -105,8 +105,8 @@ public:
     void SetDomainId(u_int32_t x) { domainId = x; }
 
 #ifdef HAVE_EXT_ATTR
-    void SetAttribute(int attrIndex, u_int16_t type, u_int16_t len, void* data);
-    void SetAttribute(int attrIndex, TLP *tlp);
+    void SetAttribute(int attrIndex, u_int16_t type, u_int16_t len, void* data, ResourceIndexingElement*pe=NULL);
+    void SetAttribute(int attrIndex, TLP *tlp, ResourceIndexingElement*pe=NULL);
     TLP* GetAttribute(int attrIndex);
     TLP* GetAttribute(string attrTag) { return GetAttribute(ResourceSchema::AttrIndexByTag(attrTag)); }
 #endif
