@@ -73,11 +73,29 @@ void Resource::SetAttribute(int attrIndex, TLP *tlp)
             attrTable[attrIndex] = *tlp;
             attrTable[attrIndex].p = new list<void*>;
         }
-        ((list<void*> *)attrTable[attrIndex].p)->push_back(tlp->p);
+
+        ResourceIndexingElement*pe =  GET_ATTR((attrIndex >> 16) & 0xffff, attrIndex  & 0xffff);
+        if (pe == NULL || pe->dataLen > tlp->l)
+        {
+            char* p_tmp = new char[tlp->l];
+            memcpy(p_tmp, tlp->p, tlp->l);
+            ((list<void*> *)attrTable[attrIndex].p)->push_back(p_tmp);
+        }
+        else
+        {
+            for (int i = 0; i < tlp->l / pe->dataLen; i++)
+            {
+                char* p_tmp = new char[pe->dataLen];
+                memcpy(p_tmp, (char*)tlp->p+(pe->dataLen*i), pe->dataLen);
+                ((list<void*> *)attrTable[attrIndex].p)->push_back((void*)(p_tmp));
+            }
+        }
     }
     else
     {
         attrTable[attrIndex] = *tlp;
+        attrTable[attrIndex].p = new char[tlp->l];
+        memcpy(attrTable[attrIndex].p, tlp->p, tlp->l);
     }
    
     delete tlp;
@@ -96,6 +114,7 @@ TLP* Resource::GetAttribute(int attrIndex)
 Resource::~Resource()
 {
     //@@@@ clean and delete attrTable
+    //@@@@ make sure delete mem block in attrTable[attrIndex].p also sub blocks in LIST!
 }
 
 
@@ -369,7 +388,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
     this->pDeltaList = oldLink->pDeltaList;
     oldLink->pDeltaList = NULL;
 
-    //elimiating double holding by zero'ing bandwidth of the deltas owned by GRI's in OSPF TE link updates
+    //eliminating double holding by zero'ing bandwidth of the deltas owned by GRI's in OSPF TE link updates
     int iAttr = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_GRI");
     if (iAttr > 0 && iAttr < this->attrTable.size())
     {

@@ -620,6 +620,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
+
     case ACT_DELETE:
         delta = link1->removeDeltaByOwner(ucid, seqnum);
         if (delta)

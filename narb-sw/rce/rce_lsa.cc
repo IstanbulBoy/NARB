@@ -371,9 +371,10 @@ Resource* LSAHandler::Parse()
                                         link->attrTable.resize(a_index+1);
                                     }
 
-                                    char * data = new char[ntohs(sub_tlvh->length)];
-                                    memcpy(data, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
-                                    link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, data);
+                                    //char * data = new char[ntohs(sub_tlvh->length)];
+                                    //memcpy(data, (char*)sub_tlvh+TLV_HDR_SIZE, ntohs(sub_tlvh->length));
+                                    //link->SetAttribute(a_index, pe ? pe->dataType: 0, pe ? pe->dataLen : 0, data);
+                                    link->SetAttribute(a_index, pe ? pe->dataType: 0, ntohs(sub_tlvh->length), (char*)sub_tlvh+TLV_HDR_SIZE);
                                 }   
                             #else
                                 LOGF("The sub-tlv type %d is not supported.\n", ntohs(sub_tlvh->type));
