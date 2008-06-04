@@ -123,6 +123,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO = 0x12,
     TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
+    TLV_TYPE_NARB_PCE_SPEC = 0x42,
 };
 
 struct narb_lsp_request_tlv
@@ -135,6 +136,14 @@ struct narb_lsp_request_tlv
     u_int8_t  switching_type;
     u_int16_t gpid;
     float bandwidth;
+};
+
+struct narb_lsp_pce_spec_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    char module_name[16]; //c-string of length up to 15 characters
+    u_int8_t reserved[16]; //reserved bytes for future extension
 };
 
 struct narb_lsp_vtagmask_tlv
@@ -227,6 +236,7 @@ private:
     u_int32_t uptime;
     u_int32_t duration;
 
+    narb_lsp_pce_spec_tlv* pce_spec;
     narb_lsp_vtagmask_tlv* vtag_mask;
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
@@ -239,13 +249,20 @@ private:
 
     APIWriter* api_writer;
     void Init ()
-        {  source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
+        {  
+            source.s_addr = 0; destination.s_addr = 0; encoding_type_ingress = encoding_type_egress = 0; 
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
             options = 0; tag = 0; ucid = seqnum = 0xffffffff; lspb_id = 0; uptime = 0; duration = 0xffffffff;
-            api_writer = NULL;  vtag_mask = NULL; hop_back = 0; src_lcl_id = dest_lcl_id = 0; is_subnet_ero2dtl_enabled = false;}
+            api_writer = NULL;  pce_spec = NULL; vtag_mask = NULL; hop_back = 0; src_lcl_id = dest_lcl_id = 0; 
+            is_subnet_ero2dtl_enabled = false;
+        }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}
-    virtual ~LSPHandler() { if (vtag_mask) delete vtag_mask; }
+    virtual ~LSPHandler() 
+        { 
+            if (pce_spec) delete pce_spec;
+            if (vtag_mask) delete vtag_mask;
+        }
     void Load(api_msg *msg);
     virtual void Run();
     void AssociateWriter (APIWriter *writer) { assert (writer); api_writer = writer; }

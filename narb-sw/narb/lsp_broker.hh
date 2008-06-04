@@ -61,6 +61,15 @@ struct msg_narb_confirm
     te_tlv_header ero;
 };
 
+// data structure of APP->NARB special PCE requirement (optional)
+struct msg_narb_pce_spec
+{
+    u_int16_t type;
+    u_int16_t length;
+    char module_name[16]; //c-string of length up to 15 characters
+    u_int8_t reserved[16]; //reserved bytes for future extension
+};
+
 // APP->NARB optional constraint structs
 struct msg_narb_vtag_mask
 {
@@ -137,6 +146,7 @@ private:
     u_int32_t req_vtag;
     msg_app2narb_request req_spec;    // information extracted from the request message
     msg_app2narb_request mrn_spec;    // for multi-region networks
+    msg_narb_pce_spec* pce_spec;
     msg_narb_vtag_mask* vtag_mask;
     msg_narb_suggested_vtag* suggested_vtag;
     u_int32_t previous_lspb_id;
@@ -377,9 +387,6 @@ enum  narb_msg_type
     MSG_REPLY_REMOVE_CONFIRM = 0x23,
     MSG_REPLY_CONFIRMATION_ID = 0x24,
     MSG_PEER_REQUEST = 0x41,
-//    MSG_PEER_REPLY = 0x42,
-//    MSG_PEER_CONFIRM = 0x43,
-//    MSG_PEER_REMOVE = 0x43,
 };
 
 // each NARB<->APP contains a TLV in its message body
@@ -399,6 +406,8 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ALTERNATE_ERO = 0x11,
     TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO = 0x12,
     TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
+    TLV_TYPE_NARB_PEER_REQUEST = 0x41,
+    TLV_TYPE_NARB_PCE_SPEC = 0x42,
 };
 
 // definitions of NARB error code as proccessing a request fails

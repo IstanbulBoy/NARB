@@ -85,10 +85,11 @@ void LSPQ::Init()
     req_spec.type = htons(TLV_TYPE_NARB_REQUEST);
     req_spec.length = htons(sizeof(req_spec) - TLV_HDR_SIZE);
     mrn_spec = req_spec;
+    pce_spec = NULL;
     vtag_mask = NULL;
     suggested_vtag = NULL;
     previous_lspb_id = 0;
-	src_lcl_id = dest_lcl_id = 0;
+    src_lcl_id = dest_lcl_id = 0;
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
@@ -101,6 +102,9 @@ LSPQ::~LSPQ()
     for (it = ero.begin(); it != ero.end(); it++)
         if (*it)
             delete (ero_subobj*)(*it);
+
+    if (pce_spec)
+        delete pce_spec;
 
     if (vtag_mask)
         delete vtag_mask;
@@ -596,7 +600,7 @@ int LSPQ::HandleLSPQRequest()
     if (req_vtag == ANY_VTAG || vtag_mask) // to make interdomain routing more acurate!
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
-        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, vtag_mask, subnet_ero.size() > 0 ? &subnet_ero : NULL,
+        | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, pce_spec, vtag_mask, subnet_ero.size() > 0 ? &subnet_ero : NULL,
         user_ero.size() > 0 ? &user_ero: NULL);
     return 0;
 }
@@ -650,7 +654,7 @@ int LSPQ::HandleRecursiveRequest()
     rce_client->QueryLsp_MRN(cspf_req, mrn_spec, req_ucid, SystemConfig::rce_options | LSP_OPT_STRICT | LSP_OPT_PREFERRED 
 	| (app_options & LSP_OPT_E2E_VTAG) |(app_options & LSP_OPT_VIA_MOVAZ) | (app_options & LSP_OPT_QUERY_HOLD)
 	| (vtag_mask ? LSP_OPT_VTAG_MASK : 0) | (req_vtag == ANY_VTAG || vtag_mask ? LSP_OPT_REQ_ALL_VTAGS : 0)
-	| (app_options & LSP_OPT_BIDIRECTIONAL), req_vtag, hop_back, vtag_mask); 
+	| (app_options & LSP_OPT_BIDIRECTIONAL), req_vtag, hop_back, pce_spec, vtag_mask); 
 }
 
 /////// STATE_RCE_REPLY  ////////
@@ -839,7 +843,7 @@ int LSPQ::HandlePartialERO()
     //$$$$ options LSP_OPT_QUERY_CONFIRM and LSP_OPT_QUERY_CONFIRM are forwarded 
     //$$$$ use last strict hop address into hop_back into recursive LSP query
     peer_narb->QueryLspRecursive(rec_cspf_req, req_ucid, app_options | LSP_OPT_STRICT & (~ LSP_OPT_PREFERRED) | (is_qconf_mode ? LSP_OPT_QUERY_CONFIRM : 0), 
-        req_vtag, (last_strict_hop_subobj ? last_strict_hop_subobj->addr.s_addr : 0), vtag_mask);
+        req_vtag, (last_strict_hop_subobj ? last_strict_hop_subobj->addr.s_addr : 0), pce_spec, vtag_mask);
 }
 
 /////// STATE_NEXT_HOP_NARB_REPLY  ////////
@@ -1922,10 +1926,16 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
     {
         switch (ntohs(tlv->type)) 
         {
-        case MSG_APP_REQUEST:
-        case MSG_PEER_REQUEST:
+        case TLV_TYPE_NARB_REQUEST:
+        case TLV_TYPE_NARB_PEER_REQUEST:
             tlv_len = sizeof(msg_app2narb_request);
             ; //do nothing
+            break;
+        case TLV_TYPE_NARB_PCE_SPEC:
+            tlv_len = sizeof(msg_narb_pce_spec);
+            if (!pce_spec)
+                pce_spec = new (struct msg_narb_pce_spec);
+            memcpy(pce_spec, tlv, sizeof(msg_narb_pce_spec));
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(msg_narb_vtag_mask);
@@ -2115,7 +2125,7 @@ void LSP_Broker::DescribeLSPbyState(u_char state, vector<string> & desc_v)
             (*it)->DescribeLSP(desc);
             desc_v.push_back(desc);
         }
-    }    
+    }
 }
 
 

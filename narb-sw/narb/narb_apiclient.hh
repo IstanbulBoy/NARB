@@ -50,7 +50,8 @@ public:
     bool IsMatched(char* host, int port);
     bool IsAssociated(in_addr ip);
     void AssociateTEAddr(in_addr ip);
-    void QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, msg_narb_vtag_mask* vtag_mask = NULL);
+    void QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, 
+        msg_narb_pce_spec* pce_spec = NULL, msg_narb_vtag_mask* vtag_mask = NULL);
     void RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_subobj*>& ero_forward);
 };
 

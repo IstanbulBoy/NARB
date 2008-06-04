@@ -96,7 +96,7 @@ void NARB_APIClient::AssociateTEAddr(in_addr ip)
     associated_addrs.push_back(ip);
 }
 
-void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_vtag_mask* vtag_mask)
+void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_pce_spec* pce_spec, msg_narb_vtag_mask* vtag_mask)
 {
     char msgbody[1024];
     api_msg *narb_msg;
@@ -118,6 +118,12 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
 	}
         //The vtag put into the msg header tag field must be ANY_VTAG wih presence of vtag_mask TLV
         vtag = ANY_VTAG;
+    }
+    //pce_spec TLV
+    if (pce_spec != NULL)
+    {
+        memcpy(msgbody+msglen, pce_spec, sizeof(msg_narb_pce_spec));
+        msglen += sizeof(msg_narb_pce_spec);
     }
     //lspb_id TLV
     if (rec_cspf_req.lspb_id != 0)

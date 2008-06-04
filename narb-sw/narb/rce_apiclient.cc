@@ -94,7 +94,7 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 
 
 void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
-    msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero, list<ero_subobj*>* p_user_ero)
+    msg_narb_pce_spec* pce_spec, msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero, list<ero_subobj*>* p_user_ero)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -102,6 +102,11 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     if ((options & LSP_OPT_VTAG_MASK) && vtag_bitmask != NULL)
         memcpy(buf+sizeof(cspf_req.app_req_data), vtag_bitmask, sizeof(msg_narb_vtag_mask));
     u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_narb_vtag_mask));
+    if (pce_spec != NULL)
+    {
+        memcpy(buf+mlen, pce_spec, sizeof(msg_narb_pce_spec));
+        mlen += sizeof(msg_narb_pce_spec);
+    }
     if (cspf_req.lspb_id != 0)
     {
         msg_narb_lspb_id* lspb_id_tlv = (msg_narb_lspb_id*)(buf+mlen);
@@ -150,7 +155,7 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     SendMessage(rce_msg); 
 }
 
-void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_vtag_mask* vtag_bitmask)
+void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, msg_narb_pce_spec* pce_spec, msg_narb_vtag_mask* vtag_bitmask)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -161,6 +166,11 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     {
         memcpy(buf+mlen, vtag_bitmask, sizeof(msg_narb_vtag_mask));
         mlen += sizeof(msg_narb_vtag_mask);
+    }
+    if (pce_spec != NULL)
+    {
+        memcpy(buf+mlen, pce_spec, sizeof(msg_narb_pce_spec));
+        mlen += sizeof(msg_narb_pce_spec);
     }
     if (cspf_req.lspb_id != 0)
     {

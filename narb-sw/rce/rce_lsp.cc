@@ -100,6 +100,12 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             tlv_len = sizeof(narb_lsp_request_tlv);
             ; //do nothing
             break;
+        case TLV_TYPE_NARB_PCE_SPEC:
+            tlv_len = sizeof(narb_lsp_pce_spec_tlv);
+            if (!pce_spec)
+                pce_spec = new (struct narb_lsp_pce_spec_tlv);
+            memcpy(pce_spec, tlv, sizeof(narb_lsp_pce_spec_tlv));
+            break;
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(narb_lsp_vtagmask_tlv);
             if (ntohl(msg->hdr.options) & LSP_OPT_VTAG_MASK)
@@ -147,16 +153,38 @@ void LSPHandler::Run()
 {
     PCEN * pcen_event;
 
-    if (SystemConfig::pce_algorithm == PCE_NONE)
+    if (pce_spec != NULL)
+    {
+        if (strcasecmp(pce_spec->module_name, "mrn-dcn") == 0)
+        {
+            pcen_event = new PCEN_DCN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
+        else if (strcasecmp(pce_spec->module_name, "mrn-cg") == 0)
+        {
+            pcen_event = new PCEN_MRN_CG(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress,
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
+        else if (strcasecmp(pce_spec->module_name, "spf") == 0)
+        {
+            pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
+                ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+        }
+        else //mrn-default
+        {
+            pcen_event = new PCEN_MRN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                src_lcl_id, dest_lcl_id, vtag_mask);
+        }
+    }
+    else if (SystemConfig::pce_algorithm == PCE_NONE)
     {
         //enforce all requests being handled by MRN routing module
         options |= LSP_OPT_MRN;
         if ((options & LSP_OPT_MRN) == 0)
         {
-            /*
-            pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
-                ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
-            */
             pcen_event = new PCEN_MRN_CG(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress,
                 switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                 src_lcl_id, dest_lcl_id, vtag_mask);

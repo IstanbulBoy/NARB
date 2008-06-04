@@ -70,6 +70,7 @@ enum rce_api_action
 
 struct msg_narb_cspf_request;
 struct msg_app2narb_request;
+struct msg_narb_pce_spec;
 struct msg_narb_vtag_mask;
 struct ero_subobj;
 struct dtl_hop;
@@ -82,10 +83,10 @@ public:
     virtual ~RCE_APIClient();
     virtual int HandleMessage(api_msg * msg);
     bool IsMatched(char* host, int port);
-    void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0, msg_narb_vtag_mask* vtag_bitmask = NULL,
-        list<ero_subobj*>* p_subnet_ero = NULL, list<ero_subobj*>* p_user_ero = NULL);
-    void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, msg_narb_vtag_mask* vtag_bitmask = NULL);
-
+    void QueryLsp (msg_narb_cspf_request & cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0,
+        msg_narb_pce_spec* pce_spec = NULL, msg_narb_vtag_mask* vtag_bitmask = NULL, list<ero_subobj*>* p_subnet_ero = NULL, list<ero_subobj*>* p_user_ero = NULL);
+    void QueryLsp_MRN (msg_narb_cspf_request & cspf_req, msg_app2narb_request &mrn_spec, u_int32_t ucid, u_int32_t options, u_int32_t vtag = 0, u_int32_t hop_back = 0, 
+        msg_narb_pce_spec* pce_spec = NULL, msg_narb_vtag_mask* vtag_bitmask = NULL);
     void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, msg_app2narb_request* msg_req, list<ero_subobj*>& ero_forward,  list<ero_subobj*>& subnet_ero, list<dtl_hop>& subnet_dtl,  u_int32_t ucid, u_int32_t seqnum, 
         u_int32_t options, u_int32_t msgtag, u_int32_t src_lcl_id = 0, u_int32_t dest_lcl_id = 0, msg_narb_vtag_mask* vtag_mask_tlv = NULL, u_int32_t holding_time = 0);
     void NotifyResvStateWithERO(u_int8_t type, u_int8_t action, api_msg* msg, list<ero_subobj*>& ero_forward, list<ero_subobj*>& subnet_ero, list<dtl_hop>& subnet_dtl, u_int32_t src_lcl_id, u_int32_t dest_lcl_id)
