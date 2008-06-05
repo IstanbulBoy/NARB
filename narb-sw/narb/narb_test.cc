@@ -64,6 +64,7 @@ u_int8_t swtype = 51;
 u_int8_t encoding = 2;
 float bandwidth = 500; //Mbps
 u_int32_t vtag = 0x0000ffff;
+u_int32_t lclid_src = 0, lclid_dest = 0;
 u_int32_t opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
 u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
@@ -94,7 +95,7 @@ void usage()
     cout<<"  ( [-S source] and [-D dest] are mandatory [-U]: unidirectional ) [-L]: loose-hop [-O]: only (as gainst preferred)" <<endl;
     cout<<"  [ [-M] multi-region network [-v tag]: E2E VLAN with specified tag [-V]: E2E VLAN with tag picked by RCE ]" <<endl;
     cout<<"  [ [-E mask] Excluding routing layers (umask) [-m] using Movaz/ADVA private info [-a]: Return all available VLAN tags ]" <<endl;
-    cout<<"  [ [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
+    cout<<"  [ [-l local-id/s]  [-Q] Query and Hold [-C] Query expecting Confirmation ID] " <<endl;
 }
 
 // SIGINT handler.
@@ -350,6 +351,16 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
     bodylen += sizeof (msg_narb_hop_back);
   }
 
+  if (lclid_src != 0 && lclid_dest != 0)
+  {
+    msg_narb_local_id* lcl_id_tlv = (msg_narb_local_id*)(msgbody+bodylen);
+    lcl_id_tlv->type = htons(TLV_TYPE_NARB_LOCAL_ID);
+    lcl_id_tlv->length = htons(sizeof(msg_narb_local_id) - TLV_HDR_SIZE);
+    lcl_id_tlv->lclid_src = htonl(lclid_src);
+    lcl_id_tlv->lclid_dest = htonl(lclid_dest);
+    bodylen += sizeof (msg_narb_hop_back);
+  }
+
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
@@ -390,7 +401,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "H:P:S:D:X:E:b:x:e:v:k:t:CLMOQUVZma", longopts, 0);
+        opt = getopt_long (argc, argv, "E:H:P:S:D:X:b:e:l:k:t:v:x:CLMOQUVZma", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -405,15 +416,34 @@ int main(int argc, char* argv[])
         case 'b':
             sscanf(optarg, "%f", &bandwidth);
             break;            
-        case 'x':
-            sscanf(optarg, "%d", &swtype);
-            break;
         case 'e':
             sscanf(optarg, "%d", &encoding);
+            break;
+        case 'l':
+            {
+                u_int32_t lclid_src_type = 0, lclid_src_val = 0;
+                u_int32_t lclid_dest_type = 0, lclid_dest_val = 0;
+                if (sscanf(optarg, "%d:%d", &lclid_src, &lclid_dest) != 2)
+                {
+                    if (sscanf(optarg, "%d/%d:%d/%d", &lclid_src_type, &lclid_src_val, &lclid_dest_type, &lclid_dest_val) == 4)
+                    {
+                        lclid_src = ((lclid_src_type << 16) | (lclid_src_val & 0xffff));
+                        lclid_dest = ((lclid_dest_type << 16) | (lclid_dest_val & 0xffff));
+                    }
+                }
+                if (lclid_src == 0 || lclid_dest == 0)
+                {
+                    printf("Wrong local ID format, use either A) lclid_src:lclid_dest, or B) src_type/src_val:dest_type/dest_val\n");
+                    exit(-1);
+                }
+            }
             break;
         case 'v':
             opt_e2e_vlan = LSP_OPT_E2E_VTAG;
             sscanf(optarg, "%d", &vtag);
+            break;
+        case 'x':
+            sscanf(optarg, "%d", &swtype);
             break;
         case 'S':
             inet_aton(optarg, &source);
