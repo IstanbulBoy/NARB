@@ -402,7 +402,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "E:H:P:S:D:X:b:e:l:k:t:v:x:CLMOQUVZma", longopts, 0);
+        opt = getopt_long (argc, argv, "E:H:P:S:D:X:b:e:l:k:t:v:x:CLMOQUVZmas", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -438,9 +438,6 @@ int main(int argc, char* argv[])
                     exit(-1);
                 }
             }
-            break;
-        case 'x':
-            opt_query_subnet_ero = LSP_OPT_SUBNET_ERO;
             break;
         case 'v':
             opt_e2e_vlan = LSP_OPT_E2E_VTAG;
@@ -504,6 +501,9 @@ int main(int argc, char* argv[])
             break;
         case 'k':
             inet_aton(optarg, &hop_back);
+            break;
+        case 's':
+            opt_query_subnet_ero = LSP_OPT_SUBNET_ERO;
             break;
         default:
             usage();
