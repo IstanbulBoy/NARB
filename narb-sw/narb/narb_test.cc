@@ -77,6 +77,7 @@ u_int32_t opt_vtag_mask = 0;
 u_int32_t opt_query_hold = 0;
 u_int32_t opt_query_with_confirmation = 0;
 u_int32_t opt_alt_paths = 0;
+u_int32_t opt_query_subnet_ero = 0;
 in_addr hop_back;
 
 struct msg_narb_vtag_mask vtag_mask;
@@ -364,7 +365,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
-        opt_query_hold | opt_query_with_confirmation | opt_alt_paths);
+        opt_query_hold | opt_query_with_confirmation | opt_query_subnet_ero | opt_alt_paths);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -437,6 +438,9 @@ int main(int argc, char* argv[])
                     exit(-1);
                 }
             }
+            break;
+        case 'x':
+            opt_query_subnet_ero = LSP_OPT_SUBNET_ERO;
             break;
         case 'v':
             opt_e2e_vlan = LSP_OPT_E2E_VTAG;
