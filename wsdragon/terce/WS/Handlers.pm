@@ -31,7 +31,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -50,6 +50,21 @@ sub new {
 
 ############################## WS API ##############################
 sub findPath {
+	my $self = shift;
+	my @args = SOAP::Server::Parameters::byName ([qw(
+		srcEndpoint 
+		destEndpoint
+		bandwidth
+		encoding
+		swcap
+		gpid
+		vtag
+		)], @_);
+	my $som = pop @_;
+	my $attrs = $som->dataof('//findPath')->attr;
+	foreach my $attr (keys %$attrs) {
+		
+	}
 	Aux::print_dbg_ws("findPath()\n");
 }
 
