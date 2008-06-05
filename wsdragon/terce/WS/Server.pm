@@ -36,7 +36,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -74,7 +74,7 @@ sub new {
 			LocalPort => $lp,
 			ReuseAddr => 1,
 			Blocking => 0
-		)->dispatch_to('WS::Handlers'),
+		)->dispatch_to(new WS::Handlers()),
 		lport => $lp,
 		queue1 => $tq1,
 		queue2 => $tq2,
@@ -86,7 +86,6 @@ sub new {
 	bless $self;
 	return $self;
 }
-
 
 ####################################################################
 
