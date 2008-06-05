@@ -28,9 +28,28 @@ use warnings;
 use WS::Formaters;
 use WS::Constants;
 
+BEGIN {
+	use Exporter   ();
+	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	@ISA         = qw(Exporter SOAP::Server::Parameters);
+	@EXPORT      = qw();
+	%EXPORT_TAGS = ();
+	@EXPORT_OK   = qw();
+}
+
+our @EXPORT_OK;
+
+sub new {
+	shift;
+	my $self = {
+	};
+	bless $self;
+	return $self;
+}
+
 ############################## WS API ##############################
 sub findPath {
-	print(join(" ", @_));
 	Aux::print_dbg_ws("findPath()\n");
 }
 
