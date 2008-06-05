@@ -482,6 +482,20 @@ void PCEN_DCN::Run()
     ReplyEROWithAltPaths();
 }
 
+void PCEN_DCN::SetSubnetUNIERO_TIMESLOT_ANY(list<ero_subobj>& ero_track)
+{
+    list<ero_subobj>::iterator it;
+    for (it = ero_track.begin(); it != ero_track.end(); it++)
+    {
+        if ((htonl((*it).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID 
+            || (htonl((*it).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC
+            || (htonl((*it).if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
+        {
+            (*it).if_id = ((*it).if_id | htonl(0x000000ff));
+        }
+    }
+}
+
 void PCEN_DCN::CleanUpTopology()
 {
     int rNum = routers.size(); 
@@ -709,6 +723,8 @@ void PCEN_DCN::ReplyEROWithAltPaths()
     // with the first path (shortest path). But they are not a concen here. When those TLVs are really
     // cared by DCN we can store and retrieve them with extra data structure...
 
+    SetSubnetUNIERO_TIMESLOT_ANY(ero); //$$$$
+
     api_msg* msg = NewEROReplyMessage();
     assert (msg != NULL);
     //plus altanative EROs TLVs (ero_alts[1] and ero_alts[2] (if any)) 
@@ -726,26 +742,28 @@ void PCEN_DCN::ReplyEROWithAltPaths()
         list<ero_subobj>::iterator iter; 
         if (hop_back != 0)
         {
-            for (iter = ero.begin(); iter != ero.end(); iter++)
+            for (iter = ero_vlsr_alts[i].begin(); iter != ero_vlsr_alts[i].end(); iter++)
             {
-                if ((*iter).addr.s_addr == hop_back && iter != ero.begin())
+                if ((*iter).addr.s_addr == hop_back && iter != ero_vlsr_alts[i].begin())
                 {
-                    iter = ero.erase(ero.begin(), iter);
+                    iter = ero_vlsr_alts[i].erase(ero_vlsr_alts[i].begin(), iter);
                     break;
                 }
             }
-            if (iter == ero.end()) // add a back_hop to the beginning
+            if (iter == ero_vlsr_alts[i].end()) // add a back_hop to the beginning
             {
-                ero_subobj subobj_hopback = *(ero.begin());
+                ero_subobj subobj_hopback = *(ero_vlsr_alts[i].begin());
                 if (subobj_hopback.hop_type == ERO_TYPE_STRICT_HOP &&
                     (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_SRC && 
                     (subobj_hopback.if_id >> 16) != LOCAL_ID_TYPE_SUBNET_UNI_DEST )
                 {
                     subobj_hopback.addr.s_addr = hop_back;
-                    ero.push_front(subobj_hopback);
+                    ero_vlsr_alts[i].push_front(subobj_hopback);
                 }
             }
         }
+
+        SetSubnetUNIERO_TIMESLOT_ANY(ero_vlsr_alts[i]); //$$$$
 
         LOGF(">> Alternate Path #%d VLSR ERO:\n", i);
         //$$$$ Making AltVlsrERO TLV

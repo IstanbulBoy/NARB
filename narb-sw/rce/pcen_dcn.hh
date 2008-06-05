@@ -71,6 +71,8 @@ public:
     bool TrimOppositeSharedSegmentAndSwapTail(list<ero_subobj>& ero1, list<ero_subobj>& ero2);
     void ReplyEROWithAltPaths();
 
+    void SetSubnetUNIERO_TIMESLOT_ANY(list<ero_subobj>& ero_track);
+    
     friend bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
 };
 
