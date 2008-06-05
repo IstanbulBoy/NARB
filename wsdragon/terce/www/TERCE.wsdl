@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsdl:definitions name="TERCE"
-	targetNamespace="http://dcn.internet2.edu/WS/Server"
-	xmlns:tns="http://dcn.internet2.edu/WS/Server"
+	targetNamespace="http://dcn.internet2.edu/WS/Handlers"
+	xmlns:tns="http://dcn.internet2.edu/WS/Handlers"
 	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema"
 	xmlns:rce="http://dcn.internet2.edu/DRAGON/TERCE/RCE"
@@ -16,10 +16,10 @@
 
 	<!-- Element definitons -->
 	<wsdl:types>
-		<xs:schema targetNamespace="http://dcn.internet2.edu/WS/Server"
+		<xs:schema targetNamespace="http://dcn.internet2.edu/WS/Handlers"
 			elementFormDefault="qualified"
 			xmlns:xs="http://www.w3.org/2001/XMLSchema"
-			xmlns:tns="http://dcn.internet2.edu/WS/Server"
+			xmlns:tns="http://dcn.internet2.edu/WS/Handlers"
 			xmlns:rce="http://dcn.internet2.edu/DRAGON/TERCE/RCE"
 	        xmlns:tedb="http://dcn.internet2.edu/DRAGON/TERCE/TEDB">
 		<xs:import namespace="http://dcn.internet2.edu/DRAGON/TERCE/RCE" schemaLocation="TERCE-RCE.xsd"/>
@@ -94,7 +94,7 @@
 
 		<wsdl:operation name="findPath">
 			<soap:operation style="document"
-				soapAction="http://dcn.internet2.edu/WS/Server/findPath" />
+				soapAction="http://dcn.internet2.edu/WS/Handlers/findPath" />
 			<wsdl:input>
 				<soap:body use="literal" parts="findPath" />
 			</wsdl:input>
@@ -109,7 +109,7 @@
 		
 		<wsdl:operation name="selectNetworkTopology">
 			<soap:operation style="document"
-				soapAction="http://dcn.internet2.edu/WS/Server/selectNetworkTopology" />
+				soapAction="http://dcn.internet2.edu/WS/Handlers/selectNetworkTopology" />
 			<wsdl:input>
 				<soap:body use="literal" parts="selectNetworkTopology" />
 			</wsdl:input>
@@ -124,7 +124,7 @@
 		
 		<wsdl:operation name="insertNetworkTopology">
 			<soap:operation style="document"
-				soapAction="http://dcn.internet2.edu/WS/Server/insertNetworkTopology" />
+				soapAction="http://dcn.internet2.edu/WS/Handlers/insertNetworkTopology" />
 			<wsdl:input>
 				<soap:body use="literal" parts="insertNetworkTopology" />
 			</wsdl:input>
