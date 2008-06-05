@@ -358,7 +358,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
     lcl_id_tlv->length = htons(sizeof(msg_narb_local_id) - TLV_HDR_SIZE);
     lcl_id_tlv->lclid_src = htonl(lclid_src);
     lcl_id_tlv->lclid_dest = htonl(lclid_dest);
-    bodylen += sizeof (msg_narb_hop_back);
+    bodylen += sizeof (msg_narb_local_id);
   }
 
   narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
