@@ -31,13 +31,17 @@
 			<xsd:element name="gpid" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
 			<xsd:element name="vtag" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
 		</xsd:all>
-		<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="strict" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="preferred" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="mrn" type="xsd:boolean" use="optional"/>
-		<xsd:attribute name="viamovaz" type="xsd:boolean" use="optional"/>
-		<xsd:attribute name="allvtags" type="xsd:boolean" use="optional"/>
-		<xsd:attribute name="allwaves" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="e2eVtag" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="viaMovaz" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="vtagMask" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="queryHold" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="subnetEro" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="subnetDtl" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="altPaths" type="xsd:boolean" use="optional"/>
 	</xsd:complexType>
 
 	<xsd:complexType name="findPathResponseContent">
