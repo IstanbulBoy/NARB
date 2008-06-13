@@ -198,7 +198,7 @@ int num_open_blks (string &line)
         num--;
         pos++;
     }
-
+    pos = 0;
     while((pos = line.find("</", pos)) !=string::npos)
     {
         num-=2;
