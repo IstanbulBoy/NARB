@@ -31,7 +31,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -42,7 +42,9 @@ our @EXPORT_OK;
 
 sub new {
 	shift;
+	my $ws = shift;
 	my $self = {
+		ws => $ws  #back ref to the actual server object
 	};
 	bless $self;
 	return $self;
@@ -62,9 +64,8 @@ sub findPath {
 		)], @_);
 	my $som = pop @_;
 	my $attrs = $som->dataof('//findPath')->attr;
-	foreach my $attr (keys %$attrs) {
-		
-	}
+	my $attr = 0;
+
 	Aux::print_dbg_ws("findPath()\n");
 }
 
@@ -72,7 +73,7 @@ sub selectNetworkTopology {
 	my $self = shift;
 	my($scope) = @_;
 	if(!defined($scope)) {
-		$self->generate_soap_fault('Sender', 
+		WS::Formaters::generate_soap_fault('Sender', 
 			'no topology set specified', 
 			'TerceTedbFault', 
 			'<scope> must be specified');
@@ -82,7 +83,7 @@ sub selectNetworkTopology {
 		lc($scope) ne SCOPE_ABS && 
 		lc($scope) ne SCOPE_CRL && 
 		lc($scope) ne SCOPE_DAT ) {
-		$self->generate_soap_fault('Sender', 
+		WS::Formaters::generate_soap_fault('Sender', 
 			'unknown topology type', 
 			'TerceTedbFault', 
 			'$scope not defined in the service description');
@@ -94,15 +95,15 @@ sub selectNetworkTopology {
 		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
 		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
-		$self->generate_soap_resp($scope_m);
+		WS::Formaters::generate_soap_resp($$self{ws}, $scope_m);
 	}
-	return $$self{xml}; 
+	return $$self{ws}{xml}; 
 }
 
 sub insertNetworkTopology {
 	my $self = shift;
 	Aux::print_dbg_ws("insertNetworkTopology()\n");
-	$self->generate_soap_fault('Receiver', 
+	WS::Formaters::generate_soap_fault('Receiver', 
 		'method not implemented', 
 		'TerceTedbFault', 
 		'insertNetworkTopology is not implemented');
