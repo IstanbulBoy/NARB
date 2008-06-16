@@ -22,8 +22,10 @@
 #
 
 package WS::Formaters;
+
 use GMPLS::Constants;
 use WS::Constants;
+use IO::Socket::INET;
 
 use strict;
 use warnings;
@@ -34,7 +36,6 @@ use warnings;
 ####################################################################
 
 sub get_swcap_xml($) {
-	my $self = shift;
 	my ($lr) = @_;
 	my $enc_xml = SOAP::Data->name('encodingType' => $link_swcap_enc_xml{$$lr{sw_cap}{enc}});
 	my $swtype_xml = SOAP::Data->name('switchingcapType' => $link_swcap_cap_xml{$$lr{sw_cap}{cap}});
@@ -65,7 +66,6 @@ sub get_swcap_xml($) {
 }
 
 sub get_nodes_xml($) {
-	my $self = shift;
 	my ($db) = @_;
 	my @nodes_xml = ();
 	foreach my $rtr (keys %$db) {
@@ -94,7 +94,7 @@ sub get_nodes_xml($) {
 			my $l_id = sprintf(TERCE_LINK_ID, inet_ntoa(pack("N", $$db{$rtr}{$link}{local})));
 			my $fql_id = TERCE_ID_PREF.":".TERCE_DOMAIN_ID.":".$rtr_id.":".$p_id.":".$l_id;
 			#swcap
-			my $swcap_xml = $self->get_swcap_xml($$db{$rtr}{$link});
+			my $swcap_xml = get_swcap_xml($$db{$rtr}{$link});
 
 			#the rest
 			my $cap_xml = SOAP::Data->name('capacity' => $$db{$rtr}{$link}{capacity})->type("xsd:string");
@@ -140,44 +140,43 @@ sub get_nodes_xml($) {
 }
 
 sub generate_soap_fault($$$$) {
-	my $self = shift;
 	die SOAP::Fault->faultcode($_[0])
 	->faultstring($_[1])
 	->faultdetail(SOAP::Data->name($_[2])
 		->value(\SOAP::Data->name('msg' => $_[3])));
 }
 
-sub generate_soap_resp($) {
-	my $self = shift;
+sub generate_soap_resp($$) {
+	my $ws = shift;
 	my ($scope_m) = @_;
 	my $xml = {};
 	my $done = 0;
 
-	if(($scope_m & SCOPE_ABS_M) && !defined($$self{abstract_tedb})) {
-		$self->generate_soap_fault('Receiver', 
+	if(($scope_m & SCOPE_ABS_M) && !defined($$ws{abstract_tedb})) {
+		generate_soap_fault('Receiver', 
 			'abstract topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
-	elsif(($scope_m & SCOPE_CRL_M) && !defined($$self{control_tedb})) {
-		$self->generate_soap_fault('Receiver', 
+	elsif(($scope_m & SCOPE_CRL_M) && !defined($$ws{control_tedb})) {
+		generate_soap_fault('Receiver', 
 			'control topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
-	elsif(($scope_m & SCOPE_DAT_M) && !defined($$self{data_tedb})) {
-		$self->generate_soap_fault('Receiver', 
+	elsif(($scope_m & SCOPE_DAT_M) && !defined($$ws{data_tedb})) {
+		generate_soap_fault('Receiver', 
 			'data topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
 	else {
-		my @dbs = ($$self{abstract_tedb}, $$self{control_tedb}, $$self{data_tedb});
+		my @dbs = ($$ws{abstract_tedb}, $$ws{control_tedb}, $$ws{data_tedb});
 		for(my $i=0; $i<SCOPE_MAX; $i++) {
 			if(defined($dbs[$i]) && ($scope_m & (1<<$i))) {
 				my @nodes = ();
 				# <node> array of
-				push(@nodes, $self->get_nodes_xml($dbs[$i]));
+				push(@nodes, get_nodes_xml($dbs[$i]));
 				# <idcID>
 				my $idcID_xml = SOAP::Data->name('idcId' => TERCE_IDC_ID);
 				# <domain>
@@ -187,7 +186,7 @@ sub generate_soap_resp($) {
 				# construct the document
 				$xml = SOAP::Data->name('topology' => \SOAP::Data->value($idcID_xml, $domain_xml));
 				$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
-				$$self{xml} = $xml;
+				$$ws{xml} = $xml;
 			}
 		}
 	}
