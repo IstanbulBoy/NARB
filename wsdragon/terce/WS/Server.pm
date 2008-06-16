@@ -29,14 +29,13 @@ use Socket;
 use GMPLS::Constants;
 use WS::External;
 use WS::Handlers;
-use IO::Socket::INET;
 use SOAP::Lite;
 use SOAP::Transport::HTTP;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.32 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -74,7 +73,7 @@ sub new {
 			LocalPort => $lp,
 			ReuseAddr => 1,
 			Blocking => 0
-		)->dispatch_to(new WS::Handlers()),
+		),
 		lport => $lp,
 		queue1 => $tq1,
 		queue2 => $tq2,
@@ -84,6 +83,7 @@ sub new {
 		xml => undef
 	};
 	bless $self;
+	$$self{server}->dispatch_to(new WS::Handlers($self));
 	return $self;
 }
 
