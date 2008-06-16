@@ -38,6 +38,7 @@
 #include "event.hh"
 #include "toolbox.hh"
 #include "zebra_ospfclient.hh"
+#include <stdlib.h>
 #include <errno.h>
 #include <vector>
 

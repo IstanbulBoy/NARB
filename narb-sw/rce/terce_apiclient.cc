@@ -34,6 +34,7 @@
 #include "rce_log.hh"
 #include "rce_lsa.hh"
 #include "terce_apiclient.hh"
+#include <stdlib.h>
 #include <errno.h>
 #include <vector>
 

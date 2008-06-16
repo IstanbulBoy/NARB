@@ -34,6 +34,7 @@
 #include "types.hh"
 #include "cli.hh"
 #include "log.hh"
+#include <stdlib.h>
 #include <arpa/telnet.h>
 #include <arpa/inet.h>
 #include <stdarg.h>
@@ -1168,28 +1169,28 @@ struct string_value_conversion str_val_conv_encoding =
 
 /////////////////////////////////////////////////////////////////////
 
-COMMAND(cmd_exit, "exit", "Exit the current command level\n")
+COMMAND(cmd_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
     cli_node->Reader()->Exit();
 }
 
 //Alias of "exit"
-cmd_exit cmd_quit("quit", "Exit the current command level\n");
+cmd_exit cmd_quit((char*)"quit", (char*)"Exit the current command level\n");
 
-COMMAND(cmd_configure, "configure", "Enter the configure command level\n")
+COMMAND(cmd_configure, (char*)"configure", (char*)"Enter the configure command level\n")
 {
-    cli_node->Reader()->GoDown("configure-node");
+    cli_node->Reader()->GoDown((char*)"configure-node");
     cli_node->Reader()->CurrentNode()->ShowPrompt();    
 }
 
-COMMAND(cmd_test, "test", "Enter the test command level\n")
+COMMAND(cmd_test, (char*)"test", (char*)"Enter the test command level\n")
 {
-    cli_node->Reader()->GoDown("test-node");
+    cli_node->Reader()->GoDown((char*)"test-node");
     cli_node->Reader()->CurrentNode()->ShowPrompt();    
 }
 
 
-COMMAND(cmd_show_topology, "show topology",  "Show configureation: \n Domain summary topology\n")
+COMMAND(cmd_show_topology, (char*)"show topology",  (char*)"Show configuration: \n Domain summary topology\n")
 {
     char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[20];
       
@@ -1232,7 +1233,7 @@ COMMAND(cmd_show_topology, "show topology",  "Show configureation: \n Domain sum
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_module, "show module", "Show \n Status of software modules\n")
+COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of software modules\n")
 {
     bool connectable;
     int alive;
@@ -1315,7 +1316,7 @@ COMMAND(cmd_show_module, "show module", "Show \n Status of software modules\n")
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_lsp, "show lsp {responded|established|deleted|all}",  "Show configureation:\nLSP\n State of LSP\nComplete ERO returned|LSP established|LSP torn down\n")
+COMMAND(cmd_show_lsp, (char*)"show lsp {responded|established|deleted|all}",  (char*)"Show configuration:\nLSP\n State of LSP\nComplete ERO returned|LSP established|LSP torn down\n")
 {
     u_char state;
     if (argv.size() > 0)
@@ -1354,9 +1355,9 @@ COMMAND(cmd_show_lsp, "show lsp {responded|established|deleted|all}",  "Show con
 }
 
 //Alias of cmd_show_lsp
-cmd_show_lsp cmd_show_lsp_alias1("show lsp", "Show configurations \n Established LSP \n IP");
+cmd_show_lsp cmd_show_lsp_alias1((char*)"show lsp", (char*)"Show configurations \n Established LSP \n IP");
 
-COMMAND(cmd_show_lsp_detail, "show lsp detail GRI",  "Show configureation:\nLSP\nDetails...\nGRI in UCID-SEQNUM format\n")
+COMMAND(cmd_show_lsp_detail, (char*)"show lsp detail GRI",  (char*)"Show configuration:\nLSP\nDetails...\nGRI in UCID-SEQNUM format\n")
 {
     u_int32_t  ucid = 0, seqnum = 0;
     LSPQ * lspq = NULL;
@@ -1375,7 +1376,7 @@ COMMAND(cmd_show_lsp_detail, "show lsp detail GRI",  "Show configureation:\nLSP\
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_lsp_dtl, "show lsp dtl GRI",  "Show configureation:\nLSP\nDesignated Transit Lit...\nGRI in UCID-SEQNUM format\n")
+COMMAND(cmd_show_lsp_dtl, (char*)"show lsp dtl GRI",  (char*)"Show configuration:\nLSP\nDesignated Transit Lit...\nGRI in UCID-SEQNUM format\n")
 {
     u_int32_t  ucid = 0, seqnum = 0;
     LSPQ * lspq = NULL;
@@ -1396,8 +1397,8 @@ COMMAND(cmd_show_lsp_dtl, "show lsp dtl GRI",  "Show configureation:\nLSP\nDesig
 
 ///////////////////////// configure command level  ////////////////////////////
 
-COMMAND(cmd_load_config, "load-config FILE",
-       "Load configuration commands from a file\nFile path")
+COMMAND(cmd_load_config, (char*)"load-config FILE",
+	(char*)"Load configuration commands from a file\nFile path")
 {
     char *cwd;
     ifstream inFile;
@@ -1449,11 +1450,11 @@ _out:
 }
 
 
-COMMAND(cmd_set_topology, "set topology FILE", "Set/Reset configureation: \n Domain summary topology\n Topology config file\n")
+COMMAND(cmd_set_topology, (char*)"set topology FILE", (char*)"Set/Reset configuration: \n Domain summary topology\n Topology config file\n")
 {
     assert(cli_node->Reader());
     cli_node->SetDumb(true);
-    cli_node->Reader()->Execute("delete topology", true);
+    cli_node->Reader()->Execute((char*)"delete topology", true);
     cli_node->SetDumb(false);
     NarbDomainInfo.ClearRouterIds();
     NarbDomainInfo.ClearLinks();
@@ -1472,7 +1473,7 @@ _out:
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_delete_topology, "delete topology", "Delete configureation: \n Domain summary topology\n")
+COMMAND(cmd_delete_topology, (char*)"delete topology", (char*)"Delete configuration: \n Domain summary topology\n")
 {
     if (zebra_client)
         NarbDomainInfo.DeleteTopology(zebra_client->GetWriter());
@@ -1480,7 +1481,7 @@ COMMAND(cmd_delete_topology, "delete topology", "Delete configureation: \n Domai
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_undelete_topology, "undelete topology", "Undelete configureation: \n Domain summary topology\n")
+COMMAND(cmd_undelete_topology, (char*)"undelete topology", (char*)"Undelete configuration: \n Domain summary topology\n")
 {
     assert(cli_node->Reader());
 
@@ -1490,8 +1491,8 @@ COMMAND(cmd_undelete_topology, "undelete topology", "Undelete configureation: \n
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
-       "Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
+COMMAND(cmd_set_ospfd, (char*)"set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
+	(char*)"Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
 {
     ospfd_info* ospfd;
     if (argv[0].compare(0, 4, "intr") == 0)
@@ -1506,8 +1507,8 @@ COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_show_ospfd, "show ospfd {interdomain|intradomain}",
-       "Show Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance")
+COMMAND(cmd_show_ospfd, (char*)"show ospfd {interdomain|intradomain}",
+	(char*)"Show Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance")
 {
     char ip1[20], ip2[20];
     ospfd_info* ospfd;
@@ -1521,7 +1522,7 @@ COMMAND (cmd_show_ospfd, "show ospfd {interdomain|intradomain}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_connect_ospfd, "connect ospfd {interdomain | intradomain}", "(Re)Connect to an OSPFd\nContinue...\n")
+COMMAND(cmd_connect_ospfd, (char*)"connect ospfd {interdomain | intradomain}", (char*)"(Re)Connect to an OSPFd\nContinue...\n")
 {
     int ret;
     
@@ -1580,12 +1581,12 @@ _out:
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_delete_ospfd, "delete ospfd {interdomain | intradomain}",
-       "Delete and disconnect an OSPFd\nContinue...\n")
+COMMAND(cmd_delete_ospfd, (char*)"delete ospfd {interdomain | intradomain}",
+	(char*)"Delete and disconnect an OSPFd\nContinue...\n")
 {
     if (argv[0].compare(0, 4, "inte") == 0)
     {
-        cli_node->Reader()->Execute("delete topology", true);
+        cli_node->Reader()->Execute((char*)"delete topology", true);
         if (zebra_client && zebra_client->GetReader() && zebra_client->GetReader()->Socket() >0)
         {
             zebra_client->GetWriter()->Close();
@@ -1597,8 +1598,8 @@ COMMAND (cmd_delete_ospfd, "delete ospfd {interdomain | intradomain}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_peer_narb, "set peer-narb HOST port PORT via IF_ADDR",
-       "Set/Reset configuration\n Configure peering NARB\n Host of the peering NARB\nThe port on the NARB host\nThe interface that the NARB is associaed with\n")
+COMMAND(cmd_set_peer_narb, (char*)"set peer-narb HOST port PORT via IF_ADDR",
+	(char*)"Set/Reset configuration\n Configure peering NARB\n Host of the peering NARB\nThe port on the NARB host\nThe interface that the NARB is associated with\n")
 {
     in_addr if_addr;
     inet_aton(argv[2].c_str(), &if_addr);
@@ -1606,8 +1607,8 @@ COMMAND(cmd_set_peer_narb, "set peer-narb HOST port PORT via IF_ADDR",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-confirmed|all-loose-allowed}",
-       "Set/Reset configuration\nPick a NARB routing mode.\n")
+COMMAND(cmd_set_routing_mode, (char*)"set routing-mode {all-strict-only|mixed-allowed|mixed-preferred|mixed-confirmed|all-loose-allowed}",
+	(char*)"Set/Reset configuration\nPick a NARB routing mode.\n")
 {
     if(argv[0] == "all-strict-only")
         SystemConfig::routing_mode= RT_MODE_ALL_STRICT_ONLY;
@@ -1623,8 +1624,8 @@ COMMAND (cmd_set_routing_mode, "set routing-mode {all-strict-only|mixed-allowed|
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_show_routing_mode, "show routing-mode",
-       "Show configuration\nNARB routing mode.\n")
+COMMAND(cmd_show_routing_mode, (char*)"show routing-mode",
+	(char*)"Show configuration\nNARB routing mode.\n")
 {
     string routing_mode;
     switch(SystemConfig::routing_mode)
@@ -1651,8 +1652,8 @@ COMMAND (cmd_show_routing_mode, "show routing-mode",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_working_mode, "set working-mode {static-interdomain-topology|dynamic-interdomain-topology}",
-       "Set/Reset configurartion\nPick aNARB working mode\n")
+COMMAND(cmd_set_working_mode, (char*)"set working-mode {static-interdomain-topology|dynamic-interdomain-topology}",
+	(char*)"Set/Reset configurartion\nPick aNARB working mode\n")
 {
     if(argv[0] == "static-interdomain-topology")
         SystemConfig::working_mode = WORKING_MODE_STATIC_INTERDOMAIN_TOPOLOGY;
@@ -1661,8 +1662,8 @@ COMMAND (cmd_set_working_mode, "set working-mode {static-interdomain-topology|dy
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_show_working_mode, "show working-mode",
-       "Show configuration\nNARB working mode.\n")
+COMMAND(cmd_show_working_mode, (char*)"show working-mode",
+	(char*)"Show configuration\nNARB working mode.\n")
 {
     string working_mode;
     switch (SystemConfig::working_mode)
@@ -1681,8 +1682,8 @@ COMMAND (cmd_show_working_mode, "show working-mode",
 }
 
 
-COMMAND (cmd_set_forced_merge, "set forced-merge {on|off}",
-       "Set/Reset configurartion\nforced merging inter- and intra-domain ERO in recursive path computation\nOn or Off\n")
+COMMAND(cmd_set_forced_merge, (char*)"set forced-merge {on|off}",
+	(char*)"Set/Reset configurartion\nforced merging inter- and intra-domain ERO in recursive path computation\nOn or Off\n")
 {
     if(argv[0] == "on")
         SystemConfig::forced_merge = true;
@@ -1691,30 +1692,30 @@ COMMAND (cmd_set_forced_merge, "set forced-merge {on|off}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_configure_exit, "exit", "Exit the current command level\n")
+COMMAND(cmd_configure_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
     cli_node->Reader()->GoUp();
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND(cmd_set_rce, "set rce HOST port PORT",
-    "Set/Reset configurartion\nResource computation engine (RCE)\nHost of the RCE\nPort on the RCE\n")
+COMMAND(cmd_set_rce, (char*)"set rce HOST port PORT",
+	(char*)"Set/Reset configurartion\nResource computation engine (RCE)\nHost of the RCE\nPort on the RCE\n")
 {
     SystemConfig::rce_pri_host = argv[0];
     SystemConfig::rce_pri_port = atoi(argv[1].c_str());
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_delete_rce, "delete rce",
-    "Delete configurartion\nResource Computation engine (RCE)\n")
+COMMAND(cmd_delete_rce, (char*)"delete rce",
+	(char*)"Delete configurartion\nResource Computation engine (RCE)\n")
 {
     SystemConfig::rce_pri_host = "";
     SystemConfig::rce_pri_port = -1;
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_rce, "show rce",
-    "Show configurartion...\nResource Computation Engine (RCE)\n")
+COMMAND(cmd_show_rce, (char*)"show rce",
+	(char*)"Show configurartion...\nResource Computation Engine (RCE)\n")
 {
     if (SystemConfig::rce_pri_host.length() == 0 || SystemConfig::rce_pri_port <= 0)
     {
@@ -1734,8 +1735,8 @@ COMMAND(cmd_show_rce, "show rce",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_topology_refresh_interval, "set refresh-interval SECONDS",
-        "Set/Reset configureation...\nDomain topology origination refresh interval\n")
+COMMAND(cmd_set_topology_refresh_interval, (char*)"set refresh-interval SECONDS",
+        (char*)"Set/Reset configuration...\nDomain topology origination refresh interval\n")
 {
     int interval = atoi(argv[0].c_str());
   
@@ -1822,8 +1823,8 @@ static link_info* link_to_update = NULL;
         CLI_OUT("          >> dtl-hop%d: --%s:%d --%s", num_dtl, (*it_dtl).nodename, (*it_dtl).linkid, cli_cstr_newline); \
     }
 
-COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
-    "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND(cmd_show_link, (char*)"show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+	(char*)"Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
     link_info * link;
@@ -1844,8 +1845,8 @@ COMMAND (cmd_show_link, "show link local_if_addr LCL_IF_ADDR remote_if_addr RMT_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP remote_if_addr IP",
-    "Add \n TE link \nAdvertising rotuter\nIP\nLink ID\nIP\nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND(cmd_add_link, (char*)"add link adv_router IP link_id IP lcl_if_addr IP remote_if_addr IP",
+	(char*)"Add \n TE link \nAdvertising rotuter\nIP\nLink ID\nIP\nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr adv_id, link_id, lcl_if, rmt_if;
   
@@ -1877,7 +1878,7 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP remote_
     NarbDomainInfo.AddLink(link);
 
     link_to_update = new link_info(*link);
-    cli_node->Reader()->GoDown("update-link-node");
+    cli_node->Reader()->GoDown((char*)"update-link-node");
     string prompt = cli_node->Prompt(); 
     prompt += '(';
     prompt += argv[2];
@@ -1888,8 +1889,8 @@ COMMAND (cmd_add_link, "add link adv_router IP link_id IP lcl_if_addr IP remote_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
-    "Delete \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND(cmd_delete_link, (char*)"delete link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+	(char*)"Delete \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
     link_info * link;
@@ -1918,8 +1919,8 @@ COMMAND (cmd_delete_link, "delete link local_if_addr LCL_IF_ADDR remote_if_addr 
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
-    "Edit/Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND(cmd_edit_link, (char*)"edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+	(char*)"Edit/Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
     link_info * link;
@@ -1940,7 +1941,7 @@ COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_
         link_to_update = new link_info;
         *link_to_update = *link;
         link_to_update->opaque_id = narb_ospf_opaque_id();
-        cli_node->Reader()->GoDown("edit-link-node");
+        cli_node->Reader()->GoDown((char*)"edit-link-node");
         string prompt = cli_node->Prompt(); 
         prompt += '(';
         prompt += argv[0];
@@ -1952,8 +1953,8 @@ COMMAND (cmd_edit_link, "edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_set_link, "set {link_id | adv_router |metric | lcl_if |rmt_if} VALUE",
-       "Set configuration...\n")
+COMMAND(cmd_set_link, (char*)"set {link_id | adv_router |metric | lcl_if |rmt_if} VALUE",
+	(char*)"Set configuration...\n")
 {
     assert (link_to_update);
     in_addr ip;
@@ -1988,8 +1989,8 @@ COMMAND (cmd_set_link, "set {link_id | adv_router |metric | lcl_if |rmt_if} VALU
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_swcap,"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
-       "Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
+COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
+	(char*)"Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
 {
     assert (link_to_update);
   
@@ -2000,8 +2001,8 @@ COMMAND (cmd_set_link_swcap,"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {l
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
-       "Set configuration \nBandwidth\nFloat in mbps")
+COMMAND(cmd_set_link_bandwidth, (char*)"set bandwidth FLOAT",
+	(char*)"Set configuration \nBandwidth\nFloat in mbps")
 {
     assert (link_to_update);
     float bw;
@@ -2022,8 +2023,8 @@ COMMAND (cmd_set_link_bandwidth,"set bandwidth FLOAT",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_vlan,"set vlan {add|delete} VLAN",
-       "Set configuration \nVLAN\nAdd|Delete\nVLAN tag")
+COMMAND(cmd_set_link_vlan, (char*)"set vlan {add|delete} VLAN",
+	(char*)"Set configuration \nVLAN\nAdd|Delete\nVLAN tag")
 {
     assert (link_to_update);
     int vlan;
@@ -2048,8 +2049,8 @@ COMMAND (cmd_set_link_vlan,"set vlan {add|delete} VLAN",
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
-       "Set configuration \nVLAN\nAdd|Delete\nVLAN tag - range begin\nVLAN tag range end")
+COMMAND(cmd_set_link_vlan_range, (char*)"set vlan-range {add|delete} VLAN1 to VLAN2",
+        (char*)"Set configuration \nVLAN\nAdd|Delete\nVLAN tag - range begin\nVLAN tag range end")
 {
     assert (link_to_update);
     int vlan, vlan1, vlan2;
@@ -2079,8 +2080,8 @@ COMMAND (cmd_set_link_vlan_range,"set vlan-range {add|delete} VLAN1 to VLAN2",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_edit_link_show, "show {updated|original}",
-       "Show editing\n Updated | Original TE parameters")
+COMMAND(cmd_edit_link_show, (char*)"show {updated|original}",
+	(char*)"Show editing\n Updated | Original TE parameters")
 {
     assert (link_to_update);
     link_info * link = NULL;
@@ -2103,8 +2104,8 @@ COMMAND(cmd_edit_link_show, "show {updated|original}",
     cli_node->ShowPrompt();
 }
   
-COMMAND(cmd_edit_link_cancel, "cancel",
-       "Cancel edited TE link parameters\n")
+COMMAND(cmd_edit_link_cancel, (char*)"cancel",
+	(char*)"Cancel edited TE link parameters\n")
 {
     if (link_to_update)
     {
@@ -2118,10 +2119,10 @@ COMMAND(cmd_edit_link_cancel, "cancel",
 }
 
 //Alias of "cancel"
-cmd_edit_link_cancel cmd_edit_link_exit_instance("exit", "Exit the current command level (cancel)\n");
+cmd_edit_link_cancel cmd_edit_link_exit_instance((char*)"exit", (char*)"Exit the current command level (cancel)\n");
 
-COMMAND(cmd_edit_link_commit, "commit",
-       "Commit edited TE link parameters\n")
+COMMAND(cmd_edit_link_commit, (char*)"commit",
+	(char*)"Commit edited TE link parameters\n")
 {
     link_info * link;
 
@@ -2155,22 +2156,22 @@ COMMAND(cmd_edit_link_commit, "commit",
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND(cmd_set_intradomain_topology, "set intradomain topology FILE",
-       "Set/originate intradomain topology\n cont...\ncont...\nTopology config file")
+COMMAND(cmd_set_intradomain_topology, (char*)"set intradomain topology FILE",
+	(char*)"Set/originate intradomain topology\n cont...\ncont...\nTopology config file")
 {
     CLI_OUT("*******Obsolete command******%sThis command is not supported in this version of NARB any more...%s", cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_delete_intradomain_topology, "delete intradomain topology",
-       "Delete intradomain topology\n cont...\ncont...\nTopology config file")
+COMMAND(cmd_delete_intradomain_topology, (char*)"delete intradomain topology",
+	(char*)"Delete intradomain topology\n cont...\ncont...\nTopology config file")
 {
     CLI_OUT("*******Obsolete command******%sThis command is not supported in this version of NARB... more%s", cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_static_ero, "set static_ero SRCDEST {enabled|disabled}",
-       "Set manual ERO\n cont...\nSource-destination IPs\nEnable \nDisable")
+COMMAND(cmd_set_static_ero, (char*)"set static_ero SRCDEST {enabled|disabled}",
+	(char*)"Set manual ERO\n cont...\nSource-destination IPs\nEnable \nDisable")
 {
     char str[40], *pstr;
     strcpy(str, argv[0].c_str());
@@ -2201,8 +2202,8 @@ COMMAND(cmd_set_static_ero, "set static_ero SRCDEST {enabled|disabled}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
-       "Show manual ERO configuration\n cont...\nERO Source-destination IPs")
+COMMAND(cmd_show_static_ero, (char*)"show static_ero SRCDEST",
+	(char*)"Show manual ERO configuration\n cont...\nERO Source-destination IPs")
 {
     char str[40], *pstr;
     in_addr src, dest;
@@ -2259,10 +2260,10 @@ COMMAND(cmd_show_static_ero, "show static_ero SRCDEST",
 }
 
 //Alias
-cmd_show_static_ero cmd_show_static_ero_default("show static_ero", "\nShow\nStatic/Manual ERO\ncont...");
+cmd_show_static_ero cmd_show_static_ero_default((char*)"show static_ero", (char*)"\nShow\nStatic/Manual ERO\ncont...");
 
-COMMAND(cmd_delete_static_ero, "delete static_ero SRCDEST",
-       "Delete manual ERO configuration\n cont...\nSource-destination IPs")
+COMMAND(cmd_delete_static_ero, (char*)"delete static_ero SRCDEST",
+	(char*)"Delete manual ERO configuration\n cont...\nSource-destination IPs")
 {
     char str[40], *pstr;
     strcpy(str, argv[0].c_str());
@@ -2291,8 +2292,8 @@ COMMAND(cmd_delete_static_ero, "delete static_ero SRCDEST",
 // edit_static_ero
 static indexed_ero* current_static_ero = NULL;
 
-COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
-       "Edit manual/static ERO \n cont ... \nSource-Destination IPs")
+COMMAND(cmd_edit_static_ero, (char*)"edit static_ero SRCDEST",
+	(char*)"Edit manual/static ERO \n cont ... \nSource-Destination IPs")
 {
     char str[40], *pstr;
     strcpy(str, argv[0].c_str());
@@ -2315,7 +2316,7 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
         SystemConfig::indexed_static_ero_list.push_back(current_static_ero);
     }
     
-    cli_node->Reader()->GoDown("edit-static-ero");
+    cli_node->Reader()->GoDown((char*)"edit-static-ero");
     string prompt = cli_node->Prompt(); 
     prompt += '(';
     prompt += argv[0];
@@ -2325,8 +2326,8 @@ COMMAND(cmd_edit_static_ero, "edit static_ero SRCDEST",
 }
 
 
-COMMAND(cmd_ero_show, "show config",
-       "Show subobjects \n cont ... ")
+COMMAND(cmd_ero_show, (char*)"show config",
+	(char*)"Show subobjects \n cont ... ")
 {
     CLI_OUT(" ## showing %d ERO (status '%s') subobjects (cursor=%d) >> %s",  current_static_ero->ero.size(), 
         current_static_ero->enabled ? "enabled" : "disabled", current_static_ero->cursor, cli_cstr_newline);
@@ -2339,8 +2340,8 @@ COMMAND(cmd_ero_show, "show config",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_clear, "clear {ero|dtl}",
-       "Clear all subobjects")
+COMMAND(cmd_ero_clear, (char*)"clear {ero|dtl}",
+	(char*)"Clear all subobjects")
 {
     if (strncmp(argv[0].c_str(), "dtl", 1) == 0)
     {
@@ -2358,22 +2359,22 @@ COMMAND(cmd_ero_clear, "clear {ero|dtl}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_enable, "enable",
-       "Enable this ERO")
+COMMAND(cmd_ero_enable, (char*)"enable",
+	(char*)"Enable this ERO")
 {
     current_static_ero->enabled = true;
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_disable, "disable",
-       "Disable this ERO")
+COMMAND(cmd_ero_disable, (char*)"disable",
+	(char*)"Disable this ERO")
 {
     current_static_ero->enabled = false;
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_insert, "insert {before|after} NUM",
-       "Insert subobject \n before \n after \n the referred subobject number")
+COMMAND(cmd_ero_insert, (char*)"insert {before|after} NUM",
+	(char*)"Insert subobject \n before \n after \n the referred subobject number")
 {
     bool insert_before = (argv[0] == "before" ? true : false);
     int cursor = 0;
@@ -2393,8 +2394,8 @@ COMMAND(cmd_ero_insert, "insert {before|after} NUM",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_append, "append",
-       "Append subobjects")
+COMMAND(cmd_ero_append, (char*)"append",
+	(char*)"Append subobjects")
 {
     current_static_ero->cursor = -1;
     CLI_OUT(" ## Current ERO with %d subobjects >> %s", current_static_ero->ero.size(), cli_cstr_newline);
@@ -2402,8 +2403,8 @@ COMMAND(cmd_ero_append, "append",
 }
 
 
-COMMAND(cmd_ero_delete, "delete subobject NUM",
-       "Delete subobject \n cont... \nthe referred subobject number")
+COMMAND(cmd_ero_delete, (char*)"delete subobject NUM",
+	(char*)"Delete subobject \n cont... \nthe referred subobject number")
 {
     int cursor = -1;
     sscanf(argv[0].c_str(), "%d", &cursor);
@@ -2447,8 +2448,8 @@ static void insert_subobject_with_cursor(indexed_ero* p_ero, ero_subobj* subobj)
     }    
 }
     
-COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
-       "Set/Add subobject \ncont... \n Strict hop | Loose hop \n type IPv4 \n IP address")
+COMMAND(cmd_set_subobject_ipv4, (char*)"set subobject {strict|loose} ipv4 IP",
+	(char*)"Set/Add subobject \ncont... \n Strict hop | Loose hop \n type IPv4 \n IP address")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2470,8 +2471,8 @@ COMMAND(cmd_set_subobject_ipv4, "set subobject {strict|loose} ipv4 IP",
 }
 
 
-COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unnumbered interface-ipv4 IP id ID",
-       "Set/Add subobject \ncont...\n Strict hop | Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
+COMMAND(cmd_set_subobject_unum_ifid, (char*)"set subobject {strict|loose} unnumbered interface-ipv4 IP id ID",
+	(char*)"Set/Add subobject \ncont...\n Strict hop | Loose hop \n type Unnumbered Interface ID \n cont ... \n IP \n cont ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2500,8 +2501,8 @@ COMMAND(cmd_set_subobject_unum_ifid, "set subobject {strict|loose} unnumbered in
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} vlan-te interface-ipv4 IP vtag ID",
-       "Set/Add subobject \ncont...\n Strict hop | Loose hop \n type VLAN TE \n Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
+COMMAND(cmd_set_subobject_vlan_te, (char*)"set subobject {strict|loose} vlan-te interface-ipv4 IP vtag ID",
+	(char*)"Set/Add subobject \ncont...\n Strict hop | Loose hop \n type VLAN TE \n Interface IPv4 Address ... \n IP \n VLAN Tag ... \n ID")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     in_addr ipv4; ipv4.s_addr = 0;
@@ -2533,8 +2534,8 @@ COMMAND(cmd_set_subobject_vlan_te, "set subobject {strict|loose} vlan-te interfa
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {source|destination} interface-ipv4 IP id ID first-timeslot TS",
-       "Set/Add subobject \ncont...\n Strict hop|Loose hop \n type Subnet Interface ... \n Source|Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
+COMMAND(cmd_set_subobject_subobj_if, (char*)"set subobject {strict|loose} subnet {source|destination} interface-ipv4 IP id ID first-timeslot TS",
+       (char*)"Set/Add subobject \ncont...\n Strict hop|Loose hop \n type Subnet Interface ... \n Source|Destination \n Interface IPv4 \n IP \n Sunbet ID Number \n ID \n First Availalbe Timeslot \n Time Slot number")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
     u_int32_t subnet_if_type = (argv[1] == "source" ? 0x10 : 0x11);
@@ -2579,8 +2580,8 @@ COMMAND(cmd_set_subobject_subobj_if, "set subobject {strict|loose} subnet {sourc
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_set_subobject_lcl_id, "set subobject {strict|loose} local-id {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
-       "Set/Add subobject \ncont...\n Strict hop|Loose hop  \n cont...\nPORT|UNTAGGED-GROUP|TAGGED-GROUP|SUBNET-INTERFACE\nInterface IPv4 Address ... \n IP \n LocalID value... \n ID value")
+COMMAND(cmd_set_subobject_lcl_id, (char*)"set subobject {strict|loose} local-id {port|group|tagged-group|subnet-interface} loopback-ipv4 IP id ID",
+	(char*)"Set/Add subobject \ncont...\n Strict hop|Loose hop  \n cont...\nPORT|UNTAGGED-GROUP|TAGGED-GROUP|SUBNET-INTERFACE\nInterface IPv4 Address ... \n IP \n LocalID value... \n ID value")
 {
     bool is_loose = (argv[0] == "loose" ? true : false);
 
@@ -2621,8 +2622,8 @@ COMMAND(cmd_set_subobject_lcl_id, "set subobject {strict|loose} local-id {port|g
 }
 
 
-COMMAND(cmd_set_dtl_hop, "set dtl-hop node NAME link ID",
-       "Set/Add DTL hop \ncont... \n Node name \n Name \n Link ID \n ID Number")
+COMMAND(cmd_set_dtl_hop, (char*)"set dtl-hop node NAME link ID",
+	(char*)"Set/Add DTL hop \ncont... \n Node name \n Name \n Link ID \n ID Number")
 {
     dtl_hop dhop;
     strncpy((char*)dhop.nodename, argv[0].c_str(), MAX_DTL_NODENAME_LEN);
@@ -2631,8 +2632,8 @@ COMMAND(cmd_set_dtl_hop, "set dtl-hop node NAME link ID",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_ero_exit, "exit",
-       "Exit static ERO editing\n")
+COMMAND(cmd_ero_exit, (char*)"exit",
+	(char*)"Exit static ERO editing\n")
 {
     current_static_ero = NULL;
     cli_node->Reader()->GoUp();
@@ -2681,16 +2682,16 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_link_instance);
     cli_root->AddCommand(&cmd_show_static_ero_instance);
     cli_root->AddCommand(&cmd_show_static_ero_default);
-    node_test = cli_root->MakeChild("test-node");
-    node = cli_root->MakeChild("configure-node");
+    node_test = cli_root->MakeChild((char*)"test-node");
+    node = cli_root->MakeChild((char*)"configure-node");
     //Test level
-    node_test->SetPrompt("narb:cli#(test)");
+    node_test->SetPrompt((char*)"narb:cli#(test)");
     node_test->AddCommand(&cmd_load_config_instance);
     node_test->AddCommand(&cmd_set_intradomain_topology_instance);
     node_test->AddCommand(&cmd_delete_intradomain_topology_instance);
     node_test->AddCommand(&cmd_configure_exit_instance);
     //Configure level
-    node->SetPrompt("narb:cli#");
+    node->SetPrompt((char*)"narb:cli#");
     node->AddCommand(&cmd_show_topology_instance);
     node->AddCommand(&cmd_set_topology_instance);
     node->AddCommand(&cmd_delete_topology_instance);
@@ -2718,7 +2719,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_show_static_ero_default);
     node->AddCommand(&cmd_delete_static_ero_instance);
     node->AddCommand(&cmd_edit_static_ero_instance);
-    node_level2 = node->MakeChild("edit-link-node");
+    node_level2 = node->MakeChild((char*)"edit-link-node");
     ///////Edit/Update-link level under the cofigure level/////
     //node_level2->SetPrompt("narb:cli#");
     node_level2->AddCommand(&cmd_set_link_instance);
@@ -2731,7 +2732,7 @@ void CLIReader::InitSession()
     node_level2->AddCommand(&cmd_edit_link_exit_instance);
     node_level2->AddCommand(&cmd_edit_link_commit_instance);
     //////////////// End /////////////////
-    node_level2 = node->MakeChild("edit-static-ero");
+    node_level2 = node->MakeChild((char*)"edit-static-ero");
     ///////Edit-Static-ERO level under the cofigure level/////
     node_level2->AddCommand(&cmd_ero_show_instance);
     node_level2->AddCommand(&cmd_ero_enable_instance);

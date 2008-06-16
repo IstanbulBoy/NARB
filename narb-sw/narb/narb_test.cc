@@ -38,6 +38,7 @@
 #include "narb_config.hh"
 #include "lsa.hh"
 #include "toolbox.hh"
+#include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifndef FREEBSD

@@ -35,6 +35,7 @@
 #include "rce_api.hh"
 #include "rce_lsp.hh"
 #include "rce_lsa.hh"
+#include <stdlib.h>
 #include <netinet/in.h>
 #include "toolbox.hh"
 #include "zebra_ospfclient.hh"

@@ -33,6 +33,7 @@
 #include "rce_types.hh"
 #include "rce_config.hh"
 #include "terce_apiclient.hh"
+#include <stdlib.h>
 #include <math.h>
 
 string SystemConfig::config_file;
@@ -229,15 +230,15 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case CONFIG_DOMAIN_ID:
           {
               char domain_id[MAXADDRLEN];
-              if (ReadConfigParameter(blk_body, "ip", "%s", domain_id))
+              if (ReadConfigParameter(blk_body, (char*)"ip", (char*)"%s", domain_id))
               {
                   inet_aton(domain_id, (struct in_addr*)(&domainId));
               }
-              else if  (ReadConfigParameter(blk_body, "id", "%s", domain_id))
+              else if  (ReadConfigParameter(blk_body, (char*)"id", (char*)"%s", domain_id))
               {
                   domainId = strtoul(domain_id, NULL, 10);
               }
-              else if  (ReadConfigParameter(blk_body, "asn", "%s", domain_id))
+              else if  (ReadConfigParameter(blk_body, (char*)"asn", (char*)"%s", domain_id))
               {
                   u_int32_t asn1, asn2;
                   int ret = sscanf(domain_id, "%u.%u", &asn1, &asn2);
@@ -276,7 +277,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case CONFIG_SUBNET:
           {
               char filename[MAXPATHLEN];
-              if (ReadConfigParameter(blk_body, "path", "%s", filename))
+              if (ReadConfigParameter(blk_body, (char*)"path", (char*)"%s", filename))
               {
                   subnet_file = filename;
               }
@@ -286,7 +287,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case CONFIG_SCHEMA:
           {
               char filename[MAXPATHLEN];
-              if (ReadConfigParameter(blk_body, "path", "%s", filename))
+              if (ReadConfigParameter(blk_body, (char*)"path", (char*)"%s", filename))
               {
                   schema_file = filename;
               }
@@ -299,7 +300,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
               int port;
 			  int interval;
   
-              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              if (ReadConfigParameter(blk_body, (char*)"address", (char*)"%s", address))
               {
                   SystemConfig::terce_host = address;
               }
@@ -310,7 +311,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   LOG("TERCE address has been set to 127.0.0.1 (localhost)" << endl);
               }
   
-              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"localport", (char*)"%d", &port))
               {
                   SystemConfig::terce_port_local = port;
               }
@@ -320,7 +321,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   SystemConfig::terce_port_local = RCE_TERCE_SYNC_PORT;
               }
               
-              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"port", (char*)"%d", &port))
               {
                   SystemConfig::terce_port = port;
               }
@@ -331,7 +332,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   LOG("TERCE server port has been set to " << TERCE_API_SERVER_PORT << endl);
               }
 
-              if (ReadConfigParameter(blk_body, "topology-sync-interval", "%d", &interval))
+              if (ReadConfigParameter(blk_body, (char*)"topology-sync-interval", (char*)"%d", &interval))
               {
                   SystemConfig::terce_topo_sync_interval = interval;
               }
@@ -355,7 +356,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case  CONFIG_HOLDING_TIME:
           {
               int qhold_time = 0, rhold_time = 0, srhold_time = 0;
-              if (ReadConfigParameter(blk_body, "query-expire-seconds", "%d", &qhold_time))
+              if (ReadConfigParameter(blk_body, (char*)"query-expire-seconds", (char*)"%d", &qhold_time))
               {
                   SystemConfig::delta_expire_query = qhold_time;
               }
@@ -365,7 +366,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   LOG("CONFIG_HOLDING_TIME:query-expire-seconds has been set to default: " << SystemConfig::delta_expire_query << endl);
               }
 
-              if (ReadConfigParameter(blk_body, "reserve-expire-seconds", "%d", &rhold_time))
+              if (ReadConfigParameter(blk_body, (char*)"reserve-expire-seconds", (char*)"%d", &rhold_time))
               {
                   SystemConfig::delta_expire_reserve = rhold_time;
               }
@@ -375,7 +376,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                   LOG("CONFIG_HOLDING_TIME:reserve-expire-seconds has been set to default: " << SystemConfig::delta_expire_reserve << endl);
               }
 
-              if (ReadConfigParameter(blk_body, "subnet-reserve-expire-seconds", "%d", &srhold_time))
+              if (ReadConfigParameter(blk_body, (char*)"subnet-reserve-expire-seconds", (char*)"%d", &srhold_time))
               {
                   SystemConfig::delta_expire_subnet_reserve = srhold_time;
               }
@@ -390,7 +391,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
         case  CONFIG_CLI:
           {
               char passwd[32];
-              if (ReadConfigParameter(blk_body, "password", "%s" , passwd))
+              if (ReadConfigParameter(blk_body, (char*)"password", (char*)"%s" , passwd))
               {
                   SystemConfig::cli_password = passwd;
               }

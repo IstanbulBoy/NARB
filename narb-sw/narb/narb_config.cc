@@ -33,6 +33,7 @@
 #include "types.hh"
 #include "narb_config.hh"
 #include "cli.hh"
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include "terce_apiclient.hh"
 
@@ -239,15 +240,15 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
         case CONFIG_DOMAIN_ID:
           {
               char domain_id[MAX_ADDR_LEN];
-              if (ReadConfigParameter(blk_body, "ip", "%s", domain_id))
+              if (ReadConfigParameter(blk_body, (char*)"ip", (char*)"%s", domain_id))
               {
                   inet_aton(domain_id, (struct in_addr*)(&domain_info.domain_id));
               }
-              else if  (ReadConfigParameter(blk_body, "id", "%s", domain_id))
+              else if  (ReadConfigParameter(blk_body, (char*)"id", (char*)"%s", domain_id))
               {
                   domain_info.domain_id = strtoul(domain_id, NULL, 10);
               }
-              else if  (ReadConfigParameter(blk_body, "asn", "%s", domain_id))
+              else if  (ReadConfigParameter(blk_body, (char*)"asn", (char*)"%s", domain_id))
               {
                   u_int32_t asn1, asn2;
                   int ret = sscanf(domain_id, "%u.%u", &asn1, &asn2);
@@ -270,7 +271,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               int port;
               char ori_if[MAX_ADDR_LEN];
   
-              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              if (ReadConfigParameter(blk_body, (char*)"address", (char*)"%s", address))
               {
                   strcpy(domain_info.ospfd_inter.addr, address);
               }
@@ -281,7 +282,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOG("inter-domain-ospfd address has been set to 127.0.0.1 (localhost)" << endl);
               }
   
-              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"localport", (char*)"%d", &port))
               {
                   domain_info.ospfd_inter.localport = port;
               }
@@ -290,7 +291,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   domain_info.ospfd_inter.localport =  SystemConfig::narb_ospfd_local_port_inter;
               }
               
-              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"port", (char*)"%d", &port))
               {
                   domain_info.ospfd_inter.port = port;
               }
@@ -301,7 +302,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOGF("inter-domain-ospfd port has been set to %d \n",  DEFAULT_OSPFD_INTER_PORT);
               }
   
-              if (ReadConfigParameter(blk_body, "originate-interface", "%s",   ori_if))
+              if (ReadConfigParameter(blk_body, (char*)"originate-interface", (char*)"%s",   ori_if))
               {
                   inet_aton(ori_if, &domain_info.ospfd_inter.ori_if);
               }
@@ -310,7 +311,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOG("ReadConfigParameter failed on inter-domain-ospfd : ori_if" << endl);
               }
   
-              if (ReadConfigParameter(blk_body, "area", "%s", area))
+              if (ReadConfigParameter(blk_body, (char*)"area", (char*)"%s", area))
               {
                   inet_aton(area, &domain_info.ospfd_inter.area);
               }
@@ -326,7 +327,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               int port;
               char ori_if[MAX_ADDR_LEN];
   
-              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              if (ReadConfigParameter(blk_body, (char*)"address", (char*)"%s", address))
               {
                   strcpy(domain_info.ospfd_intra.addr, address);
               }
@@ -337,7 +338,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOG("intra-domain-ospfd address has been set to 127.0.0.1 (localhost)" << endl);
               }
   
-              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"localport", (char*)"%d", &port))
               {
                   domain_info.ospfd_intra.localport = port;
               }
@@ -346,7 +347,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   domain_info.ospfd_intra.localport = SystemConfig::narb_ospfd_local_port_intra;
               }
               
-              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"port", (char*)"%d", &port))
               {
                   domain_info.ospfd_intra.port = port;
               }
@@ -357,7 +358,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOGF("inter-domain-ospfd port has been set to %d\n", DEFAULT_OSPFD_INTRA_PORT);
               }
   
-              if (ReadConfigParameter(blk_body, "originate-interface", "%s", ori_if))
+              if (ReadConfigParameter(blk_body, (char*)"originate-interface", (char*)"%s", ori_if))
               {
                   inet_aton(ori_if, &domain_info.ospfd_intra.ori_if);
               }
@@ -366,7 +367,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOG("ReadConfigParameter failed on intra-domain-ospfd : ori_if" <<endl);
               }
   
-              if (ReadConfigParameter(blk_body, "area", "%s", area))
+              if (ReadConfigParameter(blk_body, (char*)"area", (char*)"%s", area))
               {
                   inet_aton(area, &domain_info.ospfd_intra.area);
               }
@@ -381,7 +382,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               char address[MAX_ADDR_LEN];
               int port;
   
-              if (ReadConfigParameter(blk_body, "address", "%s", address))
+              if (ReadConfigParameter(blk_body, (char*)"address", (char*)"%s", address))
               {
                   strcpy(domain_info.terce.addr, address);
               }
@@ -392,7 +393,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   LOG("TERCE address has been set to 127.0.0.1 (localhost)" << endl);
               }
   
-              if (ReadConfigParameter(blk_body, "localport", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"localport", (char*)"%d", &port))
               {
                   domain_info.terce.localport = port;
               }
@@ -402,7 +403,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   domain_info.terce.localport =  NARB_TERCE_SYNC_PORT;
               }
               
-              if (ReadConfigParameter(blk_body, "port", "%d", &port))
+              if (ReadConfigParameter(blk_body, (char*)"port", (char*)"%d", &port))
               {
                   domain_info.terce.port = port;
               }
@@ -426,7 +427,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               in_addr ip; ip.s_addr = 0;
               router_id_info * router = new router_id_info(NarbDomainInfo.domain_id, ip);
   
-              if (ReadConfigParameter(blk_body, "id", "%s", router_id))
+              if (ReadConfigParameter(blk_body, (char*)"id", (char*)"%s", router_id))
               {
                   inet_aton(router_id, (in_addr*)&router->id);
                   router->advRtId = router->id;
@@ -441,7 +442,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
   
               link_blk = blk_body;
               
-              if (ReadConfigParameter(blk_body, "auto-link", "%s", auto_link_type) > 0)
+              if (ReadConfigParameter(blk_body, (char*)"auto-link", (char*)"%s", auto_link_type) > 0)
               {
                   if (strcasecmp(auto_link_type, "border") == 0)
                       router->rt_type = RT_TYPE_BORDER;
@@ -506,7 +507,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   link = new link_info(NarbDomainInfo.domain_id, ip, ip);
   
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "id", "%s", link_id))
+                  if (ReadConfigParameter(link_body, (char*)"id", (char*)"%s", link_id))
                   {
                       inet_aton(link_id, (in_addr*) &link->id);
                       inet_aton(router_id, (in_addr*)&link->advRtId);
@@ -518,7 +519,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "type", "%d", &link_type))
+                  if (ReadConfigParameter(link_body, (char*)"type", (char*)"%d", &link_type))
                   {
                       link->linkType = link_type;
                   }
@@ -529,7 +530,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "local_if", "%s", loc_if))
+                  if (ReadConfigParameter(link_body, (char*)"local_if", (char*)"%s", loc_if))
                   {
                       inet_aton(loc_if, (in_addr*)&link->lclIfAddr);
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
@@ -541,7 +542,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "remote_if", "%s", rem_if))
+                  if (ReadConfigParameter(link_body, (char*)"remote_if", (char*)"%s", rem_if))
                   {
                       inet_aton(rem_if, (in_addr*)&link->rmtIfAddr);
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
@@ -554,47 +555,47 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
                   }
   
                   // reading optional parameter
-                  if (ReadConfigParameter(link_body, "max_bw", "%f", &link->maxBandwidth))
+                  if (ReadConfigParameter(link_body, (char*)"max_bw", (char*)"%f", &link->maxBandwidth))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
                   }
   
-                  if (ReadConfigParameter(link_body, "max_rsv_bw", "%f", &link->maxReservableBandwidth))
+                  if (ReadConfigParameter(link_body, (char*)"max_rsv_bw", (char*)"%f", &link->maxReservableBandwidth))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag,  LINK_PARA_FLAG_MAX_RSV_BW);
                   }
   
-                  if (ReadConfigParameter(link_body, "unrsv_bw0", "%f", &link->unreservedBandwidth[0]))
+                  if (ReadConfigParameter(link_body, (char*)"unrsv_bw0", (char*)"%f", &link->unreservedBandwidth[0]))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag,  LINK_PARA_FLAG_UNRSV_BW);
-                      ReadConfigParameter(link_body, "unrsv_bw1", "%f", &link->unreservedBandwidth[1]);
-                      ReadConfigParameter(link_body, "unrsv_bw2", "%f", &link->unreservedBandwidth[2]);
-                      ReadConfigParameter(link_body, "unrsv_bw3", "%f", &link->unreservedBandwidth[3]);
-                      ReadConfigParameter(link_body, "unrsv_bw4", "%f", &link->unreservedBandwidth[4]);
-                      ReadConfigParameter(link_body, "unrsv_bw5", "%f", &link->unreservedBandwidth[5]);
-                      ReadConfigParameter(link_body, "unrsv_bw6", "%f", &link->unreservedBandwidth[6]);
-                      ReadConfigParameter(link_body, "unrsv_bw7", "%f", &link->unreservedBandwidth[7]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw1", (char*)"%f", &link->unreservedBandwidth[1]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw2", (char*)"%f", &link->unreservedBandwidth[2]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw3", (char*)"%f", &link->unreservedBandwidth[3]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw4", (char*)"%f", &link->unreservedBandwidth[4]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw5", (char*)"%f", &link->unreservedBandwidth[5]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw6", (char*)"%f", &link->unreservedBandwidth[6]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw7", (char*)"%f", &link->unreservedBandwidth[7]);
                       memcpy(link->ifswcap->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
-                  if (ReadConfigParameter(link_body, "enc_type", "%d", &encoding))
+                  if (ReadConfigParameter(link_body, (char*)"enc_type", (char*)"%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
                       link->ifswcap->encoding = (u_char)encoding;
                   }
   
-                  if (ReadConfigParameter(link_body, "sw_type", "%d", &sw_type))
+                  if (ReadConfigParameter(link_body, (char*)"sw_type", (char*)"%d", &sw_type))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
                       link->ifswcap->swtype = (u_char)sw_type;
                   }
   
-                  if (ReadConfigParameter(link_body, "metric", "%d", &link->metric))
+                  if (ReadConfigParameter(link_body, (char*)"metric", (char*)"%d", &link->metric))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
-                  if (ReadConfigVlanTagSet(link_body, "vlan_tags", link->vtagBitMask))
+                  if (ReadConfigVlanTagSet(link_body, (char*)"vlan_tags", link->vtagBitMask))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_VLAN);
                   }
@@ -608,7 +609,7 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
           {
               in_addr link_inter_rmt_if;
   
-              if (ReadConfigParameter(blk_body, "id", "%s", te_link_id_inter))
+              if (ReadConfigParameter(blk_body, (char*)"id", (char*)"%s", te_link_id_inter))
               {
                   inet_aton(te_link_id_inter, &link_inter_rmt_if);
               }
@@ -619,9 +620,9 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
               }
   
               // read peering narb information that is associated with this inter-domain link
-              if (ReadConfigParameter(blk_body, "narb-peer", "%s", narb_addr))
+              if (ReadConfigParameter(blk_body, (char*)"narb-peer", (char*)"%s", narb_addr))
               {
-                  if (!ReadConfigParameter(blk_body, "port", "%d", &narb_port))
+                  if (!ReadConfigParameter(blk_body, (char*)"port", (char*)"%d", &narb_port))
                   {
                       narb_port = NARB_API_PORT;
                   }
@@ -648,13 +649,13 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
         {
             te_profile_info *p_te_profile = new te_profile_info;
                       
-            if (ReadConfigParameter(blk_body, "id", "%d", &p_te_profile->te_profile_id))
+            if (ReadConfigParameter(blk_body, (char*)"id", (char*)"%d", &p_te_profile->te_profile_id))
             {
-                if (!ReadConfigParameter(blk_body, "sw_type", "%d", &p_te_profile->sw_type))
+                if (!ReadConfigParameter(blk_body, (char*)"sw_type", (char*)"%d", &p_te_profile->sw_type))
                     LOG("ReadConfigParameter failed on te_profile : sw_type"<<endl);
-                if (!ReadConfigParameter(blk_body, "enc_type", "%d", &p_te_profile->encoding))
+                if (!ReadConfigParameter(blk_body, (char*)"enc_type", (char*)"%d", &p_te_profile->encoding))
                     LOG("ReadConfigParameter failed on te_profile : encoding" <<endl);
-                if (!ReadConfigParameter(blk_body, "bandwidth", "%f", &p_te_profile->bandwidth))
+                if (!ReadConfigParameter(blk_body, (char*)"bandwidth", (char*)"%f", &p_te_profile->bandwidth))
                     LOG("ReadConfigParameter failed on te_profile : bandwidth"<<endl);
                 if (strstr(blk_body, "has_vtags") ||strstr(blk_body, "HAS_VTAGS"))
                     p_te_profile->has_vtags = true;
@@ -699,11 +700,11 @@ void ConfigFile::ConfigFromFile(ifstream& inFile, DomainInfo& domain_info)
             char pass[20];
             char host[20];
 
-            if (ReadConfigParameter(blk_body, "password", "%s", pass))
+            if (ReadConfigParameter(blk_body, (char*)"password", (char*)"%s", pass))
             {
                 SystemConfig::cli_password = pass;
             }
-            if (ReadConfigParameter(blk_body, "host", "%s", host))
+            if (ReadConfigParameter(blk_body, (char*)"host", (char*)"%s", host))
             {
                 SystemConfig::cli_address = host;
             }

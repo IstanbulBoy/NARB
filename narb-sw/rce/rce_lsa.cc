@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include <stdlib.h>
 #include <zlib.h>
 #include "rce_lsa.hh"
 #include "rce_log.hh"

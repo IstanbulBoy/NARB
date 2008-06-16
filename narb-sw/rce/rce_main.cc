@@ -43,6 +43,7 @@
 #include "rce_cli.hh"
 #include "rce_clicmd.hh"
 #include "toolbox.hh"
+#include <stdlib.h>
 #include <string>
 
  

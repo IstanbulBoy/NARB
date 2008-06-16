@@ -293,7 +293,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             app_req.length = htons(sizeof(struct msg_app2narb_request) - TLV_HDR_SIZE);
 
             //source
-            level1Node = findxmlnode(cur, "source");
+            level1Node = findxmlnode(cur, (char*)"source");
             if (!level1Node)
                 return NULL;
             for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
@@ -307,7 +307,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             }
             
             //destination
-            level1Node = findxmlnode(cur, "destination");
+            level1Node = findxmlnode(cur, (char*)"destination");
             if (!level1Node)
                 return NULL;
             for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
@@ -321,7 +321,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             }
 
             //te parameters
-            level1Node = findxmlnode(cur, "te_params");
+            level1Node = findxmlnode(cur, (char*)"te_params");
             if (!level1Node)
                 return NULL;
             for (level2Node = level1Node->children; level2Node; level2Node = level2Node->next)
@@ -421,7 +421,7 @@ int XML_LSP_Broker::ParseTopoQuery(xmlNodePtr cur)
                     key = xmlNodeGetContent(level1Node);
                     if (key)
                     {
-                        PrintXML_Topology("router_id", skip_xml_space(key));
+                        PrintXML_Topology((char*)"router_id", skip_xml_space(key));
                     }
                 }
             }

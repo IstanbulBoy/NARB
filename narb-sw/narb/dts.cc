@@ -36,6 +36,7 @@
 #include "terce_apiclient.hh"
 #include "narb_config.hh"
 #include "dts.hh"
+#include <stdlib.h>
 
 // topology exchange API clients
 extern ZebraOspfSync* zebra_client;

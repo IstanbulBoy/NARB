@@ -36,6 +36,7 @@
 #include "rce_config.hh"
 #include "zebra_ospfclient.hh"
 #include "resource.hh"
+#include <stdlib.h>
 #include <arpa/telnet.h>
 #include <stdarg.h>
 
@@ -1151,15 +1152,15 @@ struct string_value_conversion str_val_conv_encoding =
 };
 
 
-COMMAND(cmd_exit, "exit", "Exit the current command level\n")
+COMMAND(cmd_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
     cli_node->Reader()->Exit();
 }
 
 //Alias of "exit"
-cmd_exit cmd_quit("quit", "Exit the current command level\n");
+cmd_exit cmd_quit((char*)"quit", (char*)"Exit the current command level\n");
 
-COMMAND(cmd_show_module, "show module", "Show \n Status of software modules\n")
+COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of software modules\n")
 {
     bool connectable;
     int alive;
@@ -1216,7 +1217,7 @@ COMMAND(cmd_show_module, "show module", "Show \n Status of software modules\n")
 }
 
 
-COMMAND(cmd_show_topology, "show topology {interdomain | intradomain}",  "Show configureation: \n Domain summary topology\n")
+COMMAND(cmd_show_topology, (char*)"show topology {interdomain | intradomain}",  (char*)"Show configureation: \n Domain summary topology\n")
 {
     char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[20];
 
@@ -1276,8 +1277,8 @@ COMMAND(cmd_show_topology, "show topology {interdomain | intradomain}",  "Show c
 
 ///////////////////////// configure command level  ////////////////////////////
 
-COMMAND(cmd_load_config, "load-config FILE",
-       "Load configuration commands from a file\nFile path")
+COMMAND(cmd_load_config, (char*)"load-config FILE",
+	(char*)"Load configuration commands from a file\nFile path")
 {
     char *cwd;
     ifstream inFile;
@@ -1329,20 +1330,20 @@ _out:
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_configure, "configure", "Enter the configure command level\n")
+COMMAND(cmd_configure, (char*)"configure", (char*)"Enter the configure command level\n")
 {
-    cli_node->Reader()->GoDown("configure-node");
+    cli_node->Reader()->GoDown((char*)"configure-node");
     cli_node->Reader()->CurrentNode()->ShowPrompt();    
 }
 
-COMMAND(cmd_configure_exit, "exit", "Exit the current command level\n")
+COMMAND(cmd_configure_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
     cli_node->Reader()->GoUp();
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
-COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
-       "Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instancce |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
+COMMAND (cmd_set_ospfd, (char*)"set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
+       (char*)"Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instancce |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
 {
     string* ospfd_host;
     int* ospfd_port, *ospfd_port_local;
@@ -1365,8 +1366,8 @@ COMMAND (cmd_set_ospfd, "set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_
     cli_node->ShowPrompt();
 }
 
-COMMAND (cmd_show_link, "show link {interdomain|intradomain} local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
-    "Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+	 (char*)"Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
     in_addr lcl_if, rmt_if;
     Link * link;
@@ -1495,7 +1496,7 @@ _show_more_links:
 }
 
 
-COMMAND(cmd_connect_ospfd, "connect ospfd {interdomain | intradomain}", "(Re)Connect to an OSPFd\nContinue...\n")
+COMMAND(cmd_connect_ospfd, (char*)"connect ospfd {interdomain | intradomain}", (char*)"(Re)Connect to an OSPFd\nContinue...\n")
 {
     int ret;
 
@@ -1573,8 +1574,8 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_link_instance);
     cli_root->AddCommand(&cmd_configure_instance);
     //Configure level
-    node = cli_root->MakeChild("configure-node");
-    node->SetPrompt("rce:cli#");
+    node = cli_root->MakeChild((char*)"configure-node");
+    node->SetPrompt((char*)"rce:cli#");
     node->AddCommand(&cmd_load_config_instance);
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_configure_exit_instance);

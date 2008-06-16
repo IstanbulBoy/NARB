@@ -173,7 +173,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
               in_addr ip; ip.s_addr = 0;
               router_id_info * router = new router_id_info(routerType, domainId, ip);
   
-              if (ReadConfigParameter(blk_body, "id", "%s", router_id))
+              if (ReadConfigParameter(blk_body, (char*)"id", (char*)"%s", router_id))
               {
                   inet_aton(router_id, (in_addr*)&router->id);
                   router->advRtId = router->id;
@@ -185,12 +185,12 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   continue;
               }
 
-              if (ReadConfigParameter(blk_body, "home_vlsr", "%s", home_vlsr))
+              if (ReadConfigParameter(blk_body, (char*)"home_vlsr", (char*)"%s", home_vlsr))
               {
                   inet_aton(home_vlsr, (in_addr*)&router->home_vlsr);
               }
 
-              ReadConfigParameter(blk_body, "dtl_name", "%s", router->dtl_name);
+              ReadConfigParameter(blk_body, (char*)"dtl_name", (char*)"%s", router->dtl_name);
 
               AddRouter(router);
 
@@ -210,7 +210,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   link = new link_info(linkType, domainId, ip, ip);
   
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "id", "%s", link_id))
+                  if (ReadConfigParameter(link_body, (char*)"id", (char*)"%s", link_id))
                   {
                       inet_aton(link_id, (in_addr*) &link->id);
                       inet_aton(router_id, (in_addr*)&link->advRtId);
@@ -222,7 +222,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "type", "%d", &link_type))
+                  if (ReadConfigParameter(link_body, (char*)"type", (char*)"%d", &link_type))
                   {
                       link->linkType = link_type;
                   }
@@ -233,7 +233,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "local_if", "%s", loc_if))
+                  if (ReadConfigParameter(link_body, (char*)"local_if", (char*)"%s", loc_if))
                   {
                       inet_aton(loc_if, (in_addr*)&link->lclIfAddr);
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_LOC_IF);
@@ -245,7 +245,7 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       continue;
                   }
                   // reading madatory parameter
-                  if (ReadConfigParameter(link_body, "remote_if", "%s", rem_if))
+                  if (ReadConfigParameter(link_body, (char*)"remote_if", (char*)"%s", rem_if))
                   {
                       inet_aton(rem_if, (in_addr*)&link->rmtIfAddr);
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_REM_IF);
@@ -258,47 +258,47 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   }
   
                   // reading optional parameter
-                  if (ReadConfigParameter(link_body, "max_bw", "%f", &link->maxBandwidth))
+                  if (ReadConfigParameter(link_body, (char*)"max_bw", (char*)"%f", &link->maxBandwidth))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_MAX_BW);
                   }
   
-                  if (ReadConfigParameter(link_body, "max_rsv_bw", "%f", &link->maxReservableBandwidth))
+                  if (ReadConfigParameter(link_body, (char*)"max_rsv_bw", (char*)"%f", &link->maxReservableBandwidth))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag,  LINK_PARA_FLAG_MAX_RSV_BW);
                   }
   
-                  if (ReadConfigParameter(link_body, "unrsv_bw0", "%f", &link->unreservedBandwidth[0]))
+                  if (ReadConfigParameter(link_body, (char*)"unrsv_bw0", (char*)"%f", &link->unreservedBandwidth[0]))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag,  LINK_PARA_FLAG_UNRSV_BW);
-                      ReadConfigParameter(link_body, "unrsv_bw1", "%f", &link->unreservedBandwidth[1]);
-                      ReadConfigParameter(link_body, "unrsv_bw2", "%f", &link->unreservedBandwidth[2]);
-                      ReadConfigParameter(link_body, "unrsv_bw3", "%f", &link->unreservedBandwidth[3]);
-                      ReadConfigParameter(link_body, "unrsv_bw4", "%f", &link->unreservedBandwidth[4]);
-                      ReadConfigParameter(link_body, "unrsv_bw5", "%f", &link->unreservedBandwidth[5]);
-                      ReadConfigParameter(link_body, "unrsv_bw6", "%f", &link->unreservedBandwidth[6]);
-                      ReadConfigParameter(link_body, "unrsv_bw7", "%f", &link->unreservedBandwidth[7]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw1", (char*)"%f", &link->unreservedBandwidth[1]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw2", (char*)"%f", &link->unreservedBandwidth[2]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw3", (char*)"%f", &link->unreservedBandwidth[3]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw4", (char*)"%f", &link->unreservedBandwidth[4]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw5", (char*)"%f", &link->unreservedBandwidth[5]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw6", (char*)"%f", &link->unreservedBandwidth[6]);
+                      ReadConfigParameter(link_body, (char*)"unrsv_bw7", (char*)"%f", &link->unreservedBandwidth[7]);
                       memcpy(link->_ifswcap->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
-                  if (ReadConfigParameter(link_body, "enc_type", "%d", &encoding))
+                  if (ReadConfigParameter(link_body, (char*)"enc_type", (char*)"%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
                       link->_ifswcap->encoding = (u_char)encoding;
                   }
   
-                  if (ReadConfigParameter(link_body, "sw_type", "%d", &sw_type))
+                  if (ReadConfigParameter(link_body, (char*)"sw_type", (char*)"%d", &sw_type))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
                       link->_ifswcap->swtype = (u_char)sw_type;
                   }
   
-                  if (ReadConfigParameter(link_body, "metric", "%d", &link->metric))
+                  if (ReadConfigParameter(link_body, (char*)"metric", (char*)"%d", &link->metric))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
-                  ReadConfigParameter(link_body, "dtl_id", "%d", &link->dtl_id);
+                  ReadConfigParameter(link_body, (char*)"dtl_id", (char*)"%d", &link->dtl_id);
 
                   AddLink(link);
                 }
