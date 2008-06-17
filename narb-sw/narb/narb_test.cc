@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifndef FREEBSD
+#if !defined(__FreeBSD__) && !defined(__APPLE__)
   #include <sys/sendfile.h>
 #endif
 #include <errno.h>
@@ -525,15 +525,17 @@ int main(int argc, char* argv[])
     if (xml_file)
     {
 	int fd = open(xml_file, O_RDONLY);
-#ifndef FREEBSD
+#if defined(__APPLE__)
+	int total = sendfile(fd, sock, 0, 0, NULL, 0);
+#elif defined (__FreeBSD__)
+	int total = sendfile(fd, sock, 0, 0, NULL, NULL, 0);
+#else
 	struct stat file_stat;
 	if (fstat(fd, &file_stat) == -1) {
             printf("fstat failed\n");
             exit(1);
 	}
         int total = sendfile(sock, fd, 0, file_stat.st_size);
-#else
-        int total = sendfile(fd, sock, 0, 0, NULL, NULL, 0);
 #endif
         if (total <= 0) {
             printf("sendfile() returns %d\n", total);
