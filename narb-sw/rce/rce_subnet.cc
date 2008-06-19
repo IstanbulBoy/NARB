@@ -349,6 +349,7 @@ int Subnet_ConfigFile::ReadConfigDragonLambda(char* buf, char* id, link_info* li
         {
             link->attrTable.resize(a_index+1);
         }
+        lambda = htonl(lambda);
         link->SetAttribute(a_index, pe->dataType, 4, (char*)&lambda, pe);
         return 1;
     }
