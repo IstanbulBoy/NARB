@@ -334,13 +334,16 @@ int Subnet_ConfigFile::ReadConfigDragonLambda(char* buf, char* id, link_info* li
 
 #ifdef HAVE_EXT_ATTR
     u_int32_t lambda = 0;
-    sscanf(str, "%d", &lambda);
+    sscanf(str+strlen(id)+1, "%d", &lambda);
     if (lambda != 0)
     {
         ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
         int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
         if (pe == NULL || a_index == 0)
+        {
+            LOGF("Subnet_ConfigFile::ReadConfigDragonLambda failed to find the schema for LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA \n");
             return 0;
+        }
 
         if (link->attrTable.size() < a_index +1)
         {
@@ -351,6 +354,7 @@ int Subnet_ConfigFile::ReadConfigDragonLambda(char* buf, char* id, link_info* li
     }
 #endif
 
+    LOGF("Subnet_ConfigFile::ReadConfigDragonLambda failed on reading 'dragon_lambda' paramter in the block: %s\n", buf);
     return 0;
 }
 
@@ -393,7 +397,10 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
     ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
     int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
     if (pe == NULL || a_index == 0)
+    {
+        LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid failed to find the schema for LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA \n");
         return 0;
+    }
     if (link->attrTable.size() < a_index +1)
     {
         link->attrTable.resize(a_index+1);
@@ -406,7 +413,10 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
             return 0;
         int l = (lambda-192000)/100;
         if (l < 0 || l >= 40)
-            return 0;
+        {
+           LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid cannot take wavelength frequence %d \n", lambda);
+           return 0;
+        }
 
         lambda_info.channel_id = lambda;
         link->SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_lambda_info), (char*)&lambda_info, pe);
@@ -419,8 +429,10 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
     pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
     a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
     if (pe == NULL || a_index == 0)
+    {
+        LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid failed to find the schema for LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA \n");
         return 0;
-
+    }
     if (link->attrTable.size() < a_index +1)
     {
         link->attrTable.resize(a_index+1);
@@ -429,5 +441,6 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
     return 1;
 #endif
 
+    LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid failed on reading 'wavelength_grid' paramter in the block: %s\n", buf);
     return 0;
 }
