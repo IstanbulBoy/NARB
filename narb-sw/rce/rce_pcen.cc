@@ -306,7 +306,7 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
                     return true;
             }
             else if (tspec.SWtype >= LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 && 
-                    tspec.SWtype <=  LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 ||
+                    tspec.SWtype <=  LINK_IFSWCAP_SUBTLV_SWCAP_PSC4 ||
                     tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
                 return true;
             else //tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || LINK_IFSWCAP_SUBTLV_SWCAP_FSC
@@ -345,7 +345,7 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
                     return true;
             }
             else if (tspec.SWtype >= LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 && 
-                    tspec.SWtype <=  LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 ||
+                    tspec.SWtype <=  LINK_IFSWCAP_SUBTLV_SWCAP_PSC4 ||
                     tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
                 return true;
             else //tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || LINK_IFSWCAP_SUBTLV_SWCAP_FSC
