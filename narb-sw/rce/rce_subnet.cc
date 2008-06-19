@@ -32,6 +32,7 @@
  */
 
 #include "rce_subnet.hh"
+#include "rce_movaz_types.hh"
 
 router_id_info::router_id_info(ResourceType router_type, u_int32_t domain_id, in_addr ip):RouterId(router_type, domain_id, ip.s_addr)
 {
@@ -298,6 +299,16 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_METRIC);
                   }
 
+                  if (ReadConfigDragonLambda(link_body, (char*)"dragon_lambda", link))
+                  {
+                      SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_DRAGON_LAMBDA);
+                  }
+
+                  if (ReadConfigWdmTeGrid(link_body, (char*)"wavelength_grid", link))
+                  {
+                      SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_WDM_TE_GRID);
+                  }
+
                   ReadConfigParameter(link_body, (char*)"dtl_id", (char*)"%d", &link->dtl_id);
 
                   AddLink(link);
@@ -313,3 +324,110 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
 
 }
 
+
+int Subnet_ConfigFile::ReadConfigDragonLambda(char* buf, char* id, link_info* link)
+{
+    char *str;
+    str = strstr(buf, id);
+    if (!str)
+        return 0;
+
+#ifdef HAVE_EXT_ATTR
+    u_int32_t lambda = 0;
+    sscanf(str, "%d", &lambda);
+    if (lambda != 0)
+    {
+        ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
+        int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
+        if (pe == NULL || a_index == 0)
+            return 0;
+
+        if (link->attrTable.size() < a_index +1)
+        {
+            link->attrTable.resize(a_index+1);
+        }
+        link->SetAttribute(a_index, pe->dataType, 4, (char*)&lambda, pe);
+        return 1;
+    }
+#endif
+
+    return 0;
+}
+
+
+int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
+{
+    static char buf_para[256];
+
+    char *str;
+    str = strstr(buf, id);
+    if (!str)
+        return 0;
+
+#ifdef HAVE_EXT_ATTR
+    movaz_tlvdata_te_lambda_info lambda_info;
+    movaz_tlvdata_te_passthrough_wavegrid wavegrid;
+    memset(&lambda_info, 0, sizeof(movaz_tlvdata_te_lambda_info));
+    lambda_info.priority = 0x07;
+    memcpy(lambda_info.sw_cap, "\000\020\000\00d", 4);
+    lambda_info.data_rate= 0x4E9502F9;
+    memset(&wavegrid, 0, sizeof(movaz_tlvdata_te_passthrough_wavegrid));
+    wavegrid.base = htonl(192000);
+    wavegrid.interval = htons(100);
+    wavegrid.size = htons(40);
+
+    str += (strlen(id)+1);
+    int i=0;
+    while (str[i] != ']' && str[i] != ')')
+    {
+        buf_para[i] = *(str+i);
+        i++;
+        if (i >= 256 || i > strlen(buf) -strlen(id))
+            return 0;
+    }
+    buf_para[i] = 0;
+    str = strtok(buf_para, " \t,;[]()|");
+    if (!str)
+        return 0;
+
+    ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
+    int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
+    if (pe == NULL || a_index == 0)
+        return 0;
+    if (link->attrTable.size() < a_index +1)
+    {
+        link->attrTable.resize(a_index+1);
+    }
+
+    while (str)
+    {
+        u_int32_t lambda;
+	 if(sscanf(str, "%d", &lambda) != 1)
+            return 0;
+        int l = (lambda-192000)/100;
+        if (l < 0 || l >= 40)
+            return 0;
+
+        lambda_info.channel_id = lambda;
+        link->SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_lambda_info), (char*)&lambda_info, pe);
+        
+        wavegrid.in_channels[l/2] |= ((0xf0) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+        wavegrid.out_channels[l/2] |= ((0xf0) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+        str = strtok(NULL, " \t,;[]()|");
+    }
+
+    pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
+    a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
+    if (pe == NULL || a_index == 0)
+        return 0;
+
+    if (link->attrTable.size() < a_index +1)
+    {
+        link->attrTable.resize(a_index+1);
+    }
+    link->SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_passthrough_wavegrid), (char*)&wavegrid, pe);
+    return 1;
+#endif
+
+    return 0;
+}

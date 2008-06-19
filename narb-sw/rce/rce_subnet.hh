@@ -84,6 +84,8 @@ public:
 //Flag indicating whether the link is originated by automatic probing 
 //This is not indicating a TE parameter
 #define LINK_PARA_FLAG_AUTO_PROBED 0x1000 
+#define LINK_PARA_FLAG_DRAGON_LAMBDA 0x2000 
+#define LINK_PARA_FLAG_WDM_TE_GRID 0x4000 
 //macros to access link_info flag 
 #define SET_LINK_PARA_FLAG(X, F) ((X) = (X) | (F))
 #define LINK_PARA_FLAG(X, F) ((X) & (F))
@@ -115,7 +117,6 @@ protected:
         SystemConfig::should_incorporate_subnet = true; 
     }
     string subnetDescription;
-
     ResourceType routerType;
     ResourceType linkType;
     vector<router_id_info*> routerVector;
@@ -137,6 +138,8 @@ public:
 
     virtual void Init(const char* fileName= NULL);
     virtual void ConfigFromFile(ifstream &ifs);
+    int ReadConfigDragonLambda(char* buf, char* id, link_info* link);
+    int ReadConfigWdmTeGrid(char* buf, char* id, link_info* link);
 };
 
 #endif

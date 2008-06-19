@@ -879,7 +879,7 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
     //$$$$ --->Movaz_RE speical handling
     u_int32_t* p_freq = (u_int32_t*)(nextLink->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
     if (has_wave && p_freq)
-        waveset.AddTag(ntohl(*p_freq));
+        waveset.AddTag(ntohl(*p_freq)); //$$ freq = ANY_WAVE ?
 
     if (waveset.IsEmpty())
         return -1;

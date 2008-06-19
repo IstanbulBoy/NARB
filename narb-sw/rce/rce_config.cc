@@ -522,4 +522,3 @@ int SystemConfig::ReadConfigEosMap(char * buf, EosMapList &eos_map)
     return 1;
 }
 
-
