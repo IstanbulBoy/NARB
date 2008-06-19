@@ -421,8 +421,8 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
         lambda_info.channel_id = lambda;
         link->SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_lambda_info), (char*)&lambda_info, pe);
         
-        wavegrid.in_channels[l/2] |= ((0xf0) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
-        wavegrid.out_channels[l/2] |= ((0xf0) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+        wavegrid.in_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+        wavegrid.out_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
         str = strtok(NULL, " \t,;[]()|");
     }
 
