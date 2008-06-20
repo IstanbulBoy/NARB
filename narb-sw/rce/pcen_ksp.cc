@@ -522,6 +522,7 @@ bool PCEN_KSP::PostBuildTopology()
                 break;
             }
         }
+        link_iter++;
     }
 
     return true;
