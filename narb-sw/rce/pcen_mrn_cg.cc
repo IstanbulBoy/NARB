@@ -1426,7 +1426,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 	list<PCENLink*> netPath;
 	netPath.clear();
 	PCENLink* netLink[2];
-	u_char oriLinkType[2];
+	int oriLinkType[2];
 	int i=0, lcl_end=-1, rmt_end=-1;
 	list<PCENCGLink*>::iterator itLink = cgPath.begin();
 	bool duplex=false;
@@ -1466,7 +1466,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 				if(links[i]->lcl_end->ref_num == lcl_end && links[i]->rmt_end->ref_num == rmt_end)
 				{
 					netLink[num] =  links[i];
-					oriLinkType[num] = links[i]->link->type;
+					oriLinkType[num] = (int)links[i]->link->type;
 					num++;
 				}
 			}
@@ -1744,9 +1744,12 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 						if((*iscd_iter)->swtype == reverse->link->Iscds().front()->swtype)
 						{
 							tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_iter)->swtype);
-							this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
-//							cout<<"linkID : "<<id<<"find same swtype, link start from "<<start->ref_num<<" and end with "<<tail->ref_num<<" by pass node "<<start->rmt_endID<<endl;
-							id++;
+							if (tail != NULL)
+							{
+								this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
+								//cout<<"linkID : "<<id<<"find same swtype, link start from "<<start->ref_num<<" and end with "<<tail->ref_num<<" by pass node "<<start->rmt_endID<<endl;
+								id++;
+							}
 						}
 						iscd_iter++;
 					}
@@ -1787,8 +1790,11 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 									if((*iscd_out)->swtype == adapt_swtype2)
 									{
 										tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype);
-										this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
-										id++;
+										if (tail != NULL)
+										{
+											this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
+											id++;
+										}
 									}
 								}
 							}
@@ -1828,8 +1834,11 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 								if((*iscd_out)->swtype == adapt_swtype2)
 								{
 									tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype);
-									this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
-									id++;
+									if (tail != NULL)
+									{
+										this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
+										id++;
+									}
 								}
 							}
 						}
