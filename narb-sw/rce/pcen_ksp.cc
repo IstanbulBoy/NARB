@@ -13,6 +13,154 @@ PCENNode* PCEN_KSP::search_PCENNode(int NodeId)
 
 void PCEN_KSP::Dijkstra(int source, int destination) 
 {
+
+	PCENNode* headnode= NULL;
+	int headnodeID;
+
+	vector<PCENNode*>::iterator itNode;
+	
+	vector<PCENNode*> ReachableNodes;
+	PCENNode* sourceNode=search_PCENNode(source);
+	PCENNode* destNode=search_PCENNode(destination);
+//	cout<<"source node id: "<<sourceNode->ref_num<<" destination node id : "<<destNode->ref_num<<endl;
+
+	sourceNode->nflg.nfg.visited=1; // We don't find shortest path to a node itself
+	PCENNode* nextnode;
+	list<PCENLink*>::iterator itLink;
+	
+	itLink=sourceNode->out_links.begin();
+	while (itLink!=sourceNode->out_links.end()) 
+	{
+		if (((*itLink)->lflg.lfg.maskoff==1) || ((*itLink)->lflg.lfg.filteroff==1)) 
+		{
+			itLink++;
+			continue;
+		}
+		
+		nextnode=(*itLink)->rmt_end;
+		if ((nextnode->nflg.nfg.filteroff==1) || (nextnode->nflg.nfg.maskoff==1)) 
+		{
+			itLink++;
+			continue;
+		}
+//		cout<<"rmt_end node ID of the source node"<<nextnode->ref_num<<endl;
+		ReachableNodes.push_back(nextnode); // found path from source to this node
+		nextnode->minCost=(*itLink)->PCENmetric();  // add by qian 03/16/2007
+		nextnode->path.push_back(*itLink);
+		itLink++;
+    }
+	
+	vector<PCENNode*>::iterator start;
+	vector<PCENNode*>::iterator end;
+	if (ReachableNodes.size()==0) 
+	{
+		cout<<"No reachable Nodes has been found"<<endl;
+		return;
+	}
+	
+	start = ReachableNodes.begin();
+	end = ReachableNodes.begin();
+	start++;
+	while(start != ReachableNodes.end())
+	{
+		if( (*end)->minCost > (*start)->minCost )
+			end = start;
+		start++;
+	}
+
+
+	itNode = end; 
+	headnode = *itNode; 
+	headnode->nflg.nfg.visited=1; // shortest path to this node has been found
+	ReachableNodes.erase(itNode); // shortest path found for this head node;
+
+
+	
+	for (;;) 
+	{
+		if (headnode==NULL) 
+		{
+			cout<<"break 1"<<endl;
+			break;
+		}
+
+		// Go through all the outgoing links for the newly added node
+		itLink=headnode->out_links.begin();
+		while (itLink != headnode->out_links.end()) 
+		{
+			nextnode = (*itLink)->rmt_end;
+			if ( (nextnode->nflg.nfg.visited != 1) && (nextnode->nflg.nfg.maskoff != 1) &&
+				(nextnode->nflg.nfg.filteroff != 1) &&
+				(nextnode->minCost > headnode->minCost + ((*itLink)->PCENmetric())) &&   // add by qian 03/16/2007
+				((*itLink)->lflg.lfg.filteroff == 0) && 
+				((*itLink)->lflg.lfg.maskoff == 0)) 
+			{
+				nextnode->minCost = (headnode->minCost+((*itLink)->PCENmetric()));   // add by qian 03/16/2007
+				bool b = false;
+				vector<PCENNode*>::iterator itRNode;
+
+				//if nextnode is not in ReachableNodes list, add it in
+				itRNode = ReachableNodes.begin();
+				while ((!b) && (itRNode!=ReachableNodes.end())) 
+				{
+					if ((*itRNode)==nextnode) b=true;
+					itRNode++;
+				}
+				if (!b) 
+				{
+					ReachableNodes.push_back(nextnode);
+//					cout<<"new node found: "<<nextnode->ref_num<<endl;
+				}
+
+				list<PCENLink*>::iterator itPath;
+				itPath=(headnode->path).begin();
+				nextnode->path.clear();
+				while (itPath!=(headnode->path).end()) 
+				{
+					nextnode->path.push_back(*itPath);
+					itPath++;
+				}
+				nextnode->path.push_back(*itLink);
+			}
+			itLink++;
+		}
+
+		if (ReachableNodes.size()==0) 
+		{	
+			break;
+		}
+	
+		start = ReachableNodes.begin();
+		end = ReachableNodes.begin();
+		start++;
+		while(start != ReachableNodes.end())
+		{
+			if( (*end)->minCost > (*start)->minCost )
+				end = start;
+			start++;
+		}
+		itNode = end;
+		headnode= *itNode;
+		headnode->nflg.nfg.visited=1; // shortest path to this node has been found
+
+		ReachableNodes.erase(itNode); // shortest path found for this head node;
+//		cout<<"after erasure, headnode:  "<<headnode->ref_num<<endl;
+		headnodeID=headnode->ref_num;
+
+		if(headnodeID == destination)
+		{
+			LOGF("Find the shortest path from source to destination in DijkstraMRN....\n");
+			return;
+		}
+	} 
+
+	LOGF("Can't find the shortest path from source to destination in DijkstraMRN....\n");
+	//delete headnode; // lead to memory leak?
+}
+
+/*
+void PCEN_KSP::Dijkstra(int source, int destination) 
+{
     PCENNode* headnode= NULL;
     vector<PCENNode*>::iterator itNode;
     vector<PCENNode*> ReachableNodes;
@@ -113,6 +261,7 @@ void PCEN_KSP::Dijkstra(int source, int destination)
         ReachableNodes.erase(itNode); // shortest path found for this head node;
     }  
 }
+*/
 
 void PCEN_KSP::AddNode(int nodeid) {
     PCENNode* pcenNode=new PCENNode(nodeid);
