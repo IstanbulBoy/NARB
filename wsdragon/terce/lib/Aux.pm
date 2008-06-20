@@ -12,9 +12,9 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw();
+	@EXPORT      = qw( CTRL_CMD RUN_Q_T TERM_T_T );
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -33,6 +33,12 @@ use constant LSA_DBG => 7;
 use constant TEDB_DBG => 8;
 use constant WS_DBG => 9;
 use constant RAW_DBG => 10;
+
+# commands/types for controlling the interthread queues
+use constant CTRL_CMD => 0xffff;
+use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition can be checked)
+use constant TERM_T_T => 2; # this will force the termination of a thread run loop
+
 
 my $dbg_sys = 0;
 
@@ -181,7 +187,7 @@ sub chksum($$@) {
 	return $chksum;
 }
 
-sub send_to_tedb($@) {
+sub send_via_queue($@) {
 	my $q = shift;
 	my $t  = shift;
 	my(@d) = @_;
