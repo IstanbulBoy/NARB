@@ -539,6 +539,10 @@ void PCEN_KSP::Run()
     {
         KSP[0]->GetERO(ero);
         ReplyERO();
-     }
+    }
+    else
+    {
+        ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+    }
 }
 
