@@ -346,6 +346,9 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
 
     // First line in YEN's
     this->Dijkstra(source, destination);
+    if (destNode->path.size() == 0)
+        return;
+
     PathT* nextpath=new PathT();
     (nextpath->path).assign(destNode->path.begin(),destNode->path.end());
     nextpath->cost=destNode->minCost;
