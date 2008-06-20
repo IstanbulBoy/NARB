@@ -211,8 +211,9 @@ void LSPHandler::Run()
                     ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
                 break;
             case KSP:
-                pcen_event = new PCEN_KSP(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
-                    ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+                pcen_event = new PCEN_KSP(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress,
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
                 break;
             case MRN_CG:
                 options |= LSP_OPT_MRN;
