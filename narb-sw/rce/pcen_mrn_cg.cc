@@ -698,13 +698,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 //#################  testing #########################
 //LOGF("return error after DijkstraMRN and before create new PathT_MRN...\n");
 //return ERR_PCEN_NO_ROUTE;
-	//###############################################
-
-	
-	
-
-
-	
+//###############################################
 
 	if(destNode->path_mrn.size() == 0)
 	{
@@ -751,7 +745,8 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 //		headpath->DisplayPath_MRN();
 		if (KSPcounter>1) KSP_MRN.push_back(headpath);
 		if (KSPcounter==K) 
-			return ERR_PCEN_NO_ERROR;
+			//return ERR_PCEN_NO_ERROR;
+			break; //get out of main while loop
 
 		// while we have not found d(pk), we just go ahead
 //		cout<<"The deviation node of this path is node "<<headpath->DeviationNode<<endl;
