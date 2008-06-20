@@ -32,6 +32,7 @@ use Aux;
 use Log;
 use Parser;
 use GMPLS::Server;
+use GMPLS::Client;
 use WS::Server;
 use WS::External;
 use strict;
@@ -45,7 +46,7 @@ use IO::Socket::INET;
 use HTTP::Daemon;
 use HTTP::Status;
 
-my @servers = ();
+my @threads = ();
 %::cfg = ();
 $::ctrlC = 0;
 
@@ -173,12 +174,13 @@ sub init_cfg($) {
 }
 
 # NOTE: running in a different thread here ...
+# server socket, client socket, server queue, client queue, source port
 sub spawn_server($$$$$) {
-	my ($ss, $cs, $tq, $narb_sp, $rce_sp) = @_;
+	my ($ss, $cs, $n, $sq, $cq) = @_;
 	my $srvr;
 	$ss->close();
 	eval {
-		$srvr = new GMPLS::Server($cs, $tq, $narb_sp, $rce_sp);
+		$srvr = new GMPLS::Server($cs, $n, $sq, $cq);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -188,12 +190,28 @@ sub spawn_server($$$$$) {
 	}
 }
 
-sub start_ws_server($$$) {
-	my ($p, $tq1, $tq2) = @_;
+# NOTE: running in a different thread here ...
+sub spawn_client($$$) {
+	my ($ss, $n, $cq) = @_;
+	my $client;
+	$ss->close();
+	eval {
+		$client = new GMPLS::Client($n, $cq);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
+	}
+	else {
+		$client->run();
+	}
+}
+
+sub start_ws_server($$$$$) {
+	my ($p, $nsq, $rsq, $ncq, $rcq) = @_;
 	my $srvr;
 	Log::log "info",  "starting ws server on port $p\n";
 	eval {
-		$srvr = new WS::Server($p, $tq1, $tq2);
+		$srvr = new WS::Server($p, $nsq, $rsq, $ncq, $rcq);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -269,8 +287,18 @@ sub start_http_server() {
 	Aux::print_dbg_run("exiting http server thread\n");
 }
 
+sub terminate_queues(@) {
+	my @qs = @_;
+	my @data = ();
+	unshift(@data, {"cmd"=>CTRL_CMD, "type"=>TERM_T_T});
+
+	for(my $i=0; $i<@qs; $i++) {
+		Aux::send_via_queue($qs[$i], @data);
+	}
+}
+
 sub cleanup_servers() {
-	foreach my $s (@servers) {
+	foreach my $s (@threads) {
 		$s->join();
 	}
 }
@@ -420,22 +448,28 @@ if($daemonize) {
 		or die "Can't start a new session: $!";
 }
 eval {
-	my $tq1 = new Thread::Queue;
-	my $tq2 = new Thread::Queue;
-	my @tqs = ($tq1, $tq2);
+	# four interthread queues: 
+	# 	1. GMPLS server (from narb client) -> Web 2.0 Server's TEDB
+	# 	2. GMPLS server (from rce client) -> Web 2.0 Server's TEDB
+	# 	3. Web 2.0 Server -> GMPLS Client (to narb API server)
+	# 	4. Web 2.0 Server -> GMPLS Client (to rce API server)
+	my $nsq = new Thread::Queue; # narb-ws server queue
+	my $rsq = new Thread::Queue; # rce-ws server queue
+	my $ncq = new Thread::Queue; # ws-narb client queue
+	my $rcq = new Thread::Queue; # ws-rce client queue
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
 		my $http_server = threads->create(\&start_http_server);
 		if($http_server) {
-			push(@servers, $http_server);
+			push(@threads, $http_server);
 		}
 	}
 
 	# start the SOAP/HTTP server
-	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $tq1, $tq2);
+	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $nsq, $rsq, $ncq, $rcq);
 	if($ws_server) {
-		push(@servers, $ws_server);
+		push(@threads, $ws_server);
 	}
 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -455,13 +489,40 @@ eval {
 		my $peer_ip = inet_ntoa($tmp[1]);
 		my $peer_port = $tmp[0];
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
-		#spawn a new server thread
-		my $thr = threads->create(\&spawn_server, $serv_sock, $client_sock, shift(@tqs), $::cfg{gmpls}{narb_sport}{v}, $::cfg{gmpls}{rce_sport}{v});
+
+		my $n = "";
+		my $sq;
+		my $cq;
+		if($peer_port eq $::cfg{gmpls}{narb_sport}{v}) {
+			$sq = $nsq; 
+			$cq = $ncq; 
+			$n = "narb";
+		}
+		elsif($peer_port eq $::cfg{gmpls}{rce_sport}{v}) {
+			$sq = $rsq;
+			$cq = $rcq; 
+			$n = "rce";
+		}
+		else {
+			Log::log "err", "narb/rce client is not using a known source port ($peer_port)\n";
+			Log::log "err", "shutting down the client connection\n";
+			$client_sock->shutdown(SHUT_RDWR);
+			next;
+		}
+		# start the client queue
+		my $c_thr = threads->create(\&spawn_client, $serv_sock, $n, $cq);
+
+		# spawn a server thread
+		my $s_thr = threads->create(\&spawn_server, $serv_sock, $client_sock, $n, $sq, $cq);
 		$client_sock->close();
-		if($thr) {
-			push(@servers, $thr);
+		if($c_thr) {
+			push(@threads, $c_thr);
+		}
+		if($s_thr) {
+			push(@threads, $s_thr);
 		}
 	}
+	terminate_queues($ncq, $rcq);
 	cleanup_servers();
 
 	$serv_sock->shutdown(SHUT_RDWR);
