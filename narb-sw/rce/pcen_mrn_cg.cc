@@ -269,7 +269,7 @@ void PCEN_MRN_CG::DijkstraMRN(int source, int destination)
 	} 
 
 	LOGF("Can't find the shortest path from source to destination in DijkstraMRN....\n");
-	delete headnode; // lead to memory leak?
+	//delete headnode; // lead to memory leak?
 }
 
 void PCEN_MRN_CG::AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric,u_char type)
