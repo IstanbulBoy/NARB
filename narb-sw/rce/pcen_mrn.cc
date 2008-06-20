@@ -609,7 +609,11 @@ void PCEN_MRN::Run()
     }
 
     if (!PostBuildTopology())
+    {
+        LOGF("PCEN_MRN::PostBuildTopology() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ERR_PCEN_NO_ROUTE);
         return;
+    }
 
     if ((ret = PerformComputation()) != 0)
     {

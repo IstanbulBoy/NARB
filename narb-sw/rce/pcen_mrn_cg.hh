@@ -122,7 +122,7 @@ public:
     int CheckAllocatedTags(PCENLink* oneLink, int request_tag);
     int CheckIfSingleLayer();  // added 03/20/2008
     void ShowERO();
-    bool PostBuildTopology();
+    virtual bool PostBuildTopology();
     virtual void Run();
 };
 

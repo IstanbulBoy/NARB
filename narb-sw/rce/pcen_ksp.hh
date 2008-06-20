@@ -47,6 +47,7 @@ public:
     PCENNode* search_PCENNode(int NodeId);
     void RestoreGraphKeepFilter();
     void MaskParentPath(PathT* ParentPath); // mark the link list of the parent path
+    virtual bool PostBuildTopology();
     virtual void Run();
 };
 
