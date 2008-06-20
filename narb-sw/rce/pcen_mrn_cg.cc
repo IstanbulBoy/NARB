@@ -2505,7 +2505,7 @@ void PCEN_MRN_CG::Run()
     }
 	
 
-	ret = BuildTopology();
+    ret = BuildTopology();
 
     if (ret != 0)
     {

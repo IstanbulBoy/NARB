@@ -149,12 +149,12 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 
 		if(headnodeID == destination)
 		{
-			LOGF("Find the shortest path from source to destination in DijkstraMRN....\n");
+			LOGF("Find the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
 			return;
 		}
 	} 
 
-	LOGF("Can't find the shortest path from source to destination in DijkstraMRN....\n");
+	LOGF("Can't find the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
 }
 
 void PCEN_KSP::AddNode(int nodeid) {
