@@ -1470,7 +1470,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 			}
 		
 //			netLink = search_PCENLink(lcl_end,rmt_end);
-			if(oriLinkType[1] == -1)
+			if(oriLinkType[1] == -1 && netLink[0])
 			{
 				LOGF("Add the following into network path\n");
 				LOGF("linkID [%X]\n", netLink[0]->linkID);
@@ -1480,7 +1480,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 
 				netPath.push_back(netLink[0]);
 			}
-			else if((oriLinkType[1] > -1) && (oriLinkType[0]-oriLinkType[1] <= 0))
+			else if((oriLinkType[1] > -1) && (oriLinkType[0]-oriLinkType[1] <= 0) && netLink[0])
 			{
 				LOGF("Add the following into network path\n");
 				LOGF("linkID [%X]\n", netLink[0]->linkID);
@@ -1489,7 +1489,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 				LOGF("link rmt addr [%X]\n", netLink[0]->link->rmtIfAddr);
 				netPath.push_back(netLink[0]);
 			}
-			else {
+			else if (netLink[1]){
 				LOGF("Add the following into network path\n");
 				LOGF("linkID [%X]\n", netLink[1]->linkID);
 				LOGF("link type [%X]\n", netLink[1]->link->type);
