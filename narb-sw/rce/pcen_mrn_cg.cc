@@ -432,7 +432,7 @@ void PCEN_MRN_CG::DisplayCGNodes()
 	for(node_iter = CGnodes.begin(); node_iter != CGnodes.end(); node_iter++)
 	{
 		cout<<"node: "<<(*node_iter)->ref_num<<" has been added, local end "<<(*node_iter)->lcl_endID<<" and rmt end "<<(*node_iter)->rmt_endID<<endl;
-		cout<<"the switching type is: "<<(*node_iter)->swType<<endl;
+		cout<<"the switching type is: "<<(int)(*node_iter)->swType<<endl;
 		cout<<"the metric of this node is "<<(*node_iter)->LinkMetric<<endl;
 		cout<<"Outgoing link list is: ";
 		link_iter = (*node_iter)->out_CGlinks.begin();
@@ -710,9 +710,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	{
 		cout<<"Can't find one shortest path from source to destination"<<endl;
 		LOGF("Can't find one shortest path from source to destination\n");
-		LOGF("Return with error code..........1\n");
 		return ERR_PCEN_NO_ROUTE;
-		LOGF("Return with error code..........2\n");
 	}
 
 	
@@ -1651,7 +1649,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 				{
 					DisplayPCENLink(*itLink);
 					this->AddCGNode(id,(*itLink)->lcl_end->ref_num,(*itLink)->rmt_end->ref_num,(*iscd_iter)->swtype,(*iscd_iter)->encoding,(*iscd_iter)->max_lsp_bw[7],(*itLink)->PCENmetric(),(*itLink)->link->type);
-					cout<<"Channel grpah node : "<<id<<" with local_end "<<(*itLink)->lcl_end->ref_num<<" and rmt_end "<<(*itLink)->rmt_end->ref_num<<"  and swtype "<<(*iscd_iter)->swtype<<" node metric is: " <<(*itLink)->PCENmetric()<<endl;
+					cout<<"Channel grpah node : "<<id<<" with local_end "<<(*itLink)->lcl_end->ref_num<<" and rmt_end "<<(*itLink)->rmt_end->ref_num<<"  and swtype "<<(int)(*iscd_iter)->swtype<<" node metric is: " <<(*itLink)->PCENmetric()<<endl;
 					id++;
 				}
 				iscd_iter++;
@@ -1679,7 +1677,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 					iscd_out = (*outlink)->link->Iscds().begin();
 					while(iscd_out != (*outlink)->link->Iscds().end())
 					{
-//						cout<<"inlink "<<(*inlink)->linkID<<" with swtype "<<(*iscd_in)->swtype<<" outlink "<<(*outlink)->linkID<<" with swtype"<<(*iscd_out)->swtype<<endl;
+//						cout<<"inlink "<<(*inlink)->linkID<<" with swtype "<<(int)(*iscd_in)->swtype<<" outlink "<<(*outlink)->linkID<<" with swtype"<<(*iscd_out)->swtype<<endl;
 						if((*iscd_in)->swtype == (*iscd_out)->swtype)
 						{
 							start = search_PCENCGNode((*inlink)->lcl_end->ref_num,(*inlink)->rmt_end->ref_num,(*iscd_in)->swtype);
