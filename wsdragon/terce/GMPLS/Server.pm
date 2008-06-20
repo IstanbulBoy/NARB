@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -42,23 +42,22 @@ BEGIN {
 our @EXPORT_OK;
 
 sub activate_tedb($$) {
-	my ($tq, $cn) = @_;
+	my ($sq, $cn) = @_;
 	my @cmd = ({"cmd"=>TEDB_ACTIVATE, "client"=>$cn});
-	Aux::send_to_tedb($tq, @cmd);
+	Aux::send_via_queue($sq, @cmd);
 }
 
 sub new {
 	shift;
-	my ($sock, $tq, $narb_sp, $rce_sp)  = @_;
+	my ($sock, $n, $sq, $cq)  = @_;
 	my $select = new IO::Select($sock);
 	my $self = {
-		"name" => undef,
-		"sock" => $sock,
-		"select" => $select,
-		"ctrl_sock" => undef,
-		"tq" => $tq,
-		"narb_sp" => $narb_sp,
-		"rce_sp" => $rce_sp,
+		"name" => $n, 		# server name  
+		"sock" => $sock,	# server socket
+		"select" => $select,	# select handle
+		"ctrl_sock" => undef,	# control channel socket
+		"sq" => $sq,		# server queue (to ws server)
+		"cq" => $cq		# cleint queue (from ws server)
 	};
 	bless $self;
 	return $self;
@@ -89,30 +88,19 @@ sub run() {
 		eval {
 			$err = 0;
 			if(GMPLS::API::is_sync_init($msg{$sn})) {
-				#guess who's calling ... (we really don't know)
-				if($$self{sock}->peerport() eq $::cfg{gmpls}{narb_sport}{v}) {
-					$$self{name} = "narb";
-				}
-				elsif($$self{sock}->peerport() eq $::cfg{gmpls}{rce_sport}{v}) {
-					$$self{name} = "rce";
-				}
-				else {
-					Log::log "err", "narb/rce is not using a known source port\n";
-					last;
-				}
 				Aux::print_dbg_run("starting (%s) server thread\n", $$self{name});
 				# open the control channel
 				$$self{ctrl_sock} = GMPLS::API::open_ctrl_channel($$self{sock}, $msg{$sn}{hdr}{tag2});
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{tq}, $$self{name}) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{sq}, $$self{name}) <0) {
 					$err = 1;
 				}
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
-				activate_tedb($$self{tq}, $$self{name});
+				activate_tedb($$self{sq}, $$self{name});
 				$msg{$sn} = {};
 			}
 			else {
