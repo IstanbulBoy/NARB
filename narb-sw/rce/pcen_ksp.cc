@@ -469,6 +469,37 @@ void PCEN_KSP::MaskParentPath(PathT *ParentPath){
     }
 }
 
+bool PCEN_KSP::PostBuildTopology()
+{
+    //pruning/trimming links that have insufficient bandwidth
+    vector<PCENLink*>::iterator link_iter = links.begin();
+    while (link_iter != links.end())
+    {
+        PCENLink* pcen_link = (*link_iter);
+        if (pcen_link->link && pcen_link->link->Iscds().size() > 0)
+        {
+            list<ISCD*>::iterator iscd_iter = pcen_link->link->Iscds().begin();
+            while(iscd_iter != pcen_link->link->Iscds().end())
+            {
+                IfSwCapDesc* iscd = pcen_link->link->Iscds().front();
+                if (iscd->max_lsp_bw[7] >= bandwidth_ingress)
+                    break;
+            }
+            if (iscd_iter == pcen_link->link->Iscds().end()) // none of ISCD has sufficient bandwidth
+            {
+                if (pcen_link->lcl_end)
+                    pcen_link->lcl_end->out_links.remove(pcen_link);
+                if (pcen_link->rmt_end)
+                    pcen_link->rmt_end->in_links.remove(pcen_link);
+                link_iter = links.erase(link_iter);
+                continue;
+            }
+        }
+        link_iter++;
+    }
+    return true;
+}
+
 void PCEN_KSP::Run()
 {
     int ret;
@@ -483,6 +514,13 @@ void PCEN_KSP::Run()
     {
         LOGF("PCEN::BuildTopology() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
         ReplyErrorCode(ret);
+        return;
+    }
+
+    if (!PostBuildTopology()) //pruning links
+    {
+        LOGF("PCEN::PostBuildTopology() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ERR_PCEN_NO_ROUTE);
         return;
     }
 
