@@ -476,9 +476,10 @@ bool PCEN_KSP::PostBuildTopology()
 {
     //pruning/trimming links that have insufficient bandwidth
     vector<PCENLink*>::iterator link_iter = links.begin();
+    PCENLink* pcen_link;
     while (link_iter != links.end())
     {
-        PCENLink* pcen_link = (*link_iter);
+        pcen_link = (*link_iter);
         if (pcen_link->link && pcen_link->link->Iscds().size() > 0)
         {
             list<ISCD*>::iterator iscd_iter = pcen_link->link->Iscds().begin();
@@ -501,6 +502,28 @@ bool PCEN_KSP::PostBuildTopology()
         }
         link_iter++;
     }
+
+    //initiating reverse links
+    link_iter = links.begin();
+    while (link_iter != links.end())
+    {
+        pcen_link = (*link_iter);
+
+        PCENNode* pcen_node = pcen_link->rmt_end;
+        if (!pcen_node)
+            continue;
+        list<PCENLink *>::iterator it_link;
+        for (it_link = pcen_node->out_links.begin(); it_link != pcen_node->out_links.end(); it_link++)
+        {
+            if ((*it_link)->rmt_end == pcen_link->lcl_end && (*it_link)->link->rmtIfAddr == pcen_link->link->lclIfAddr
+			&& (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
+            {
+                pcen_link->reverse_link = *it_link;
+                break;
+            }
+        }
+    }
+
     return true;
 }
 
