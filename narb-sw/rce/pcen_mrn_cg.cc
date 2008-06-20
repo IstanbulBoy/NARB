@@ -882,7 +882,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	}
 	this->DeleteVirtualNodes();
 
-   //    LOGF("%d path has been found:\n", KSP_MRN.size());
+	//LOGF("%d path has been found:\n", KSP_MRN.size());
 	//cout<<KSP_MRN.size()<<" path has been found"<<endl;
 
 	// deal with vlan tag
@@ -894,6 +894,8 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	int best_path_num = 0;
 	u_int32_t best_vtag = 0;
 
+       // verifing the K-shortest paths
+       //$$$$ no sufficient verification logic?!
 	if(is_e2e_tagged_vlan && Net_Paths.size() > 0)
 	{
 		for(onePath = Net_Paths.begin();onePath != Net_Paths.end(); onePath++)
@@ -909,7 +911,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 			}
 			if (vtag == ANY_VTAG)
 			{
-		//		LOGF("Looking for any vlan tag: %d\n", vtag);
+				//LOGF("Looking for any vlan tag: %d\n", vtag);
 				head_vlan_tag_set.AddTag(vtag);
 				result_tag_set = FindVlanTagSetForPath(head_vlan_tag_set, (*onePath), true);
 				if(result_tag_set.IsEmpty())
@@ -954,11 +956,9 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 		}
 	}
 
-	
 	if(Net_Paths.size() > 0)
-		best_path_num = 1;
-//	 LOGF("The best path number is %d:  and the best vtag is: %d\n", best_path_num, best_vtag);
-	
+		best_path_num = 1; //$$$ fixed to 1 ??
+
 	// add the best cost path into ERO
 	if(best_path_num != 0)
 	{
@@ -1461,6 +1461,8 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 					netLink[num] =  links[i];
 					oriLinkType[num] = (int)links[i]->link->type;
 					num++;
+					if (num == 2)
+						break;
 				}
 			}
 		
