@@ -31,7 +31,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,7 +44,7 @@ sub new {
 	shift;
 	my $ws = shift;
 	my $self = {
-		ws => $ws  #back ref to the actual server object
+		ws => $ws  # the owner (ws server object)
 	};
 	bless $self;
 	return $self;
@@ -64,7 +64,6 @@ sub findPath {
 		)], @_);
 	my $som = pop @_;
 	my $attrs = $som->dataof('//findPath')->attr;
-	my $attr = 0;
 
 	Aux::print_dbg_ws("findPath()\n");
 }
