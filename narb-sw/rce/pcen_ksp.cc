@@ -525,6 +525,12 @@ bool PCEN_KSP::PostBuildTopology()
         link_iter++;
     }
 
+    //assign router reference number
+    for (int i =0 ; i < routers.size(); i++)
+    {
+        routers[i]->ref_num = i; 
+    }
+
     return true;
 }
 
