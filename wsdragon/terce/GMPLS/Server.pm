@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -55,9 +55,8 @@ sub new {
 		"name" => $n, 		# server name  
 		"sock" => $sock,	# server socket
 		"select" => $select,	# select handle
-		"ctrl_sock" => undef,	# control channel socket
 		"sq" => $sq,		# server queue (to ws server)
-		"cq" => $cq		# cleint queue (from ws server)
+		"cq" => $cq		# client queue (from ws server)
 	};
 	bless $self;
 	return $self;
@@ -89,8 +88,10 @@ sub run() {
 			$err = 0;
 			if(GMPLS::API::is_sync_init($msg{$sn})) {
 				Aux::print_dbg_run("starting (%s) server thread\n", $$self{name});
-				# open the control channel
-				$$self{ctrl_sock} = GMPLS::API::open_ctrl_channel($$self{sock}, $msg{$sn}{hdr}{tag2});
+				# init the control channel
+				my @data = ($$self{sock}->peerhost(), $msg{$sn}{hdr}{tag2});
+				unshift(@data, {"cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
+				Aux::send_via_queue($$self{cq}, @data);
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
@@ -113,9 +114,6 @@ sub run() {
 		threads->yield();
 	}
 	Aux::print_dbg_run("exiting %s server thread\n", $$self{name});
-	if(defined($$self{ctrl_sock})) {
-		close($$self{ctrl_sock});
-	}
 	close($$self{sock});
 }
 
