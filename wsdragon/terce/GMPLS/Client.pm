@@ -29,10 +29,12 @@ use Socket;
 use GMPLS::Constants;
 use Aux;
 
+use constant CQ_INIT_S => (1<<0);
+
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -45,11 +47,28 @@ sub new {
 	my ($n, $q)  = @_;
 	my $self = {
 		name => $n,
-		queue => $q
+		ctrl_sock => undef,
+		queue => $q,
+		status => 0
 	};
 	bless $self;
 	return $self;
 }
+
+sub open_ctrl_channel($$) {
+	my ($peer, $ctrl_p) = @_;
+	my $ctrl_sock = IO::Socket::INET->new(
+		PeerAddr => $peer,
+		PeerPort => $ctrl_p,
+		Proto     => 'tcp') or die "control socket ".$peer.":".$ctrl_p.": $@\n";
+	if($ctrl_sock) {
+		if($ctrl_sock->connected()) {
+			Aux::print_dbg_net("connected to %s:%d\n", $peer, $ctrl_p);
+		}
+	}
+	return $ctrl_sock;
+}
+
 
 sub run() {
 	my $self = shift;
@@ -59,14 +78,28 @@ sub run() {
 		# this blocking queue is being controlled from WS server
 		$d = $$self{queue}->dequeue();
 		if(defined($d)) {
+			my @data = @{$$d{data}};
 			if($$d{cmd} == CTRL_CMD) {
 				if($$d{type} == TERM_T_T) {
 					last;
+				}
+				elsif($$d{type} == RUN_Q_T) {
+				}
+				elsif($$d{type} == INIT_Q_T) {
+					if(defined($data[0]) && defined($data[1])) {
+						$$self{ctrl_socket} = open_ctrl_channel($data[0], $data[1]);
+						if(defined($$self{ctrl_socket})) {
+							$$self{status} |= CQ_INIT_S;
+						}
+					}
 				}
 			}
 		}
 	}
 	Aux::print_dbg_run("exiting %s client queue\n", $$self{name});
+	if(defined($$self{ctrl_sock})) {
+		close($$self{ctrl_sock});
+	}
 }
 
 1;
