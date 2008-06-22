@@ -12,9 +12,9 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD RUN_Q_T TERM_T_T );
+	@EXPORT      = qw( CTRL_CMD RUN_Q_T TERM_T_T INIT_Q_T );
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -38,6 +38,7 @@ use constant RAW_DBG => 10;
 use constant CTRL_CMD => 0xffff;
 use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition can be checked)
 use constant TERM_T_T => 2; # this will force the termination of a thread run loop
+use constant INIT_Q_T => 3; # this will initialize a client queue and open the async socket
 
 
 my $dbg_sys = 0;
