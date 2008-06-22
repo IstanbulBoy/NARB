@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -81,20 +81,6 @@ sub dump_data($) {
 		}
 		Aux::print_dbg_data("------------------------------------------------------\n");
 	}
-}
-
-sub open_ctrl_channel($$) {
-	my ($s, $ctrl_p) = @_;
-	my $ctrl_sock = IO::Socket::INET->new(
-		PeerAddr => $s->peerhost(),
-		PeerPort => $ctrl_p,
-		Proto     => 'tcp') or die "control socket ".$s->peerhost().":".$ctrl_p.": $@\n";
-	if($ctrl_sock) {
-		if($ctrl_sock->connected()) {
-			Aux::print_dbg_net("connected to %s:%d\n", $s->peerhost(), $ctrl_p);
-		}
-	}
-	return $ctrl_sock;
 }
 
 sub ack_msg($$;$) {
