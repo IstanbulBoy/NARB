@@ -49,8 +49,8 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 		{
 			nextnode->minCost=(*itLink)->PCENmetric();  // add by qian 03/16/2007
 			nextnode->path.push_back(*itLink);
-			itLink++;
 		}
+		itLink++;
     }
 	
 	vector<PCENNode*>::iterator start;
