@@ -399,6 +399,8 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
                     next_waveset.AddTag(tel.channel_id);
                     has_wave = true;
                 }
+                else 
+                    next_waveset.DeleteTag(tel.channel_id);
             }
         }
     }
@@ -410,9 +412,12 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
         {
             next_waveset.AddTag(ntohl(*p_freq));
         }
-        else if (p_freq && !next_waveset.HasTag(ntohl(*p_freq)))
+        else if (p_freq)
         {
-            next_waveset.TagSet().clear();            
+            if(!next_waveset.HasTag(ntohl(*p_freq)))
+            {
+                next_waveset.TagSet().clear();
+            }
         }
     }
     

@@ -77,7 +77,7 @@ inline void ntoh_telambda(MovazTeLambda& tel)
 
 inline bool valid_channel(u_int32_t freq)
 {
-    return (freq >= 192100 && freq <= 196000 && freq%100 == 0);
+    return (freq >= 192000 && freq < 196000 && freq%100 == 0);
 }
 
 //////////////////////////////////////////////////////
