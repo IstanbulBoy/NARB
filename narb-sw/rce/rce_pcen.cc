@@ -395,9 +395,10 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
             if (tel.priority == 0x07)
             {
                 if (valid_channel(tel.channel_id))
+                {
                     next_waveset.AddTag(tel.channel_id);
-                else
                     has_wave = true;
+                }
             }
         }
     }
@@ -405,17 +406,13 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     if (this->reverse_link) //$$$$ Movaz-RE--->VLSR speical handling
     {
         u_int32_t* p_freq = (u_int32_t*)(reverse_link->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
-        if (has_wave && p_freq)
+        if (p_freq && !has_wave)
         {
-            if (next_waveset.HasTag(ntohl(*p_freq)))
-            {
-                next_waveset.TagSet().clear();
-                next_waveset.AddTag(ntohl(*p_freq));
-            }
-            else
-            {
-                next_waveset.TagSet().clear();
-            }
+            next_waveset.AddTag(ntohl(*p_freq));
+        }
+        else if (p_freq && !next_waveset.HasTag(ntohl(*p_freq)))
+        {
+            next_waveset.TagSet().clear();            
         }
     }
     
