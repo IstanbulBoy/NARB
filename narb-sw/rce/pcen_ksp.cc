@@ -45,9 +45,12 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 		}
 //		cout<<"rmt_end node ID of the source node"<<nextnode->ref_num<<endl;
 		ReachableNodes.push_back(nextnode); // found path from source to this node
-		nextnode->minCost=(*itLink)->PCENmetric();  // add by qian 03/16/2007
-		nextnode->path.push_back(*itLink);
-		itLink++;
+		if (nextnode->minCost > (*itLink)->PCENmetric())
+		{
+			nextnode->minCost=(*itLink)->PCENmetric();  // add by qian 03/16/2007
+			nextnode->path.push_back(*itLink);
+			itLink++;
+		}
     }
 	
 	vector<PCENNode*>::iterator start;
