@@ -603,6 +603,7 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
     list<PCENLink*>::iterator iterL;
     ConstraintTagSet head_vtagset, next_vtagset;
     ConstraintTagSet head_waveset, next_waveset;
+    TSpec link_tspec;
 
     for (iterP = KSP.begin(); iterP != KSP.end(); iterP++)
     {
@@ -622,11 +623,26 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
             L = (*iterL);
             if (L == NULL || L->lcl_end == NULL || L->rmt_end ==NULL || L->link == NULL || L->link->Iscds().size() == 0)
                 goto _path_removal;
-            if (L->lcl_end->tspec <= L->rmt_end->tspec)
+
+            if (!L->IsAvailableForTspec(L->lcl_end->tspec))
+                goto _path_removal;
+
+            if (!head_vtagset.IsEmpty())
             {
-                ;
+                L->ProceedByUpdatingVtags(head_vtagset, next_vtagset);
+                if (next_vtagset.IsEmpty())
+                    goto _path_removal;
+                head_vtagset = next_vtagset;
             }
-            else if (L->CrossingRegionBoundary(L->lcl_end->tspec))
+            if (!head_waveset.IsEmpty())
+            {
+                L->ProceedByUpdatingWaves(head_waveset, next_waveset);
+                if (next_waveset.IsEmpty())
+                    goto _path_removal;
+                head_waveset = next_waveset;
+            }
+
+            if (L->CrossingRegionBoundary(L->lcl_end->tspec))
             {
                 L->GetNextRegionTspec(L->rmt_end->tspec);
                 //$$$$ WDM subnet special handling
@@ -666,20 +682,6 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
             else // incompatible switching capability
                 goto _path_removal;
             
-            if (!head_vtagset.IsEmpty())
-            {
-                L->ProceedByUpdatingVtags(head_vtagset, next_vtagset);
-                if (next_vtagset.IsEmpty())
-                    goto _path_removal;
-                head_vtagset = next_vtagset;
-            }
-            if (!head_waveset.IsEmpty())
-            {
-                L->ProceedByUpdatingWaves(head_waveset, next_waveset);
-                if (next_waveset.IsEmpty())
-                    goto _path_removal;
-                head_waveset = next_waveset;
-            }
         }
 
         if (P->cost < minCost)
