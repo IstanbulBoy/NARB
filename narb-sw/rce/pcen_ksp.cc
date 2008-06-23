@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2008
+ * DRAGON Project.
+ * Created by Shujia Gong (George Mason University), 2004-2007
+ * Modified by Qian Xu (George Mason University), 2007
+ * Modified by Xi Yang (USC/ISI), 2008
+ */
+ 
 #include "pcen_ksp.hh"
 
 PCENNode* PCEN_KSP::search_PCENNode(int NodeId) 

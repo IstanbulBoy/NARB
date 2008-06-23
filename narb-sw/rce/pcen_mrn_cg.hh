@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2008
+ * DRAGON Project.
+ * Created by Shujia Gong and Qian Xu (George Mason University), 2004-2008
+ * Modified by Xi Yang (USC/ISI), 2008
+ */
+ 
 #ifndef __PCEN_MRN_CG_HH__
 #define __PCEN_MRN_CG_HH__
 
