@@ -52,6 +52,7 @@ public:
     void DisplayLinks();
     void Dijkstra(int source, int destination);
     void SearchKSP(int source, int destination, int K);
+    PathT* ConstrainKSPaths(vector<PathT*>& KSP);
     PCENNode* search_PCENNode(int NodeId);
     void RestoreGraphKeepFilter();
     void MaskParentPath(PathT* ParentPath); // mark the link list of the parent path

@@ -654,6 +654,9 @@ bool PCEN_MRN::IsLoop(list<PCENLink*> &path, PCENNode* new_node)
     return false;
 }
 
+/* 
+  *Moved to bool PCENLink::CrossingRegionBoundary(TSpec& tspec)
+  *
 bool PCEN_MRN::IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec)
 {
     assert(pcen_link && pcen_link->link);
@@ -684,6 +687,7 @@ bool PCEN_MRN::IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec)
 
     return false;
 }
+*/
 
 bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
 {
@@ -714,6 +718,9 @@ bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
     return false;
 }
 
+/*
+  * moved to PCENLink->GetNextResionTspec(TSpec& tspec)
+  *
 int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
 {
     assert(pcen_link && pcen_link->link);
@@ -802,11 +809,9 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
                 //@@@@ bandwidth constraint unchanged
-                /*
-                if (!float_equal(pcen_link->reverse_link->link->iscds.front()->min_lsp_bw, 0))
-                    tspec.Bandwidth = ceilf(tspec.Bandwidth /pcen_link->reverse_link->link->iscds.front()->min_lsp_bw)
-                    * pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
-                */
+                //if (!float_equal(pcen_link->reverse_link->link->iscds.front()->min_lsp_bw, 0))
+                //    tspec.Bandwidth = ceilf(tspec.Bandwidth /pcen_link->reverse_link->link->iscds.front()->min_lsp_bw)
+                //    pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
                 break;
             case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
                 //@@@@ bandwidth constraint unchanged
@@ -823,7 +828,8 @@ int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
 
     return -1;
 }
-
+*/
+    
 int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
 {
     // find the ISCD with subnetUniIf specific information
@@ -1335,7 +1341,7 @@ int PCEN_MRN::PerformComputation()
             // A wavelength set has existed in headNode, now match it with the set of available waves on the link.
             //$$$$ Special handling for Movaz/ADVA private wavelength constraints
             nextWaveSet.TagSet().clear();
-            if (is_via_movaz &&  headNode->tspec.SWtype == MOVAZ_LSC)
+            if (has_wdm_layer &&  headNode->tspec.SWtype == MOVAZ_LSC)
             {
 #ifdef DISPLAY_ROUTING_DETAILS
                 cout << "HeadNode->waveset: ";
@@ -1411,14 +1417,14 @@ int PCEN_MRN::PerformComputation()
             nextNode->tspec = headNode->tspec;
 
             // check if nextLink cross region boundary
-            if (IsCrossingRegionBoundary(nextLink, nextNode->tspec))
+            if (nextLink->CrossingRegionBoundary(nextNode->tspec))
             {
                 //$$$$ VLSR<->RayExpress crossing should be properly recognized
                 // Update nextNode->tspec according to the next region constraints
-                GetNextRegionTspec(nextLink, nextNode->tspec);
+                nextLink->GetNextRegionTspec(nextNode->tspec);
 
                 //$$$$ Movaz subnet special handling
-                if (is_via_movaz && nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+                if (has_wdm_layer && nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
                 {
                     //$$$$ change MOVAZ Switching Type to 151 (MOVAZ_LSC instead of standard LSC (150)) ???
                     //$$$$ Get MOVAZ proprietary information, e.g. TE lambda's. 
@@ -1519,7 +1525,7 @@ int PCEN_MRN::PerformComputation()
                 SetVTagMask(destNode->vtagset);
         }
 
-        if (is_via_movaz)
+        if (has_wdm_layer)
             HandleMovazEROTrack(ero, vtag);
     }
 

@@ -304,6 +304,8 @@ public:
     void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
     void ExcludeAllocatedVtags(ConstraintTagSet &vtagset);
+    bool CrossingRegionBoundary(TSpec& tspec);
+    int GetNextRegionTspec(TSpec& tspec);
 
     PCENNode* search_PCENNode(vector<PCENNode*>& routers, int NodeId);
 
@@ -356,7 +358,7 @@ protected:
     u_int32_t vtag;    
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
-    bool is_via_movaz;
+    bool has_wdm_layer;
     bool is_subnet_ero2dtl_enabled;
 
     float * gGraph;
@@ -385,7 +387,7 @@ public:
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 // VIA_MOVAZ and INCOPORATE_SUBNET modes are mutually exclusive and the later overrides the former...
-                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
+                has_wdm_layer = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
                 is_subnet_ero2dtl_enabled = false;
             }
     PCEN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
@@ -411,7 +413,7 @@ public:
                 }
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
-                is_via_movaz = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
+                has_wdm_layer = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_subnet ? false : true);
                 is_subnet_ero2dtl_enabled = false;
             }
     virtual ~PCEN();

@@ -902,7 +902,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	u_int32_t best_vtag = 0;
 
        // verifing the K-shortest paths
-       //$$$$ no sufficient verification logic?!
+       //$$$$ insufficient verification logic?!
 	if(is_e2e_tagged_vlan && Net_Paths.size() > 0)
 	{
 		for(onePath = Net_Paths.begin();onePath != Net_Paths.end(); onePath++)

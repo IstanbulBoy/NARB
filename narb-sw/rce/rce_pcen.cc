@@ -491,6 +491,146 @@ void PCENLink::ExcludeAllocatedVtags(ConstraintTagSet &vtagset)
     }
 }
 
+bool PCENLink::CrossingRegionBoundary(TSpec& tspec)
+{
+    assert(this->link);
+
+    // Check adaptation defined by IACD(s)
+    list<IACD*>::iterator it_iacd;
+    for (it_iacd = this->link->iacds.begin(); it_iacd != this->link->iacds.end(); it_iacd++)
+    {
+        //crossing from lower layer to upper layer
+        if ((*it_iacd)->swtype_lower == tspec.SWtype && (*it_iacd)->encoding_lower == tspec.ENCtype)
+            return true;
+        //crossing from upper layer to lower layer
+        if ((*it_iacd)->swtype_upper == tspec.SWtype && (*it_iacd)->encoding_upper == tspec.ENCtype)
+            return true;
+
+         // @@@@ bandwidth criteria to be considered in the future.
+    }
+
+    // Check implicit adaptation
+    if (this->reverse_link && this->reverse_link->link && 
+        this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1)
+    {
+        //@@@@ Does encoding matter?
+        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype
+            || this->link->iscds.front()->encoding != this->reverse_link->link->iscds.front()->encoding)
+            return true;
+    }
+
+    return false;
+}
+
+int PCENLink::GetNextRegionTspec(TSpec& tspec)
+{
+    assert(this->link);
+
+    // Check adaptation defined by IACD(s)
+    list<IACD*>::iterator it_iacd;
+    for (it_iacd = this->link->iacds.begin(); it_iacd != this->link->iacds.end(); it_iacd++)
+    {
+        //crossing from lower layer to upper layer
+        if ((*it_iacd)->swtype_lower == tspec.SWtype && (*it_iacd)->encoding_lower == tspec.ENCtype)
+        {
+            tspec.SWtype = (*it_iacd)->swtype_upper;
+            tspec.ENCtype = (*it_iacd)->encoding_upper;
+            // Bandwidth adaptation for lower->upper layer
+            // @@@@ To be enhanced in the future
+            switch (tspec.SWtype)
+            {
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
+                //bandwidth constraint unchanged
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                break;
+            }
+            return 0;
+        }
+        
+        //crossing from upper layer to lower layer
+        if ((*it_iacd)->swtype_upper == tspec.SWtype && (*it_iacd)->encoding_upper == tspec.ENCtype)
+        {
+            tspec.SWtype = (*it_iacd)->swtype_lower;
+            tspec.ENCtype = (*it_iacd)->encoding_lower;
+            // Bandwidth adaptation for upper->lower layer
+            // @@@@ To be enhanced in the future
+            switch (tspec.SWtype)
+            {
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
+                //bandwidth constraint unchanged
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
+                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
+                break;
+            }
+            return 0;
+        }
+    }
+
+
+    // Check implicit adaptation
+    if (this->reverse_link && this->reverse_link->link && 
+        this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1)
+    {
+        //@@@@ Does encoding matter?
+        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype
+            || this->link->iscds.front()->encoding != this->reverse_link->link->iscds.front()->encoding)
+        {
+            tspec.SWtype = this->reverse_link->link->iscds.front()->swtype;
+            tspec.ENCtype = this->reverse_link->link->iscds.front()->encoding;
+            //Bandwidth adaptation
+            // @@@@ To be enhanced in the future
+            switch (tspec.SWtype)
+            {
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
+            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
+                //bandwidth constraint unchanged
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
+                //@@@@ bandwidth constraint unchanged
+                /*
+                if (!float_equal(pcen_link->reverse_link->link->iscds.front()->min_lsp_bw, 0))
+                    tspec.Bandwidth = ceilf(tspec.Bandwidth /pcen_link->reverse_link->link->iscds.front()->min_lsp_bw)
+                    * pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
+                */
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
+                //@@@@ bandwidth constraint unchanged
+                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
+                break;
+            case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
+                //@@@@ bandwidth constraint unchanged
+                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
+                break;
+            }
+            return 0;
+        }
+    }
+
+    return -1;
+}
 
 PCENNode* PCENLink::search_PCENNode(vector<PCENNode*>& routers, int NodeId) 
 {
