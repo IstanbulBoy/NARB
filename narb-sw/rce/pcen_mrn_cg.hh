@@ -94,7 +94,7 @@ public:
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric, u_char swtype1);//added by qian
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric, u_char swtype1,u_char encoding,float bandwidth);//changed 07/14
     void AddLink(int linkid, int localNodeId, int remoteNodeId, double metric, u_char swtype1,u_char encoding1,float bandwidth1,u_char swtype2,u_char encoding2,float bandwidth2, bool adapt);//added by qian
-    void AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric, u_char type);   
+    void AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric, u_char type, u_int32_t lclIfAddr, u_int32_t rmtIfAddr);
     void CreateNetLinks();
     bool BuildEndNodes(int source, int end, u_char swtype,u_char encoding,float bandwidth);//changed 07/14
     list<PCENLink*> CGPathToNetPath(list<PCENCGLink*> cgPath); // added by qian 20/03/2007 to transfer path from CG to NG
@@ -116,7 +116,7 @@ public:
     int SearchMRNKSP(int source, int destination, u_char swtype, u_char encoding, float bandwidth, int K);
 //    int SearchSLNPath(int source, int destination, float bandwidth);
     PCENCGNode* search_PCENCGNode(int nodeid);//added by qian
-    PCENCGNode* search_PCENCGNode(int lclID, int rmtID, u_char swtype);//added by qian
+    PCENCGNode* search_PCENCGNode(int lclID, int rmtID, u_char swtype, u_int32_t auxvar1, u_int32_t auxvar2);//added by qian
     void MaskParentPath(PathT* ParentPath); // mark the link list of the parent path
     void MaskParentPath_MRN(PathT_MRN* ParentPath);//added by qian
     void CreateChannelGraph(float bandwidth);//changed 07/14    

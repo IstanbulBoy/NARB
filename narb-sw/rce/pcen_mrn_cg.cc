@@ -121,12 +121,18 @@ PCENCGNode* PCEN_MRN_CG::search_PCENCGNode(int nodeid)
 	return NULL;
 }
 
-PCENCGNode* PCEN_MRN_CG::search_PCENCGNode(int lclID, int rmtID, u_char swtype)
+PCENCGNode* PCEN_MRN_CG::search_PCENCGNode(int lclID, int rmtID, u_char swtype, u_int32_t auxvar1=0, u_int32_t auxvar2=0)
 {
 	for (unsigned int i=0; i<CGnodes.size(); i++)
 	{
-		if ((CGnodes[i]->lcl_endID == lclID) &&(CGnodes[i]->rmt_endID == rmtID)&&(CGnodes[i]->swType==swtype)) 
+		if ((CGnodes[i]->lcl_endID == lclID) &&(CGnodes[i]->rmt_endID == rmtID)&&(CGnodes[i]->swType==swtype))
+		{
+			if (auxvar1 !=0 && CGnodes[i]->auxvar1 != auxvar1)
+				continue;
+			if (auxvar2 !=0 && CGnodes[i]->auxvar2 != auxvar2)
+				continue;
 			return CGnodes[i];
+		}
 	}
 	return NULL;
 }
@@ -279,11 +285,9 @@ void PCEN_MRN_CG::DijkstraMRN(int source, int destination)
 	//delete headnode; // lead to memory leak?
 }
 
-void PCEN_MRN_CG::AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric,u_char type)
+void PCEN_MRN_CG::AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric,u_char type, u_int32_t lclIfAddr=0, u_int32_t rmtIfAddr=0)
 {
 	PCENCGNode* pceCGNode = new PCENCGNode(nodeid);
-	pceCGNode->auxvar1=0;
-	pceCGNode->auxvar2=0;
 	pceCGNode->minCost=PCEN_INFINITE_COST;
 	pceCGNode->nflg.flag=0;
 	pceCGNode->lcl_endID = lclID;
@@ -293,8 +297,9 @@ void PCEN_MRN_CG::AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char
 	pceCGNode->bandwidth = bandwidth;
 	pceCGNode->LinkMetric = vMetric;
 	pceCGNode->linkType = type;
-	CGnodes.push_back(pceCGNode);
-	
+	pceCGNode->auxvar1=lclIfAddr;
+	pceCGNode->auxvar2=rmtIfAddr;
+	CGnodes.push_back(pceCGNode);	
 }
 
 void PCEN_MRN_CG::AddCGLink(int linkid, int localNodeId, int remoteNodeId, double metric, int passNode)
@@ -696,8 +701,6 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 		cout<<"Can't find the source node or destination node"<<endl;
 		return ERR_PCEN_NO_SRC;
 	}
-
-	
 
 	// First line in YEN's
 	this->DijkstraMRN(source, destination);
@@ -1657,7 +1660,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 				if((*iscd_iter)->max_lsp_bw[7] >= bandwidth)
 				{
 					DisplayPCENLink(*itLink);
-					this->AddCGNode(id,(*itLink)->lcl_end->ref_num,(*itLink)->rmt_end->ref_num,(*iscd_iter)->swtype,(*iscd_iter)->encoding,(*iscd_iter)->max_lsp_bw[7],(*itLink)->PCENmetric(),(*itLink)->link->type);
+					this->AddCGNode(id,(*itLink)->lcl_end->ref_num,(*itLink)->rmt_end->ref_num,(*iscd_iter)->swtype,(*iscd_iter)->encoding,(*iscd_iter)->max_lsp_bw[7],(*itLink)->PCENmetric(),(*itLink)->link->type, (*itLink)->link->lclIfAddr, (*itLink)->link->rmtIfAddr);
 					cout<<"Channel grpah node : "<<id<<" with local_end "<<(*itLink)->lcl_end->ref_num<<" and rmt_end "<<(*itLink)->rmt_end->ref_num<<"  and swtype "<<(int)(*iscd_iter)->swtype<<" node metric is: " <<(*itLink)->PCENmetric()<<endl;
 					id++;
 				}
@@ -1689,8 +1692,8 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 //						cout<<"inlink "<<(*inlink)->linkID<<" with swtype "<<(int)(*iscd_in)->swtype<<" outlink "<<(*outlink)->linkID<<" with swtype"<<(*iscd_out)->swtype<<endl;
 						if((*iscd_in)->swtype == (*iscd_out)->swtype)
 						{
-							start = search_PCENCGNode((*inlink)->lcl_end->ref_num,(*inlink)->rmt_end->ref_num,(*iscd_in)->swtype);
-							tail = search_PCENCGNode((*outlink)->lcl_end->ref_num,(*outlink)->rmt_end->ref_num,(*iscd_out)->swtype);
+							start = search_PCENCGNode((*inlink)->lcl_end->ref_num,(*inlink)->rmt_end->ref_num,(*iscd_in)->swtype, (*inlink)->link->lclIfAddr, (*inlink)->link->rmtIfAddr);
+							tail = search_PCENCGNode((*outlink)->lcl_end->ref_num,(*outlink)->rmt_end->ref_num,(*iscd_out)->swtype, (*outlink)->link->lclIfAddr, (*outlink)->link->rmtIfAddr);
 							if(start && tail)
 							{
 								this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric, start->rmt_endID);
@@ -1738,7 +1741,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 		//if both links have only one iscd
 		if(reverse != NULL && oneLink->link->Iscds().size() == 1 && reverse->link->Iscds().size() == 1 && oneLink->link->Iscds().front()->swtype != reverse->link->Iscds().front()->swtype)
 		{
-			start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,oneLink->link->Iscds().front()->swtype);
+			start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,oneLink->link->Iscds().front()->swtype, oneLink->link->lclIfAddr, oneLink->link->rmtIfAddr);
 			adaptNode = this->search_PCENNode(oneLink->rmt_end->ref_num);
 			out = adaptNode->out_links.begin();
 			while(out != adaptNode->out_links.end())
@@ -1750,7 +1753,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 					{
 						if((*iscd_iter)->swtype == reverse->link->Iscds().front()->swtype)
 						{
-							tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_iter)->swtype);
+							tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_iter)->swtype, (*out)->link->lclIfAddr, (*out)->link->rmtIfAddr);
 							if (tail != NULL)
 							{
 								this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
@@ -1786,7 +1789,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 					}
 					if(adapt)
 					{
-						start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,adapt_swtype1);
+						start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,adapt_swtype1, oneLink->link->lclIfAddr, oneLink->link->rmtIfAddr);
 						adaptNode = this->search_PCENNode(oneLink->rmt_end->ref_num);
 						for(out = adaptNode->out_links.begin();out != adaptNode->out_links.end();out++)
 						{
@@ -1796,7 +1799,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 								{
 									if((*iscd_out)->swtype == adapt_swtype2)
 									{
-										tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype);
+										tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype, (*out)->link->lclIfAddr, (*out)->link->rmtIfAddr);
 										if (tail != NULL)
 										{
 											this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
@@ -1830,7 +1833,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 				}
 				if(adapt)
 				{
-					start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,adapt_swtype1);
+					start = this->search_PCENCGNode(oneLink->lcl_end->ref_num,oneLink->rmt_end->ref_num,adapt_swtype1, oneLink->link->lclIfAddr, oneLink->link->rmtIfAddr);
 					adaptNode = this->search_PCENNode(oneLink->rmt_end->ref_num);
 					for(out = adaptNode->out_links.begin();out != adaptNode->out_links.end();out++)
 					{
@@ -1840,7 +1843,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 							{
 								if((*iscd_out)->swtype == adapt_swtype2)
 								{
-									tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype);
+									tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_out)->swtype, (*out)->link->lclIfAddr, (*out)->link->rmtIfAddr);
 									if (tail != NULL)
 									{
 										this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
