@@ -122,6 +122,7 @@ public:
     void CreateChannelGraph(float bandwidth);//changed 07/14    
     void OutputKSP_MRN();
     void AssignRefNumber(vector<PCENNode*>& routers);
+    double GetPathCost(list<PCENLink*>& path);
     int FindSpecificTagForPath(int vtag, list<PCENLink*> path);
     ConstraintTagSet FindVlanTagSetForPath(ConstraintTagSet head_vtagset, list<PCENLink*> path, bool any_tag);
     int FindTagInLink(int request_tag, int link_num,PCENLink* oneLink);

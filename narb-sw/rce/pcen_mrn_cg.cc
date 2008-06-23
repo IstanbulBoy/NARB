@@ -884,7 +884,8 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 
 	if(KSP_MRN.size() > 0)
 	{
-		this->ConstructNetworkPath();
+            //$$$$ PCEN_KSP::VerifyPathConstraints is called in ConstructNetworkPath--> Only constraint qualified paths are added
+		this->ConstructNetworkPath(); 
 		this->DisplayNetworkPath();
 	}
 	this->DeleteVirtualNodes();
@@ -892,22 +893,19 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	//LOGF("%d path has been found:\n", KSP_MRN.size());
 	//cout<<KSP_MRN.size()<<" path has been found"<<endl;
 
-	// deal with vlan tag
-	list< list<PCENLink*> >:: iterator onePath;
-	u_int32_t vlan_tag = 0;
+	list< list<PCENLink*> >::iterator onePath;
 	ConstraintTagSet head_vlan_tag_set, result_tag_set;
-	int count = 1;
-	bool find_tag = false;
 	int best_path_num = 0;
 	u_int32_t best_vtag = 0;
-
-       // verifing the K-shortest paths
-       //$$$$ insufficient verification logic?!
-	if(is_e2e_tagged_vlan && Net_Paths.size() > 0)
+	double minCost = PCEN_INFINITE_COST;
+	int count = 1;
+	for(onePath = Net_Paths.begin();onePath != Net_Paths.end(); onePath++, count++)
 	{
-		for(onePath = Net_Paths.begin();onePath != Net_Paths.end(); onePath++)
+		// dealing with vlan tag
+		u_int32_t vlan_tag = 0;
+		bool find_tag = false;
+		if(is_e2e_tagged_vlan)
 		{
-			
 			if(vtag_mask)
 			{
 				LOGF("Asking for all available vlan tags\n");
@@ -924,7 +922,6 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 				if(result_tag_set.IsEmpty())
 				{
 					cout<<"Can't find available vlan tag in path: "<<count<<endl;
-					count++;
 					continue;
 				}
 				else
@@ -932,12 +929,11 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 					
 					if(find_tag==false)
 					{
-						best_vtag = result_tag_set.TagSet().front();
+						vlan_tag = result_tag_set.TagSet().front();
 						find_tag = true;
-						best_path_num = count;
 					}
 				}
-				LOGF("\nThe vlan tag found is: [%d]\n\n", best_vtag);
+				LOGF("\nThe vlan tag found is: [%d]\n\n", vlan_tag);
 			}
 			else
 			{
@@ -948,23 +944,26 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 					cout<<"The requested vlan tag "<<vtag<<" is available on path "<<count<<" !"<<endl;
 					if(find_tag==false)
 					{
-						best_vtag = vlan_tag;
 						find_tag = true;
-						best_path_num = count;
 					}
 				}
 				else
 				{
-					count++;
 					continue;
 				}
 			}
-			count++;
 		}
-	}
 
-	if(Net_Paths.size() > 0)
-		best_path_num = 1; //$$$ fixed to 1 ??
+            //getting lowest-cost path and the associated vlan tag
+            double pathCost = GetPathCost((*onePath));
+            if (minCost > pathCost)
+            {
+                minCost = pathCost;
+                best_path_num = count;
+                if (find_tag)
+                    best_vtag = vlan_tag;
+            }
+	}
 
 	// add the best cost path into ERO
 	if(best_path_num != 0)
@@ -992,14 +991,6 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 
 	if(is_e2e_tagged_vlan)
 	{
-	/*	if(vtag && vtag != ANY_VTAG)
-		{
-			vtag = best_vtag;
-			SetVTagToERO(vtag);
-		}
-		else if(result_tag_set.IsEmpty())
-			return ERR_PCEN_NO_ROUTE;
-	*/
 		if(vtag == ANY_VTAG)
 		{
 			if(best_vtag != 0)
@@ -1023,14 +1014,14 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 			
 	}
 	LOGF("The size of ero is: %d\n", ero.size());
-//	cout<<"the size of ero is: "<<ero.size()<<endl;
+	//	cout<<"the size of ero is: "<<ero.size()<<endl;
 	if (ero.size() == 0)
 	{
 		LOGF("No route found. The ERO is empty.\n");
-       	 return ERR_PCEN_NO_ROUTE;
+       	return ERR_PCEN_NO_ROUTE;
 	}
 
-	 return ERR_PCEN_NO_ERROR;
+	return ERR_PCEN_NO_ERROR;
 }
 
 void PCEN_MRN_CG::AddLinkToERO(PCENLink* pcen_link)
@@ -1154,6 +1145,17 @@ void PCEN_MRN_CG::SetVTagMask(ConstraintTagSet& vtagset)
     	{
        	 SET_VLAN(vtag_mask->bitmask, *it);
     	}
+}
+
+double PCEN_MRN_CG::GetPathCost(list<PCENLink*>& path)
+{
+	double cost = 0;
+	list<PCENLink*>::iterator itLink;
+	for(itLink = path.begin(); itLink != path.end(); itLink++)
+	{
+            cost += (*itLink)->PCENmetric();
+	}
+	return cost;
 }
 
 ConstraintTagSet PCEN_MRN_CG::FindVlanTagSetForPath(ConstraintTagSet head_vtagset, list<PCENLink*> path, bool any_tag)
@@ -1520,8 +1522,11 @@ void PCEN_MRN_CG::ConstructNetworkPath()
 	 vector<PathT_MRN*>::iterator itPath =  KSP_MRN.begin();
 	 while(itPath != KSP_MRN.end())
 	 {
-	 	path = CGPathToNetPath((*itPath)->path_mrn);
-		Net_Paths.push_back(path);
+		path = CGPathToNetPath((*itPath)->path_mrn);
+		if (VerifyPathConstraints(path)) //PCEN_KSP function
+		{
+			Net_Paths.push_back(path); //only constraint qualified paths are added
+		}
 		itPath++;
 	 }
 }

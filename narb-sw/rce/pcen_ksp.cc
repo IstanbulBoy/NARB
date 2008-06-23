@@ -583,6 +583,7 @@ void PCEN_KSP::Run()
     if (bestPath != NULL)
     {
         bestPath->GetERO(ero);
+       // $$$$ TODO: Set VLAN Tag and Wavelength to ERO if applicable
         ReplyERO();
     }
     else
@@ -598,106 +599,119 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
     double minCost = PCEN_INFINITE_COST;
     PathT* bestPath = NULL;
     PathT* P;
-    PCENLink* L;
     vector<PathT*>::iterator iterP;
-    list<PCENLink*>::iterator iterL;
-    ConstraintTagSet head_vtagset, next_vtagset;
-    ConstraintTagSet head_waveset, next_waveset;
-    TSpec link_tspec;
 
     iterP = KSP.begin();
     while (iterP != KSP.end())
     {
         P = (*iterP);
-        if (P->path.size() == 0)
-            goto _path_removal;
-
-        // initializing VLAN tags and wavelengths
-        if (vtag != 0)
-            head_vtagset.AddTag(vtag);
-        else         
-            head_vtagset.TagSet().clear();
-        head_waveset.TagSet().clear();        
-        // verifying path
-        for (iterL = P->path.begin(); iterL != P->path.end(); iterL++)
+        if (VerifyPathConstraints(P->path))
         {
-            L = (*iterL);
-            if (L == NULL || L->lcl_end == NULL || L->rmt_end ==NULL || L->link == NULL || L->link->Iscds().size() == 0)
-                goto _path_removal;
-
-            if (!L->IsAvailableForTspec(L->lcl_end->tspec))
-                goto _path_removal;
-
-            if (!head_vtagset.IsEmpty())
+            if (P->cost < minCost)
             {
-                L->ProceedByUpdatingVtags(head_vtagset, next_vtagset);
-                if (next_vtagset.IsEmpty())
-                    goto _path_removal;
-                head_vtagset = next_vtagset;
-            }
-            if (!head_waveset.IsEmpty())
-            {
-                L->ProceedByUpdatingWaves(head_waveset, next_waveset);
-                if (next_waveset.IsEmpty())
-                    goto _path_removal;
-                head_waveset = next_waveset;
-            }
-
-            if (L->CrossingRegionBoundary(L->lcl_end->tspec))
-            {
-                L->GetNextRegionTspec(L->rmt_end->tspec);
-                //$$$$ WDM subnet special handling
-                if (has_wdm_layer && (L->rmt_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->rmt_end->tspec.SWtype == MOVAZ_LSC))
-                {
-                    MovazTeLambda tel;
-                    u_int32_t* p_freq;
-                    PCENLink * reverseLink = L->reverse_link;
-                    head_waveset.TagSet().clear();
-                    list<void*>::iterator it;
-                    bool has_wave = false;
-
-                    list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
-                    if (reverseLink == NULL || p_list == NULL)
-                        goto _path_removal;
-                  
-                    for (it = p_list->begin(); it!= p_list->end(); it++)
-                    {
-                        tel = *(MovazTeLambda*)(*it);
-                        ntoh_telambda(tel);
-                        if (tel.priority == 0x07)
-                        {
-                            if (valid_channel(tel.channel_id))
-                                head_waveset.AddTag(tel.channel_id);
-                            else
-                                has_wave = true;
-                        }
-                    }
-                    //$$$$ --->VLSR-->Movaz_RE link speical handling
-                    p_freq = (u_int32_t*)(L->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
-                    if (has_wave && p_freq)
-                        head_waveset.AddTag(ntohl(*p_freq)); //$$ freq = ANY_WAVE ?
-                    if (head_waveset.IsEmpty())
-                        head_waveset.AddTag(ANY_WAVE);
+                minCost = P->cost;
+                bestPath = P;
+                /* $$$$ TODO
+                if (vtag == ANY_VTAG) {
+                    vtag  = next_vtagset.TagSet().front();
+                    if (vtag > MAX_VLAN_NUM)
+                        vtag = 0;
                 }
-            }       
-            else
-            {
-                L->rmt_end->tspec = L->lcl_end->tspec;
+                // Wavelength ?
+                */
             }
+            iterP++;
         }
-
-        if (P->cost < minCost)
-        {
-            minCost = P->cost;
-            bestPath = P;
-        }
-
-        iterP++;
-        continue; // qualified path won't be removed
-
-      _path_removal:
-        iterP = KSP.erase(iterP);
+        else
+            iterP = KSP.erase(iterP);
     }
     
     return bestPath;
+}
+
+bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
+{
+    PCENLink* L;
+    list<PCENLink*>::iterator iterL;
+    ConstraintTagSet head_vtagset, next_vtagset;
+    ConstraintTagSet head_waveset, next_waveset;
+    TSpec link_tspec;
+
+    if (path.size() == 0)
+        return false;
+
+    // initializing VLAN tags and wavelengths
+    if (vtag != 0)
+        head_vtagset.AddTag(vtag);
+    else         
+        head_vtagset.TagSet().clear();
+    head_waveset.TagSet().clear();        
+    // verifying path
+    for (iterL = path.begin(); iterL != path.end(); iterL++)
+    {
+        L = (*iterL);
+        if (L == NULL || L->lcl_end == NULL || L->rmt_end ==NULL || L->link == NULL || L->link->Iscds().size() == 0)
+            return false;
+
+        if (!L->IsAvailableForTspec(L->lcl_end->tspec))
+            return false;
+
+        if (!head_vtagset.IsEmpty())
+        {
+            L->ProceedByUpdatingVtags(head_vtagset, next_vtagset);
+            if (next_vtagset.IsEmpty())
+                return false;
+            head_vtagset = next_vtagset;
+        }
+        if (!head_waveset.IsEmpty())
+        {
+            L->ProceedByUpdatingWaves(head_waveset, next_waveset);
+            if (next_waveset.IsEmpty())
+                return false;
+            head_waveset = next_waveset;
+        }
+
+        if (L->CrossingRegionBoundary(L->lcl_end->tspec))
+        {
+            L->GetNextRegionTspec(L->rmt_end->tspec);
+            //$$$$ WDM subnet special handling
+            if (has_wdm_layer && (L->rmt_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->rmt_end->tspec.SWtype == MOVAZ_LSC))
+            {
+                MovazTeLambda tel;
+                u_int32_t* p_freq;
+                PCENLink * reverseLink = L->reverse_link;
+                head_waveset.TagSet().clear();
+                list<void*>::iterator it;
+                bool has_wave = false;
+
+                list<void*> *p_list = (list<void*>*)(reverseLink->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
+                if (reverseLink == NULL || p_list == NULL)
+                    return false;
+              
+                for (it = p_list->begin(); it!= p_list->end(); it++)
+                {
+                    tel = *(MovazTeLambda*)(*it);
+                    ntoh_telambda(tel);
+                    if (tel.priority == 0x07)
+                    {
+                        if (valid_channel(tel.channel_id))
+                            head_waveset.AddTag(tel.channel_id);
+                        else
+                            has_wave = true;
+                    }
+                }
+                //$$$$ --->VLSR-->Movaz_RE link speical handling
+                p_freq = (u_int32_t*)(L->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
+                if (has_wave && p_freq)
+                    head_waveset.AddTag(ntohl(*p_freq)); //$$ freq = ANY_WAVE ?
+                if (head_waveset.IsEmpty())
+                    head_waveset.AddTag(ANY_WAVE);
+            }
+        }       
+        else
+        {
+            L->rmt_end->tspec = L->lcl_end->tspec;
+        }
+    }
+    return true;
 }
