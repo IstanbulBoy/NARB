@@ -647,7 +647,7 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
             {
                 L->GetNextRegionTspec(L->rmt_end->tspec);
                 //$$$$ WDM subnet special handling
-                if (has_wdm_layer && L->rmt_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+                if (has_wdm_layer && (L->rmt_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->rmt_end->tspec.SWtype == MOVAZ_LSC))
                 {
                     MovazTeLambda tel;
                     u_int32_t* p_freq;
