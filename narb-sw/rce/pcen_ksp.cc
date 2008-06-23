@@ -679,7 +679,10 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
                         head_waveset.AddTag(ANY_WAVE);
                 }
             }       
-            L->rmt_end->tspec = L->lcl_end->tspec;
+            else
+            {
+                L->rmt_end->tspec = L->lcl_end->tspec;
+            }
         }
 
         if (P->cost < minCost)
