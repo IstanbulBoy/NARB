@@ -605,7 +605,8 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
     ConstraintTagSet head_waveset, next_waveset;
     TSpec link_tspec;
 
-    for (iterP = KSP.begin(); iterP != KSP.end(); iterP++)
+    iterP = KSP.begin();
+    while (iterP != KSP.end())
     {
         P = (*iterP);
         if (P->path.size() == 0)
@@ -691,6 +692,7 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
             bestPath = P;
         }
 
+        iterP++;
         continue; // qualified path won't be removed
 
       _path_removal:
