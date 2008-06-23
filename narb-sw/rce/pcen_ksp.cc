@@ -678,10 +678,7 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
                     if (head_waveset.IsEmpty())
                         head_waveset.AddTag(ANY_WAVE);
                 }
-            }
-            else // incompatible switching capability
-                goto _path_removal;
-            
+            }            
         }
 
         if (P->cost < minCost)
