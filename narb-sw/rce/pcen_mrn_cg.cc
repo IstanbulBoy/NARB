@@ -485,7 +485,7 @@ void PCEN_MRN_CG::RestoreCGGraph()
 	{
 		(*node_iter)->nflg.flag=0L;
 		(*node_iter)->path_mrn.clear();
-		(*node_iter)->auxvar2=0;
+		//(*node_iter)->auxvar2=0;
 		(*node_iter)->minCost = PCEN_INFINITE_COST;
 	}
 	for(link_iter = CGlinks.begin(); link_iter != CGlinks.end(); link_iter++)
