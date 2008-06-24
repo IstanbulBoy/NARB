@@ -69,7 +69,9 @@ void PCEN_TEST::Run()
     PCENNode* dest_node = GetNodeByIp(routers,&destination);
     assert (src_node && dest_node);
 
-    PathT* bestPath = SearchUpperLayerPath(src_node, dest_node);
+    PathT* bestPath = NULL;
+
+    bestPath = SearchUpperLayerPath(src_node, dest_node);
 
     if (bestPath != NULL)
     {
@@ -79,7 +81,7 @@ void PCEN_TEST::Run()
         return;
     }
 
-    bestPath = SearchUpperLayerPath(src_node, dest_node);
+    bestPath = SearchLowerLayerPath(src_node, dest_node);
     
     if (bestPath != NULL)
     {
