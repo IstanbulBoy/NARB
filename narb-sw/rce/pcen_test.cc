@@ -116,6 +116,7 @@ PathT* PCEN_TEST::SearchUpperLayerPath(PCENNode*  src_node, PCENNode*  dest_node
         else
             iterL++;
     }
+    iterL=dest_node->out_links.begin();
     while (iterL != dest_node->out_links.end())
     {
         L = (*iterL);
@@ -191,6 +192,7 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
         else
             iterL++;
     }
+    iterL=dest_node->out_links.begin();
     while (iterL != dest_node->out_links.end())
     {
         L = (*iterL);
