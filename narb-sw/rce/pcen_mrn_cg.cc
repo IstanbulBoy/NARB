@@ -1799,25 +1799,25 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 			out = adaptNode->out_links.begin();
 			while(out != adaptNode->out_links.end())
 			{
-				if((*inlink)->lcl_end->ref_num == (*outlink)->rmt_end->ref_num && (*inlink)->rmt_end->ref_num == (*outlink)->lcl_end->ref_num)
+				if(oneLink->lcl_end->ref_num == (*out)->rmt_end->ref_num && oneLink->rmt_end->ref_num == (*out)->lcl_end->ref_num)
 					continue;
 				//if((*out) != reverse) // case covered by the line above
 				//{
-					iscd_iter = (*out)->link->Iscds().begin();
-					while(iscd_iter != (*out)->link->Iscds().end())
+				iscd_iter = (*out)->link->Iscds().begin();
+				while(iscd_iter != (*out)->link->Iscds().end())
+				{
+					if((*iscd_iter)->swtype == reverse->link->Iscds().front()->swtype)
 					{
-						if((*iscd_iter)->swtype == reverse->link->Iscds().front()->swtype)
+						tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_iter)->swtype, (*out)->link->lclIfAddr, (*out)->link->rmtIfAddr);
+						if (tail != NULL)
 						{
-							tail = this->search_PCENCGNode((*out)->lcl_end->ref_num,(*out)->rmt_end->ref_num,(*iscd_iter)->swtype, (*out)->link->lclIfAddr, (*out)->link->rmtIfAddr);
-							if (tail != NULL)
-							{
-								this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
-								//cout<<"linkID : "<<id<<"find same swtype, link start from "<<start->ref_num<<" and end with "<<tail->ref_num<<" by pass node "<<start->rmt_endID<<endl;
-								id++;
-							}
+							this->AddCGLink(id,start->ref_num,tail->ref_num,tail->LinkMetric,start->rmt_endID);
+							//cout<<"linkID : "<<id<<"find same swtype, link start from "<<start->ref_num<<" and end with "<<tail->ref_num<<" by pass node "<<start->rmt_endID<<endl;
+							id++;
 						}
-						iscd_iter++;
 					}
+					iscd_iter++;
+				}
 				//}
 				out++;
 			}
