@@ -58,10 +58,10 @@ public:
     virtual ~PCEN_TEST() {}
 
     virtual bool PostBuildTopology();
+    virtual void Run();
 
     PathT* SearchUpperLayerPath(PCENNode*  src_node, PCENNode*  dest_node);
     PathT* SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node);
-    virtual void Run();
 };
 
 #endif
