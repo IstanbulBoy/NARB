@@ -98,6 +98,7 @@ public:
     void CreateNetLinks();
     bool BuildEndNodes(int source, int end, u_char swtype,u_char encoding,float bandwidth);//changed 07/14
     list<PCENLink*> CGPathToNetPath(list<PCENCGLink*> cgPath); // added by qian 20/03/2007 to transfer path from CG to NG
+    list<PCENLink*> CGPathToNetPath2(list<PCENCGLink*> cgPath); // added by Xi Yang 06/2008
     void ConstructNetworkPath();  // added by qian 20/03/2007 to transfer paths from channel graph to network graph
     void DisplayNetworkPath(); // added by qian 20/03/2007 to display the path in network grpah
     void AddLinkToERO(PCENLink* pcen_link); //added by qian 09/04/2007 to add a network link to the ero

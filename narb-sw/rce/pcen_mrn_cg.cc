@@ -1518,6 +1518,59 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath(list<PCENCGLink*> cgPath)
 	return netPath;
 }
 
+list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath2(list<PCENCGLink*> cgPath)
+{
+	list<PCENLink*> netPath;
+	netPath.clear();
+	PCENCGNode *lcl_cgnode=NULL, *rmt_cgnode=NULL;
+	list<PCENCGLink*>::iterator itLink = cgPath.begin();
+	bool duplex=false;
+	
+	//cout<<"Size of the channel graph path is "<<cgPath.size()<<endl;
+	
+	while (itLink != cgPath.end())
+	{
+		assert (lcl_cgnode == NULL || lcl_cgnode == (*itLink)->lcl_end);
+
+		rmt_cgnode = (*itLink)->rmt_end;
+		if (lcl_cgnode != NULL && rmt_cgnode != NULL)
+		{
+
+			for(unsigned int i=0; i<links.size(); i++)
+			{
+				for(unsigned int j=0; j<chopLinks.size(); j++)
+				{
+					if(i == chopLinks[j])
+					{
+						duplex = true;
+						break;
+					}
+				}
+				if(duplex)
+				{
+					duplex = false;
+					continue;
+				}
+				if(links[i]->lcl_end->ref_num == lcl_cgnode->lcl_endID && links[i]->rmt_end->ref_num == lcl_cgnode->lcl_endID 
+					&& (lcl_cgnode->auxvar1 == 0 || links[i]->link->LclIfAddr() == lcl_cgnode->auxvar1) 
+					&& (lcl_cgnode->auxvar2 == 0 || links[i]->link->RmtIfAddr() == lcl_cgnode->auxvar2))
+				{
+					LOGF("Add the following into network path\n");
+					LOGF("linkID [%X]\n", links[i]->linkID);
+					LOGF("link type [%X]\n", links[i]->link->type);
+					LOGF("link lcl addr [%X]\n", links[i]->link->lclIfAddr);
+					LOGF("link rmt addr [%X]\n", links[i]->link->rmtIfAddr);
+					netPath.push_back(links[i]);
+				}
+			}
+		}
+
+		lcl_cgnode = rmt_cgnode;
+		itLink++;
+	}
+	//cout<<endl;
+	return netPath;
+}
 
 void PCEN_MRN_CG::ConstructNetworkPath()
 {
@@ -1525,7 +1578,7 @@ void PCEN_MRN_CG::ConstructNetworkPath()
 	 vector<PathT_MRN*>::iterator itPath =  KSP_MRN.begin();
 	 while(itPath != KSP_MRN.end())
 	 {
-		path = CGPathToNetPath((*itPath)->path_mrn);
+		path = CGPathToNetPath2((*itPath)->path_mrn);
 		if (VerifyPathConstraints(path)) //PCEN_KSP function
 		{
 			Net_Paths.push_back(path); //only constraint qualified paths are added
