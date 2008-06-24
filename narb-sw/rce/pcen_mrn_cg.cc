@@ -1800,7 +1800,10 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 			while(out != adaptNode->out_links.end())
 			{
 				if(oneLink->lcl_end->ref_num == (*out)->rmt_end->ref_num && oneLink->rmt_end->ref_num == (*out)->lcl_end->ref_num)
+				{
+					out++;
 					continue;
+				}
 				//if((*out) != reverse) // case covered by the line above
 				//{
 				iscd_iter = (*out)->link->Iscds().begin();
