@@ -80,7 +80,7 @@ enum PceAlgorithm
 {
     PCE_NONE = 0,
     SPF = 1,
-    KSP,
+    MRN_KSP,
     MRN_DEFAULT,
     MRN_CG,
     MRN_DCN,

@@ -260,14 +260,14 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           {
             if (strstr(blk_body, "mrn-default") != NULL)
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
+            else if (strstr(blk_body, "mrn-ksp") != NULL)
+                SystemConfig::pce_algorithm = MRN_KSP;
             else if (strstr(blk_body, "mrn-cg") != NULL)
                 SystemConfig::pce_algorithm = MRN_CG;
             else if (strstr(blk_body, "mrn-dcn") != NULL)
                 SystemConfig::pce_algorithm = MRN_DCN;
             else if (strstr(blk_body, "spf") != NULL)
                 SystemConfig::pce_algorithm = SPF;
-            else if (strstr(blk_body, "ksp") != NULL)
-                SystemConfig::pce_algorithm = KSP;
             else
             {
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
