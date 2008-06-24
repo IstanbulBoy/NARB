@@ -38,6 +38,7 @@
 #include "pcen_mrn.hh"
 #include "pcen_mrn_cg.hh"
 #include "pcen_dcn.hh"
+#include "pcen_test.hh"
 #include "rce_lsp.hh"
 
 void LSPHandler::Load(api_msg *msg)
@@ -208,6 +209,10 @@ void LSPHandler::Run()
         {
             case SPF:
                 pcen_event = new PCEN(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
+                    ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
+                break;
+            case TEST_BASE:
+                pcen_event = new PCEN_TEST(source, destination, switching_type_egress, encoding_type_egress, bandwidth_egress, options, 
                     ucid, seqnum, lspb_id, tag, hop_back, src_lcl_id, dest_lcl_id);
                 break;
             case MRN_KSP:

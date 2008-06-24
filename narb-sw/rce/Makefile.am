@@ -14,10 +14,10 @@ sbin_PROGRAMS = rce rce_test
 ##libxxx_a_SOURCES = rce_xxx.c
 
 rce_SOURCES = \
-	rce_main.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc rce_subnet.cc terce_apiclient.cc
+	rce_main.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
 
 rce_test_SOURCES = \
-	rce_test.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc rce_subnet.cc terce_apiclient.cc
+	rce_test.cc event.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
 
 ## $(libxxx_a_SOURCES)
 

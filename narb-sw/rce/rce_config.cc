@@ -268,6 +268,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 SystemConfig::pce_algorithm = MRN_DCN;
             else if (strstr(blk_body, "spf") != NULL)
                 SystemConfig::pce_algorithm = SPF;
+            else if (strstr(blk_body, "test") != NULL)
+                SystemConfig::pce_algorithm = TEST_BASE;
             else
             {
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
