@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2008
  * DRAGON Project.
- * Created by Shujia Gong and Qian Xu (George Mason University), 2004-2008
- * Modified by Xi Yang (USC/ISI), 2008
+ * Created and modified by Qian Xu and Shujia Gong (George Mason University), 2004-2008
+ * Debugged, modified and improved by Xi Yang (USC/ISI), 2008
  */
  
 #include "pcen_mrn_cg.hh"
@@ -1788,7 +1788,8 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 			continue;
 		}
 		oneLink = (*itLink);
-		reverse = this->search_PCENLink(oneLink->rmt_end->ref_num, oneLink->lcl_end->ref_num);
+		//reverse = this->search_PCENLink(oneLink->rmt_end->ref_num, oneLink->lcl_end->ref_num);
+		reverse = oneLink->reverse_link;
 
 		//if both links have only one iscd
 		if(reverse != NULL && oneLink->link->Iscds().size() == 1 && reverse->link->Iscds().size() == 1 && oneLink->link->Iscds().front()->swtype != reverse->link->Iscds().front()->swtype)
@@ -1798,8 +1799,10 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 			out = adaptNode->out_links.begin();
 			while(out != adaptNode->out_links.end())
 			{
-				if((*out) != reverse)
-				{
+				if((*inlink)->lcl_end->ref_num == (*outlink)->rmt_end->ref_num && (*inlink)->rmt_end->ref_num == (*outlink)->lcl_end->ref_num)
+					continue;
+				//if((*out) != reverse) // case covered by the line above
+				//{
 					iscd_iter = (*out)->link->Iscds().begin();
 					while(iscd_iter != (*out)->link->Iscds().end())
 					{
@@ -1815,7 +1818,7 @@ void PCEN_MRN_CG::CreateChannelGraph(float bandwidth)//changed 07/14
 						}
 						iscd_iter++;
 					}
-				}
+				//}
 				out++;
 			}
 		}
