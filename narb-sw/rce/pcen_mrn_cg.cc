@@ -1551,7 +1551,7 @@ list<PCENLink*> PCEN_MRN_CG::CGPathToNetPath2(list<PCENCGLink*> cgPath)
 					duplex = false;
 					continue;
 				}
-				if(links[i]->lcl_end->ref_num == lcl_cgnode->lcl_endID && links[i]->rmt_end->ref_num == lcl_cgnode->lcl_endID 
+				if(links[i]->lcl_end->ref_num == lcl_cgnode->lcl_endID && links[i]->rmt_end->ref_num == lcl_cgnode->rmt_endID 
 					&& (lcl_cgnode->auxvar1 == 0 || links[i]->link->LclIfAddr() == lcl_cgnode->auxvar1) 
 					&& (lcl_cgnode->auxvar2 == 0 || links[i]->link->RmtIfAddr() == lcl_cgnode->auxvar2))
 				{
