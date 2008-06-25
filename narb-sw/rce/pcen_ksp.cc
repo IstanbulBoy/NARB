@@ -707,6 +707,10 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
                 if (head_waveset.IsEmpty())
                     head_waveset.AddTag(ANY_WAVE);
             }
+            else if (has_wdm_layer && (L->lcl_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->lcl_end->tspec.SWtype == MOVAZ_LSC))
+            {
+                head_waveset.TagSet().clear();
+            }
         }       
         else
         {
