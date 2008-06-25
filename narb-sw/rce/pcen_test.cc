@@ -102,39 +102,25 @@ PathT* PCEN_TEST::SearchUpperLayerPath(PCENNode*  src_node, PCENNode*  dest_node
     PCENLink* L;
     TSpec tspec;
     tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
-    iterL=src_node->out_links.begin();
-    while (iterL != src_node->out_links.end())
+    for (int i = 0; i < routers.size(); i++)
     {
-        L = (*iterL);
-
-        if (L->CrossingRegionBoundary(tspec))
+        iterL=routers[i]->out_links.begin();
+        while (iterL != routers[i]->out_links.end())
         {
-            cout << "Removing cross-layer link id: " << L->linkID << endl;
-            L->rmt_end->in_links.remove(L);
-            links_backup.push_back(L);
-            L->auxvar1 = 0xffffffff;
-            iterL = src_node->out_links.erase(iterL);
-        }
-        else
-            iterL++;
-    }
-    iterL=dest_node->out_links.begin();
-    while (iterL != dest_node->out_links.end())
-    {
-        L = (*iterL);
+            L = (*iterL);
 
-        if (L->CrossingRegionBoundary(tspec))
-        {
-            cout << "Removing cross-layer link id: " << L->linkID << endl;
-            L->rmt_end->in_links.remove(L);
-            links_backup.push_back(L);
-            L->auxvar1 = 0xffffffff;
-            iterL = src_node->out_links.erase(iterL);
+            if (L->CrossingRegionBoundary(tspec))
+            {
+                cout << "Removing cross-layer link id: " << L->linkID << endl;
+                L->rmt_end->in_links.remove(L);
+                links_backup.push_back(L);
+                L->auxvar1 = 0xffffffff;
+                iterL = src_node->out_links.erase(iterL);
+            }
+            else
+                iterL++;
         }
-        else
-            iterL++;
     }
-
     vector<PCENLink*>::iterator iter = links.begin();
     while (iter != links.end())
     {
@@ -185,7 +171,7 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
 
         if (!L->CrossingRegionBoundary(tspec))
         {
-            cout << "Removing cross-layer link id: " << L->linkID << endl;
+            cout << "Removing source non-cross-layer link id: " << L->linkID << endl;
             L->rmt_end->in_links.remove(L);
             links_backup.push_back(L);
             L->auxvar1 = 0xffffffff;
@@ -201,7 +187,7 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
 
         if (!L->CrossingRegionBoundary(tspec))
         {
-            cout << "Removing cross-layer link id: " << L->linkID << endl;
+            cout << "Removing destination non-cross-layer link id: " << L->linkID << endl;
             L->rmt_end->in_links.remove(L);
             links_backup.push_back(L);
             L->auxvar1 = 0xffffffff;
