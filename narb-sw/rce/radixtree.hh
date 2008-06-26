@@ -546,9 +546,13 @@ T* RadixTree<T>::DeleteNode (RadixNode<T>* node)
   data = node->data;
   delete node;
   node = NULL;
+
+#ifdef HAVING_LOCK
   /* If parent node is stub then delete it also. */
   if (parent && parent->lock == 0)
-    return DeleteNode(parent);
+    DeleteNode(parent);
+#endif
+
   return data;
 }
 

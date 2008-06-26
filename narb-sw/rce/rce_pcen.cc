@@ -1330,7 +1330,7 @@ void PCEN::ReplyErrorCode (u_int32_t code)
 
 api_msg* PCEN::NewEROReplyMessage ()
 {
-    char body[1024];
+    char body[2048];
 
     list<ero_subobj>::iterator iter; 
 
