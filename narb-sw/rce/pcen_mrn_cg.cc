@@ -94,9 +94,9 @@ PCENCGLink::PCENCGLink(int id, int localNodeId, int remoteNodeId, vector<PCENCGN
 : PCENLink(id)
 {
 	lcl_end=search_PCENCGNode(CGnodes,localNodeId);
-	lcl_end->out_CGlinks.push_back(this);
+	lcl_end->out_CGlinks.push_back(this); //@@@@ mem leak?
 	rmt_end=search_PCENCGNode(CGnodes, remoteNodeId);
-	rmt_end->in_CGlinks.push_back(this);
+	rmt_end->in_CGlinks.push_back(this); //@@@@ mem leak?
 }
 
 double PCENCGLink::PCENCGmetric ()
@@ -287,7 +287,7 @@ void PCEN_MRN_CG::DijkstraMRN(int source, int destination)
 
 void PCEN_MRN_CG::AddCGNode (int nodeid,int lclID,int rmtID,u_char swtype,u_char encoding,float bandwidth,double vMetric,u_char type, u_int32_t lclIfAddr=0, u_int32_t rmtIfAddr=0)
 {
-	PCENCGNode* pceCGNode = new PCENCGNode(nodeid);
+	PCENCGNode* pceCGNode = new PCENCGNode(nodeid);  //@@@@ mem leak?
 	pceCGNode->minCost=PCEN_INFINITE_COST;
 	pceCGNode->nflg.flag=0;
 	pceCGNode->lcl_endID = lclID;
@@ -814,12 +814,12 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 			if (destNode->path_mrn.size()>0) 
 			{
 				// concatenate subpk(s, vk_i) to shortest path found from vk_i to destination
-				PathT_MRN* nextpath=new PathT_MRN();
+				PathT_MRN* nextpath=new PathT_MRN(); //@@@@ mem leak
 				if (itLink!=headpath->path_mrn.begin()) 
 				{
 					//deviationstart=--itLink;
 					//(nextpath->path).assign(headpath->path.begin(),deviationstart);
-					(nextpath->path_mrn).assign(headpath->path_mrn.begin(),itLink);
+					(nextpath->path_mrn).assign(headpath->path_mrn.begin(),itLink); //@@@@ mem leak?
 					// (nextpath->path).pop_back();
 					
 					nextpath->DeviationNode=(*itLink)->lcl_end->ref_num;
@@ -833,7 +833,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 				halfpath=destNode->path_mrn.begin();
 				while (halfpath!=destNode->path_mrn.end())
 				{
-					(nextpath->path_mrn).push_back(*halfpath);
+					(nextpath->path_mrn).push_back(*halfpath); //@@@@ mem leak?
 					halfpath++;
 				}
 				//check loop
@@ -859,8 +859,8 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 				if(!find_loop)
 				{	nextpath->CalculatePathCost_MRN();
 				// mask the parent path and current path.
-					(nextpath->MaskedLinkList_mrn).assign(headpath->MaskedLinkList_mrn.begin(),headpath->MaskedLinkList_mrn.end());
-					(nextpath->MaskedLinkList_mrn).push_back(*itLink);
+					(nextpath->MaskedLinkList_mrn).assign(headpath->MaskedLinkList_mrn.begin(),headpath->MaskedLinkList_mrn.end()); //@@@@ mem leak?
+					(nextpath->MaskedLinkList_mrn).push_back(*itLink); //@@@@ mem leak?
 					nextpath->DisplayPath_MRN();
 					CandidatePaths.push_back(nextpath);
 				}

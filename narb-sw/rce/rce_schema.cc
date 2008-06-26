@@ -509,20 +509,13 @@ ResourceIndexingElement* ResourceSchema::AttrByTag (string tag)
 {
     ResourceIndexingElement* pInElement;
     RadixNode<ResourceIndexingElement>* node = indexTree.Root();
-    if (!node)
-        return NULL;
-
-    pInElement = (ResourceIndexingElement*) node->Data();
-    if (pInElement && pInElement->rcAttrTag == tag)
-        return pInElement;
-            
-    while (node = indexTree.NextNodeHavingData(node))
+    while (node)
     {
-        pInElement = (ResourceIndexingElement*) node->Data();
-        if (pInElement->rcAttrTag == tag)
+        if ((pInElement = (ResourceIndexingElement*) node->Data()) != NULL
+                && pInElement->rcAttrTag == tag)
             return pInElement;
+        node = indexTree.NextNode(node);
     }
-
     return NULL;
 }
 
