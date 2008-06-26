@@ -113,7 +113,8 @@ PathT* PCEN_TEST::SearchUpperLayerPath(PCENNode*  src_node, PCENNode*  dest_node
             {
                 cout << "Removing cross-layer link id: " << L->linkID << endl;
                 L->rmt_end->in_links.remove(L);
-                links_backup.push_back(L);
+                if (L->lcl_end == src_node || L->rmt_end == src_node || L->lcl_end == dest_node || L->rmt_end == dest_node)
+                    links_backup.push_back(L);
                 L->auxvar1 = 0xffffffff;
                 iterL = src_node->out_links.erase(iterL);
             }
@@ -151,7 +152,7 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
     list<PCENLink*>::iterator iterL;
     PCENLink* L;
 
-    //recovering removed links
+    //recovering removed source and destination links
     while (links_backup.size() > 0)
     {
         L = links_backup.front();
@@ -173,7 +174,6 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
         {
             cout << "Removing source non-cross-layer link id: " << L->linkID << endl;
             L->rmt_end->in_links.remove(L);
-            links_backup.push_back(L);
             L->auxvar1 = 0xffffffff;
             iterL = src_node->out_links.erase(iterL);
         }
@@ -189,7 +189,6 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
         {
             cout << "Removing destination non-cross-layer link id: " << L->linkID << endl;
             L->rmt_end->in_links.remove(L);
-            links_backup.push_back(L);
             L->auxvar1 = 0xffffffff;
             iterL = src_node->out_links.erase(iterL);
         }
