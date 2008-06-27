@@ -25,13 +25,15 @@ package WS::Handlers;
 
 use strict;
 use warnings;
+use Aux;
+use GMPLS::Constants;
 use WS::Formaters;
 use WS::Constants;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -53,19 +55,70 @@ sub new {
 ############################## WS API ##############################
 sub findPath {
 	my $self = shift;
-	my @args = SOAP::Server::Parameters::byName ([qw(
-		srcEndpoint 
-		destEndpoint
-		bandwidth
-		encoding
-		swcap
-		gpid
-		vtag
-		)], @_);
+	my $arg_ns = [qw(
+	srcEndpoint 
+	destEndpoint
+	bandwidth
+	encoding
+	swcap
+	gpid
+	vtag
+	)];
+	my @args = SOAP::Server::Parameters::byName ($arg_ns, @_);
+	for(my $i=0; $i<@args; $i++) {
+		if(!defined($args[$i])) {
+			my $msg = $$arg_ns[$i] . " must be specified";
+			WS::Formaters::generate_soap_fault('Sender', 
+				'incomplete query', 
+				'TerceRceFault', 
+				$msg);
+		}
+	}
 	my $som = pop @_;
 	my $attrs = $som->dataof('//findPath')->attr;
-
+	my $lsp_opt = 0;
+	my $lsp_act = ACT_QUERY;
+	my @data = ();
+	foreach my $a (keys %$attrs) {
+		if(lc($a) eq "strict") {
+			$lsp_opt |= LSP_OPT_STRICT_HOP;
+		}
+		if(lc($a) eq "preferred") {
+			$lsp_opt |= LSP_OPT_N_FORCE_HOP;
+		}
+		if(lc($a) eq "mrn") {
+			$lsp_act = ACT_QUERY_MRN;
+		}
+		if(lc($a) eq "bidirectional") {
+			$lsp_opt |= LSP_OPT_BI_DIR;
+		}
+		if(lc($a) eq "e2evtag") {
+		}
+		if(lc($a) eq "vtagmask") {
+			$lsp_opt |= LSP_OPT_VLAN_BMP;
+		}
+		if(lc($a) eq "queryhold") {
+			$lsp_opt |= LSP_OPT_QHOLD;
+		}
+		if(lc($a) eq "subnetero") {
+			$lsp_opt |= LSP_OPT_SUB_ERO;
+		}
+		if(lc($a) eq "subnetdtl") {
+			$lsp_opt |= LSP_OPT_SUB_DTL;
+		}
+		if(lc($a) eq "altpaths") {
+		}
+		if(lc($a) eq "allvtags") {
+			$lsp_opt |= LSP_OPT_VTAG_ALL;
+		}
+		if(lc($a) eq "allwaves") {
+			$lsp_opt |= LSP_OPT_LAMBDA_ALL;
+		}
+	}
 	Aux::print_dbg_ws("findPath()\n");
+
+	unshift(@data, {"cmd"=>ASYNC_CMD, "type"=>TERCE_TOPO_ASYNC, "subtype"=>$lsp_act});
+	Aux::send_via_queue($$self{ws}{rcq}, @data);
 }
 
 sub selectNetworkTopology {
