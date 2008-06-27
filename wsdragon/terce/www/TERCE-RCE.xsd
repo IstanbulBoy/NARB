@@ -36,12 +36,15 @@
 		<xsd:attribute name="mrn" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="bidirectional" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="e2eVtag" type="xsd:boolean" use="optional"/>
-		<xsd:attribute name="viaMovaz" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="vtagMask" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="queryHold" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="queryConfirm" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="subnetEro" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="subnetDtl" type="xsd:boolean" use="optional"/>
 		<xsd:attribute name="altPaths" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="allVtags" type="xsd:boolean" use="optional"/>
+		<xsd:attribute name="allWaves" type="xsd:boolean" use="optional"/>
+
 	</xsd:complexType>
 
 	<xsd:complexType name="findPathResponseContent">
