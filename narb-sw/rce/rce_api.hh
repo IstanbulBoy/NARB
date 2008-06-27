@@ -65,7 +65,8 @@ enum api_action
     //extensions:
     ACT_INIT = 0x0A,
     ACT_ALIVE = 0x0B,
-    ACT_QUERY_MRN = 0x10
+    //0xF0 -- 0xFE reserved for NARB-RCE
+    ACT_QUERY_MRN = 0xF0
 };
 
 struct api_msg_header
