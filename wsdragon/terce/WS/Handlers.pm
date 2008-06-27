@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -66,7 +66,9 @@ sub findPath {
 	)];
 	my @args = SOAP::Server::Parameters::byName ($arg_ns, @_);
 	for(my $i=0; $i<@args; $i++) {
-		if(!defined($args[$i])) {
+		if(((lc($$arg_ns[$i]) eq "srcendpoint") || 
+				(lc($$arg_ns[$i]) eq "destendpoint")) && 
+			!defined($args[$i])) {
 			my $msg = $$arg_ns[$i] . " must be specified";
 			WS::Formaters::generate_soap_fault('Sender', 
 				'incomplete query', 
@@ -117,6 +119,7 @@ sub findPath {
 	}
 	Aux::print_dbg_ws("findPath()\n");
 
+	push(@data, $lsp_opt, @args);
 	unshift(@data, {"cmd"=>ASYNC_CMD, "type"=>TERCE_TOPO_ASYNC, "subtype"=>$lsp_act});
 	Aux::send_via_queue($$self{ws}{rcq}, @data);
 }
