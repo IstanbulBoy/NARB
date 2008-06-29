@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -91,6 +91,16 @@ sub run() {
 						if(defined($$self{ctrl_socket})) {
 							$$self{status} |= CQ_INIT_S;
 						}
+					}
+				}
+			}
+			if(!($$self{status} & CQ_INIT_S)) {
+				next;
+			}
+			# findPath
+			if($$d{cmd} == ASYNC_CMD) {
+				if($$d{type} == RCE_MSG_LSP) {
+					if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
 					}
 				}
 			}

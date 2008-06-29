@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -120,7 +120,7 @@ sub findPath {
 	Aux::print_dbg_ws("findPath()\n");
 
 	push(@data, $lsp_opt, @args);
-	unshift(@data, {"cmd"=>ASYNC_CMD, "type"=>TERCE_TOPO_ASYNC, "subtype"=>$lsp_act});
+	unshift(@data, {"cmd"=>ASYNC_CMD, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
 	Aux::send_via_queue($$self{ws}{rcq}, @data);
 }
 
