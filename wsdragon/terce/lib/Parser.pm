@@ -11,7 +11,7 @@ use WS::External;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -20,28 +20,6 @@ BEGIN {
 our @EXPORT_OK;
 
 my $d = 0; # a global to use in regex embedded command execution
-
-sub process_cfg_wrapper() {
-	eval{
-		process_cfg();
-	};
-	if($@) {
-		Log::log "warning", "$@\n";
-		return 1;
-	}
-	return 0;
-}
-
-sub load_config_wrapper($) {
-	eval {
-		load_configuration(@_);
-	};
-	if($@) {
-		Log::log "warning", "$@\n";
-		return 1;
-	}
-	return 0;
-}
 
 sub process_cfg() {
 	my $cfg_s = "";

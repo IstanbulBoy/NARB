@@ -24,13 +24,15 @@
 
 use lib ("$ENV{HOME}/dragon/lib", "./lib");
 
-use threads;
-use threads::shared;
-use Thread::Queue;
+use Socket;
+use IO::Handle;
+use IO::Select;
+use IO::Socket::INET;
 
 use Aux;
 use Log;
 use Parser;
+use GMPLS::Core;
 use GMPLS::Server;
 use GMPLS::Client;
 use WS::Server;
@@ -42,11 +44,9 @@ use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
 use Getopt::Long;
-use IO::Socket::INET;
 use HTTP::Daemon;
 use HTTP::Status;
 
-my @threads = ();
 %::cfg = ();
 $::ctrlC = 0;
 
@@ -84,13 +84,21 @@ USG
 }
 
 #signal handlers
-
 sub catch_term {
 	my $signame = shift;
-	Log::log("info", "terminating threads... (SIG$signame)\n");
+	Log::log("info", "terminating ... (SIG$signame)\n");
 	Log::log("info", "   (http server can take up to 10s to exit)\n");
 	$::ctrlC = 1;
 }
+
+sub grim {
+	my $child;
+	while ((my $waitedpid = waitpid(-1,WNOHANG)) > 0) {
+		Aux::print_dbg_run("reaped $waitedpid with exit $?" );
+	}
+	$SIG{CHLD} = \&grim;
+}
+
 
 sub process_opts($$) {
 	my ($n, $v) = @_;
@@ -172,15 +180,16 @@ sub init_cfg($) {
 		}
 	}
 }
+######################################################################
+###################### child process entry points ####################
+######################################################################
 
-# NOTE: running in a different thread here ...
-# server socket, client socket, server queue, client queue, source port
-sub spawn_server($$$$$) {
-	my ($ss, $cs, $n, $sq, $cq) = @_;
+# NOTE: running in a different process here ...
+sub start_gmpls_server($$$) {
+	my ($fh, $cs, $n) = @_;
 	my $srvr;
-	$ss->close();
 	eval {
-		$srvr = new GMPLS::Server($cs, $n, $sq, $cq);
+		$srvr = new GMPLS::Server($cs, $n, $fh);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -190,13 +199,11 @@ sub spawn_server($$$$$) {
 	}
 }
 
-# NOTE: running in a different thread here ...
-sub spawn_client($$$) {
-	my ($ss, $n, $cq) = @_;
+sub start_gmpls_client($$) {
+	my ($fh, $n) = @_;
 	my $client;
-	$ss->close();
 	eval {
-		$client = new GMPLS::Client($n, $cq);
+		$client = new GMPLS::Client($n, $fh);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -206,12 +213,27 @@ sub spawn_client($$$) {
 	}
 }
 
-sub start_ws_server($$$$$) {
-	my ($p, $nsq, $rsq, $ncq, $rcq) = @_;
+sub start_gmpls_core($$) {
+	my ($fh, $p) = @_;
+	my $core;
+	Log::log "info",  "starting gmpls processor core\n";
+	eval {
+		$core = new GMPLS::Core($fh);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
+	}
+	else {
+		$core->run();
+	}
+}
+
+sub start_ws_server($$) {
+	my ($fh, $p) = @_;
 	my $srvr;
 	Log::log "info",  "starting ws server on port $p\n";
 	eval {
-		$srvr = new WS::Server($p, $nsq, $rsq, $ncq, $rcq);
+		$srvr = new WS::Server($p, $fh);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -221,7 +243,8 @@ sub start_ws_server($$$$$) {
 	}
 }
 
-sub start_http_server() {
+sub start_http_server($) {
+	my ($fh) = @_;
 	my $http = new HTTP::Daemon(
 		LocalAddr => inet_ntoa(INADDR_ANY),
 		LocalPort => $::cfg{http}{port}{v},
@@ -284,34 +307,46 @@ sub start_http_server() {
 	}
 	$c->close if defined;
 	undef($c);
-	Aux::print_dbg_run("exiting http server thread\n");
+	Aux::print_dbg_run(" http server exiting\n");
 }
 
-sub terminate_queues(@) {
-	my @qs = @_;
-	my @data = ();
-	unshift(@data, {"cmd"=>CTRL_CMD, "type"=>TERM_T_T});
-
-	for(my $i=0; $i<@qs; $i++) {
-		Aux::send_via_queue($qs[$i], @data);
+sub spawn($$$$@) {
+	my ($piperef, $selref, $coderef, $proc_name, @args) = @_;
+	my $pid;
+	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+	if (!defined($pid = fork)) {
+		Log::log "err",  "cannot fork: $!";
+		close $ph;
+		close $ch;
+		die "";
+	} elsif ($pid) {
+		close $ph;
+		my $fn = fileno($ch);
+		vec($$rdinref, $fn, 1) = 1;
+		$$piperef{$fn}{fh} = $ch; 	#filehandle corresponding to this number
+		$$piperef{$fn}{cpid} = $pid;				#child's pid using this pipe 
+		return;
 	}
-}
-
-sub cleanup_servers() {
-	foreach my $s (@threads) {
-		$s->join();
-	}
+	close $ch;
+	exit &$coderef($ph, @args);
 }
 
 
 ################################################################################
+#############################  main loop #######################################
 ################################################################################
 $SIG{TERM} = \&catch_term;
 $SIG{INT} = \&catch_term;
 $SIG{HUP} = \&catch_term;
+$SIG{CHLD} = \&grim;
 $| = 1;
-share($::ctrlC);
-share(%::cfg);
+$::ctrlC = 0;
+my $status = 0;
+
+use constant TERCE_STAT_NARB_CONN => (1<<0);
+use constant TERCE_STAT_RCE_CONN => (1<<1);
+use constant TERCE_STAT_INIT_DONE => (TERCE_STAT_NARB_CONN | TERCE_STAT_NARB_CONN);
+
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -319,51 +354,62 @@ share(%::cfg);
 #     		 f: from config file, 
 #     		 c: overriden from the cli
 #		 i: from stdin
-$::cfg{daemonize} = &share({});
-$::cfg{daemonize}{v} = 0;
-$::cfg{daemonize}{s} = 'd';
-
-$::cfg{config} = &share({});
-$::cfg{config}{v} = "/etc/terce/terce.conf";
-$::cfg{config}{s} = 'd';
-
-$::cfg{gmpls} = &share({});
-$::cfg{gmpls}{port} = &share({});
-$::cfg{gmpls}{port}{v} = "2690";
-$::cfg{gmpls}{port}{s} = 'd';
-$::cfg{gmpls}{narb_sport} = &share({});
-$::cfg{gmpls}{narb_sport}{v} = "2692";
-$::cfg{gmpls}{narb_sport}{s} = 'd';
-$::cfg{gmpls}{rce_sport} = &share({});
-$::cfg{gmpls}{rce_sport}{v} = "2694";
-$::cfg{gmpls}{rce_sport}{s} = 'd';
-
-$::cfg{http} = &share({});
-$::cfg{http}{port} = &share({});
-$::cfg{http}{port}{v} = "80";
-$::cfg{http}{port}{s} = 'd';
-$::cfg{http}{root} = &share({});
-$::cfg{http}{root}{v} = "./www";
-$::cfg{http}{root}{s} = 'd';
-
-$::cfg{ws} = &share({});
-$::cfg{ws}{port} = &share({});
-$::cfg{ws}{port}{v} = "8080";
-$::cfg{ws}{port}{s} = 'd';
-$::cfg{ws}{wsdl} = &share({});
-$::cfg{ws}{wsdl}{v} = undef;
-$::cfg{ws}{wsdl}{s} = 'd';
-$::cfg{ws}{subnet_cfg} = &share({});
-$::cfg{ws}{subnet_cfg}{v} = undef;
-$::cfg{ws}{subnet_cfg}{s} = 'd';
-
-$::cfg{log} = &share({});
-$::cfg{log}{v} = "/var/log/terce.log";
-$::cfg{log}{s} = 'd';
-
-$::cfg{dbg} = &share({});
-$::cfg{dbg}{v} = 0;
-$::cfg{dbg}{s} = 'd';
+%::cfg = (
+	"daemonize" => {
+		"v" => 0,
+		"s" => 'd'
+	},
+	"config" => {
+		"v" => "/etc/terce/terce.conf",
+		"s" => 'd'
+	},
+	"gmpls" => {
+		"port" => {
+			"v" => "2690",
+			"s" => 'd'
+		},
+		"narb_sport" => {
+			"v" => "2692",
+			"s" => 'd'
+		},
+		"rce_sport" => {
+			"v" => "2694",
+			"s" => 'd'
+		}
+	},
+	"http" => {
+		"port" => {
+			"v" => "80",
+			"s" => 'd'
+		},
+		"root" => {
+			"v" => "./www",
+			"s" => 'd'
+		}
+	},
+	"ws" => {
+		"port" => {
+			"v" => "8080",
+			"s" => 'd'
+		},
+		"wsdl" => {
+			"v" => undef,
+			"s" => 'd'
+		},
+		"subnet_cfg" => {
+			"v" => undef,
+			"s" => 'd'
+		}
+	},
+	"log" => {
+		"v" => "/var/log/terce.log",
+		"s" => 'd'
+	},
+	"dbg" => {
+		"v" => 0,
+		"s" => 'd'
+	}
+);
 
 if(!GetOptions ('d' =>			\&process_opts,
 		'c=s' =>		\&process_opts,
@@ -388,16 +434,9 @@ if(!GetOptions ('d' =>			\&process_opts,
 # tmp logging facility
 Log::open(Log::OUT, "info warning err");
 
-# NOTE: the following code is a workaround for perl/libc bug which causes
-# a complex rexeg engine state incorrect freeing of the allocated memory
-# cloned across multiple threads. To prevent the crash, all complex regex
-# expression are run in a separate thread (async block)so they don't get cloned to other
-# threads. As a result the main $::cfg structure had to be made shared.
-
 # process the main config file
 eval {
-	my $th = async{Parser::process_cfg_wrapper();};
-	die "cfg" if($th->join());
+	Parser::process_cfg();
 };	
 if($@) {
 	Log::log "err", $@;
@@ -411,8 +450,7 @@ init_cfg(\$daemonize);
 
 if(defined($::cfg{ws}{subnet_cfg}{v})) {
 	eval {
-		my $th = async{Parser::load_config_wrapper($::cfg{ws}{subnet_cfg}{v});};
-		die "cfg" if($th->join());
+		Parser::load_configuration($::cfg{ws}{subnet_cfg}{v});
 	};
 	if($@) {
 		$::cfg{ws}{subnet_cfg}{v} = undef;	
@@ -447,31 +485,26 @@ if($daemonize) {
 	POSIX::setsid( )
 		or die "Can't start a new session: $!";
 }
+
+########################### initial setup ############################
 eval {
-	# four interthread queues: 
-	# 	1. GMPLS server (from narb client) -> Web 2.0 Server's TEDB
-	# 	2. GMPLS server (from rce client) -> Web 2.0 Server's TEDB
-	# 	3. Web 2.0 Server -> GMPLS Client (to narb API server)
-	# 	4. Web 2.0 Server -> GMPLS Client (to rce API server)
-	my $nsq = new Thread::Queue; # narb-ws server queue
-	my $rsq = new Thread::Queue; # rce-ws server queue
-	my $ncq = new Thread::Queue; # ws-narb client queue
-	my $rcq = new Thread::Queue; # ws-rce client queue
+	my %pipe_map;
+	my $sel = new IO::Select();
+
+
+	# start the GMPLS Processor Core
+	spawn(\%pipe_map, \$sel, \&start_gmpls_core, "GMPLS Core");
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		my $http_server = threads->create(\&start_http_server);
-		if($http_server) {
-			push(@threads, $http_server);
-		}
+		spawn(\%pipe_map, \$sel, \&start_http_server, "Web Server");
 	}
 
 	# start the SOAP/HTTP server
-	my $ws_server = threads->create(\&start_ws_server, $::cfg{ws}{port}{v}, $nsq, $rsq, $ncq, $rcq);
-	if($ws_server) {
-		push(@threads, $ws_server);
-	}
+	spawn(\%pipe_map, \$sel, \&start_ws_server, "SOAP Server", $::cfg{ws}{port}{v});
 
+	exit;
+	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
 		LocalAddr => inet_ntoa(INADDR_ANY),
 		LocalPort => $::cfg{gmpls}{port}{v},
@@ -479,6 +512,7 @@ eval {
 		Blocking => 1,
 		Proto     => 'tcp') or die "socket: $@\n";
 	Aux::print_dbg_net("listening on port $::cfg{gmpls}{port}{v}\n");
+
 	while(!$::ctrlC) {
 		my @conn = $serv_sock->accept();
 		if(!@conn) {
@@ -491,17 +525,13 @@ eval {
 		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
 
 		my $n = "";
-		my $sq;
-		my $cq;
 		if($peer_port eq $::cfg{gmpls}{narb_sport}{v}) {
-			$sq = $nsq; 
-			$cq = $ncq; 
 			$n = "narb";
+			$status |= TERCE_STAT_NARB_CONN;
 		}
 		elsif($peer_port eq $::cfg{gmpls}{rce_sport}{v}) {
-			$sq = $rsq;
-			$cq = $rcq; 
 			$n = "rce";
+			$status |= TERCE_STAT_RCE_CONN;
 		}
 		else {
 			Log::log "err", "narb/rce client is not using a known source port ($peer_port)\n";
@@ -509,21 +539,79 @@ eval {
 			$client_sock->shutdown(SHUT_RDWR);
 			next;
 		}
-		# start the client queue
-		my $c_thr = threads->create(\&spawn_client, $serv_sock, $n, $cq);
+		# start uninitialized client queue
+		spawn(\%pipe_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", $n);
 
-		# spawn a server thread
-		my $s_thr = threads->create(\&spawn_server, $serv_sock, $client_sock, $n, $sq, $cq);
-		$client_sock->close();
-		if($c_thr) {
-			push(@threads, $c_thr);
-		}
-		if($s_thr) {
-			push(@threads, $s_thr);
+		# start GMPLS server
+		spawn(\%pipe_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", $client_sock, $n);
+		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 		}
 	}
-	terminate_queues($ncq, $rcq);
-	cleanup_servers();
+	
+	# start the msg relay loop 
+	while(!$::ctrlC) {
+		my $l;
+		my $msg_l = 0;
+		my $msg = "";
+		my $i = 0;
+		my $nch;
+		my $nfound = select($rdout=$sel, undef, undef, undef);
+		if($nfound==-1) {
+			die "select: $!\n";
+		}
+		if(!$nfound) {
+			next;
+		}
+		while(!vec($rdin, $i, 1)) {$i++;}
+		
+		my $fh = $pipe_map{$i}{fh};			
+
+		$nch = 0;
+		my $break = 0;
+		while($nch<4) {
+			$nch = read($fh, $l, 4-$nch, $nch);
+			if(!defined($nch)) {
+				Log::log "err", "read error in $pipe_map{$i}{vlsr} pipe: $!";
+				$break = 1;
+				vec($rdin, $i, 1) = 0;
+				last;
+			}
+		}
+		if($break) {
+			next;
+		}
+		$l = unpack("a4", $l);
+		if($l ne "") {
+			$msg_l = unpack("S", $l);
+		}
+		$nch = 0;
+		while($nch<$msg_l) {
+			$nch = read($fh, $msg, $msg_l-$nch, $nch);
+			if(!defined($nch)) {
+				Log::log "err", "read error in $pipe_map{$i}{vlsr} pipe: $!";
+				$break = 1;
+				vec($rdin, $i, 1) = 0;
+				last;
+			}
+		}
+		if($break) {
+			next;
+		}
+		my $pref;
+		($pref, $msg) = split(":", $msg);
+		
+
+
+		#if the child died for whatever reason, close will return an error
+		# and exit status 10. We can safely ignore it
+		close $fh;
+
+		waitpid($pipe_map{$i}{cpid}, 0) or die "waitpid";
+
+		# clear the bit of the read pipe
+		vec($rdin, $i, 1) = 0;
+		
+	}
 
 	$serv_sock->shutdown(SHUT_RDWR);
 };
