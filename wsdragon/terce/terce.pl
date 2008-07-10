@@ -489,6 +489,7 @@ if($daemonize) {
 ########################### initial setup ############################
 eval {
 	my %pipe_map;
+	my %pipe_queue;
 	my $sel = new IO::Select();
 
 
@@ -549,26 +550,54 @@ eval {
 	}
 	
 	# start the msg relay loop 
+	# ASSUMPTIONS (so we can be reentrant):
+	#     1. the source will send only complete messages to a single destination
+	#         (no multiplexing of partial messages)
+	#     2. the relay will forward only full messages
+	#     => if we get an incomplete message from a src we can come back
+	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run(" entering message relay loop\n");
 	while(!$::ctrlC) {
 		my @readable = $sel->can_read();
 
 		foreach my $h (@readable) {
-			while(!$n) {
-				$n = read($h, $m, $l, $o);
-				#lock on the message preamble in the stream 
-				if($m =~ /<msg dst=(\d+) src=(\d+) len=(\d+)>/) {
-					$m_lck = 1;
-					$m_hdr = $&;
+
+			while(1) {
+				# handle, message, length, offset
+				$n = sysread($h, $m, $l, $o);
+				if(!$n) {
+					last;
+				}
+				#lock on the message preamble
+				if($m =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
+					$m_start = 1;
 					$dst = $1;
+					$src = $2;
+					$pipe_queue{d_fh} = $pipe_map{$dst}{fh};
+					$pipe_queue{s_fh} = $h;
+					$pipe_queue{$dst}{$src}{queue} = $&;
 					$l = $3;
 					$m = $';
 					$o = length($m) + 1;
 				}
-				if($m_lck && ($m =~ /<\/msg>/)) {
-					$m_fin = 1;
+				elsif($m_start && ($m =~ /<\/msg>/)) {
+					$pipe_queue{$dst}{$src}{queue} .= $`.$&;
+					$l = 1;
+					$m = $';
+					$o = length($m) + 1;
+					$n = 0;
+					while(1) {
+						$n = syswrite($pipe_queue{$dst}{fh}, $pipe_queue{$dst}{$src}{queue});
+						if(!defined($n)) {
+							Log::log "warning", "relay: message to   \n";
+							last;
+						}
+					}
 				}
-				$o += $n;
+				else {
+					$o += $n;
+					$l -= $n;
+				}
 			}
 		}
 		
