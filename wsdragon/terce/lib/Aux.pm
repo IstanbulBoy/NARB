@@ -12,9 +12,9 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T );
+	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -44,6 +44,14 @@ use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition ca
 use constant TERM_T_T => 2; # this will force the termination of a thread run loop
 use constant INIT_Q_T => 3; # this will initialize a client queue and open the async socket
 
+use constant ADDR_TERCE => 1;
+use constant ADDR_GMPLS_CORE => 2;
+use constant ADDR_GMPLS_NARB_S => 3;
+use constant ADDR_GMPLS_NARB_C => 4;
+use constant ADDR_GMPLS_RCE_S => 5;
+use constant ADDR_GMPLS_RCE_C => 6;
+use constant ADDR_WEB_S => 7;
+use constant ADDR_SOAP_S => 8;
 
 my $dbg_sys = 0;
 

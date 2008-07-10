@@ -310,9 +310,11 @@ sub start_http_server($) {
 	Aux::print_dbg_run(" http server exiting\n");
 }
 
-sub spawn($$$$@) {
-	my ($piperef, $selref, $coderef, $proc_name, @args) = @_;
+sub spawn($$$$$@) {
+	my ($piperef, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
 	my $pid;
+	# $ch: child handle .... the socket used by parent to talk to child
+	# $ph: parent handle .... the socket used by child to talk to parent
 	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
 	if (!defined($pid = fork)) {
 		Log::log "err",  "cannot fork: $!";
@@ -321,10 +323,9 @@ sub spawn($$$$@) {
 		die "";
 	} elsif ($pid) {
 		close $ph;
-		my $fn = fileno($ch);
-		vec($$rdinref, $fn, 1) = 1;
-		$$piperef{$fn}{fh} = $ch; 	#filehandle corresponding to this number
-		$$piperef{$fn}{cpid} = $pid;				#child's pid using this pipe 
+		$$selref->add($ch);
+		$$piperef{$proc_addr}{fh} = $ch; 	#filehandle corresponding to this number
+		$$piperef{$proc_addr}{cpid} = $pid;	#child's pid using this pipe 
 		return;
 	}
 	close $ch;
@@ -346,7 +347,6 @@ my $status = 0;
 use constant TERCE_STAT_NARB_CONN => (1<<0);
 use constant TERCE_STAT_RCE_CONN => (1<<1);
 use constant TERCE_STAT_INIT_DONE => (TERCE_STAT_NARB_CONN | TERCE_STAT_NARB_CONN);
-
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -493,15 +493,15 @@ eval {
 
 
 	# start the GMPLS Processor Core
-	spawn(\%pipe_map, \$sel, \&start_gmpls_core, "GMPLS Core");
+	spawn(\%pipe_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		spawn(\%pipe_map, \$sel, \&start_http_server, "Web Server");
+		spawn(\%pipe_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
 	}
 
 	# start the SOAP/HTTP server
-	spawn(\%pipe_map, \$sel, \&start_ws_server, "SOAP Server", $::cfg{ws}{port}{v});
+	spawn(\%pipe_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
 
 	exit;
 	# wait for GMPLS connections 
@@ -540,76 +540,37 @@ eval {
 			next;
 		}
 		# start uninitialized client queue
-		spawn(\%pipe_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", $n);
+		spawn(\%pipe_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C, $n);
 
 		# start GMPLS server
-		spawn(\%pipe_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", $client_sock, $n);
+		spawn(\%pipe_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock, $n);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 		}
 	}
 	
 	# start the msg relay loop 
+	Aux::print_dbg_run(" entering message relay loop\n");
 	while(!$::ctrlC) {
-		my $l;
-		my $msg_l = 0;
-		my $msg = "";
-		my $i = 0;
-		my $nch;
-		my $nfound = select($rdout=$sel, undef, undef, undef);
-		if($nfound==-1) {
-			die "select: $!\n";
-		}
-		if(!$nfound) {
-			next;
-		}
-		while(!vec($rdin, $i, 1)) {$i++;}
-		
-		my $fh = $pipe_map{$i}{fh};			
+		my @readable = $sel->can_read();
 
-		$nch = 0;
-		my $break = 0;
-		while($nch<4) {
-			$nch = read($fh, $l, 4-$nch, $nch);
-			if(!defined($nch)) {
-				Log::log "err", "read error in $pipe_map{$i}{vlsr} pipe: $!";
-				$break = 1;
-				vec($rdin, $i, 1) = 0;
-				last;
+		foreach my $h (@readable) {
+			while(!$n) {
+				$n = read($h, $m, $l, $o);
+				#lock on the message preamble in the stream 
+				if($m =~ /<msg dst=(\d+) src=(\d+) len=(\d+)>/) {
+					$m_lck = 1;
+					$m_hdr = $&;
+					$dst = $1;
+					$l = $3;
+					$m = $';
+					$o = length($m) + 1;
+				}
+				if($m_lck && ($m =~ /<\/msg>/)) {
+					$m_fin = 1;
+				}
+				$o += $n;
 			}
 		}
-		if($break) {
-			next;
-		}
-		$l = unpack("a4", $l);
-		if($l ne "") {
-			$msg_l = unpack("S", $l);
-		}
-		$nch = 0;
-		while($nch<$msg_l) {
-			$nch = read($fh, $msg, $msg_l-$nch, $nch);
-			if(!defined($nch)) {
-				Log::log "err", "read error in $pipe_map{$i}{vlsr} pipe: $!";
-				$break = 1;
-				vec($rdin, $i, 1) = 0;
-				last;
-			}
-		}
-		if($break) {
-			next;
-		}
-		my $pref;
-		($pref, $msg) = split(":", $msg);
-		
-
-
-		#if the child died for whatever reason, close will return an error
-		# and exit status 10. We can safely ignore it
-		close $fh;
-
-		waitpid($pipe_map{$i}{cpid}, 0) or die "waitpid";
-
-		# clear the bit of the read pipe
-		vec($rdin, $i, 1) = 0;
 		
 	}
 
