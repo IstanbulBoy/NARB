@@ -348,6 +348,11 @@ use constant TERCE_STAT_NARB_CONN => (1<<0);
 use constant TERCE_STAT_RCE_CONN => (1<<1);
 use constant TERCE_STAT_INIT_DONE => (TERCE_STAT_NARB_CONN | TERCE_STAT_NARB_CONN);
 
+use constant TERCE_MSG_SCAN => 1;
+use constant TERCE_MSG_STARTED => 2;
+
+use constant TERCE_MSG_SCAN_L => 64;
+
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
 #     status ... d: default, 
@@ -556,47 +561,60 @@ eval {
 	#     2. the relay will forward only full messages
 	#     => if we get an incomplete message from a src we can come back
 	#        and continue to build the same queue when more data is available
-	Aux::print_dbg_run(" entering message relay loop\n");
+	Aux::print_dbg_run("entering message relay loop\n");
 	while(!$::ctrlC) {
 		my @readable = $sel->can_read();
 
 		foreach my $h (@readable) {
 
+			my $src_n = fileno($h);
+			if(!exists($pipe_queue{$src_n}{buffer})) {
+				# create new stream buffer and start scanning
+				$pipe_queue{$src_n}{buffer} = "";  # stream buffer
+				$pipe_queue{$src_n}{status} = TERCE_MSG_SCAN; # queue status
+				$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L; # initial (could be anything) amount of data to read
+			}
+			my $o = length($pipe_queue{$src_n}{buffer});
+			my $dst;
+			my $n;
 			while(1) {
 				# handle, message, length, offset
-				$n = sysread($h, $m, $l, $o);
+				$n = sysread($h, $pipe_queue{$src_n}{buffer}, $pipe_queue{$src_n}{length}, $o);
 				if(!$n) {
 					last;
 				}
-				#lock on the message preamble
-				if($m =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
-					$m_start = 1;
-					$dst = $1;
-					$src = $2;
-					$pipe_queue{d_fh} = $pipe_map{$dst}{fh};
-					$pipe_queue{s_fh} = $h;
-					$pipe_queue{$dst}{$src}{queue} = $&;
-					$l = $3;
-					$m = $';
-					$o = length($m) + 1;
+				$o += $n;
+				if($pipe_queue{$src_n}{status} == TERCE_MSG_STARTED) {
+					# at this point the message length is known
+					$pipe_queue{$src_n}{length} -= $n;
 				}
-				elsif($m_start && ($m =~ /<\/msg>/)) {
-					$pipe_queue{$dst}{$src}{queue} .= $`.$&;
-					$l = 1;
-					$m = $';
-					$o = length($m) + 1;
-					$n = 0;
+				# lock on the message preamble and discard anything before the message start
+				# and reinitialize the queue
+				if($pipe_queue{$src_n}{buffer} =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
+					$pipe_queue{$src_n}{status} = TERCE_MSG_STARTED;
+					$dst = $1;
+					$pipe_queue{$src_n}{dst} = $pipe_map{$dst}{fh};
+					$pipe_queue{$src_n}{msg} = $&;
+					$pipe_queue{$src_n}{buffer} = $'; # shorten the buffer
+					$pipe_queue{$src_n}{length} = $3 - length($&);
+					if($pipe_queue{$src_n}{length} <= 0) {
+						$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L;
+					}
+				}
+				# forward the message
+				if(($pipe_queue{$src_n}{status} == TERCE_MSG_STARTED) && ($pipe_queue{$src_n}{buffer} =~ /<\/msg>/)) {
+					$pipe_queue{$src_n}{msg} .= $`.$&;
+					$pipe_queue{$src_n}{buffer} = $';
+					$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L;
+					$pipe_queue{$src_n}{status} = TERCE_MSG_SCAN;
 					while(1) {
-						$n = syswrite($pipe_queue{$dst}{fh}, $pipe_queue{$dst}{$src}{queue});
+						$n = syswrite($pipe_queue{$dst}{fh}, $pipe_queue{$src_n}{msg});
 						if(!defined($n)) {
 							Log::log "warning", "relay: message to   \n";
 							last;
 						}
 					}
-				}
-				else {
-					$o += $n;
-					$l -= $n;
+					last;
 				}
 			}
 		}
