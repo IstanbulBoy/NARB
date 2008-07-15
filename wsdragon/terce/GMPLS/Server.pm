@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -49,11 +49,13 @@ sub activate_tedb($$) {
 
 sub new {
 	shift;
-	my ($fh, $sock, $n)  = @_;
+	my ($fh, $proc, $sock)  = @_;
 	my $self = {
-		"name" => $n, 		# server name  
 		"sock" => $sock,	# server socket
-		"select" => new IO::Select($sock); # select handle
+		"gmpls_select" => new IO::Select($sock); # select handle
+		"proc" => $proc,
+		"fh" => $fh, 		# IPC pipe
+		"select" => new IO::Select($fh); # select handle
 	};
 	bless $self;
 	return $self;
@@ -71,7 +73,7 @@ sub run() {
 		}
 
 		eval {
-			$sn = GMPLS::API::get_msg($$self{select}, \%msg);
+			$sn = GMPLS::API::get_msg($$self{gmpls_select}, \%msg);
 		};
 		if($@) {
 			Log::log "err", "$@\n";
@@ -84,7 +86,7 @@ sub run() {
 		eval {
 			$err = 0;
 			if(GMPLS::API::is_sync_init($msg{$sn})) {
-				Aux::print_dbg_run("starting (%s) server thread\n", $$self{name});
+				Log::log "info", "starting $$self{name}\n";
 				# init the control channel
 				my @data = ($$self{sock}->peerhost(), $msg{$sn}{hdr}{tag2});
 				unshift(@data, {"cmd"=>CTRL_CMD, "type"=>INIT_Q_T});

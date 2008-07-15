@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,13 +44,20 @@ our @EXPORT_OK;
 
 sub new {
 	shift;
-	my ($fh, $n)  = @_;
-	my $self = {
-		name => $n,
-		queue => $q,
-		status => 0
-		ctrl_sock => undef,
+	my ($fh, $proc)  = @_;
+	my $self;
+	eval {
+		$self = {
+			"status" => 0,
+			"ctrl_sock" => undef,
+			"proc" => $proc,
+			"fh" => $fh, 		# IPC pipe
+			"select" => new IO::Select($fh) # select handle
+		};
 	};
+	if($@) {
+		die "$n: $@\n";
+	}
 	bless $self;
 	return $self;
 }
@@ -73,7 +80,7 @@ sub open_ctrl_channel($$) {
 sub run() {
 	my $self = shift;
 	my $d;
-	Aux::print_dbg_run("starting (%s) client queue\n", $$self{name});
+	Log::log "info", "starting $$self{name}\n";
 	while(!$::ctrlC) {
 		# this blocking queue is being controlled from WS server
 		$d = $$self{queue}->dequeue();
@@ -106,7 +113,7 @@ sub run() {
 			}
 		}
 	}
-	Aux::print_dbg_run("exiting %s client queue\n", $$self{name});
+	Aux::print_dbg_run("exiting $$self{name}\n");
 	if(defined($$self{ctrl_sock})) {
 		close($$self{ctrl_sock});
 	}

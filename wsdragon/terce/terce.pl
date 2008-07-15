@@ -44,8 +44,6 @@ use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
 use Getopt::Long;
-use HTTP::Daemon;
-use HTTP::Status;
 
 %::cfg = ();
 $::ctrlC = 0;
@@ -188,10 +186,10 @@ sub init_cfg($) {
 ######################################################################
 
 sub start_gmpls_server($$$) {
-	my ($fh, $cs, $n) = @_;
+	my ($fh, $n, $cs) = @_;
 	my $srvr;
 	eval {
-		$srvr = new GMPLS::Server($fh, $cs, $n);
+		$srvr = new GMPLS::Server($fh, $n, $cs);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -215,12 +213,11 @@ sub start_gmpls_client($$) {
 	}
 }
 
-sub start_gmpls_core($) {
-	my ($fh) = @_;
+sub start_gmpls_core($$) {
+	my ($fh, $n) = @_;
 	my $core;
-	Log::log "info",  "starting gmpls processor core\n";
 	eval {
-		$core = new GMPLS::Core($fh);
+		$core = new GMPLS::Core($fh, $n);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -230,12 +227,11 @@ sub start_gmpls_core($) {
 	}
 }
 
-sub start_ws_server($$) {
-	my ($fh, $p) = @_;
+sub start_ws_server($$$) {
+	my ($fh, $n, $p) = @_;
 	my $srvr;
-	Log::log "info",  "starting ws server on port $p\n";
 	eval {
-		$srvr = new WS::Server($fh, $p);
+		$srvr = new WS::Server($fh, $n, $p);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -245,75 +241,22 @@ sub start_ws_server($$) {
 	}
 }
 
-sub start_http_server($) {
-	my ($fh) = @_;
-	my $http = new HTTP::Daemon(
-		LocalAddr => inet_ntoa(INADDR_ANY),
-		LocalPort => $::cfg{http}{port}{v},
-		ReuseAddr => 1,
-		Timeout => 5,
-		Blocking => 1
-	);
-	Log::log "info",  "starting HTTP server on port $::cfg{http}{port}{v}\n";
-	my $c;
-	while(!$::ctrlC) {
-		while ($c = $http->accept) {
-			while (my $r = $c->get_request) {
-				if ($r->method eq 'GET') {
-					my $f;
-					if($r->uri eq "/") {
-						$f = $::cfg{http}{root}{v}."/index.html";
-					}
-					else {
-						$f = $::cfg{http}{root}{v}.$r->uri;
-					}
-					if(-d $f) {
-						$c->send_error(RC_FORBIDDEN);
-					}
-					elsif(-e $f && -r $f) {
-						if($f =~ /(\.[Ww][Ss][Dd][Ll]\s*$|[Xx][Ss][Dd]\s*$)/) {
-							my $code = RC_OK;
-							my $msg = "";
-							my $content = "";
-							eval {
-								open(FH, "<", $f) or die "Can't open $f: $!\n";
-								while(<FH>) {
-									$content .= $_;
-								}
-								close(FH) or die "Can't close $f: $!\n";
-							};
-							if($@) {
-								Log::log "warning", "wsdl file reading error: $@\n";
-								$c->send_error(RC_BAD_REQUEST);
-							}
-							else {
-								my $h = new HTTP::Headers();
-								$h->header('Content-Type' => 'text/xml');
-								my $res = new HTTP::Response( $code, $msg, $h, $content );
-								$c->send_response($res);
-							}
-						}
-						else {
-							$c->send_file_response($f);
-						}
-					}
-					else {
-						$c->send_error(RC_NOT_FOUND);
-					}
-				}
-				else {
-					$c->send_error(RC_METHOD_NOT_ALLOWED);
-				}
-			}
-		}
+sub start_http_server($$$) {
+	my ($fh, $n, $p) = @_;
+	my $srvr;
+	eval {
+		$srvr = new HTTP::Server($fh, $n, $p);
+	};
+	if($@) {
+		Log::log "err",  "$@\n";
 	}
-	$c->close if defined;
-	undef($c);
-	Aux::print_dbg_run(" http server exiting\n");
+	else {
+		$srvr->run();
+	}
 }
 
 sub spawn($$$$$@) {
-	my ($piperef, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
+	my ($procref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
 	my $pid;
 	# $ch: child handle .... the socket used by parent to talk to child
 	# $ph: parent handle .... the socket used by child to talk to parent
@@ -326,17 +269,23 @@ sub spawn($$$$$@) {
 	} elsif ($pid) {
 		close $ph;
 		$$selref->add($ch);
-		# a double keyed hash ... a bit crazy
-		my $tmp = {"fh" => $ch, "cpid" => $pid, "name" => $proc_name};
-		$$piperef{$proc_addr} = $tmp;
-		$$piperef{$ch} = $tmp;
+		# a doubly-keyed hash 
+		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+		$$procref{$proc_addr} = $tmp;
+		$$procref{$ch} = $tmp;
 		return;
 	}
 	close $ch;
 	$SIG{TERM} = \&catch_quiet_term;
 	$SIG{INT} = \&catch_quiet_term;
 	$SIG{HUP} = \&catch_quiet_term;
-	exit &$coderef($ph, @args); # this is the child's entry point
+
+	# a doubly-keyed hash 
+	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+	$$procref{$proc_addr} = $tmp;
+	$$procref{$ch} = $tmp;
+
+	exit &$coderef($ph, $procref, @args); # this is the child's entry point
 }
 
 
@@ -495,21 +444,21 @@ if($daemonize) {
 
 ########################### initial setup ############################
 eval {
-	my %pipe_map;
-	my %pipe_queue;
+	my %proc_map;
+	my %proc_queue;
 	my $sel = new IO::Select();
 
 
 	# start the GMPLS Processor Core
-	spawn(\%pipe_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
+	spawn(\%proc_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		spawn(\%pipe_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
+		spawn(\%proc_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
 	}
 
 	# start the SOAP/HTTP server
-	spawn(\%pipe_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
+	spawn(\%proc_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
 
 	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -547,10 +496,10 @@ eval {
 			next;
 		}
 		# start uninitialized client queue
-		spawn(\%pipe_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C, $n);
+		spawn(\%proc_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
 
 		# start GMPLS server
-		spawn(\%pipe_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock, $n);
+		spawn(\%proc_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 			last;
 		}
@@ -563,9 +512,9 @@ eval {
 	#     2. the relay will forward only full messages
 	#     => if we get an incomplete message from a src we can come back
 	#        and continue to build the same queue when more data is available
-	Aux::print_dbg_run("entering message relay loop\n");
+	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 	while(!$::ctrlC) {
-		Aux::process_msg($sel, \%pipe_map, \%pipe_queue, 1);
+		Aux::process_msg($sel, \%proc_map, \%proc_queue, 1);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };

@@ -16,26 +16,22 @@
 #    MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
 # Author: Jaroslav Flidr
-# March 1, 2008
+# July 15, 2008
 #
 # File: Server.pm
 #
 
-package WS::Server;
+package HTTP::Server;
 
 use strict;
 use warnings;
-use Socket;
-use GMPLS::Constants;
-use WS::External;
-use WS::Handlers;
-use SOAP::Lite;
-use SOAP::Transport::HTTP;
+use HTTP::Daemon;
+use HTTP::Status;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.36 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -43,76 +39,89 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-
-use constant STAT_LINK_ID => 		(1<<0);
-use constant STAT_LINK_TYPE => 		(1<<1);
-use constant STAT_LINK_LOCAL => 	(1<<2);
-use constant STAT_LINK_REMOTE =>	(1<<3);
-use constant STAT_LINK_METRIC => 	(1<<4);
-use constant STAT_LINK_CAPACITY => 	(1<<5);
-use constant STAT_LINK_MAX_BW => 	(1<<6);
-use constant STAT_LINK_SWCAP => 	(1<<7);
-
-use constant STAT_LINK_COMPLETE => 	(
-	STAT_LINK_ID | 
-	STAT_LINK_LOCAL | 
-	STAT_LINK_METRIC | 
-	STAT_LINK_CAPACITY | 
-	STAT_LINK_MAX_BW | 
-	STAT_LINK_SWCAP);
-
-
-sub tag($$$);
-
 sub new {
 	shift;
 	my ($fh, $proc, $p)  = @_;
 	my $self;
 	eval {
 		$self = {
-			"xml" => undef,
 			"port" => $p,
-			"server" => new SOAP::Transport::HTTP::Daemon(
+			"server"=> new HTTP::Daemon(
 				LocalAddr => inet_ntoa(INADDR_ANY),
 				LocalPort => $p,
 				ReuseAddr => 1,
+				Timeout => 5,
 				Blocking => 1
 			),
 			"proc" => $proc,
 			"fh" => $fh, 		# IPC pipe
-			"select" => new IO::Select($fh), # select handle
+			"select" => new IO::Select($sock) # select handle
 		};
 	};
 	if($@) {
 		die "$n: $@\n";
 	}
 	bless $self;
-	$$self{server}->dispatch_to(new WS::Handlers($self));
 	return $self;
-}
-
-# this is an override so we can fork the process and handle multiple requests 
-sub handle {
-	my $self = shift->new;
-	while (my $c = $self->accept) {
-		while (my $r = $c->get_request) {
-			$self->request($r);
-			$self->SUPER::handle;
-			$c->send_response($self->response)
-		}
-		UNIVERSAL::isa($c, 'shutdown') ? $c->shutdown(2) : $c->close(); 
-		$c->close;
-	}
 }
 
 sub run() {
 	my $self = shift;
-	Log::log "info", "starting $$self{name} on port $$self{port}\n";
+	my $c;
+	Log::log "info", "starting $$self{name}\n";
 	while(!$::ctrlC) {
-		# WS server
-		$$self{server}->handle;
+		while ($c = $http->accept) {
+			while (my $r = $c->get_request) {
+				if ($r->method eq 'GET') {
+					my $f;
+					if($r->uri eq "/") {
+						$f = $::cfg{http}{root}{v}."/index.html";
+					}
+					else {
+						$f = $::cfg{http}{root}{v}.$r->uri;
+					}
+					if(-d $f) {
+						$c->send_error(RC_FORBIDDEN);
+					}
+					elsif(-e $f && -r $f) {
+						if($f =~ /(\.[Ww][Ss][Dd][Ll]\s*$|[Xx][Ss][Dd]\s*$)/) {
+							my $code = RC_OK;
+							my $msg = "";
+							my $content = "";
+							eval {
+								open(FH, "<", $f) or die "Can't open $f: $!\n";
+								while(<FH>) {
+									$content .= $_;
+								}
+								close(FH) or die "Can't close $f: $!\n";
+							};
+							if($@) {
+								Log::log "warning", "wsdl file reading error: $@\n";
+								$c->send_error(RC_BAD_REQUEST);
+							}
+							else {
+								my $h = new HTTP::Headers();
+								$h->header('Content-Type' => 'text/xml');
+								my $res = new HTTP::Response( $code, $msg, $h, $content );
+								$c->send_response($res);
+							}
+						}
+						else {
+							$c->send_file_response($f);
+						}
+					}
+					else {
+						$c->send_error(RC_NOT_FOUND);
+					}
+				}
+				else {
+					$c->send_error(RC_METHOD_NOT_ALLOWED);
+				}
+			}
+		}
 	}
-	$$self{server}->shutdown(SHUT_RDWR);
+	$c->close if defined;
+	undef($c);
 	Aux::print_dbg_run("exiting $$self{name}\n");
 }
 

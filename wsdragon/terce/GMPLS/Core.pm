@@ -31,7 +31,7 @@ use GMPLS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -62,13 +62,21 @@ sub tag($$$);
 
 sub new {
 	shift;
-	my($ph) = @_;
-	my $self = {
-		select => new IO::Select($ph),
-		abstract_tedb => undef,
-		control_tedb => undef,
-		data_tedb => undef,
+	my($fh, $proc) = @_;
+	my $self;
+	eval {
+		$self = {
+			"abstract_tedb" => undef,
+			"control_tedb" => undef,
+			"data_tedb" => undef,
+			"proc" => $proc,
+			"fh" => $fh,
+			"select" => new IO::Select($fh)
+		};
 	};
+	if($@) {
+		die "$n: $@\n";
+	}
 	bless $self;
 	return $self;
 }
@@ -406,6 +414,11 @@ sub run() {
 	my $stat2 = 0;
 	my @ret1 = ();
 	my @ret2 = ();
+
+	my %pipe_map
+	my %pipe_queue;
+
+	Log::log "info",  "starting gmpls processor core\n";
 	while(!$::ctrlC) {
 		# rce or narb TEDB queue
 		$$self{select}->can_read();
@@ -508,7 +521,7 @@ sub run() {
 		}
 	}
 	$$self{server}->shutdown(SHUT_RDWR);
-	Aux::print_dbg_run("exiting web services thread\n");
+	Aux::print_dbg_run("exiting $$self{name}\n");
 }
 
 1;
