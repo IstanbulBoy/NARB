@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,12 +44,12 @@ our @EXPORT_OK;
 
 sub new {
 	shift;
-	my ($n, $q)  = @_;
+	my ($fh, $n)  = @_;
 	my $self = {
 		name => $n,
-		ctrl_sock => undef,
 		queue => $q,
 		status => 0
+		ctrl_sock => undef,
 	};
 	bless $self;
 	return $self;

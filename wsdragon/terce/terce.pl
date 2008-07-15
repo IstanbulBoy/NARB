@@ -77,7 +77,7 @@ usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
        --www_root <dir>: root of the web server
        --log: <log file> log file (default: /var/log/terce.log)
        --dbg: <list> of components to debug:
-              (run config narb rce net api data lsa ws)
+              (run config narb rce net api data lsa ws msg)
        --help: prints this message
 USG
 	exit;
@@ -87,14 +87,17 @@ USG
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating ... (SIG$signame)\n");
-	Log::log("info", "   (http server can take up to 10s to exit)\n");
+	$::ctrlC = 1;
+}
+
+sub catch_quiet_term {
 	$::ctrlC = 1;
 }
 
 sub grim {
 	my $child;
 	while ((my $waitedpid = waitpid(-1,WNOHANG)) > 0) {
-		Aux::print_dbg_run("reaped $waitedpid with exit $?" );
+		Aux::print_dbg_run("reaped $waitedpid with exit $?\n" ) if $? != 0;
 	}
 	$SIG{CHLD} = \&grim;
 }
@@ -113,11 +116,11 @@ sub process_opts($$) {
 	if(($n eq "p") || ($n eq "gmpls_port"))	{$k1 = "gmpls"; $k2 = "port";}
 	if($n eq "narb_sport")			{$k1 = "gmpls"; $k2 = "narb_sport";}
 	if($n eq "rce_sport")			{$k1 = "gmpls"; $k2 = "rce_sport";}
-	if($n eq "www_port")			{$k1 = "http"; $k2 = "port"}
-	if($n eq "wsdl")			{$k1 = "http"; $k2 = "wsdl"}
-	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port"}
-	if($n eq "wsdl")			{$k1 = "ws"; $k2 = "wsdl"}
-	if($n eq "subnet_cfg")			{$k1 = "ws"; $k2 = "subnet_cfg"}
+	if($n eq "www_port")			{$k1 = "http"; $k2 = "port";}
+	if($n eq "wsdl")			{$k1 = "http"; $k2 = "wsdl";}
+	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port";}
+	if($n eq "wsdl")			{$k1 = "ws"; $k2 = "wsdl";}
+	if($n eq "subnet_cfg")			{$k1 = "ws"; $k2 = "subnet_cfg";}
 
 	if(defined($k1) && !defined($k2) && !$is_array) {
 		if($k1 eq "dbg") {
@@ -184,12 +187,11 @@ sub init_cfg($) {
 ###################### child process entry points ####################
 ######################################################################
 
-# NOTE: running in a different process here ...
 sub start_gmpls_server($$$) {
 	my ($fh, $cs, $n) = @_;
 	my $srvr;
 	eval {
-		$srvr = new GMPLS::Server($cs, $n, $fh);
+		$srvr = new GMPLS::Server($fh, $cs, $n);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -203,7 +205,7 @@ sub start_gmpls_client($$) {
 	my ($fh, $n) = @_;
 	my $client;
 	eval {
-		$client = new GMPLS::Client($n, $fh);
+		$client = new GMPLS::Client($fh, $n);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -213,8 +215,8 @@ sub start_gmpls_client($$) {
 	}
 }
 
-sub start_gmpls_core($$) {
-	my ($fh, $p) = @_;
+sub start_gmpls_core($) {
+	my ($fh) = @_;
 	my $core;
 	Log::log "info",  "starting gmpls processor core\n";
 	eval {
@@ -233,7 +235,7 @@ sub start_ws_server($$) {
 	my $srvr;
 	Log::log "info",  "starting ws server on port $p\n";
 	eval {
-		$srvr = new WS::Server($p, $fh);
+		$srvr = new WS::Server($fh, $p);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -324,12 +326,17 @@ sub spawn($$$$$@) {
 	} elsif ($pid) {
 		close $ph;
 		$$selref->add($ch);
-		$$piperef{$proc_addr}{fh} = $ch; 	#filehandle corresponding to this number
-		$$piperef{$proc_addr}{cpid} = $pid;	#child's pid using this pipe 
+		# a double keyed hash ... a bit crazy
+		my $tmp = {"fh" => $ch, "cpid" => $pid, "name" => $proc_name};
+		$$piperef{$proc_addr} = $tmp;
+		$$piperef{$ch} = $tmp;
 		return;
 	}
 	close $ch;
-	exit &$coderef($ph, @args);
+	$SIG{TERM} = \&catch_quiet_term;
+	$SIG{INT} = \&catch_quiet_term;
+	$SIG{HUP} = \&catch_quiet_term;
+	exit &$coderef($ph, @args); # this is the child's entry point
 }
 
 
@@ -347,11 +354,6 @@ my $status = 0;
 use constant TERCE_STAT_NARB_CONN => (1<<0);
 use constant TERCE_STAT_RCE_CONN => (1<<1);
 use constant TERCE_STAT_INIT_DONE => (TERCE_STAT_NARB_CONN | TERCE_STAT_NARB_CONN);
-
-use constant TERCE_MSG_SCAN => 1;
-use constant TERCE_MSG_STARTED => 2;
-
-use constant TERCE_MSG_SCAN_L => 64;
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -509,7 +511,6 @@ eval {
 	# start the SOAP/HTTP server
 	spawn(\%pipe_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
 
-	exit;
 	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
 		LocalAddr => inet_ntoa(INADDR_ANY),
@@ -551,76 +552,21 @@ eval {
 		# start GMPLS server
 		spawn(\%pipe_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock, $n);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
+			last;
 		}
 	}
 	
 	# start the msg relay loop 
 	# ASSUMPTIONS (so we can be reentrant):
-	#     1. the source will send only complete messages to a single destination
+	#     1. a source will send only complete messages to a single destination
 	#         (no multiplexing of partial messages)
 	#     2. the relay will forward only full messages
 	#     => if we get an incomplete message from a src we can come back
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n");
 	while(!$::ctrlC) {
-		my @readable = $sel->can_read();
-
-		foreach my $h (@readable) {
-
-			my $src_n = fileno($h);
-			if(!exists($pipe_queue{$src_n}{buffer})) {
-				# create new stream buffer and start scanning
-				$pipe_queue{$src_n}{buffer} = "";  # stream buffer
-				$pipe_queue{$src_n}{status} = TERCE_MSG_SCAN; # queue status
-				$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L; # initial (could be anything) amount of data to read
-			}
-			my $o = length($pipe_queue{$src_n}{buffer});
-			my $dst;
-			my $n;
-			while(1) {
-				# handle, message, length, offset
-				$n = sysread($h, $pipe_queue{$src_n}{buffer}, $pipe_queue{$src_n}{length}, $o);
-				if(!$n) {
-					last;
-				}
-				$o += $n;
-				if($pipe_queue{$src_n}{status} == TERCE_MSG_STARTED) {
-					# at this point the message length is known
-					$pipe_queue{$src_n}{length} -= $n;
-				}
-				# lock on the message preamble and discard anything before the message start
-				# and reinitialize the queue
-				if($pipe_queue{$src_n}{buffer} =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
-					$pipe_queue{$src_n}{status} = TERCE_MSG_STARTED;
-					$dst = $1;
-					$pipe_queue{$src_n}{dst} = $pipe_map{$dst}{fh};
-					$pipe_queue{$src_n}{msg} = $&;
-					$pipe_queue{$src_n}{buffer} = $'; # shorten the buffer
-					$pipe_queue{$src_n}{length} = $3 - length($&);
-					if($pipe_queue{$src_n}{length} <= 0) {
-						$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L;
-					}
-				}
-				# forward the message
-				if(($pipe_queue{$src_n}{status} == TERCE_MSG_STARTED) && ($pipe_queue{$src_n}{buffer} =~ /<\/msg>/)) {
-					$pipe_queue{$src_n}{msg} .= $`.$&;
-					$pipe_queue{$src_n}{buffer} = $';
-					$pipe_queue{$src_n}{length} = TERCE_MSG_SCAN_L;
-					$pipe_queue{$src_n}{status} = TERCE_MSG_SCAN;
-					while(1) {
-						$n = syswrite($pipe_queue{$dst}{fh}, $pipe_queue{$src_n}{msg});
-						if(!defined($n)) {
-							Log::log "warning", "relay: message to   \n";
-							last;
-						}
-					}
-					last;
-				}
-			}
-		}
-		
+		Aux::process_msg($sel, \%pipe_map, \%pipe_queue, 1);
 	}
-
 	$serv_sock->shutdown(SHUT_RDWR);
 };
 if($@) {

@@ -31,7 +31,7 @@ use GMPLS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -62,7 +62,9 @@ sub tag($$$);
 
 sub new {
 	shift;
+	my($ph) = @_;
 	my $self = {
+		select => new IO::Select($ph),
 		abstract_tedb => undef,
 		control_tedb => undef,
 		data_tedb => undef,
@@ -394,7 +396,6 @@ sub process_q($$$$$) {
 
 sub run() {
 	my $self = shift;
-	my $d = undef;
 	my $tedb1 = {};
 	my $tedb2 = {};
 	my $lblock1 = undef;
@@ -407,54 +408,53 @@ sub run() {
 	my @ret2 = ();
 	while(!$::ctrlC) {
 		# rce or narb TEDB queue
-		$d = $$self{queue1}->dequeue_nb();
-		if(defined($d)) {
-			my $res = $self->process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
-			if($res == 1) {
-				if($stat1 == 0) {
-					# create net graph
-					$self->create_graph($tedb1);
-					eval {
-						$self->traverse($tedb1);
-						@ret1 = $self->split_graph($tedb1);
-					};
-					if($@) {
-						Log::log("err", "$@\n");
-						Aux::print_dbg_tedb("TEDB1 not updated\n");
-					}
-					else {
-						# loop through all the disconnected graphs
-						for(my $i=0; $i<@ret1; $i++) {
-							# first, look at the source
-							my $type = $self->get_topo_type($ret1[$i]);
-							if(defined($type)) {
-								# transfer the completed TEDBs
-								if($type eq "abstract") {
-									$$self{abstract_tedb} = $ret1[$i];
-									Aux::print_dbg_tedb("updating abstract TEDB\n");
-								}
-								elsif($type eq "control") {
-									$$self{control_tedb} = $ret1[$i];
-									Aux::print_dbg_tedb("updating control TEDB\n");
-								}
-								elsif($type eq "data") {
-									$$self{data_tedb} = $ret1[$i];
-									Aux::print_dbg_tedb("updating data TEDB\n");
-								}
+		$$self{select}->can_read();
+		Aux::process_msg($$self{select}, \%pipe_map, \%pipe_queue);
+		my $res = $self->process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
+		if($res == 1) {
+			if($stat1 == 0) {
+				# create net graph
+				$self->create_graph($tedb1);
+				eval {
+					$self->traverse($tedb1);
+					@ret1 = $self->split_graph($tedb1);
+				};
+				if($@) {
+					Log::log("err", "$@\n");
+					Aux::print_dbg_tedb("TEDB1 not updated\n");
+				}
+				else {
+					# loop through all the disconnected graphs
+					for(my $i=0; $i<@ret1; $i++) {
+						# first, look at the source
+						my $type = $self->get_topo_type($ret1[$i]);
+						if(defined($type)) {
+							# transfer the completed TEDBs
+							if($type eq "abstract") {
+								$$self{abstract_tedb} = $ret1[$i];
+								Aux::print_dbg_tedb("updating abstract TEDB\n");
 							}
-							else {
-								Log::log("err", "unknown source\n");
-								Aux::print_dbg_tedb("TEDB1 not updated\n");
+							elsif($type eq "control") {
+								$$self{control_tedb} = $ret1[$i];
+								Aux::print_dbg_tedb("updating control TEDB\n");
 							}
+							elsif($type eq "data") {
+								$$self{data_tedb} = $ret1[$i];
+								Aux::print_dbg_tedb("updating data TEDB\n");
+							}
+						}
+						else {
+							Log::log("err", "unknown source\n");
+							Aux::print_dbg_tedb("TEDB1 not updated\n");
 						}
 					}
 				}
-				else {
-					Aux::print_dbg_tedb("TEDB1 not updated\n");
-				}
-				$tedb1 = {};
-				$stat1 = 0;
 			}
+			else {
+				Aux::print_dbg_tedb("TEDB1 not updated\n");
+			}
+			$tedb1 = {};
+			$stat1 = 0;
 		}
 		# rce or narb TEDB queue
 		$d = $$self{queue2}->dequeue_nb();

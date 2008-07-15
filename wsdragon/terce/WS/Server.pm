@@ -35,7 +35,7 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.34 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.35 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -66,7 +66,7 @@ sub tag($$$);
 
 sub new {
 	shift;
-	my ($lp)  = @_;
+	my ($lp, $fh)  = @_;
 	my $self = {
 		server => new SOAP::Transport::HTTP::Daemon(
 			LocalAddr => inet_ntoa(INADDR_ANY),

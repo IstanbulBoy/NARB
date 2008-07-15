@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,19 +44,16 @@ our @EXPORT_OK;
 sub activate_tedb($$) {
 	my ($sq, $cn) = @_;
 	my @cmd = ({"cmd"=>TEDB_ACTIVATE, "client"=>$cn});
-	Aux::send_via_queue($sq, @cmd);
+	Aux::send_msg($sq, @cmd);
 }
 
 sub new {
 	shift;
-	my ($sock, $n, $sq, $cq)  = @_;
-	my $select = new IO::Select($sock);
+	my ($fh, $sock, $n)  = @_;
 	my $self = {
 		"name" => $n, 		# server name  
 		"sock" => $sock,	# server socket
-		"select" => $select,	# select handle
-		"sq" => $sq,		# server queue (to ws server)
-		"cq" => $cq		# client queue (from ws server)
+		"select" => new IO::Select($sock); # select handle
 	};
 	bless $self;
 	return $self;
@@ -91,7 +88,7 @@ sub run() {
 				# init the control channel
 				my @data = ($$self{sock}->peerhost(), $msg{$sn}{hdr}{tag2});
 				unshift(@data, {"cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
-				Aux::send_via_queue($$self{cq}, @data);
+				Aux::send_msg($$self{cq}, @data);
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {

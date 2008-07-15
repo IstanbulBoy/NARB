@@ -12,7 +12,7 @@ use Log;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -33,6 +33,7 @@ use constant LSA_DBG => 7;
 use constant TEDB_DBG => 8;
 use constant WS_DBG => 9;
 use constant RAW_DBG => 10;
+use constant MSG_DBG => 11;
 
 # commands/types for controlling the interthread client queues
 # NOTE: the "type" key in this construct translates directly to "action" of 
@@ -52,6 +53,23 @@ use constant ADDR_GMPLS_RCE_S => 5;
 use constant ADDR_GMPLS_RCE_C => 6;
 use constant ADDR_WEB_S => 7;
 use constant ADDR_SOAP_S => 8;
+
+use constant TERCE_MSG_SCAN => 1;
+use constant TERCE_MSG_STARTED => 2;
+use constant TERCE_MSG_PEND => 3;
+
+use constant TERCE_MSG_SCAN_L => 64;
+use constant TERCE_MSG_CHUNK => 16384;
+
+our %msg_addr_X = 	(
+	ADDR_TERCE => "TERCE",
+	ADDR_GMPLS_CORE => "GMPLS CORE",
+	ADDR_GMPLS_NARB_S => "GMPLS NARB SERVER",
+	ADDR_GMPLS_NARB_C => "GMPLS NARB CLIENT",
+	ADDR_GMPLS_RCE_S => "GMPLS RCE SERVER",
+	ADDR_GMPLS_RCE_C => "GMPLS RCE CLIENT",
+	ADDR_WEB_S => "WEB SERVER",
+	ADDR_SOAP_S => "SOAP SERVER");
 
 my $dbg_sys = 0;
 
@@ -77,7 +95,8 @@ sub get_dbg_sys(;$) {
 		$v eq "data"?	(1 << DATA_DBG):
 		$v eq "lsa"?	(1 << LSA_DBG):
 		$v eq "tedb"?	(1 << TEDB_DBG):
-		$v eq "ws"?	(1 << WS_DBG):0
+		$v eq "ws"?	(1 << WS_DBG):
+		$v eq "msg"?	(1 << MSG_DBG):0
 		;
 }
 
@@ -130,6 +149,13 @@ sub dbg_raw() {
 	return 0;
 }
 
+sub dbg_msg() {
+	if(defined($dbg_sys)) {
+		return ($dbg_sys &(1 << MSG_DBG));
+	}
+	return 0;
+}
+
 sub print_dbg($;@) {
 	my ($sys, $msg, @args) = @_;
 	if(!defined($dbg_sys)) {
@@ -171,6 +197,10 @@ sub print_dbg_ws($;@) {
 	print_dbg(WS_DBG, @_);
 }
 
+sub print_dbg_msg($;@) {
+	print_dbg(MSG_DBG, @_);
+}
+
 sub dump_config($;$) {
 	my ($hr,$u) = @_;
 	foreach my $k (sort(keys %$hr)) {
@@ -200,7 +230,7 @@ sub chksum($$@) {
 	return $chksum;
 }
 
-sub send_via_queue($@) {
+sub send_msg($@) {
 	my $q = shift;
 	my $t  = shift;
 	my(@d) = @_;
@@ -217,25 +247,77 @@ sub send_via_queue($@) {
 	$q->enqueue($ref);
 }
 
-sub recv_from_tedb($;$) {
-	my ($q, $to) = @_;
-	my $d;
-	$to = 5 if !defined($to);
+sub process_msg($$$;$) {
+	my ($sel, $map_ref, $queue_ref, $forward) = @_;
+	my @readable = $sel->can_read();
 
-	eval {
-		local $SIG{ALRM} = sub { die "timeout"};
-		alarm $to;
-		$::timeout = 0;
+	foreach my $h (@readable) {
 
-		while(!defined($d)) {
-			$d = $q->dequeue();
+		my $src_n = fileno($h);
+		if(!exists($$queue_ref{$src_n}{buffer})) {
+			# create new stream buffer and start scanning
+			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$map_ref{$h}{name});
+			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
+			$$queue_ref{$src_n}{status} = TERCE_MSG_SCAN; # queue status
+			$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L; # initial (could be anything) amount of data to read
 		}
-		alarm 0;
-	};
-	if($@) {
-		return "timeout";
+		# <msg dst=4 src=2 len=47 fmt="NN">........</msg><msg dst=4 src=2 len=47 fmt="NN">........</msg>
+		# <msg dst=4 src=2 len=47 fmt="NN">........</msg><msg dst=4 src=2 
+		my $o = length($$queue_ref{$src_n}{buffer});
+		my $dst;
+		my $n;
+		my $c_cnt = 0;
+		while(1) {
+			# handle, message, length, offset
+			$n = sysread($h, $$queue_ref{$src_n}{buffer}, $$queue_ref{$src_n}{length}, $o);
+			$c_cnt += $n;
+			if(!$n) {
+				last;
+			}
+			$o += $n;
+			if($$queue_ref{$src_n}{status} == TERCE_MSG_STARTED) {
+				# at this point the message length is known
+				$$queue_ref{$src_n}{length} -= $n;
+			}
+			# lock on the message preamble and discard anything before the message start
+			# and reinitialize the queue
+			if($$queue_ref{$src_n}{buffer} =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
+				$$queue_ref{$src_n}{status} = TERCE_MSG_STARTED;
+				$dst = $1;
+				$$queue_ref{$src_n}{dst} = $$map_ref{$dst}{fh};
+				$$queue_ref{$src_n}{msg} = $&;
+				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer
+				$$queue_ref{$src_n}{length} = $3 - length($&) - length($'); # remainder of the message
+				if($$queue_ref{$src_n}{length} <= 0) {
+					$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L;
+				}
+				Aux::print_dbg_msg("receiving message from %s to %s (l: %d)\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name}, $3);
+			}
+			# forward the message
+			if(($$queue_ref{$src_n}{status} == TERCE_MSG_STARTED) && ($$queue_ref{$src_n}{buffer} =~ /<\/msg>/)) {
+				$$queue_ref{$src_n}{msg} .= $`.$&;
+				$$queue_ref{$src_n}{buffer} = $';
+				$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L;
+				$$queue_ref{$src_n}{status} = TERCE_MSG_SCAN;
+				if(defined($forward)) {
+					Aux::print_dbg_msg("forwarding message from %s to %s (l: %d)\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name}, length($$queue_ref{$src_n}{msg}));
+					$n = syswrite($$queue_ref{$src_n}{dst}, $$queue_ref{$src_n}{msg});
+					if(!defined($n)) {
+						Log::log "warning", "relay: message delivery failed\n";
+					}
+					if($n < length($$queue_ref{$src_n}{msg})) {
+						$$queue_ref{$src_n}{status} = TERCE_MSG_PEND;
+					}
+				}
+			}
+			# give another pipe a chance
+			if((@readable > 1) && ($c_cnt > TERCE_MSG_CHUNK)) {
+				Aux::print_dbg_msg("interrupting message\n");
+				$c_cnt = 0;
+				last;
+			}
+		}
 	}
-	return $d;
 }
 
 1;
