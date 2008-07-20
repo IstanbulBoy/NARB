@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -42,19 +42,20 @@ BEGIN {
 our @EXPORT_OK;
 
 sub activate_tedb($$) {
-	my ($sq, $cn) = @_;
+	my ($fh, $cn) = @_;
 	my @cmd = ({"cmd"=>TEDB_ACTIVATE, "client"=>$cn});
-	Aux::send_msg($sq, @cmd);
+	Aux::send_msg($fh, @cmd);
 }
 
 sub new {
 	shift;
-	my ($fh, $proc, $sock)  = @_;
+	my ($proc, $sock)  = @_;
+	my $proc_val = each %$proc;  # child processes hold only self-descriptors
 	my $self = {
 		"sock" => $sock,	# server socket
 		"gmpls_select" => new IO::Select($sock); # select handle
-		"proc" => $proc,
-		"fh" => $fh, 		# IPC pipe
+		"proc" => $proc_val,
+		"fh" => $proc_val{fh},
 		"select" => new IO::Select($fh); # select handle
 	};
 	bless $self;
@@ -94,13 +95,13 @@ sub run() {
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{sq}, $$self{name}) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{fh}, $$self{name}) <0) {
 					$err = 1;
 				}
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
-				activate_tedb($$self{sq}, $$self{name});
+				activate_tedb($$self{fh}, $$self{name});
 				$msg{$sn} = {};
 			}
 			else {

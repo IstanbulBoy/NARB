@@ -185,11 +185,11 @@ sub init_cfg($) {
 ###################### child process entry points ####################
 ######################################################################
 
-sub start_gmpls_server($$$) {
-	my ($fh, $n, $cs) = @_;
+sub start_gmpls_server($$) {
+	my ($proc, $cs) = @_;
 	my $srvr;
 	eval {
-		$srvr = new GMPLS::Server($fh, $n, $cs);
+		$srvr = new GMPLS::Server($proc, $cs);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -199,11 +199,11 @@ sub start_gmpls_server($$$) {
 	}
 }
 
-sub start_gmpls_client($$) {
-	my ($fh, $n) = @_;
+sub start_gmpls_client($) {
+	my ($proc) = @_;
 	my $client;
 	eval {
-		$client = new GMPLS::Client($fh, $n);
+		$client = new GMPLS::Client($proc);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -213,11 +213,11 @@ sub start_gmpls_client($$) {
 	}
 }
 
-sub start_gmpls_core($$) {
-	my ($fh, $n) = @_;
+sub start_gmpls_core($) {
+	my ($proc) = @_;
 	my $core;
 	eval {
-		$core = new GMPLS::Core($fh, $n);
+		$core = new GMPLS::Core($proc);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -227,11 +227,11 @@ sub start_gmpls_core($$) {
 	}
 }
 
-sub start_ws_server($$$) {
-	my ($fh, $n, $p) = @_;
+sub start_ws_server($$) {
+	my ($proc, $p) = @_;
 	my $srvr;
 	eval {
-		$srvr = new WS::Server($fh, $n, $p);
+		$srvr = new WS::Server($proc, $p);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -241,11 +241,11 @@ sub start_ws_server($$$) {
 	}
 }
 
-sub start_http_server($$$) {
-	my ($fh, $n, $p) = @_;
+sub start_http_server($$) {
+	my ($proc, $p) = @_;
 	my $srvr;
 	eval {
-		$srvr = new HTTP::Server($fh, $n, $p);
+		$srvr = new HTTP::Server($proc, $p);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
@@ -283,9 +283,9 @@ sub spawn($$$$$@) {
 	# a doubly-keyed hash 
 	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
 	$$procref{$proc_addr} = $tmp;
-	$$procref{$ch} = $tmp;
+	$$procref{$ph} = $tmp;
 
-	exit &$coderef($ph, $procref, @args); # this is the child's entry point
+	exit &$coderef($procref, @args); # this is the child's entry point
 }
 
 

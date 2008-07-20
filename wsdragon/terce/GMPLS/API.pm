@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -495,7 +495,7 @@ sub parse_tlv($$$$;$) {
 }
 
 sub parse_msg($$$) {
-	my ($md, $tq, $cn) = @_;
+	my ($md, $fh, $cn) = @_;
 	my $ret = 0;
 	# LSA header
 	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
