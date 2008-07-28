@@ -109,13 +109,31 @@ TLP* Resource::GetAttribute(int attrIndex)
 }
 #endif
 
-
 Resource::~Resource()
 {
-    //@@@@ clean and delete attrTable
-    //@@@@ make sure delete mem block in attrTable[attrIndex].p also sub blocks in LIST!
+    for (int i = 0; i < attrTable.size(); i++)
+    {
+        TLP *tlp = &attrTable[i];
+        if (tlp->t == N_LIST || tlp->t == P_LIST || tlp->t == N_VECTOR || tlp->t == P_VECTOR)
+        {
+            if (tlp->p)
+            {
+                list<void*>::iterator iter = ((list<void*> *)tlp->p)->begin();
+                while (iter != ((list<void*> *)tlp->p)->end())
+                {
+                    if ((*iter) !=NULL)
+                        delete[] (char*)(*iter);
+                    iter++;
+                }
+                delete ((list<void*> *)tlp->p);
+            }
+        }
+        else if(tlp->p)
+        {
+            delete[] (char*)tlp->p;
+        }
+    }
 }
-
 
 Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
 {
@@ -181,8 +199,36 @@ Link::Link(Link* link):Resource(RTYPE_LOC_PHY_LNK,0, 0, 0)
        this->pDeltaList = NULL;
 
 #ifdef HAVE_EXT_ATTR
-   this->attrTable.assign(link->attrTable.begin(), link->attrTable.end());
-   //@@@@ should allocate/duplicate contents, and properly free them in ~Resource()
+    this->attrTable.assign(link->attrTable.begin(), link->attrTable.end());
+    for (int i = 0; i < link->attrTable.size(); i++)
+    {
+        TLP* tlp1 = &link->attrTable[i];
+        TLP* tlp2 = &this->attrTable[i]; 
+        char* pData;
+        if (tlp1->t == N_LIST || tlp1->t == P_LIST || tlp1->t == N_VECTOR || tlp1->t == P_VECTOR)
+        {
+            if (tlp1->p)
+            {
+                tlp2->p = new list<void*>;
+                list<void*>::iterator iter = ((list<void*> *)tlp1->p)->begin();
+                while (iter != ((list<void*> *)tlp1->p)->end())
+                {
+                    if ((*iter) !=NULL)
+                    {
+                        char* p_tmp = new char[tlp1->l];
+                        memcpy(p_tmp, tlp1->p, tlp1->l);
+                        ((list<void*> *)tlp2->p)->push_back(p_tmp);
+                    }
+                    iter++;
+                }
+            }
+        }
+        else if (tlp1->p)
+        {
+            tlp2->p = new char[tlp1->l];
+            memcpy(tlp2->p, tlp1->p, tlp1->l);
+        }
+    }
 #endif
 }
 
