@@ -820,9 +820,9 @@ void ResourceDB::RemoveIncompleteLinkNode(RadixNode<Resource>* node)
         rcIncompleteType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
     else
         return;
-    delete link;
-    r_trees[rcIncompleteType].DeleteNode(node);
-    //r_trees[link->Type()].DeleteNode(node);
+    link = (Link*)r_trees[rcIncompleteType].DeleteNode(node);
+    if (link)
+        delete link;
 }
 
 void ResourceDB::WalkTree(ResourceType type)
