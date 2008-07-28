@@ -60,7 +60,7 @@ void LSAHandler::Run()
                 if (linknode_incomplete)
                 {
                     RDB.RemoveIncompleteLinkNode(linknode_incomplete); //delete incomplete node
-                    RDB.Delete(rc); //delete node from regular RDB tree
+                    RDB.Delete(linknode_incomplete->Data()); //delete incomplete node from regular RDB tree
                 }
             }
         }
