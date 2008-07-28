@@ -208,6 +208,7 @@ public:
     double minCost;				// Remember the minimal cost from source node to this node
     list<PCENLink*> path;			// Remember the path from source node to this node
     list<ero_subobj> ero_track;                   // Keep the track of path using a list of composite ero subobjects
+
     ///////////////////////////////////////
 
     void Init()

@@ -1266,7 +1266,7 @@ void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
       node.path_visited = PathVisitedStack.front();
     PathVisitedStack.pop_front();
 }
-    
+
 int PCEN_MRN::PerformComputation()
 {
     double final_cost = PCEN_INFINITE_COST;
@@ -1322,7 +1322,7 @@ int PCEN_MRN::PerformComputation()
         {
             nextLink = *it_nextLink;
             link_visited = (nextLink->lflg.lfg.visited == 1);
-            nextLink->lflg.lfg.visited = 1;
+            //nextLink->lflg.lfg.visited = 1;//@@@@ 6/27/2008
             nextNode = nextLink->rmt_end;
             if (!nextNode)
                 continue;
@@ -1476,7 +1476,9 @@ int PCEN_MRN::PerformComputation()
                 nextNode->nflg.nfg.visited = 1;
             }
 
-            //keeping the trace to indicate whether any (even one) link in the current path has been visited
+            nextLink->lflg.lfg.visited = 1; //@@@@ 6/27/2008
+
+            //keeping the trace to indicate whether any of the links in the current path has been visited
             headNode->path_visited = (headNode->path_visited || link_visited);
 
             //proceed with new wavelengthSet
