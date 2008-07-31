@@ -1,18 +1,17 @@
 package Aux;
 
-use threads;
-use threads::shared;
 use strict;
 use sigtrap;
 use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
 use Log;
+use XML::Writer;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -230,21 +229,38 @@ sub chksum($$@) {
 	return $chksum;
 }
 
-sub send_msg($@) {
-	my $q = shift;
-	my $t  = shift;
-	my(@d) = @_;
-	my $ref = &share({});
-	$$ref{cmd} = $$t{cmd};
-	$$ref{type} = $$t{type} if exists($$t{type}); 
-	$$ref{subtype} = $$t{subtype} if exists($$t{subtype}); 
-	$$ref{rtr} = $$t{rtr} if exists($$t{rtr}); 
-	$$ref{client} = $$t{client} if exists($$t{client}); 
-	$$ref{data} = &share([]);
-	for(my $i=0; $i<@d; $i++) {
-		${$$ref{data}}[$i] = $d[$i]; 
+# $proc: sender process descriptor
+# $dst: destination address
+# $src: source address
+# $hdr: internal header describing the encapsulated data: 
+# 	fmt: template for packing and unpacking (required)
+#	cmd: processing instruction (required)
+#	type: type of data (optional)
+#	subtype: usually, tlv subtype such as "uni" (optional)
+#	rtr: advertizing router (optional)
+#	client: e.g. rce ... helps disambiguation of data source (optional)
+# @data: raw packed data
+sub send_msg($$$$@) {
+	my ($proc, $dst, $src, $hdr, @data);  
+	my $writer = new XML::Writer(OUTPUT => $$proc{fh}, ENCODING => "us-ascii");
+	if(!defined($writer)) {
+		Log::log "warning", "XML writer failure\n";
+		return;
 	}
-	$q->enqueue($ref);
+	$writer->xmlDecl();
+	$writer->doctype("x-stream");
+	$writer->startTag("msg", "dst" => $dst, "src" => $src);
+	$writer->startTag("data", 
+		"fmt" => $$hdr{fmt}, 
+		"cmd" => $$hdr{cmd}, 
+		"type" => $$hdr{type}, 
+		"subtype" => $$hdr{subtype}, 
+		"rtr" => $$hdr{rtr}, 
+		"client" => $$hdr{client});
+	$writer->characters(pack($$hdr{fmt}, @data));
+	$writer->endTag("data");
+	$writer->endTag("msg");
+	$writer->end();
 }
 
 sub process_msg($$$;$) {
@@ -287,7 +303,7 @@ sub process_msg($$$;$) {
 				$$queue_ref{$src_n}{dst} = $$map_ref{$dst}{fh};
 				$$queue_ref{$src_n}{msg} = $&;
 				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer
-				$$queue_ref{$src_n}{length} = $3 - length($&) - length($'); # remainder of the message
+				$$queue_ref{$src_n}{length} = $3 - length($') + 6; # remainder of the message
 				if($$queue_ref{$src_n}{length} <= 0) {
 					$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L;
 				}
