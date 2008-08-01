@@ -256,7 +256,7 @@ sub start_http_server($$) {
 }
 
 sub spawn($$$$$@) {
-	my ($procref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
+	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
 	my $pid;
 	# $ch: child handle .... the socket used by parent to talk to child
 	# $ph: parent handle .... the socket used by child to talk to parent
@@ -271,8 +271,8 @@ sub spawn($$$$$@) {
 		$$selref->add($ch);
 		# a doubly-keyed hash 
 		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
-		$$procref{$proc_addr} = $tmp;
-		$$procref{$ch} = $tmp;
+		$$child_mapref{$proc_addr} = $tmp;
+		$$child_mapref{$ch} = $tmp;
 		return;
 	}
 	close $ch;
@@ -445,21 +445,21 @@ if($daemonize) {
 
 ########################### initial setup ############################
 eval {
-	my %proc_map;
+	my %child_map;
 	my %proc_queue;
 	my $sel = new IO::Select();
 
 
 	# start the GMPLS Processor Core
-	spawn(\%proc_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
+	spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		spawn(\%proc_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
+		spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
 	}
 
 	# start the SOAP/HTTP server
-	spawn(\%proc_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
+	spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
 
 	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -497,10 +497,10 @@ eval {
 			next;
 		}
 		# start uninitialized client queue
-		spawn(\%proc_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
+		spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
 
 		# start GMPLS server
-		spawn(\%proc_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
+		spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 			last;
 		}
@@ -515,7 +515,7 @@ eval {
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 	while(!$::ctrlC) {
-		Aux::act_on_msg($sel, \%proc_map, \%proc_queue);
+		Aux::act_on_msg($sel, \%child_map, \%proc_queue);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };
