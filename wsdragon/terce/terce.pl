@@ -282,10 +282,11 @@ sub spawn($$$$$@) {
 
 	# a doubly-keyed hash 
 	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
-	$$procref{$proc_addr} = $tmp;
-	$$procref{$ph} = $tmp;
+	my %proc;
+	$proc{$proc_addr} = $tmp;
+	$proc{$ph} = $tmp;
 
-	exit &$coderef($procref, @args); # this is the child's entry point
+	exit &$coderef(\%proc, @args); # this is the child's entry point
 }
 
 
@@ -514,7 +515,7 @@ eval {
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 	while(!$::ctrlC) {
-		Aux::process_msg($sel, \%proc_map, \%proc_queue, 1);
+		Aux::act_on_msg($sel, \%proc_map, \%proc_queue);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };

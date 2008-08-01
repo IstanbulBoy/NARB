@@ -11,7 +11,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -247,8 +247,6 @@ sub send_msg($$$$@) {
 		Log::log "warning", "XML writer failure\n";
 		return;
 	}
-	$writer->xmlDecl();
-	$writer->doctype("x-stream");
 	$writer->startTag("msg", "dst" => $dst, "src" => $src);
 	$writer->startTag("data", 
 		"fmt" => $$hdr{fmt}, 
@@ -263,69 +261,41 @@ sub send_msg($$$$@) {
 	$writer->end();
 }
 
-sub process_msg($$$;$) {
-	my ($sel, $map_ref, $queue_ref, $forward) = @_;
+# this will either forward or consume the IPC message
+sub act_on_msg($$$;$) {
+	my ($owner, $sel, $map_ref, $queue_ref) = @_;
 	my @readable = $sel->can_read();
 
 	foreach my $h (@readable) {
-
 		my $src_n = fileno($h);
 		if(!exists($$queue_ref{$src_n}{buffer})) {
 			# create new stream buffer and start scanning
 			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$map_ref{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
 			$$queue_ref{$src_n}{status} = TERCE_MSG_SCAN; # queue status
-			$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L; # initial (could be anything) amount of data to read
 		}
-		# <msg dst=4 src=2 len=47 fmt="NN">........</msg><msg dst=4 src=2 len=47 fmt="NN">........</msg>
-		# <msg dst=4 src=2 len=47 fmt="NN">........</msg><msg dst=4 src=2 
 		my $o = length($$queue_ref{$src_n}{buffer});
 		my $dst;
 		my $n;
 		my $c_cnt = 0;
 		while(1) {
 			# handle, message, length, offset
-			$n = sysread($h, $$queue_ref{$src_n}{buffer}, $$queue_ref{$src_n}{length}, $o);
+			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, $o);
 			$c_cnt += $n;
 			if(!$n) {
 				last;
 			}
 			$o += $n;
-			if($$queue_ref{$src_n}{status} == TERCE_MSG_STARTED) {
-				# at this point the message length is known
-				$$queue_ref{$src_n}{length} -= $n;
-			}
-			# lock on the message preamble and discard anything before the message start
-			# and reinitialize the queue
-			if($$queue_ref{$src_n}{buffer} =~ /<msg dst=(\d+) src=(\d+) len=(\d+) fmt="(.*)">/) {
-				$$queue_ref{$src_n}{status} = TERCE_MSG_STARTED;
+			# lock on the message and discard anything before the message start tag
+			if($$queue_ref{$src_n}{buffer} =~ /<msg(.*?)>.*?<\/msg>/) {
+				my $attrs = $1;
+				$$queue_ref{$src_n}{msg} = $&;
+				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer to the unprocessed data
+				$attrs =~ /dst.*?=.*?(\d+)(?:\s|$)/;
 				$dst = $1;
 				$$queue_ref{$src_n}{dst} = $$map_ref{$dst}{fh};
-				$$queue_ref{$src_n}{msg} = $&;
-				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer
-				$$queue_ref{$src_n}{length} = $3 - length($') + 6; # remainder of the message
-				if($$queue_ref{$src_n}{length} <= 0) {
-					$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L;
-				}
-				Aux::print_dbg_msg("receiving message from %s to %s (l: %d)\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name}, $3);
 			}
-			# forward the message
-			if(($$queue_ref{$src_n}{status} == TERCE_MSG_STARTED) && ($$queue_ref{$src_n}{buffer} =~ /<\/msg>/)) {
-				$$queue_ref{$src_n}{msg} .= $`.$&;
-				$$queue_ref{$src_n}{buffer} = $';
-				$$queue_ref{$src_n}{length} = TERCE_MSG_SCAN_L;
-				$$queue_ref{$src_n}{status} = TERCE_MSG_SCAN;
-				if(defined($forward)) {
-					Aux::print_dbg_msg("forwarding message from %s to %s (l: %d)\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name}, length($$queue_ref{$src_n}{msg}));
-					$n = syswrite($$queue_ref{$src_n}{dst}, $$queue_ref{$src_n}{msg});
-					if(!defined($n)) {
-						Log::log "warning", "relay: message delivery failed\n";
-					}
-					if($n < length($$queue_ref{$src_n}{msg})) {
-						$$queue_ref{$src_n}{status} = TERCE_MSG_PEND;
-					}
-				}
-			}
+			Aux::print_dbg_msg("received message from %s to %s\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name});
 			# give another pipe a chance
 			if((@readable > 1) && ($c_cnt > TERCE_MSG_CHUNK)) {
 				Aux::print_dbg_msg("interrupting message\n");
