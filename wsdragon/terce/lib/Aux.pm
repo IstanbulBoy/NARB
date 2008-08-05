@@ -11,7 +11,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -44,18 +44,16 @@ use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition ca
 use constant TERM_T_T => 2; # this will force the termination of a thread run loop
 use constant INIT_Q_T => 3; # this will initialize a client queue and open the async socket
 
-use constant ADDR_TERCE => 1;
-use constant ADDR_GMPLS_CORE => 2;
-use constant ADDR_GMPLS_NARB_S => 3;
-use constant ADDR_GMPLS_NARB_C => 4;
-use constant ADDR_GMPLS_RCE_S => 5;
-use constant ADDR_GMPLS_RCE_C => 6;
-use constant ADDR_WEB_S => 7;
-use constant ADDR_SOAP_S => 8;
+use constant ADDR_TERCE => (1<<0);
+use constant ADDR_GMPLS_CORE => (1<<1);
+use constant ADDR_GMPLS_NARB_S => (1<<2);
+use constant ADDR_GMPLS_NARB_C => (1<<3);
+use constant ADDR_GMPLS_RCE_S => (1<<4);
+use constant ADDR_GMPLS_RCE_C => (1<<5);
+use constant ADDR_WEB_S => (1<<6);
+use constant ADDR_SOAP_S => (1<<7);
 
-use constant TERCE_MSG_SCAN => 1;
-use constant TERCE_MSG_STARTED => 2;
-use constant TERCE_MSG_PEND => 3;
+use constant ADDR_SPACE => (ADDR_TERCE | ADDR_GMPLS_CORE| ADDR_GMPLS_NARB_S | ADDR_GMPLS_NARB_C | ADDR_GMPLS_RCE_S | ADDR_GMPLS_RCE_C | ADDR_WEB_S | ADDR_SOAP_S);
 
 use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
@@ -232,16 +230,17 @@ sub chksum($$@) {
 # $proc: sender process descriptor
 # $dst: destination address
 # $src: source address
-# $hdr: internal header describing the encapsulated data: 
-# 	fmt: template for packing and unpacking (required)
-#	cmd: processing instruction (required)
-#	type: type of data (optional)
-#	subtype: usually, tlv subtype such as "uni" (optional)
-#	rtr: advertizing router (optional)
-#	client: e.g. rce ... helps disambiguation of data source (optional)
-# @data: raw packed data
-sub send_msg($$$$@) {
-	my ($proc, $dst, $src, $hdr, @data);  
+# @data: raw data
+sub send_msg($$$@) {
+	my ($proc, $dst, $src, @data) = @_;  
+	my $hdr = shift @data;
+	# $hdr: internal header describing the encapsulated data: 
+	# 	fmt: template for packing and unpacking (required)
+	#	cmd: processing instruction (required)
+	#	type: type of data (optional)
+	#	subtype: usually, tlv subtype such as "uni" (optional)
+	#	rtr: advertizing router (optional)
+	#	client: e.g. rce ... helps disambiguation of data source (optional)
 	my $writer = new XML::Writer(OUTPUT => $$proc{fh}, ENCODING => "us-ascii");
 	if(!defined($writer)) {
 		Log::log "warning", "XML writer failure\n";
@@ -262,8 +261,8 @@ sub send_msg($$$$@) {
 }
 
 # this will either forward or consume the IPC message
-sub act_on_msg($$$;$) {
-	my ($owner, $sel, $map_ref, $queue_ref) = @_;
+sub act_on_msg($$$$) {
+	my ($owner, $processor, $sel, $map_ref, $queue_ref) = @_;
 	my @readable = $sel->can_read();
 
 	foreach my $h (@readable) {
@@ -272,14 +271,12 @@ sub act_on_msg($$$;$) {
 			# create new stream buffer and start scanning
 			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$map_ref{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
-			$$queue_ref{$src_n}{status} = TERCE_MSG_SCAN; # queue status
 		}
 		my $o = length($$queue_ref{$src_n}{buffer});
 		my $dst;
 		my $n;
 		my $c_cnt = 0;
 		while(1) {
-			# handle, message, length, offset
 			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, $o);
 			$c_cnt += $n;
 			if(!$n) {
@@ -294,6 +291,40 @@ sub act_on_msg($$$;$) {
 				$attrs =~ /dst.*?=.*?(\d+)(?:\s|$)/;
 				$dst = $1;
 				$$queue_ref{$src_n}{dst} = $$map_ref{$dst}{fh};
+
+				$$queue_ref{$src_n}{buffer} = "";
+
+				if(!($dst & ADDR_SPACE)) {
+					Log::log "warning", "unknown/unspecified destination address ($dst)\n";
+					last;
+				}
+				# consume
+				if($dst == $owner) {
+					&$processor($$queue_ref{$src_n}{msg});
+					$$queue_ref{$src_n}{msg} = "";
+				}
+				# forward everything in the queues (only the parent is allowed to forward)
+				elsif($owner == ADDR_TERCE) {
+					foreach my $k (keys %$queue_ref)  {
+						if(!length($$queue_ref{$k}{msg})) {
+							next;
+						}
+						$n = syswrite($$queue_ref{$k}{dst}, $$queue_ref{$k}{msg});
+						if(!defined($n)) {
+							Log::log "warning", "message forwarding failed\n";
+							$$queue_ref{$k}{msg} = "";
+							last;
+						}
+						if($n < length($$queue_ref{$k}{msg})) {
+							Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{msg}));
+							# store to the queue buffer
+							$$queue_ref{$k}{msg} = substr($$queue_ref{$k}{msg}, $n);
+						}
+						else {
+							$$queue_ref{$k}{msg} = "";
+						}
+					}
+				}
 			}
 			Aux::print_dbg_msg("received message from %s to %s\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name});
 			# give another pipe a chance

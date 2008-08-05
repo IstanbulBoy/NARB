@@ -289,6 +289,8 @@ sub spawn($$$$$@) {
 	exit &$coderef(\%proc, @args); # this is the child's entry point
 }
 
+sub consume() {
+}
 
 ################################################################################
 #############################  main loop #######################################
@@ -515,7 +517,7 @@ eval {
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 	while(!$::ctrlC) {
-		Aux::act_on_msg($sel, \%child_map, \%proc_queue);
+		Aux::act_on_msg(ADDR_TERCE, \&consume, $sel, \%child_map, \%proc_queue);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };
