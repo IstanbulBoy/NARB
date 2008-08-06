@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -210,6 +210,7 @@ sub parse_tlv_data($$$$) {
 sub parse_tlv($$$;$) {
 	my ($md, $o, $proc, $p) = @_;
 	my $ret = 0;
+	my $fmt = "";
 	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
 	# TLV header
 	my ($tlv_type, $tlv_len) = unpack("x[$o]nn", $md);	
@@ -224,15 +225,16 @@ sub parse_tlv($$$;$) {
 		if($tlv_type == TE_TLV_ROUTER_ADDR) {
 			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
 			my @res;
-			parse_tlv_data($md, $o, "N", \@res);
+			$fmt = "N";
+			parse_tlv_data($md, $o, $fmt, \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
-			unshift(@res, {"cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
+			unshift(@res, {"fmt" => "N", "cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
 			Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @res);
 			return (0);
 		}
 		elsif($tlv_type == TE_TLV_LINK) {
 			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
-			my @cmd = ({"cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
+			my @cmd = ({"fmt" => "", "cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
 			Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @cmd);
 			return(parse_tlv($md, $o, $proc, TE_TLV_LINK));
 		}
@@ -259,68 +261,79 @@ sub parse_tlv($$$;$) {
 		my @res;
 		my @info = ();
 		if($tlv_type == TE_LINK_SUBTLV_LINK_TYPE) {
-			if(parse_tlv_data($md, $o, "C", \@res)<0) {
+			$fmt = "C";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_type_X{$res[0]});
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_ID) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       0x%08x\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LCLIF_IPADDR) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %s\n", inet_ntoa(pack("N", $res[0])));
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_RMTIF_IPADDR) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %s\n", inet_ntoa(pack("N", $res[0])));
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_TE_METRIC) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %d\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_MAX_BW) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
+			$fmt = "f";
 			$res[0] = unpack("f", pack("V", $res[0]));
 			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_MAX_RSV_BW) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
+			$fmt = "f";
 			$res[0] = unpack("f", pack("V", $res[0]));
 			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_UNRSV_BW) {
-			if(parse_tlv_data($md, $o, "N8", \@res)<0) {
+			$fmt = "N8";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
-			if(Aux::dbg_lsa()) {
-				for(my $i=0; $i<@res; $i++) {
-					$res[$i] = unpack("f", pack("V", $res[$i]));
-					Aux::print_dbg_lsa("       %s\n", $res[$i]);
-				}
+			$fmt = "f8";
+			for(my $i=0; $i<@res; $i++) {
+				$res[$i] = unpack("f", pack("V", $res[$i]));
+				Aux::print_dbg_lsa("       %s\n", $res[$i]);
 			}
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_RSC_CLSCLR) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %d\n", $res[0]);
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_LCRMT_ID) {
-			if(parse_tlv_data($md, $o, "NN", \@res)<0) {
+			$fmt = "NN";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       0x%08x\n", $res[0]);
@@ -328,38 +341,43 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_IFSWCAP) {
 			# common part
-			if(parse_tlv_data($md, $o, "C4N8", \@res)<0) {
+			$fmt = "C4N8";
+			my $tmp_fmt = "C4f8";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_cap{$res[0]});
 			Aux::print_dbg_lsa("       %s\n", $sub_tlvs_link_swcap_enc{$res[1]});
-			if(Aux::dbg_lsa()) {
-				for(my $i=0; $i<8; $i++) {
-					$res[$i+4] = unpack("f", pack("V", $res[$i+4]));
-					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[$i+4]);
-				}
+			for(my $i=0; $i<8; $i++) {
+				$res[$i+4] = unpack("f", pack("V", $res[$i+4]));
+				Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[$i+4]);
 			}
 			$o += 36;
 			if($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 ||
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC2 ||
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC3 ||
 				$res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4) {
-				if(parse_tlv_data($md, $o, "Nn", \@info)<0) {
+				$fmt = "Nn";
+				if(parse_tlv_data($md, $o, $fmt, \@info)<0) {
 					return (-1);
 				}
+				$tmp_fmt .= "fn";
 				$info[0] = unpack("f", pack("V", $info[0]));
 				Aux::print_dbg_lsa("       min. bw: %s\n", $info[0]);
 				Aux::print_dbg_lsa("       mtu: %d\n", $info[1]);
 			}
 			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) {
-				if(parse_tlv_data($md, $o, "nn", \@info)<0) {
+				$fmt = "nn";
+				$tmp_fmt .= "nn";
+				if(parse_tlv_data($md, $o, $fmt, \@info)<0) {
 					return (-1);
 				}
 				my ($len, $ver) = @info;
 				my $vlan_bitmaps = "";
 				my $tmp_len = 0;
 				if($ver & IFSWCAP_SPECIFIC_SUBNET_UNI) {
-					if(parse_tlv_data($md, $o+4, "CCCCNNNNNN", \@info)<0) {
+					$fmt = "CCCCNNNNNN";
+					if(parse_tlv_data($md, $o+4, $fmt, \@info)<0) {
 						return (-1);
 					}
 					$tlv_stype = "uni";
@@ -380,6 +398,7 @@ sub parse_tlv($$$;$) {
 						$l = 16;
 					}
 					push(@info, substr($md, $o + 4 + 40, $l));
+					$tmp_fmt .= "CCCCNNNNNN$l/a*";
 					my $ts = substr($md, $o + 4 + 56, 192/8);
 					my $tcnt = 0;
 					Aux::print_dbg_lsa("       time slots: ");
@@ -433,6 +452,8 @@ sub parse_tlv($$$;$) {
 						my $p = 0;
 						while($bin_s =~ s/(1+)//) {
 							push(@info, sprintf("%d-%d", $-[0]+$p+1, $+[0]+$p));
+							my $l = length($info[$#info]);
+							$tmp_fmt .= "$l/a*";
 							Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
 							$p = $+[0] - $-[0];
 						}
@@ -451,7 +472,9 @@ sub parse_tlv($$$;$) {
 				}
 			}
 			elsif($res[0] == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) {
-				if(parse_tlv_data($md, $o, "NC", \@info)<0) {
+				$fmt = "NC";
+				$tmp_fmt .= "fC";
+				if(parse_tlv_data($md, $o, $fmt, \@info)<0) {
 					return (-1);
 				}
 				$info[0] = unpack("f", pack("V", $info[0]));
@@ -464,22 +487,24 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "Resv. schedule TLV. Not parsed.";
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_IFADCAP) {
-			if(parse_tlv_data($md, $o, "C4N8", \@res)<0) {
+			$fmt = "C4N8";
+			$tmp_fmt = "C4f8";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       swcap lower: %d\n", $res[0]);
 			Aux::print_dbg_lsa("       enc lower: %d\n", $res[1]);
 			Aux::print_dbg_lsa("       swcap upper: %d\n", $res[2]);
 			Aux::print_dbg_lsa("       enc upper: %d\n", $res[3]);
-			if(Aux::dbg_lsa()) {
-				for(my $i=0; $i<8; $i++) {
-					$res[0] = unpack("f", pack("V", $res[0]));
-					Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[0]);
-				}
+			for(my $i=0; $i<8; $i++) {
+				$res[4+$i] = unpack("f", pack("V", $res[0+$i]));
+				Aux::print_dbg_lsa("       max. bw at pr. %d: %s\n", $i, $res[4+$i]);
 			}
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_DOMAIN_ID) {
-			if(parse_tlv_data($md, $o, "N", \@res)<0) {
+			$fmt = "N";
+			$tmp_fmt = "N";
+			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
 			Aux::print_dbg_lsa("       domain ID: 0x%08x\n", $res[0]);
@@ -488,7 +513,7 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
-		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr, "client"=>$cn});
+		unshift(@res, {"fmt" => $tmp_fmt, "cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr, "client"=>$cn});
 		Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @res);
 	}
 	return(0);
