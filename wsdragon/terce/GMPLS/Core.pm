@@ -27,11 +27,12 @@ use strict;
 use warnings;
 use Socket;
 use GMPLS::Constants;
+use XML::Parser;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -62,20 +63,26 @@ sub tag($$$);
 
 sub new {
 	shift;
-	my($fh, $proc) = @_;
+	my($proc) = @_;
+	my $proc_val = each %$proc;  # child processes hold only self-descriptors
 	my $self;
 	eval {
 		$self = {
+			# process descriptor:
+			"proc" => $proc, # process info
+			"addr" => $$proc_val{addr}, # process IPC address
+			"fh" => $$proc_val{fh}, # IPC filehandle 
+			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
+			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
+
+			# object descriptor:
 			"abstract_tedb" => undef,
 			"control_tedb" => undef,
-			"data_tedb" => undef,
-			"proc" => $proc,
-			"fh" => $fh,
-			"select" => new IO::Select($fh)
+			"data_tedb" => undef
 		};
 	};
 	if($@) {
-		die "$n: $@\n";
+		die "child instantiation failed: $@\n";
 	}
 	bless $self;
 	return $self;
@@ -402,123 +409,90 @@ sub process_q($$$$$) {
 	}
 }
 
+sub process_tedb_data($) {
+	my $self = shift;
+	my ($msg)  = @_;
+	my $d;
+
+	my $tedb = {};
+	my $lblock = undef;
+	my $tmp = undef; #temporary storage for the link block data
+	my $stat = 0;
+	my @ret = ();
+
+	# parse the message
+	my $tr;  # XML tree reference
+	eval {
+		$tr = $$self{parser}->parse($msg);
+		$d = xfrm_tree("msg", $$tr[1]);
+		if(!defined($d)) {
+			Log::log("warning", "IPC message parsing failed\n");
+			return;
+		}
+	};
+	if($@) {
+		Log::log("err", "$@\n");
+		return;
+	}
+
+	my $res = $self->process_q($d, $tedb, \$lblock, \$tmp, \$stat);
+
+	if($res == 1) {
+		if($stat == 0) {
+			# create net graph
+			$self->create_graph($tedb);
+			eval {
+				$self->traverse($tedb);
+				@ret = $self->split_graph($tedb);
+			};
+			if($@) {
+				Log::log("err", "$@\n");
+				Aux::print_dbg_tedb("TEDB1 not updated\n");
+			}
+			else {
+				# loop through all the disconnected graphs
+				for(my $i=0; $i<@ret; $i++) {
+					# first, look at the source
+					my $type = $self->get_topo_type($ret[$i]);
+					if(defined($type)) {
+						# transfer the completed TEDBs
+						if($type eq "abstract") {
+							$$self{abstract_tedb} = $ret[$i];
+							Aux::print_dbg_tedb("updating abstract TEDB\n");
+						}
+						elsif($type eq "control") {
+							$$self{control_tedb} = $ret[$i];
+							Aux::print_dbg_tedb("updating control TEDB\n");
+						}
+						elsif($type eq "data") {
+							$$self{data_tedb} = $ret[$i];
+							Aux::print_dbg_tedb("updating data TEDB\n");
+						}
+					}
+					else {
+						Log::log("err", "unknown source\n");
+						Aux::print_dbg_tedb("TEDB not updated\n");
+					}
+				}
+			}
+		}
+		else {
+			Aux::print_dbg_tedb("TEDB not updated\n");
+		}
+		$tedb = {};
+		$stat = 0;
+	}
+}
+
 sub run() {
 	my $self = shift;
-	my $tedb1 = {};
-	my $tedb2 = {};
-	my $lblock1 = undef;
-	my $lblock2 = undef;
-	my $tmp1 = undef; #temporary storage for the link block data
-	my $tmp2 = undef; #temporary storage for the link block data
-	my $stat1 = 0;
-	my $stat2 = 0;
-	my @ret1 = ();
-	my @ret2 = ();
-
-	my %pipe_map
 	my %pipe_queue;
 
 	Log::log "info",  "starting gmpls processor core\n";
 	while(!$::ctrlC) {
 		# rce or narb TEDB queue
 		$$self{select}->can_read();
-		Aux::process_msg($$self{select}, \%pipe_map, \%pipe_queue);
-		my $res = $self->process_q($d, $tedb1, \$lblock1, \$tmp1, \$stat1);
-		if($res == 1) {
-			if($stat1 == 0) {
-				# create net graph
-				$self->create_graph($tedb1);
-				eval {
-					$self->traverse($tedb1);
-					@ret1 = $self->split_graph($tedb1);
-				};
-				if($@) {
-					Log::log("err", "$@\n");
-					Aux::print_dbg_tedb("TEDB1 not updated\n");
-				}
-				else {
-					# loop through all the disconnected graphs
-					for(my $i=0; $i<@ret1; $i++) {
-						# first, look at the source
-						my $type = $self->get_topo_type($ret1[$i]);
-						if(defined($type)) {
-							# transfer the completed TEDBs
-							if($type eq "abstract") {
-								$$self{abstract_tedb} = $ret1[$i];
-								Aux::print_dbg_tedb("updating abstract TEDB\n");
-							}
-							elsif($type eq "control") {
-								$$self{control_tedb} = $ret1[$i];
-								Aux::print_dbg_tedb("updating control TEDB\n");
-							}
-							elsif($type eq "data") {
-								$$self{data_tedb} = $ret1[$i];
-								Aux::print_dbg_tedb("updating data TEDB\n");
-							}
-						}
-						else {
-							Log::log("err", "unknown source\n");
-							Aux::print_dbg_tedb("TEDB1 not updated\n");
-						}
-					}
-				}
-			}
-			else {
-				Aux::print_dbg_tedb("TEDB1 not updated\n");
-			}
-			$tedb1 = {};
-			$stat1 = 0;
-		}
-		# rce or narb TEDB queue
-		$d = $$self{queue2}->dequeue_nb();
-		if(defined($d)) {
-			my $res = $self->process_q($d, $tedb2, \$lblock2, \$tmp2, \$stat2);
-			if($res == 1) {
-				if($stat2 == 0) {
-					# create net graph
-					$self->create_graph($tedb2);
-					eval {
-						$self->traverse($tedb2);
-						@ret2 = $self->split_graph($tedb2);
-					};
-					if($@) {
-						Log::log("err", "$@\n");
-						Aux::print_dbg_tedb("TEDB2 not updated\n");
-					}
-					else {
-						# loop through all the disconnected graphs
-						for(my $i=0; $i<@ret2; $i++) {
-							# first, look at the source
-							my $type = $self->get_topo_type($ret2[$i]);
-							if(defined($type)) {
-								# transfer the completed TEDBs
-								if($type eq "abstract") {
-									$$self{abstract_tedb} = $ret2[$i];
-									Aux::print_dbg_tedb("updating abstract TEDB\n");
-								}
-								elsif($type eq "control") {
-									$$self{control_tedb} = $ret2[$i];
-									Aux::print_dbg_tedb("updating control TEDB\n");
-								}
-								elsif($type eq "data") {
-									$$self{data_tedb} = $ret2[$i];
-									Aux::print_dbg_tedb("updating data TEDB\n");
-								}
-							}
-							else {
-								Log::log("err", "unknown source\n");
-								Aux::print_dbg_tedb("TEDB2 not updated\n");
-							}
-						}
-					}
-				}
-				else {
-					Aux::print_dbg_tedb("TEDB2 not updated\n");
-				}
-				$tedb2 = {};
-				$stat2 = 0;
-			}
-		}
+		Aux::act_on_msg($$self{addr}, $self->process_tedb_data(), $$self{select}, $$self{proc}, \%pipe_queue);
 	}
 	$$self{server}->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting $$self{name}\n");

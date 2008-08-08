@@ -11,7 +11,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -69,6 +69,8 @@ our %msg_addr_X = 	(
 	ADDR_SOAP_S => "SOAP SERVER");
 
 my $dbg_sys = 0;
+
+sub xfrm_tree($$);
 
 sub set_dbg_sys($) {
 	my ($v) = @_;
@@ -227,6 +229,67 @@ sub chksum($$@) {
 	return $chksum;
 }
 
+# $tr: element tree reference (message element tree from the parser)
+sub xfrm_tree($$) {
+	my ($root, $tr) = @_;
+	my $attrs = shift(@$tr);
+	my $fmt = undef;
+	my $cmd = undef;
+	my $type = undef;
+	my $subtype = undef;
+	my $rtr = undef;
+	my $client = undef;
+	my $data = [];
+	my $ret = undef;
+	if(lc($root) eq "data") {
+		if(exists($$attrs{fmt}) && defined($$attrs{fmt})) {
+			$fmt = $$attrs{fmt};
+		}
+		else {
+			die "missing \"fmt\" attribute\n";
+		}
+		if(exists($$attrs{cmd}) && defined($$attrs{cmd})) {
+			$cmd = $$attrs{cmd};
+		}
+		else {
+			die "missing \"cmd\" attribute\n";
+		}
+		if(exists($$attrs{type})) {
+			$type = $$attrs{type};
+		}
+		if(exists($$attrs{subtype})) {
+			$subtype = $$attrs{subtype};
+		}
+		if(exists($$attrs{rtr})) {
+			$rtr = $$attrs{rtr};
+		}
+		if(exists($$attrs{client})) {
+			$client = $$attrs{client};
+		}
+		if($$tr[0] == 0) {
+			if(length($fmt)>0) {
+				@$data = unpack($fmt, $$tr[1]);
+			}
+		}
+		else {
+			die "data element\n";
+		}
+		$ret = {
+			cmd => $cmd,
+			type => $type,
+			subtype => $subtype,
+			rtr => $rtr,
+			client => $client,
+			data => $data
+		};
+		return $ret;
+	}
+	foreach my $el (keys %$tr) {
+		$ret = xfrm_tree($el, $$tr{$el});
+	}
+	return $ret;
+}
+
 # $proc: sender process descriptor
 # $dst: destination address
 # $src: source address
@@ -261,7 +324,7 @@ sub send_msg($$$@) {
 }
 
 # this will either forward or consume the IPC message
-sub act_on_msg($$$$) {
+sub act_on_msg($$$$$) {
 	my ($owner, $processor, $sel, $map_ref, $queue_ref) = @_;
 	my @readable = $sel->can_read();
 

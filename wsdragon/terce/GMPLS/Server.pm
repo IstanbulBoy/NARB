@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -51,13 +51,18 @@ sub new {
 	shift;
 	my ($proc, $sock)  = @_;
 	my $proc_val = each %$proc;  # child processes hold only self-descriptors
-	my $self = {
-		"sock" => $sock,	# server socket
-		"gmpls_select" => new IO::Select($sock); # select handle
-		"proc" => $proc_val,
-		"fh" => $proc_val{fh},
-		"select" => new IO::Select($fh); # select handle
+	eval {
+		my $self = {
+			"sock" => $sock,	# server socket
+			"gmpls_select" => new IO::Select($sock); # select handle
+			"proc" => $proc,
+			"fh" => $proc_val{fh},
+			"select" => new IO::Select($proc_val{fh}); # select handle
+		};
 	};
+	if($@) {
+		die "child instantiation failed: $@\n";
+	}
 	bless $self;
 	return $self;
 }

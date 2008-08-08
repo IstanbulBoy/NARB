@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -209,6 +209,8 @@ sub parse_tlv_data($$$$) {
 # NOTE: wildly recursive
 sub parse_tlv($$$;$) {
 	my ($md, $o, $proc, $p) = @_;
+	my $proc_val = each %$proc;
+	my $cn = ($$proc_val{addr} == ADDR_GMPLS_NARB_S)?"narb":"rce";
 	my $ret = 0;
 	my $fmt = "";
 	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
@@ -260,6 +262,7 @@ sub parse_tlv($$$;$) {
 		}
 		my @res;
 		my @info = ();
+		my $tmp_fmt = "";
 		if($tlv_type == TE_LINK_SUBTLV_LINK_TYPE) {
 			$fmt = "C";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
@@ -342,7 +345,7 @@ sub parse_tlv($$$;$) {
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_IFSWCAP) {
 			# common part
 			$fmt = "C4N8";
-			my $tmp_fmt = "C4f8";
+			$tmp_fmt = "C4f8";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}

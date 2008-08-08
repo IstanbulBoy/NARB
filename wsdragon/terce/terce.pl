@@ -265,7 +265,7 @@ sub spawn($$$$$@) {
 		Log::log "err",  "cannot fork: $!";
 		close $ph;
 		close $ch;
-		die "";
+		die "cannot fork $proc_name\n";
 	} elsif ($pid) {
 		close $ph;
 		$$selref->add($ch);
