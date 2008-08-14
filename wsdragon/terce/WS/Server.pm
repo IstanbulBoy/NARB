@@ -35,8 +35,8 @@ use SOAP::Transport::HTTP;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.36 $ =~ /(\d+)/g;
-	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.37 $ =~ /(\d+)/g;
+	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
@@ -66,21 +66,27 @@ sub tag($$$);
 
 sub new {
 	shift;
-	my ($fh, $proc, $p)  = @_;
+	my ($proc, $p)  = @_;
+	my $proc_val = each %$proc;  # child processes hold only self-descriptors
 	my $self;
 	eval {
 		$self = {
+			# process descriptor:
+			"proc" => $proc, # process info
+			"addr" => $$proc_val{addr}, # process IPC address
+			"fh" => $$proc_val{fh}, # IPC filehandle 
+			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
+			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
+
+			# object descriptor:
 			"xml" => undef,
 			"port" => $p,
-			"server" => new SOAP::Transport::HTTP::Daemon(
+			"server" => new SOAP::Transport::HTTP::Server(
 				LocalAddr => inet_ntoa(INADDR_ANY),
 				LocalPort => $p,
 				ReuseAddr => 1,
 				Blocking => 1
 			),
-			"proc" => $proc,
-			"fh" => $fh, 		# IPC pipe
-			"select" => new IO::Select($fh), # select handle
 		};
 	};
 	if($@) {
@@ -91,15 +97,17 @@ sub new {
 	return $self;
 }
 
-# this is an override so we can fork the process and handle multiple requests 
+# this is an override so we can fork the process and handle multiple requests in parallel
 sub handle {
-	my $self = shift->new;
+	my $self;
 	while (my $c = $self->accept) {
 		while (my $r = $c->get_request) {
 			$self->request($r);
 			$self->SUPER::handle;
 			$c->send_response($self->response)
 		}
+		# replaced ->close, thanks to Sean Meisner <Sean.Meisner@VerizonWireless.com>
+		# shutdown() doesn't work on AIX. close() is used in this case. Thanks to Jos Clijmans <jos.clijmans@recyfin.be>
 		UNIVERSAL::isa($c, 'shutdown') ? $c->shutdown(2) : $c->close(); 
 		$c->close;
 	}
@@ -107,10 +115,11 @@ sub handle {
 
 sub run() {
 	my $self = shift;
-	Log::log "info", "starting $$self{name} on port $$self{port}\n";
+	Log::log "info", "starting $$self{proc}{name} on port $$self{port}\n";
 	while(!$::ctrlC) {
 		# WS server
 		$$self{server}->handle;
+		Aux::print_dbg_run("WS request: forking $$self{name}\n");
 	}
 	$$self{server}->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting $$self{name}\n");

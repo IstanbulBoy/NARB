@@ -181,10 +181,12 @@ sub init_cfg($) {
 		}
 	}
 }
+
 ######################################################################
 ###################### child process entry points ####################
 ######################################################################
 
+# GMPLS Server listens to either narb or rce 
 sub start_gmpls_server($$) {
 	my ($proc, $cs) = @_;
 	my $srvr;
@@ -199,6 +201,7 @@ sub start_gmpls_server($$) {
 	}
 }
 
+# GMPLS Client provides the async interface to narb and rce
 sub start_gmpls_client($) {
 	my ($proc) = @_;
 	my $client;
@@ -213,6 +216,7 @@ sub start_gmpls_client($) {
 	}
 }
 
+# GMPLS Core provides all the TEDB-related processing
 sub start_gmpls_core($) {
 	my ($proc) = @_;
 	my $core;
@@ -227,6 +231,7 @@ sub start_gmpls_core($) {
 	}
 }
 
+# WS Server handles external web services requests
 sub start_ws_server($$) {
 	my ($proc, $p) = @_;
 	my $srvr;
@@ -241,6 +246,7 @@ sub start_ws_server($$) {
 	}
 }
 
+# HTTP Server is a simple web server (wsdl, description, etc.)
 sub start_http_server($$) {
 	my ($proc, $p) = @_;
 	my $srvr;
@@ -253,43 +259,6 @@ sub start_http_server($$) {
 	else {
 		$srvr->run();
 	}
-}
-
-sub spawn($$$$$@) {
-	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
-	my $pid;
-	# $ch: child handle .... the socket used by parent to talk to child
-	# $ph: parent handle .... the socket used by child to talk to parent
-	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
-	if (!defined($pid = fork)) {
-		Log::log "err",  "cannot fork: $!";
-		close $ph;
-		close $ch;
-		die "cannot fork $proc_name\n";
-	} elsif ($pid) {
-		close $ph;
-		$$selref->add($ch);
-		# a doubly-keyed hash 
-		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
-		$$child_mapref{$proc_addr} = $tmp;
-		$$child_mapref{$ch} = $tmp;
-		return;
-	}
-	close $ch;
-	$SIG{TERM} = \&catch_quiet_term;
-	$SIG{INT} = \&catch_quiet_term;
-	$SIG{HUP} = \&catch_quiet_term;
-
-	# a doubly-keyed hash 
-	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
-	my %proc;
-	$proc{$proc_addr} = $tmp;
-	$proc{$ph} = $tmp;
-
-	exit &$coderef(\%proc, @args); # this is the child's entry point
-}
-
-sub consume() {
 }
 
 ################################################################################
@@ -453,15 +422,15 @@ eval {
 
 
 	# start the GMPLS Processor Core
-	spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
+	Aux::spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
+		Aux::spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
 	}
 
 	# start the SOAP/HTTP server
-	spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
+	Aux::spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
 
 	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -499,10 +468,10 @@ eval {
 			next;
 		}
 		# start uninitialized client queue
-		spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
+		Aux::spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
 
 		# start GMPLS server
-		spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
+		Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 			last;
 		}
@@ -517,7 +486,7 @@ eval {
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 	while(!$::ctrlC) {
-		Aux::act_on_msg(ADDR_TERCE, \&consume, $sel, \%child_map, \%proc_queue);
+		Aux::act_on_msg(ADDR_TERCE, \&Aux::receive_msg, $sel, \%child_map, \%proc_queue);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };

@@ -2,6 +2,7 @@ package Aux;
 
 use strict;
 use sigtrap;
+use Socket;
 use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
@@ -11,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
 	%EXPORT_TAGS = ();
@@ -229,6 +230,11 @@ sub chksum($$@) {
 	return $chksum;
 }
 
+######################################################################
+############################# IPC ####################################
+######################################################################
+
+# $root: root element for this recursion level
 # $tr: element tree reference (message element tree from the parser)
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
@@ -290,12 +296,14 @@ sub xfrm_tree($$) {
 	return $ret;
 }
 
-# $proc: sender process descriptor
+sub receive_msg() {
+}
+
+# $owner: sender process descriptor
 # $dst: destination address
-# $src: source address
 # @data: raw data
 sub send_msg($$$@) {
-	my ($proc, $dst, $src, @data) = @_;  
+	my ($owner, $dst, @data) = @_;  
 	my $hdr = shift @data;
 	# $hdr: internal header describing the encapsulated data: 
 	# 	fmt: template for packing and unpacking (required)
@@ -303,20 +311,18 @@ sub send_msg($$$@) {
 	#	type: type of data (optional)
 	#	subtype: usually, tlv subtype such as "uni" (optional)
 	#	rtr: advertizing router (optional)
-	#	client: e.g. rce ... helps disambiguation of data source (optional)
-	my $writer = new XML::Writer(OUTPUT => $$proc{fh}, ENCODING => "us-ascii");
+	my $writer = new XML::Writer(OUTPUT => $$owner{fh}, ENCODING => "us-ascii");
 	if(!defined($writer)) {
 		Log::log "warning", "XML writer failure\n";
 		return;
 	}
-	$writer->startTag("msg", "dst" => $dst, "src" => $src);
+	$writer->startTag("msg", "dst" => $dst, "src" => $$owner{addr});
 	$writer->startTag("data", 
 		"fmt" => $$hdr{fmt}, 
 		"cmd" => $$hdr{cmd}, 
 		"type" => $$hdr{type}, 
 		"subtype" => $$hdr{subtype}, 
-		"rtr" => $$hdr{rtr}, 
-		"client" => $$hdr{client});
+		"rtr" => $$hdr{rtr});
 	$writer->characters(pack($$hdr{fmt}, @data));
 	$writer->endTag("data");
 	$writer->endTag("msg");
@@ -399,5 +405,40 @@ sub act_on_msg($$$$$) {
 		}
 	}
 }
+
+sub spawn($$$$$@) {
+	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
+	my $pid;
+	# $ch: child handle .... the socket used by parent to talk to child
+	# $ph: parent handle .... the socket used by child to talk to parent
+	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+	if (!defined($pid = fork)) {
+		Log::log "err",  "cannot fork: $!";
+		close $ph;
+		close $ch;
+		die "cannot fork $proc_name\n";
+	} elsif ($pid) {
+		close $ph;
+		$$selref->add($ch);
+		# a doubly-keyed hash 
+		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+		$$child_mapref{$proc_addr} = $tmp;
+		$$child_mapref{$ch} = $tmp;
+		return;
+	}
+	close $ch;
+	$SIG{TERM} = \&catch_quiet_term;
+	$SIG{INT} = \&catch_quiet_term;
+	$SIG{HUP} = \&catch_quiet_term;
+
+	# a doubly-keyed hash 
+	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+	my %proc;
+	$proc{$proc_addr} = $tmp;
+	$proc{$ph} = $tmp;
+
+	exit &$coderef(\%proc, @args); # this is the child's entry point
+}
+
 
 1;

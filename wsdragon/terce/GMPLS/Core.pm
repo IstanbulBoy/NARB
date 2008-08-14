@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -82,7 +82,7 @@ sub new {
 		};
 	};
 	if($@) {
-		die "child instantiation failed: $@\n";
+		die "$$proc_val{name} instantiation failed: $@\n";
 	}
 	bless $self;
 	return $self;

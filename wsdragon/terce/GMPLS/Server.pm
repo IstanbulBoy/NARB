@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,27 +41,27 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-sub activate_tedb($$) {
-	my ($fh, $cn) = @_;
-	my @cmd = ({"cmd"=>TEDB_ACTIVATE, "client"=>$cn});
-	Aux::send_msg($fh, @cmd);
-}
-
 sub new {
 	shift;
 	my ($proc, $sock)  = @_;
 	my $proc_val = each %$proc;  # child processes hold only self-descriptors
+	my $self;
 	eval {
-		my $self = {
-			"sock" => $sock,	# server socket
-			"gmpls_select" => new IO::Select($sock); # select handle
+		$self = {
+			# process descriptor:
 			"proc" => $proc,
-			"fh" => $proc_val{fh},
-			"select" => new IO::Select($proc_val{fh}); # select handle
+			"addr" => $$proc_val{addr}, # process IPC address
+			"fh" => $$proc_val{fh},
+			"select" => new IO::Select($$proc_val{fh}), # select handle
+			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
+
+			# object descriptor:
+			"sock" => $sock,	# server socket
+			"gmpls_select" => new IO::Select($sock) # select handle
 		};
 	};
 	if($@) {
-		die "child instantiation failed: $@\n";
+		die "$$proc_val{name} instantiation failed: $@\n";
 	}
 	bless $self;
 	return $self;
@@ -96,7 +96,7 @@ sub run() {
 				# init the control channel
 				my @data = ($$self{sock}->peerhost(), $msg{$sn}{hdr}{tag2});
 				unshift(@data, {"cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
-				Aux::send_msg($$self{cq}, @data);
+				Aux::send_msg($$self{proc}, ADDR_GMPLS_CORE, $$self{addr}, @data);
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
@@ -106,7 +106,7 @@ sub run() {
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
 			}
 			elsif(GMPLS::API::is_delim($msg{$sn})) {
-				activate_tedb($$self{fh}, $$self{name});
+				$self->activate_tedb();
 				$msg{$sn} = {};
 			}
 			else {
@@ -120,6 +120,12 @@ sub run() {
 	}
 	Aux::print_dbg_run("exiting %s server thread\n", $$self{name});
 	close($$self{sock});
+}
+
+sub activate_tedb() {
+	my $self = shift;
+	my @cmd = ({"cmd"=>TEDB_ACTIVATE});
+	Aux::send_msg($$self{proc}, ADDR_GMPLS_CORE, $$self{addr}, @cmd);
 }
 
 1;
