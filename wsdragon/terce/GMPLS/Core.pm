@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -108,6 +108,8 @@ sub find_remote($$) {
 	return undef;
 }
 
+# this probably creates a closure: we have to break up the graph after we are done with it
+# otherwise we'll run out of memory
 sub create_graph($) {
 	my $self = shift;
 	my($dr) = @_;
@@ -123,6 +125,23 @@ sub create_graph($) {
 				if(!defined($$dr{$rtr}{$link}{remote})) {
 					delete($$dr{$rtr}{$link}{remote});
 				}
+			}
+		}
+	}
+}
+
+sub destroy_graph($) {
+	my $self = shift;
+	my($dr) = @_;
+	foreach my $rtr (keys %$dr) {
+		foreach my $link (keys %{$$dr{$rtr}}) {
+			# skip the top-level descriptors
+			if(ref($$dr{$rtr}{$link}) ne "HASH") {
+				next;
+			}
+			# break all the references so the garbage collector can do its job
+			if(exists($$dr{$rtr}{$link}{remote})) {
+				$$dr{$rtr}{$link}{remote} = {};
 			}
 		}
 	}
@@ -418,13 +437,13 @@ sub process_tedb_data($) {
 	my $lblock = undef;
 	my $tmp = undef; #temporary storage for the link block data
 	my $stat = 0;
-	my @ret = ();
+	my @tedbs = ();
 
 	# parse the message
 	my $tr;  # XML tree reference
 	eval {
 		$tr = $$self{parser}->parse($msg);
-		$d = xfrm_tree("msg", $$tr[1]);
+		$d = Lib::xfrm_tree("msg", $$tr[1]);
 		if(!defined($d)) {
 			Log::log("warning", "IPC message parsing failed\n");
 			return;
@@ -443,7 +462,7 @@ sub process_tedb_data($) {
 			$self->create_graph($tedb);
 			eval {
 				$self->traverse($tedb);
-				@ret = $self->split_graph($tedb);
+				@tedbs = $self->split_graph($tedb);
 			};
 			if($@) {
 				Log::log("err", "$@\n");
@@ -451,21 +470,24 @@ sub process_tedb_data($) {
 			}
 			else {
 				# loop through all the disconnected graphs
-				for(my $i=0; $i<@ret; $i++) {
+				for(my $i=0; $i<@tedbs; $i++) {
 					# first, look at the source
-					my $type = $self->get_topo_type($ret[$i]);
+					my $type = $self->get_topo_type($tedbs[$i]);
 					if(defined($type)) {
 						# transfer the completed TEDBs
 						if($type eq "abstract") {
-							$$self{abstract_tedb} = $ret[$i];
+							$self->destroy_graph($$self{abstract_tedb});
+							$$self{abstract_tedb} = $tedbs[$i];
 							Aux::print_dbg_tedb("updating abstract TEDB\n");
 						}
 						elsif($type eq "control") {
-							$$self{control_tedb} = $ret[$i];
+							$self->destroy_graph($$self{control_tedb});
+							$$self{control_tedb} = $tedbs[$i];
 							Aux::print_dbg_tedb("updating control TEDB\n");
 						}
 						elsif($type eq "data") {
-							$$self{data_tedb} = $ret[$i];
+							$self->destroy_graph($$self{data_tedb});
+							$$self{data_tedb} = $tedbs[$i];
 							Aux::print_dbg_tedb("updating data TEDB\n");
 						}
 					}
