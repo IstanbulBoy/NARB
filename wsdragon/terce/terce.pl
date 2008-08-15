@@ -236,7 +236,12 @@ sub start_ws_server($$) {
 	my ($proc, $p) = @_;
 	my $srvr;
 	eval {
-		$srvr = new WS::Server($proc, $p);
+		$srvr = new WS::Server($proc, 
+					LocalAddr => inet_ntoa(INADDR_ANY),
+					LocalPort => $p,
+					ReuseAddr => 1,
+					Blocking => 1
+				);
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
