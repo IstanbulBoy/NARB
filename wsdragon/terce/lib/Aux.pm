@@ -12,9 +12,9 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S);
+	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -53,8 +53,13 @@ use constant ADDR_GMPLS_RCE_S => (1<<4);
 use constant ADDR_GMPLS_RCE_C => (1<<5);
 use constant ADDR_WEB_S => (1<<6);
 use constant ADDR_SOAP_S => (1<<7);
+# soap server children addresses
+use constant ADDR_SOAP_S_BASE => (1<<8);
 
-use constant ADDR_SPACE => (ADDR_TERCE | ADDR_GMPLS_CORE| ADDR_GMPLS_NARB_S | ADDR_GMPLS_NARB_C | ADDR_GMPLS_RCE_S | ADDR_GMPLS_RCE_C | ADDR_WEB_S | ADDR_SOAP_S);
+use constant MAX_SOAP_SRVR => 10;
+
+# NOTE: if you change MAX_SOAP_SRVR, change ADDR_SPACE, too
+use constant ADDR_SPACE => 0x7ffff;
 
 use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
@@ -409,9 +414,17 @@ sub act_on_msg($$$$$) {
 sub spawn($$$$$@) {
 	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
 	my $pid;
+	my $sp_pool = []; # socketpair pool
 	# $ch: child handle .... the socket used by parent to talk to child
 	# $ph: parent handle .... the socket used by child to talk to parent
 	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+	# create a pool of socket pairs for the SOAP server
+	if($proc_addr == ADDR_SOAP_S) {
+		for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+			socketpair(my $ch_pool, my $ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+			push(@$sp_pool, [$ch_pool, $ph_pool]);
+		}
+	}
 	if (!defined($pid = fork)) {
 		Log::log "err",  "cannot fork: $!";
 		close $ph;
@@ -424,9 +437,27 @@ sub spawn($$$$$@) {
 		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
 		$$child_mapref{$proc_addr} = $tmp;
 		$$child_mapref{$ch} = $tmp;
+		# load the socketpair pool for the forked ws servers
+		if($proc_addr == ADDR_SOAP_S) {
+			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+				close ${$$sp_pool[$i]}[1];
+				$$selref->add(${$$sp_pool[$i]}[0]);
+				$tmp = {"fh" => ${$$sp_pool[$i]}[0], "addr" => (ADDR_SOAP_S_BASE+$i), "cpid" => $pid, "name" => $proc_name."($i)"};
+				$$child_mapref{ADDR_SOAP_S_BASE+$i} = $tmp;
+				$$child_mapref{${$$sp_pool[$i]}[0]} = $tmp;
+			}
+		}
 		return;
 	}
 	close $ch;
+	my $s_pool = [];
+	if($proc_addr == ADDR_SOAP_S) {
+		for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+			close ${$$sp_pool[$i]}[0];
+			push(@$s_pool, $$sp_pool[$i]}[1]);
+		}
+		push(@args, $s_pool);
+	}
 	$SIG{TERM} = \&catch_quiet_term;
 	$SIG{INT} = \&catch_quiet_term;
 	$SIG{HUP} = \&catch_quiet_term;
