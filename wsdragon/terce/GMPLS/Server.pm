@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -52,6 +52,7 @@ sub new {
 			"proc" => $proc,
 			"addr" => $$proc_val{addr}, # process IPC address
 			"fh" => $$proc_val{fh},
+			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
 
