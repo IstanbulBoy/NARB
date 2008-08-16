@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -72,6 +72,7 @@ sub new {
 			"proc" => $proc, # process info
 			"addr" => $$proc_val{addr}, # process IPC address
 			"fh" => $$proc_val{fh}, # IPC filehandle 
+			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
 
@@ -476,18 +477,21 @@ sub process_tedb_data($) {
 					if(defined($type)) {
 						# transfer the completed TEDBs
 						if($type eq "abstract") {
-							$self->destroy_graph($$self{abstract_tedb});
+							my $tmp = $$self{abstract_tedb};
 							$$self{abstract_tedb} = $tedbs[$i];
+							$self->destroy_graph($tmp);
 							Aux::print_dbg_tedb("updating abstract TEDB\n");
 						}
 						elsif($type eq "control") {
-							$self->destroy_graph($$self{control_tedb});
+							my $tmp = $$self{control_tedb};
 							$$self{control_tedb} = $tedbs[$i];
+							$self->destroy_graph($tmp);
 							Aux::print_dbg_tedb("updating control TEDB\n");
 						}
 						elsif($type eq "data") {
-							$self->destroy_graph($$self{data_tedb});
+							my $tmp = $$self{data_tedb};
 							$$self{data_tedb} = $tedbs[$i];
+							$self->destroy_graph($tmp);
 							Aux::print_dbg_tedb("updating data TEDB\n");
 						}
 					}
