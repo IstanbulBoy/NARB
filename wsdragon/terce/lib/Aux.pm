@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
@@ -410,63 +410,78 @@ sub act_on_msg($$$$$) {
 		}
 	}
 }
-
-sub spawn($$$$$@) {
-	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, @args) = @_;
+# $child_mapref: a map of all open sockets to their associated process info
+# $selref:  IO::Select object - the core of the IPC router
+# $coderef: child's entry point
+# $proc_name: child's process name
+# $proc_addr: child's process IPC address
+# $pool_fh: if defined, spawn will use this file handle and will not allocate a socket pair
+# @args: all the remaining arguments are passed to &$coderef as its arguments
+sub spawn($$$$$$@) {
+	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, $pool_fh, @args) = @_;
 	my $pid;
+	my $to_ch;
+	my $to_ph;
 	my $sp_pool = []; # socketpair pool
-	# $ch: child handle .... the socket used by parent to talk to child
-	# $ph: parent handle .... the socket used by child to talk to parent
-	socketpair(my $ch, my $ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
-	# create a pool of socket pairs for the SOAP server
-	if($proc_addr == ADDR_SOAP_S) {
-		for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
-			socketpair(my $ch_pool, my $ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
-			push(@$sp_pool, [$ch_pool, $ph_pool]);
+	# $to_ch: socket descriptor ... the socket used by parent to talk to child
+	# $to_ph: socket descriptor ... the socket used by child to talk to parent
+	if(!defined($pool_fh)) {
+		socketpair($to_ch, $to_ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+		# create a pool of socket pairs for the SOAP server
+		if($proc_addr == ADDR_SOAP_S) {
+			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+				socketpair(my $to_ch_pool, my $to_ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
+			}
 		}
 	}
 	if (!defined($pid = fork)) {
 		Log::log "err",  "cannot fork: $!";
-		close $ph;
-		close $ch;
+		if(!defined($pool_fh)) {
+			close $to_ph;
+			close $to_ch;
+		}
 		die "cannot fork $proc_name\n";
 	} elsif ($pid) {
-		close $ph;
-		$$selref->add($ch);
-		# a doubly-keyed hash 
-		my $tmp = {"fh" => $ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
-		$$child_mapref{$proc_addr} = $tmp;
-		$$child_mapref{$ch} = $tmp;
-		# load the socketpair pool for the forked ws servers
-		if($proc_addr == ADDR_SOAP_S) {
-			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
-				close ${$$sp_pool[$i]}[1];
-				$$selref->add(${$$sp_pool[$i]}[0]);
-				$tmp = {"fh" => ${$$sp_pool[$i]}[0], "addr" => (ADDR_SOAP_S_BASE+$i), "cpid" => $pid, "name" => $proc_name."($i)"};
-				$$child_mapref{ADDR_SOAP_S_BASE+$i} = $tmp;
-				$$child_mapref{${$$sp_pool[$i]}[0]} = $tmp;
+		if(!defined($pool_fh)) {
+			close $to_ph;
+			$$selref->add($to_ch);
+			# a doubly-keyed hash  (I don't think that this constitutes a closure ... we shall see)
+			my $tmp = {"fh" => $to_ch, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+			$$child_mapref{$proc_addr} = $tmp;
+			$$child_mapref{$to_ch} = $tmp;
+			# load the socketpair pool for the forked ws servers
+			if($proc_addr == ADDR_SOAP_S) {
+				for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+					close ${$$sp_pool[$i]}[1];
+					$$selref->add(${$$sp_pool[$i]}[0]);
+					$tmp = {"fh" => ${$$sp_pool[$i]}[0], "addr" => (ADDR_SOAP_S_BASE+$i), "cpid" => $pid, "name" => $proc_name."($i)"};
+					$$child_mapref{ADDR_SOAP_S_BASE+$i} = $tmp;
+					$$child_mapref{${$$sp_pool[$i]}[0]} = $tmp;
+				}
 			}
 		}
 		return;
 	}
-	close $ch;
 	my $s_pool = [];
-	if($proc_addr == ADDR_SOAP_S) {
-		for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
-			close ${$$sp_pool[$i]}[0];
-			push(@$s_pool, $$sp_pool[$i]}[1]);
+	if(!defined($pool_fh)) {
+		close $to_ch;
+		if($proc_addr == ADDR_SOAP_S) {
+			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+				close ${$$sp_pool[$i]}[0];
+				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0});
+			}
 		}
-		push(@args, $s_pool);
 	}
 	$SIG{TERM} = \&catch_quiet_term;
 	$SIG{INT} = \&catch_quiet_term;
 	$SIG{HUP} = \&catch_quiet_term;
 
 	# a doubly-keyed hash 
-	my $tmp = {"fh" => $ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name};
+	my $tmp = {"fh" => $to_ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
 	my %proc;
 	$proc{$proc_addr} = $tmp;
-	$proc{$ph} = $tmp;
+	$proc{$to_ph} = $tmp;
 
 	exit &$coderef(\%proc, @args); # this is the child's entry point
 }
