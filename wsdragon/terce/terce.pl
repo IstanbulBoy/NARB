@@ -427,15 +427,15 @@ eval {
 
 
 	# start the GMPLS Processor Core
-	Aux::spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE);
+	Aux::spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE, undef);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		Aux::spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S);
+		Aux::spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S, undef);
 	}
 
 	# start the SOAP/HTTP server
-	Aux::spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, $::cfg{ws}{port}{v});
+	Aux::spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, undef, $::cfg{ws}{port}{v});
 
 	# wait for GMPLS connections 
 	my $serv_sock = IO::Socket::INET->new(Listen => 5,
@@ -473,10 +473,10 @@ eval {
 			next;
 		}
 		# start uninitialized client queue
-		Aux::spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C);
+		Aux::spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C, undef);
 
 		# start GMPLS server
-		Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, $client_sock);
+		Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, undef, $client_sock);
 		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
 			last;
 		}
