@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
@@ -477,11 +477,19 @@ sub spawn($$$$$$@) {
 	$SIG{INT} = \&catch_quiet_term;
 	$SIG{HUP} = \&catch_quiet_term;
 
-	# a doubly-keyed hash 
-	my $tmp = {"fh" => $to_ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
+	my $tmp;
 	my %proc;
-	$proc{$proc_addr} = $tmp;
-	$proc{$to_ph} = $tmp;
+	# a doubly-keyed hash 
+	if(defined($pool_fh)) {
+		$tmp = {"fh" => $pool_fh, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
+		$proc{$proc_addr} = $tmp;
+		$proc{$pool_fh} = $tmp;
+	}
+	else {
+		$tmp = {"fh" => $to_ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
+		$proc{$proc_addr} = $tmp;
+		$proc{$to_ph} = $tmp;
+	}
 
 	exit &$coderef(\%proc, @args); # this is the child's entry point
 }
