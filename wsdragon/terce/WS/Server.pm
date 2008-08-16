@@ -25,17 +25,20 @@ package WS::Server;
 
 use strict;
 use warnings;
+use sigtrap;
+use POSIX;
 use Socket;
 use GMPLS::Constants;
 use WS::External;
 use WS::Handlers;
 use SOAP::Lite;
 use SOAP::Transport::HTTP;
+use Aux;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.38 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.39 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -64,6 +67,18 @@ use constant STAT_LINK_COMPLETE => 	(
 
 sub tag($$$);
 
+sub catch_quiet_term {
+	$::ctrlC = 1;
+}
+
+sub grim {
+	my $child;
+	while ((my $waitedpid = waitpid(-1,WNOHANG)) > 0) {
+		Aux::print_dbg_run("reaped $waitedpid with exit $?\n" ) if $? != 0;
+	}
+	$SIG{CHLD} = \&grim;
+}
+
 # this is a subclass of SOAP::Transport::HTTP::Server
 sub new {
 	my $self = shift;
@@ -78,8 +93,9 @@ sub new {
 			$self->{proc} = $proc; # process info
 			$self->{addr} = $$proc_val{addr}; # process IPC address
 			$self->{fh} = $$proc_val{fh}; # IPC filehandle 
+			$self->{pool} = $$proc_val{pool}; # socket pool for forked children
 			$self->{select} = new IO::Select($$proc_val{fh}); # corresponding select object
-			$self->{parser} = new XML::Parser(Style => "tree"); # incomming data parser
+			$self->{parser} = undef;
 
 			# object descriptor:
 			$self->{pool} = $s_pool;
@@ -94,7 +110,9 @@ sub new {
 }
 
 # fork a child handling the request
-sub start_ws_server() {
+sub start_ws_server($) {
+	my $self = shift;
+	my ($c) = @_;
 	while (my $r = $c->get_request) {
 		$self->request($r);
 		$self->handle();
@@ -106,6 +124,10 @@ sub start_ws_server() {
 
 sub run() {
 	my $self = shift;
+	my $pid;
+	my $c;
+	my $fh = undef;
+	$SIG{CHLD} = \&grim;
 	Log::log "info", "starting $$self{proc}{name} on port $$self{port}\n";
 	while(!$::ctrlC) {
 		# WS server
@@ -113,7 +135,17 @@ sub run() {
 		if(!$c) {
 			next;
 		}
+		# find an unused socket form the pool
+		my $i;
+		for($i=0; $i<MAX_SOAP_SRVR; $i++) {
+			if(!${${$$self{pool}}[$i]}{in_use}) {
+				$fh = ${${$$self{pool}}[$i]}{fh};
+				${${$$self{pool}}[$i]}{in_use} = 1;
+				last;
+			}
+		}
 		Aux::print_dbg_run("WS request: forking $$self{name}\n");
+		Aux::spawn(undef, undef, $self->start_ws_server, $$self{name}."($i)", $$self{addr}+$i, $fh);
 	}
 	$$self{server}->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting $$self{name}\n");
