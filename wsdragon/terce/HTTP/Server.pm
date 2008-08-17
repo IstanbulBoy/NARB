@@ -31,7 +31,7 @@ use HTTP::Status;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -41,10 +41,21 @@ our @EXPORT_OK;
 
 sub new {
 	shift;
-	my ($fh, $proc, $p)  = @_;
+	my ($proc, $p)  = @_;
 	my $self;
+	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 	eval {
 		$self = {
+			# process descriptor:
+			"proc" => $proc,
+			"addr" => $$proc_val{addr}, # process IPC address
+			"name" => $$proc_val{name}, # process name
+			"fh" => $$proc_val{fh},
+			"pool" => $$proc_val{pool}, # empty
+			"select" => new IO::Select($$proc_val{fh}), # select handle
+			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
+
+			# object descriptor:
 			"port" => $p,
 			"server"=> new HTTP::Daemon(
 				LocalAddr => inet_ntoa(INADDR_ANY),
@@ -52,14 +63,11 @@ sub new {
 				ReuseAddr => 1,
 				Timeout => 5,
 				Blocking => 1
-			),
-			"proc" => $proc,
-			"fh" => $fh, 		# IPC pipe
-			"select" => new IO::Select($sock) # select handle
+			)
 		};
 	};
 	if($@) {
-		die "$n: $@\n";
+		die "$$proc_val{name} instantiation failed: $@\n";
 	}
 	bless $self;
 	return $self;
@@ -70,7 +78,7 @@ sub run() {
 	my $c;
 	Log::log "info", "starting $$self{name}\n";
 	while(!$::ctrlC) {
-		while ($c = $http->accept) {
+		while ($c = $$self{server}->accept) {
 			while (my $r = $c->get_request) {
 				if ($r->method eq 'GET') {
 					my $f;
