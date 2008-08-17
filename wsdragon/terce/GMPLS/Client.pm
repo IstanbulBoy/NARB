@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -45,7 +45,7 @@ our @EXPORT_OK;
 sub new {
 	shift;
 	my ($proc)  = @_;
-	my $proc_val = each %$proc;  # child processes hold only self-descriptors
+	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 	my $self;
 	eval {
 		$self = {
@@ -53,6 +53,7 @@ sub new {
 			"proc" => $proc,
 			"addr" => $$proc_val{addr}, # process IPC address
 			"fh" => $$proc_val{fh},
+			"name" => $$proc_val{name}, # process name
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser

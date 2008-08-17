@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -44,13 +44,14 @@ our @EXPORT_OK;
 sub new {
 	shift;
 	my ($proc, $sock)  = @_;
-	my $proc_val = each %$proc;  # child processes hold only self-descriptors
+	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 	my $self;
 	eval {
 		$self = {
 			# process descriptor:
 			"proc" => $proc,
 			"addr" => $$proc_val{addr}, # process IPC address
+			"name" => $$proc_val{name}, # process name
 			"fh" => $$proc_val{fh},
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle

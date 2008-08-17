@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -64,13 +64,14 @@ sub tag($$$);
 sub new {
 	shift;
 	my($proc) = @_;
-	my $proc_val = each %$proc;  # child processes hold only self-descriptors
+	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 	my $self;
 	eval {
 		$self = {
 			# process descriptor:
 			"proc" => $proc, # process info
 			"addr" => $$proc_val{addr}, # process IPC address
+			"name" => $$proc_val{name}, # process name
 			"fh" => $$proc_val{fh}, # IPC filehandle 
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
@@ -514,7 +515,7 @@ sub run() {
 	my $self = shift;
 	my %pipe_queue;
 
-	Log::log "info",  "starting gmpls processor core\n";
+	Log::log "info", "starting $$self{name}\n";
 	while(!$::ctrlC) {
 		# rce or narb TEDB queue
 		$$self{select}->can_read();
