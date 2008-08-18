@@ -38,7 +38,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.40 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.41 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -66,10 +66,6 @@ use constant STAT_LINK_COMPLETE => 	(
 
 
 sub tag($$$);
-
-sub catch_quiet_term {
-	$::ctrlC = 1;
-}
 
 sub grim {
 	my $child;
@@ -152,7 +148,7 @@ sub run() {
 		Aux::print_dbg_run("WS request: forking $$self{_ws_srvr_name}\n");
 		Aux::spawn(undef, undef, $self->start_ws_server, $$self{_ws_srvr_name}."($i)", $$self{_ws_srvr_addr}+$i, $fh);
 	}
-	$$self{server}->shutdown(SHUT_RDWR);
+	$$self{_ws_daemon}->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting $$self{_ws_srvr_name}\n");
 }
 

@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
@@ -77,6 +77,11 @@ our %msg_addr_X = 	(
 my $dbg_sys = 0;
 
 sub xfrm_tree($$);
+
+sub catch_quiet_term {
+	$::ctrlC = 1;
+}
+
 
 sub set_dbg_sys($) {
 	my ($v) = @_;
@@ -301,7 +306,7 @@ sub xfrm_tree($$) {
 	return $ret;
 }
 
-sub receive_msg() {
+sub receive_msg($) {
 }
 
 # $owner: sender process descriptor
@@ -335,15 +340,15 @@ sub send_msg($$$@) {
 }
 
 # this will either forward or consume the IPC message
-sub act_on_msg($$$$$) {
-	my ($owner, $processor, $sel, $map_ref, $queue_ref) = @_;
-	my @readable = $sel->can_read();
+sub act_on_msg($$) {
+	my ($owner, $map_ref, $queue_ref) = @_;
+	my @readable = $$owner{select}->can_read();
 
 	foreach my $h (@readable) {
 		my $src_n = fileno($h);
 		if(!exists($$queue_ref{$src_n}{buffer})) {
 			# create new stream buffer and start scanning
-			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$map_ref{$h}{name});
+			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$owner{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
 		}
 		my $o = length($$queue_ref{$src_n}{buffer});
@@ -364,7 +369,7 @@ sub act_on_msg($$$$$) {
 				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer to the unprocessed data
 				$attrs =~ /dst.*?=.*?(\d+)(?:\s|$)/;
 				$dst = $1;
-				$$queue_ref{$src_n}{dst} = $$map_ref{$dst}{fh};
+				$$queue_ref{$src_n}{dst} = $$owner{proc}{$dst}{fh};
 
 				$$queue_ref{$src_n}{buffer} = "";
 
@@ -373,12 +378,14 @@ sub act_on_msg($$$$$) {
 					last;
 				}
 				# consume
-				if($dst == $owner) {
-					&$processor($$queue_ref{$src_n}{msg});
+				if($dst == $$owner{addr}) {
+					if(defined($$owner{processor})) {
+						&{$$owner{processor}}($$queue_ref{$src_n}{msg});
+					}
 					$$queue_ref{$src_n}{msg} = "";
 				}
 				# forward everything in the queues (only the parent is allowed to forward)
-				elsif($owner == ADDR_TERCE) {
+				elsif($$owner{addr} == ADDR_TERCE) {
 					foreach my $k (keys %$queue_ref)  {
 						if(!length($$queue_ref{$k}{msg})) {
 							next;
@@ -400,7 +407,7 @@ sub act_on_msg($$$$$) {
 					}
 				}
 			}
-			Aux::print_dbg_msg("received message from %s to %s\n", $$map_ref{$h}{name}, $$map_ref{$dst}{name});
+			Aux::print_dbg_msg("received message from %s to %s\n", $$owner{name}, $$owner{name});
 			# give another pipe a chance
 			if((@readable > 1) && ($c_cnt > TERCE_MSG_CHUNK)) {
 				Aux::print_dbg_msg("interrupting message\n");

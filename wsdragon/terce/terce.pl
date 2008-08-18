@@ -89,13 +89,13 @@ sub catch_term {
 	$::ctrlC = 1;
 }
 
-sub catch_quiet_term {
-	$::ctrlC = 1;
-}
-
 sub grim {
 	my $child;
 	while ((my $waitedpid = waitpid(-1,WNOHANG)) > 0) {
+		# error on exit usually means error while instantiated => exit process
+		if($?) {
+			$::ctrlC = 1;
+		}
 		Aux::print_dbg_run("reaped $waitedpid with exit $?\n" ) if $? != 0;
 	}
 	$SIG{CHLD} = \&grim;
@@ -491,8 +491,29 @@ eval {
 	#     => if we get an incomplete message from a src we can come back
 	#        and continue to build the same queue when more data is available
 	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
+
+	# terce self descriptor NOTE: this one is not an object
+	my $self;
+	eval {
+		$self = {
+			# process descriptor:
+			"proc" => \%child_map, # process info
+			"addr" => ADDR_TERCE, # process IPC address
+			"name" => "TERCE", # process name
+			"fh" => undef, # many handles available 
+			"pool" => [], # empty
+			"select" => $sel, # corresponding select object
+			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
+			"processor" => \&Aux::receive_msg, # data processor
+		};
+	};
+	if($@) {
+		die "TERCE instantiation failed: $@\n";
+	}
+
+	# msg router
 	while(!$::ctrlC) {
-		Aux::act_on_msg(ADDR_TERCE, \&Aux::receive_msg, $sel, \%child_map, \%proc_queue);
+		Aux::act_on_msg($self, \%proc_queue);
 	}
 	$serv_sock->shutdown(SHUT_RDWR);
 };
