@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -208,9 +208,8 @@ sub parse_tlv_data($$$$) {
 
 # NOTE: wildly recursive
 sub parse_tlv($$$;$) {
-	my ($md, $o, $proc, $p) = @_;
-	my $proc_val = each %$proc;
-	my $cn = ($$proc_val{addr} == ADDR_GMPLS_NARB_S)?"narb":"rce";
+	my ($md, $o, $owner, $p) = @_;
+	my $cn = ($$owner{addr} == ADDR_GMPLS_NARB_S)?"narb":"rce";
 	my $ret = 0;
 	my $fmt = "";
 	my ($adv_rtr, $lsa_len) = unpack("x[8]Nx[10]n", $md);	
@@ -231,14 +230,14 @@ sub parse_tlv($$$;$) {
 			parse_tlv_data($md, $o, $fmt, \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
 			unshift(@res, {"fmt" => "N", "cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
-			Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @res);
+			Aux::send_msg($owner, ADDR_GMPLS_CORE, @res);
 			return (0);
 		}
 		elsif($tlv_type == TE_TLV_LINK) {
 			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
 			my @cmd = ({"fmt" => "", "cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr, "client"=>$cn});
-			Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @cmd);
-			return(parse_tlv($md, $o, $proc, TE_TLV_LINK));
+			Aux::send_msg($owner, ADDR_GMPLS_CORE, @cmd);
+			return(parse_tlv($md, $o, $owner, TE_TLV_LINK));
 		}
 		else {
 			Log::log "warning", "unknown TLV type ($tlv_type)\n";
@@ -251,7 +250,7 @@ sub parse_tlv($$$;$) {
 		# if all the data are consistent (allign to 4-byte boundary)
 		my $o1 = $o + (($tlv_len+TLV_ALIGN-1)&(~(TLV_ALIGN-1)));
 		if($o1<$lsa_len) {
-			if(parse_tlv($md, $o1, $proc, $p)<0) {
+			if(parse_tlv($md, $o1, $owner, $p)<0) {
 				# this will invalidate the entire chain
 				# before anything gets parsed if error occurs
 				return -1;
@@ -265,6 +264,7 @@ sub parse_tlv($$$;$) {
 		my $tmp_fmt = "";
 		if($tlv_type == TE_LINK_SUBTLV_LINK_TYPE) {
 			$fmt = "C";
+			$tmp_fmt = "C";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -272,6 +272,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_ID) {
 			$fmt = "N";
+			$tmp_fmt = "N";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -279,6 +280,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LCLIF_IPADDR) {
 			$fmt = "N";
+			$tmp_fmt = "N";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -286,6 +288,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_RMTIF_IPADDR) {
 			$fmt = "N";
+			$tmp_fmt = "N";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -293,6 +296,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_TE_METRIC) {
 			$fmt = "N";
+			$tmp_fmt = "N";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -303,7 +307,7 @@ sub parse_tlv($$$;$) {
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
-			$fmt = "f";
+			$tmp_fmt = "f";
 			$res[0] = unpack("f", pack("V", $res[0]));
 			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
@@ -312,7 +316,7 @@ sub parse_tlv($$$;$) {
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
-			$fmt = "f";
+			$tmp_fmt = "f";
 			$res[0] = unpack("f", pack("V", $res[0]));
 			Aux::print_dbg_lsa("       %s\n", $res[0]);
 		}
@@ -321,7 +325,7 @@ sub parse_tlv($$$;$) {
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
-			$fmt = "f8";
+			$tmp_fmt = "f8";
 			for(my $i=0; $i<@res; $i++) {
 				$res[$i] = unpack("f", pack("V", $res[$i]));
 				Aux::print_dbg_lsa("       %s\n", $res[$i]);
@@ -329,6 +333,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_RSC_CLSCLR) {
 			$fmt = "N";
+			$tmp_fmt = "N";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -336,6 +341,7 @@ sub parse_tlv($$$;$) {
 		}
 		elsif($tlv_type == TE_LINK_SUBTLV_LINK_LCRMT_ID) {
 			$fmt = "NN";
+			$tmp_fmt = "NN";
 			if(parse_tlv_data($md, $o, $fmt, \@res)<0) {
 				return (-1);
 			}
@@ -517,13 +523,13 @@ sub parse_tlv($$$;$) {
 			return (-1);
 		}
 		unshift(@res, {"fmt" => $tmp_fmt, "cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr, "client"=>$cn});
-		Aux::send_msg($proc, ADDR_GMPLS_CORE, $$proc{addr}, @res);
+		Aux::send_msg($owner, ADDR_GMPLS_CORE, @res);
 	}
 	return(0);
 }
 
 sub parse_msg($$) {
-	my ($md, $proc) = @_;
+	my ($md, $owner) = @_;
 	my $ret = 0;
 	# LSA header
 	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
@@ -538,7 +544,7 @@ sub parse_msg($$) {
 	}
 	Aux::print_dbg_lsa("----------------- parsed data ------------------------\n");
 	Aux::print_dbg_lsa("%s from %s (%d)\n", $lsa_type_X{$type}, inet_ntoa(pack("N", $rtr)), $len);
-	$ret = parse_tlv($md, LSA_HDR_SIZE, $proc);
+	$ret = parse_tlv($md, LSA_HDR_SIZE, $owner);
 	Aux::print_dbg_lsa("------------------------------------------------------\n");
 	return($ret);
 }

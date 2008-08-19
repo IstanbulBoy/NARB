@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
@@ -312,7 +312,7 @@ sub receive_msg($) {
 # $owner: sender process descriptor
 # $dst: destination address
 # @data: raw data
-sub send_msg($$$@) {
+sub send_msg($$@) {
 	my ($owner, $dst, @data) = @_;  
 	my $hdr = shift @data;
 	# $hdr: internal header describing the encapsulated data: 
@@ -327,13 +327,16 @@ sub send_msg($$$@) {
 		return;
 	}
 	$writer->startTag("msg", "dst" => $dst, "src" => $$owner{addr});
+
 	$writer->startTag("data", 
 		"fmt" => $$hdr{fmt}, 
 		"cmd" => $$hdr{cmd}, 
-		"type" => $$hdr{type}, 
-		"subtype" => $$hdr{subtype}, 
-		"rtr" => $$hdr{rtr});
-	$writer->characters(pack($$hdr{fmt}, @data));
+		"type" => defined($$hdr{type})?" $$hdr{type}":" undef",
+		"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":" undef",
+		"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":" undef");
+	if(length($$hdr{fmt})>0) {
+		#$writer->characters(pack($$hdr{fmt}, @data));
+	}
 	$writer->endTag("data");
 	$writer->endTag("msg");
 	$writer->end();

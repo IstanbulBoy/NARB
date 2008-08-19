@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -57,7 +57,7 @@ sub new {
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
-			"processor" => \&Aux::receive_msgs, # data processor
+			"processor" => \&process_msg, # msg processor
 
 			# object descriptor:
 			"status" => 0,
@@ -85,42 +85,62 @@ sub open_ctrl_channel($$) {
 	return $ctrl_sock;
 }
 
-
-sub run() {
+sub process_msg() {
 	my $self = shift;
+	my ($msg)  = @_;
 	my $d;
-	Log::log "info", "starting $$self{name}\n";
-	while(!$::ctrlC) {
-		# this blocking queue is being controlled from WS server
-		$d = $$self{queue}->dequeue();
-		if(defined($d)) {
-			my @data = @{$$d{data}};
-			if($$d{cmd} == CTRL_CMD) {
-				if($$d{type} == TERM_T_T) {
-					last;
-				}
-				elsif($$d{type} == RUN_Q_T) {
-				}
-				elsif($$d{type} == INIT_Q_T) {
-					if(defined($data[0]) && defined($data[1])) {
-						$$self{ctrl_socket} = open_ctrl_channel($data[0], $data[1]);
-						if(defined($$self{ctrl_socket})) {
-							$$self{status} |= CQ_INIT_S;
-						}
-					}
-				}
+
+	# parse the message
+	my $tr;  # XML tree reference
+	eval {
+		$tr = $$self{parser}->parse($msg);
+		$d = Lib::xfrm_tree("msg", $$tr[1]);
+		if(!defined($d)) {
+			Log::log("warning", "IPC message parsing failed\n");
+			return;
+		}
+	};
+	if($@) {
+		Log::log("err", "$@\n");
+		return;
+	}
+	if(defined($d)) {
+		my @data = @{$$d{data}};
+		if($$d{cmd} == CTRL_CMD) {
+			if($$d{type} == TERM_T_T) {
+				last;
 			}
-			if(!($$self{status} & CQ_INIT_S)) {
-				next;
+			elsif($$d{type} == RUN_Q_T) {
 			}
-			# findPath
-			if($$d{cmd} == ASYNC_CMD) {
-				if($$d{type} == RCE_MSG_LSP) {
-					if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
+			elsif($$d{type} == INIT_Q_T) {
+				if(defined($data[0]) && defined($data[1])) {
+					$$self{ctrl_socket} = open_ctrl_channel($data[0], $data[1]);
+					if(defined($$self{ctrl_socket})) {
+						$$self{status} |= CQ_INIT_S;
 					}
 				}
 			}
 		}
+		if(!($$self{status} & CQ_INIT_S)) {
+			next;
+		}
+		# findPath
+		if($$d{cmd} == ASYNC_CMD) {
+			if($$d{type} == RCE_MSG_LSP) {
+				if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
+				}
+			}
+		}
+	}
+}
+
+sub run() {
+	my $self = shift;
+	my %pipe_queue;
+
+	Log::log "info", "starting $$self{name}\n";
+	while(!$::ctrlC) {
+		Aux::act_on_msg($self, \%pipe_queue);
 	}
 	Aux::print_dbg_run("exiting $$self{name}\n");
 	if(defined($$self{ctrl_sock})) {

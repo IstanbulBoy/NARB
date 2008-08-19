@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -120,8 +120,8 @@ sub findPath {
 	Aux::print_dbg_ws("findPath()\n");
 
 	push(@data, $lsp_opt, @args);
-	unshift(@data, {"cmd"=>ASYNC_CMD, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
-	#Aux::send_msg($$self{ws}{proc}, ADDR_, $$self{addr}, @data);
+	unshift(@data, {"fmt"=>"", "cmd"=>ASYNC_CMD, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
+	#Aux::send_msg($self, ADDR_, @data);
 }
 
 sub selectNetworkTopology {

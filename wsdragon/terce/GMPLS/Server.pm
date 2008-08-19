@@ -33,7 +33,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -98,12 +98,12 @@ sub run() {
 				Log::log "info", "starting $$self{name}\n";
 				# init the control channel
 				my @data = ($$self{sock}->peerhost(), $msg{$sn}{hdr}{tag2});
-				unshift(@data, {"cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
-				Aux::send_msg($$self{proc}, ADDR_GMPLS_CORE, $$self{addr}, @data);
+				unshift(@data, {"fmt"=>"", "cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
+				Aux::send_msg($self, ADDR_GMPLS_CORE, @data);
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn});
 			}
 			elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
-				if(GMPLS::API::parse_msg($msg{$sn}{data}, $$self{proc}) <0) {
+				if(GMPLS::API::parse_msg($msg{$sn}{data}, $self) <0) {
 					$err = 1;
 				}
 				GMPLS::API::ack_msg($$self{sock}, $msg{$sn}, $err);
@@ -127,8 +127,8 @@ sub run() {
 
 sub activate_tedb() {
 	my $self = shift;
-	my @cmd = ({"cmd"=>TEDB_ACTIVATE});
-	Aux::send_msg($$self{proc}, ADDR_GMPLS_CORE, $$self{addr}, @cmd);
+	my @cmd = ({"fmt"=>"", "cmd"=>TEDB_ACTIVATE});
+	Aux::send_msg($self, ADDR_GMPLS_CORE, @cmd);
 }
 
 1;
