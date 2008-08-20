@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
 	%EXPORT_TAGS = ();
@@ -342,12 +342,17 @@ sub send_msg($$@) {
 	$writer->end();
 }
 
-# this will either forward or consume the IPC message
+# this will either forward, consume the IPC message or return the socket handle
+# if it does not belong to the IPC address space
 sub act_on_msg($$) {
 	my ($owner, $map_ref, $queue_ref) = @_;
 	my @readable = $$owner{select}->can_read();
 
 	foreach my $h (@readable) {
+		# return if not an IPC socket
+		if(!exists($$owner{proc}{$h})) {
+			return $h;
+		}
 		my $src_n = fileno($h);
 		if(!exists($$queue_ref{$src_n}{buffer})) {
 			# create new stream buffer and start scanning
@@ -419,7 +424,9 @@ sub act_on_msg($$) {
 			}
 		}
 	}
+	return undef;
 }
+
 # $child_mapref: a map of all open sockets to their associated process info
 # $selref:  IO::Select object - the core of the IPC router
 # $coderef: child's entry point
