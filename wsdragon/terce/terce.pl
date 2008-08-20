@@ -82,6 +82,8 @@ USG
 	exit;
 }
 
+my %child_map;
+
 #signal handlers
 sub catch_term {
 	my $signame = shift;
@@ -95,6 +97,60 @@ sub grim {
 		# error on exit usually means error while instantiated => exit process
 		if($?) {
 			$::ctrlC = 1;
+		}
+		# let's check what died
+		else {
+			foreach my $k (keys %child_map) {
+				if((ref($k) eq "SCALAR") && ($child_map{$k}{cpid} == $waitedpid)) {
+					if(
+						($k == ADDR_GMPLS_CORE) || 
+						($k == ADDR_SOAP_S) || 
+						($k == ADDR_WEB_S)) { # fatal
+						$::ctrlC = 1;
+					}
+					# probably narb/rce crashed
+					elsif($k == ADDR_GMPLS_NARB_S) {
+						# kill the client too
+						if(exists($child_map{ADDR_GMPLS_NARB_C})) {
+							my $fh = $child_map{ADDR_GMPLS_NARB_C}{fh};
+							my $pid = $child_map{ADDR_GMPLS_NARB_C}{cpid}; 
+							delete $child_map{ADDR_GMPLS_NARB_C};
+							delete $child_map{$fh};
+							kill 15, $pid;
+						}
+					}
+					elsif($k == ADDR_GMPLS_NARB_C) {
+						# kill the server too
+						if(exists($child_map{ADDR_GMPLS_NARB_S})) {
+							my $fh = $child_map{ADDR_GMPLS_NARB_S}{fh};
+							my $pid = $child_map{ADDR_GMPLS_NARB_S}{cpid}; 
+							delete $child_map{ADDR_GMPLS_NARB_S};
+							delete $child_map{$fh};
+							kill 15, $pid;
+						}
+					}
+					elsif($k == ADDR_GMPLS_RCE_S) {
+						# kill the client too
+						if(exists($child_map{ADDR_GMPLS_RCE_C})) {
+							my $fh = $child_map{ADDR_GMPLS_RCE_C}{fh};
+							my $pid = $child_map{ADDR_GMPLS_RCE_C}{cpid}; 
+							delete $child_map{ADDR_GMPLS_RCE_C};
+							delete $child_map{$fh};
+							kill 15, $pid;
+						}
+					}
+					elsif($k == ADDR_GMPLS_RCE_C) {
+						# kill the server too
+						if(exists($child_map{ADDR_GMPLS_RCE_S})) {
+							my $fh = $child_map{ADDR_GMPLS_RCE_S}{fh};
+							my $pid = $child_map{ADDR_GMPLS_RCE_S}{cpid}; 
+							delete $child_map{ADDR_GMPLS_RCE_S};
+							delete $child_map{$fh};
+							kill 15, $pid;
+						}
+					}
+				}
+			}
 		}
 		Aux::print_dbg_run("reaped $waitedpid with exit $?\n" ) if $? != 0;
 	}
@@ -422,7 +478,6 @@ if($daemonize) {
 
 ########################### initial setup ############################
 eval {
-	my %child_map;
 	my %proc_queue;
 	my $sel = new IO::Select();
 
