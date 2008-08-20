@@ -34,7 +34,6 @@ use Log;
 use Parser;
 use GMPLS::Core;
 use GMPLS::Server;
-use GMPLS::Client;
 use WS::Server;
 use WS::External;
 use HTTP::Server;
@@ -97,58 +96,9 @@ sub grim {
 		# error on exit usually means error while instantiated => exit process
 		if($?) {
 			$::ctrlC = 1;
-		}
-		# let's check what died
-		else {
 			foreach my $k (keys %child_map) {
-				if((ref($k) eq "SCALAR") && ($child_map{$k}{cpid} == $waitedpid)) {
-					if(
-						($k == ADDR_GMPLS_CORE) || 
-						($k == ADDR_SOAP_S) || 
-						($k == ADDR_WEB_S)) { # fatal
-						$::ctrlC = 1;
-					}
-					# probably narb/rce crashed
-					elsif($k == ADDR_GMPLS_NARB_S) {
-						# kill the client too
-						if(exists($child_map{ADDR_GMPLS_NARB_C})) {
-							my $fh = $child_map{ADDR_GMPLS_NARB_C}{fh};
-							my $pid = $child_map{ADDR_GMPLS_NARB_C}{cpid}; 
-							delete $child_map{ADDR_GMPLS_NARB_C};
-							delete $child_map{$fh};
-							kill 15, $pid;
-						}
-					}
-					elsif($k == ADDR_GMPLS_NARB_C) {
-						# kill the server too
-						if(exists($child_map{ADDR_GMPLS_NARB_S})) {
-							my $fh = $child_map{ADDR_GMPLS_NARB_S}{fh};
-							my $pid = $child_map{ADDR_GMPLS_NARB_S}{cpid}; 
-							delete $child_map{ADDR_GMPLS_NARB_S};
-							delete $child_map{$fh};
-							kill 15, $pid;
-						}
-					}
-					elsif($k == ADDR_GMPLS_RCE_S) {
-						# kill the client too
-						if(exists($child_map{ADDR_GMPLS_RCE_C})) {
-							my $fh = $child_map{ADDR_GMPLS_RCE_C}{fh};
-							my $pid = $child_map{ADDR_GMPLS_RCE_C}{cpid}; 
-							delete $child_map{ADDR_GMPLS_RCE_C};
-							delete $child_map{$fh};
-							kill 15, $pid;
-						}
-					}
-					elsif($k == ADDR_GMPLS_RCE_C) {
-						# kill the server too
-						if(exists($child_map{ADDR_GMPLS_RCE_S})) {
-							my $fh = $child_map{ADDR_GMPLS_RCE_S}{fh};
-							my $pid = $child_map{ADDR_GMPLS_RCE_S}{cpid}; 
-							delete $child_map{ADDR_GMPLS_RCE_S};
-							delete $child_map{$fh};
-							kill 15, $pid;
-						}
-					}
+				if(ref($k) eq "SCALAR") {
+					kill 9, $child_map{$k}{cpid};
 				}
 			}
 		}
@@ -258,21 +208,6 @@ sub start_gmpls_server($$) {
 	}
 }
 
-# GMPLS Client provides the async interface to narb and rce
-sub start_gmpls_client($) {
-	my ($proc) = @_;
-	my $client;
-	eval {
-		$client = new GMPLS::Client($proc);
-	};
-	if($@) {
-		Log::log "err",  "$@\n";
-	}
-	else {
-		$client->run();
-	}
-}
-
 # GMPLS Core provides all the TEDB-related processing
 sub start_gmpls_core($) {
 	my ($proc) = @_;
@@ -332,11 +267,6 @@ $SIG{HUP} = \&catch_term;
 $SIG{CHLD} = \&grim;
 $| = 1;
 $::ctrlC = 0;
-my $status = 0;
-
-use constant TERCE_STAT_NARB_CONN => (1<<0);
-use constant TERCE_STAT_RCE_CONN => (1<<1);
-use constant TERCE_STAT_INIT_DONE => (TERCE_STAT_NARB_CONN | TERCE_STAT_NARB_CONN);
 
 # configuration parameters hash
 # each parameter holds it's value "v" and it's status "s".
@@ -493,50 +423,9 @@ eval {
 	# start the SOAP/HTTP server
 	Aux::spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, undef, $::cfg{ws}{port}{v});
 
-	# wait for GMPLS connections 
-	my $serv_sock = IO::Socket::INET->new(Listen => 5,
-		LocalAddr => inet_ntoa(INADDR_ANY),
-		LocalPort => $::cfg{gmpls}{port}{v},
-		ReuseAddr => 1,
-		Blocking => 1,
-		Proto     => 'tcp') or die "socket: $@\n";
-	Aux::print_dbg_net("listening on port $::cfg{gmpls}{port}{v}\n");
+	# start gmpls server
+	Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server", ADDR_GMPLS_S, undef);
 
-	while(!$::ctrlC) {
-		my @conn = $serv_sock->accept();
-		if(!@conn) {
-			next;
-		}
-		my $client_sock = $conn[0];
-		my @tmp = sockaddr_in($conn[1]);
-		my $peer_ip = inet_ntoa($tmp[1]);
-		my $peer_port = $tmp[0];
-		Log::log("info", "accepted connection from $peer_ip:$peer_port\n");
-
-		my $n = "";
-		if($peer_port eq $::cfg{gmpls}{narb_sport}{v}) {
-			$n = "narb";
-			$status |= TERCE_STAT_NARB_CONN;
-		}
-		elsif($peer_port eq $::cfg{gmpls}{rce_sport}{v}) {
-			$n = "rce";
-			$status |= TERCE_STAT_RCE_CONN;
-		}
-		else {
-			Log::log "err", "narb/rce client is not using a known source port ($peer_port)\n";
-			Log::log "err", "shutting down the client connection\n";
-			$client_sock->shutdown(SHUT_RDWR);
-			next;
-		}
-		# start uninitialized client queue
-		Aux::spawn(\%child_map, \$sel, \&start_gmpls_client, "Client Queue ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C, undef);
-
-		# start GMPLS server
-		Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server ($n)", ($n eq "narb")?ADDR_GMPLS_NARB_S:ADDR_GMPLS_RCE_S, undef, $client_sock);
-		if(($status & TERCE_STAT_INIT_DONE) == TERCE_STAT_INIT_DONE) {
-			last;
-		}
-	}
 	
 	# start the msg relay loop 
 	# ASSUMPTIONS (so we can be reentrant):
@@ -570,7 +459,6 @@ eval {
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%proc_queue);
 	}
-	$serv_sock->shutdown(SHUT_RDWR);
 };
 if($@) {
 	Log::log("err", "$@\n");

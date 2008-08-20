@@ -12,9 +12,9 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_NARB_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_S ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR);
+	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -45,21 +45,21 @@ use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition ca
 use constant TERM_T_T => 2; # this will force the termination of a thread run loop
 use constant INIT_Q_T => 3; # this will initialize a client queue and open the async socket
 
-use constant ADDR_TERCE => (1<<0);
-use constant ADDR_GMPLS_CORE => (1<<1);
-use constant ADDR_GMPLS_NARB_S => (1<<2);
-use constant ADDR_GMPLS_NARB_C => (1<<3);
-use constant ADDR_GMPLS_RCE_S => (1<<4);
-use constant ADDR_GMPLS_RCE_C => (1<<5);
-use constant ADDR_WEB_S => (1<<6);
-use constant ADDR_SOAP_S => (1<<7);
-# soap server children addresses
-use constant ADDR_SOAP_S_BASE => (1<<8);
-
 use constant MAX_SOAP_SRVR => 10;
+use constant MAX_GMPLS_CS => 4; #client/server
 
-# NOTE: if you change MAX_SOAP_SRVR, change ADDR_SPACE, too
-use constant ADDR_SPACE => 0x7ffff;
+use constant ADDR_TERCE => 0;
+use constant ADDR_GMPLS_CORE => 1;
+use constant ADDR_GMPLS_S => 2;
+use constant ADDR_WEB_S => 3;
+use constant ADDR_SOAP_S => 4;
+# soap server children addresses
+use constant ADDR_SOAP_S_BASE => 5;
+use constant ADDR_GMPLS_S_BASE => ADDR_SOAP_S_BASE + MAX_SOAP_SRVR;
+use constant ADDR_GMPLS_NARB_S => ADDR_GMPLS_S_BASE;
+use constant ADDR_GMPLS_NARB_C => ADDR_GMPLS_S_BASE + 1;
+use constant ADDR_GMPLS_RCE_S => ADDR_GMPLS_S_BASE + 2;
+use constant ADDR_GMPLS_RCE_C => ADDR_GMPLS_S_BASE + 3;
 
 use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
@@ -67,12 +67,14 @@ use constant TERCE_MSG_CHUNK => 16384;
 our %msg_addr_X = 	(
 	ADDR_TERCE => "TERCE",
 	ADDR_GMPLS_CORE => "GMPLS CORE",
-	ADDR_GMPLS_NARB_S => "GMPLS NARB SERVER",
+	ADDR_GMPLS_S => "GMPLS SERVER",
 	ADDR_GMPLS_NARB_C => "GMPLS NARB CLIENT",
-	ADDR_GMPLS_RCE_S => "GMPLS RCE SERVER",
 	ADDR_GMPLS_RCE_C => "GMPLS RCE CLIENT",
 	ADDR_WEB_S => "WEB SERVER",
-	ADDR_SOAP_S => "SOAP SERVER");
+	ADDR_SOAP_S => "SOAP SERVER",
+	ADDR_GMPLS_NARB_S => "GMPLS NARB SERVER",
+	ADDR_GMPLS_RCE_S => "GMPLS RCE SERVER"
+);
 
 my $dbg_sys = 0;
 
@@ -321,25 +323,24 @@ sub send_msg($$@) {
 	#	type: type of data (optional)
 	#	subtype: usually, tlv subtype such as "uni" (optional)
 	#	rtr: advertizing router (optional)
-	my $writer = new XML::Writer(OUTPUT => $$owner{fh}, ENCODING => "us-ascii");
-	if(!defined($writer)) {
-		Log::log "warning", "XML writer failure\n";
-		return;
-	}
-	$writer->startTag("msg", "dst" => $dst, "src" => $$owner{addr});
+	eval {
+		$$owner{writer}->startTag("msg", "dst" => $dst, "src" => $$owner{addr});
 
-	$writer->startTag("data", 
-		"fmt" => $$hdr{fmt}, 
-		"cmd" => $$hdr{cmd}, 
-		"type" => defined($$hdr{type})?" $$hdr{type}":" undef",
-		"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":" undef",
-		"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":" undef");
-	if(length($$hdr{fmt})>0) {
-		#$writer->characters(pack($$hdr{fmt}, @data));
+		$$owner{writer}->startTag("data", 
+			"fmt" => $$hdr{fmt}, 
+			"cmd" => $$hdr{cmd}, 
+			"type" => defined($$hdr{type})?" $$hdr{type}":" undef",
+			"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":" undef",
+			"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":" undef");
+		if(length($$hdr{fmt})>0) {
+			$$owner{writer}->characters(pack($$hdr{fmt}, @data));
+		}
+		$$owner{writer}->endTag("data");
+		$$owner{writer}->endTag("msg");
+		$$owner{writer}->end();
+	};
+	if($@) {
 	}
-	$writer->endTag("data");
-	$writer->endTag("msg");
-	$writer->end();
 }
 
 # this will either forward, consume the IPC message or return the socket handle
@@ -356,7 +357,7 @@ sub act_on_msg($$) {
 		my $src_n = fileno($h);
 		if(!exists($$queue_ref{$src_n}{buffer})) {
 			# create new stream buffer and start scanning
-			Aux::print_dbg_msg("setting up a pipe queue for %s\n", $$owner{name});
+			Aux::print_dbg_msg("setting up a pipe queue on %s for %s\n", $$owner{name}, $$owner{proc}{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
 		}
 		my $o = length($$queue_ref{$src_n}{buffer});
@@ -381,10 +382,6 @@ sub act_on_msg($$) {
 
 				$$queue_ref{$src_n}{buffer} = "";
 
-				if(!($dst & ADDR_SPACE)) {
-					Log::log "warning", "unknown/unspecified destination address ($dst)\n";
-					last;
-				}
 				# consume
 				if($dst == $$owner{addr}) {
 					if(defined($$owner{processor})) {
@@ -451,6 +448,13 @@ sub spawn($$$$$$@) {
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
+		# create a pool of socket pairs for the GMPLS server
+		elsif($proc_addr == ADDR_GMPLS_S) {
+			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
+				socketpair(my $to_ch_pool, my $to_ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
+			}
+		}
 	}
 	if (!defined($pid = fork)) {
 		Log::log "err",  "cannot fork: $!";
@@ -477,6 +481,15 @@ sub spawn($$$$$$@) {
 					$$child_mapref{${$$sp_pool[$i]}[0]} = $tmp;
 				}
 			}
+			elsif($proc_addr == ADDR_GMPLS_S) {
+				for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
+					close ${$$sp_pool[$i]}[1];
+					$$selref->add(${$$sp_pool[$i]}[0]);
+					$tmp = {"fh" => ${$$sp_pool[$i]}[0], "addr" => (ADDR_GMPLS_S_BASE+$i), "cpid" => $pid, "name" => $proc_name."($i)"};
+					$$child_mapref{ADDR_GMPLS_S_BASE+$i} = $tmp;
+					$$child_mapref{${$$sp_pool[$i]}[0]} = $tmp;
+				}
+			}
 		}
 		return;
 	}
@@ -485,6 +498,12 @@ sub spawn($$$$$$@) {
 		close $to_ch;
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
+				close ${$$sp_pool[$i]}[0];
+				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0});
+			}
+		}
+		elsif($proc_addr == ADDR_GMPLS_S) {
+			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
 				close ${$$sp_pool[$i]}[0];
 				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0});
 			}

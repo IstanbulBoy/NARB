@@ -34,7 +34,7 @@ use constant CQ_INIT_S => (1<<0);
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -56,6 +56,7 @@ sub new {
 			"name" => $$proc_val{name}, # process name
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle
+			"writer" => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii"),
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
 			"processor" => \&process_msg, # msg processor
 
@@ -85,10 +86,13 @@ sub open_ctrl_channel($$) {
 	return $ctrl_sock;
 }
 
-sub process_msg() {
+sub process_msg($) {
 	my $self = shift;
 	my ($msg)  = @_;
 	my $d;
+
+	print("$msg\n");
+	return;
 
 	# parse the message
 	my $tr;  # XML tree reference

@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -124,17 +124,13 @@ sub ack_msg($$;$) {
 }
 
 sub get_msg($$) {
-	my ($sel, $mr) = @_;
+	my ($fh, $mr) = @_;
 	#get the header
 	my $hdr;
 	my $data;
 	my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2);
 
-	my @fh = $sel->can_read(0.25);
-	if(@fh != 1) {
-		return undef;
-	}
-	my $n = $fh[0]->sysread($hdr, 24);
+	my $n = $fh->sysread($hdr, 24);
 	if(!defined($n)) {
 		Log::log("err", "recv hdr: $!\n");
 		die "client error: $!\n";
@@ -142,7 +138,7 @@ sub get_msg($$) {
 	if($n==0) {
 		die "client disconnected\n";
 	}
-	if($fh[0]->connected()) {
+	if($fh->connected()) {
 		($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
 		$$mr{$sn} = {
 			"hdr" => {
@@ -165,7 +161,7 @@ sub get_msg($$) {
 	}
 	# and the body
 	if($len > 0) {
-		$n = $fh[0]->sysread($data, $len);
+		$n = $fh->sysread($data, $len);
 		if(!defined($n)) {
 			Log::log("err", "recv hdr: $!\n");
 			die "client error: $!\n";
@@ -176,7 +172,7 @@ sub get_msg($$) {
 		$$mr{$sn}{data} =  $data;
 	}
 	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action_X{$$mr{$sn}{hdr}{action}},
-		$fh[0]->peerhost(), $fh[0]->peerport()
+		$fh->peerhost(), $fh->peerport()
 	);
 	dump_data($$mr{$sn});
 	return $sn;

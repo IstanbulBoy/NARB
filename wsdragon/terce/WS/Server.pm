@@ -38,7 +38,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.41 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.42 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -93,6 +93,7 @@ sub new {
 			$self->{_ws_srvr_fh} = $$proc_val{fh}; # IPC filehandle 
 			$self->{_ws_srvr_pool} = $$proc_val{pool}; # socket pool for forked children
 			$self->{_ws_srvr_select} = new IO::Select($$proc_val{fh}); # corresponding select object
+			$self->{writer} = undef;
 			$self->{_ws_srvr_parser} = undef;
 
 			# object descriptor:

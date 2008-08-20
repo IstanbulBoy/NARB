@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -75,6 +75,7 @@ sub new {
 			"fh" => $$proc_val{fh}, # IPC filehandle 
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
+			"writer" => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii"),
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
 			"processor" => \&process_tedb_data, # data processor
 

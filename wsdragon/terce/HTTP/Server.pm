@@ -31,7 +31,7 @@ use HTTP::Status;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -53,6 +53,7 @@ sub new {
 			"fh" => $$proc_val{fh},
 			"pool" => $$proc_val{pool}, # empty
 			"select" => new IO::Select($$proc_val{fh}), # select handle
+			"writer" => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii"),
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
 			"processor" => \&Aux::receive_msg, # data processor
 
