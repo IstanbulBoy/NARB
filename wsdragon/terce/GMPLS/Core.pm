@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -447,7 +447,7 @@ sub process_tedb_data($) {
 	my $tr;  # XML tree reference
 	eval {
 		$tr = $$self{parser}->parse($msg);
-		$d = Lib::xfrm_tree("msg", $$tr[1]);
+		$d = Aux::xfrm_tree("msg", $$tr[1]);
 		if(!defined($d)) {
 			Log::log("warning", "IPC message parsing failed\n");
 			return;

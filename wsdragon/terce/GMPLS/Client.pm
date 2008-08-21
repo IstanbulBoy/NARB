@@ -29,12 +29,10 @@ use Socket;
 use GMPLS::Constants;
 use Aux;
 
-use constant CQ_INIT_S => (1<<0);
-
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -91,14 +89,11 @@ sub process_msg($) {
 	my ($msg)  = @_;
 	my $d;
 
-	print("$msg\n");
-	return;
-
 	# parse the message
 	my $tr;  # XML tree reference
 	eval {
 		$tr = $$self{parser}->parse($msg);
-		$d = Lib::xfrm_tree("msg", $$tr[1]);
+		$d = Aux::xfrm_tree("msg", $$tr[1]);
 		if(!defined($d)) {
 			Log::log("warning", "IPC message parsing failed\n");
 			return;
@@ -119,14 +114,8 @@ sub process_msg($) {
 			elsif($$d{type} == INIT_Q_T) {
 				if(defined($data[0]) && defined($data[1])) {
 					$$self{ctrl_socket} = open_ctrl_channel($data[0], $data[1]);
-					if(defined($$self{ctrl_socket})) {
-						$$self{status} |= CQ_INIT_S;
-					}
 				}
 			}
-		}
-		if(!($$self{status} & CQ_INIT_S)) {
-			next;
 		}
 		# findPath
 		if($$d{cmd} == ASYNC_CMD) {

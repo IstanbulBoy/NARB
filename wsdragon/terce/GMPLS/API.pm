@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -403,7 +403,7 @@ sub parse_tlv($$$;$) {
 						$l = 16;
 					}
 					push(@info, substr($md, $o + 4 + 40, $l));
-					$tmp_fmt .= "CCCCNNNNNN$l/a*";
+					$tmp_fmt .= "CCCCNNNNNNC/a*";   # NOTE: C/a* template is packing a string with its length
 					my $ts = substr($md, $o + 4 + 56, 192/8);
 					my $tcnt = 0;
 					Aux::print_dbg_lsa("       time slots: ");
@@ -458,7 +458,7 @@ sub parse_tlv($$$;$) {
 						while($bin_s =~ s/(1+)//) {
 							push(@info, sprintf("%d-%d", $-[0]+$p+1, $+[0]+$p));
 							my $l = length($info[$#info]);
-							$tmp_fmt .= "$l/a*";
+							$tmp_fmt .= "C/a*";
 							Aux::print_dbg_lsa(" %d-%d", $-[0]+$p+1, $+[0]+$p);
 							$p = $+[0] - $-[0];
 						}

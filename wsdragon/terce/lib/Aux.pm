@@ -2,7 +2,7 @@ package Aux;
 
 use strict;
 use sigtrap;
-use Socket;
+use IO::Socket;
 use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
@@ -12,7 +12,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS);
 	%EXPORT_TAGS = ();
@@ -248,6 +248,8 @@ sub chksum($$@) {
 
 # $root: root element for this recursion level
 # $tr: element tree reference (message element tree from the parser)
+############## data structure ####################
+#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"fmt"=>"NN","cmd"=>3,"type"=>5...} item [{"seq"=>0},0,STRING0], item [{"seq"=>1},0,STRING1]]]]
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
 	my $attrs = shift(@$tr);
@@ -256,9 +258,21 @@ sub xfrm_tree($$) {
 	my $type = undef;
 	my $subtype = undef;
 	my $rtr = undef;
-	my $client = undef;
 	my $data = [];
 	my $ret = undef;
+
+
+	for(my $i=0; $i<@$tr; $i+=2) {
+		my $el = shift @$tr;
+		my $chld = shift @$tr;
+		if($el eq "0") {
+			return {"seq"=>$$attrs{seq}, "item"=>$chld}; 
+		}
+		else {
+			push(@$data, xfrm_tree($el, $chld));
+		}
+	}
+
 	if(lc($root) eq "data") {
 		if(exists($$attrs{fmt}) && defined($$attrs{fmt})) {
 			$fmt = $$attrs{fmt};
@@ -281,31 +295,19 @@ sub xfrm_tree($$) {
 		if(exists($$attrs{rtr})) {
 			$rtr = $$attrs{rtr};
 		}
-		if(exists($$attrs{client})) {
-			$client = $$attrs{client};
-		}
-		if($$tr[0] == 0) {
-			if(length($fmt)>0) {
-				@$data = unpack($fmt, $$tr[1]);
-			}
-		}
-		else {
-			die "data element\n";
-		}
+		@$data = sort {$$a{seq} <=> $$b{seq}} @$data;
 		$ret = {
 			cmd => $cmd,
 			type => $type,
 			subtype => $subtype,
 			rtr => $rtr,
-			client => $client,
 			data => $data
 		};
 		return $ret;
 	}
-	foreach my $el (keys %$tr) {
-		$ret = xfrm_tree($el, $$tr{$el});
+	if(lc($root) eq "msg") {
+		return $$data[0];
 	}
-	return $ret;
 }
 
 sub receive_msg($) {
@@ -329,17 +331,19 @@ sub send_msg($$@) {
 		$$owner{writer}->startTag("data", 
 			"fmt" => $$hdr{fmt}, 
 			"cmd" => $$hdr{cmd}, 
-			"type" => defined($$hdr{type})?" $$hdr{type}":" undef",
-			"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":" undef",
-			"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":" undef");
-		if(length($$hdr{fmt})>0) {
-			$$owner{writer}->characters(pack($$hdr{fmt}, @data));
+			"type" => defined($$hdr{type})?" $$hdr{type}":"undef",
+			"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":"undef",
+			"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":"undef");
+		for(my $i=0; $i<@data; $i++) {
+			 $$owner{writer}->dataElement("item", $data[$i], "seq"=>$i);
 		}
+
 		$$owner{writer}->endTag("data");
 		$$owner{writer}->endTag("msg");
 		$$owner{writer}->end();
 	};
 	if($@) {
+		die "send_msg: $@";
 	}
 }
 
@@ -347,6 +351,7 @@ sub send_msg($$@) {
 # if it does not belong to the IPC address space
 sub act_on_msg($$) {
 	my ($owner, $map_ref, $queue_ref) = @_;
+
 	my @readable = $$owner{select}->can_read();
 
 	foreach my $h (@readable) {
@@ -366,6 +371,9 @@ sub act_on_msg($$) {
 		my $c_cnt = 0;
 		while(1) {
 			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, $o);
+			if(!defined($n)) {
+				last;
+			}
 			$c_cnt += $n;
 			if(!$n) {
 				last;
@@ -376,7 +384,7 @@ sub act_on_msg($$) {
 				my $attrs = $1;
 				$$queue_ref{$src_n}{msg} = $&;
 				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer to the unprocessed data
-				$attrs =~ /dst.*?=.*?(\d+)(?:\s|$)/;
+				$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
 				$dst = $1;
 				$$queue_ref{$src_n}{dst} = $$owner{proc}{$dst}{fh};
 
@@ -385,7 +393,7 @@ sub act_on_msg($$) {
 				# consume
 				if($dst == $$owner{addr}) {
 					if(defined($$owner{processor})) {
-						&{$$owner{processor}}($$queue_ref{$src_n}{msg});
+						$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
 					}
 					$$queue_ref{$src_n}{msg} = "";
 				}
@@ -412,7 +420,6 @@ sub act_on_msg($$) {
 					}
 				}
 			}
-			Aux::print_dbg_msg("received message from %s to %s\n", $$owner{name}, $$owner{name});
 			# give another pipe a chance
 			if((@readable > 1) && ($c_cnt > TERCE_MSG_CHUNK)) {
 				Aux::print_dbg_msg("interrupting message\n");
@@ -440,18 +447,18 @@ sub spawn($$$$$$@) {
 	# $to_ch: socket descriptor ... the socket used by parent to talk to child
 	# $to_ph: socket descriptor ... the socket used by child to talk to parent
 	if(!defined($pool_fh)) {
-		socketpair($to_ch, $to_ph, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+		($to_ch, $to_ph) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
 		# create a pool of socket pairs for the SOAP server
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
-				socketpair(my $to_ch_pool, my $to_ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
 		# create a pool of socket pairs for the GMPLS server
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
-				socketpair(my $to_ch_pool, my $to_ph_pool, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}

@@ -423,8 +423,8 @@ eval {
 	# start the SOAP/HTTP server
 	Aux::spawn(\%child_map, \$sel, \&start_ws_server, "SOAP Server", ADDR_SOAP_S, undef, $::cfg{ws}{port}{v});
 
-	# start gmpls server
-	Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Server", ADDR_GMPLS_S, undef);
+	# start gmpls server and subsequently the client
+	Aux::spawn(\%child_map, \$sel, \&start_gmpls_server, "GMPLS Processor", ADDR_GMPLS_S, undef);
 
 	
 	# start the msg relay loop 
