@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -179,6 +179,11 @@ sub start_gmpls_server($$$) {
 	my ($proc, $self, $sock) = @_;
 	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 
+	$$self{proc} = $proc;
+	$$self{addr} = $$proc_val{addr}; # process IPC address
+	$$self{name} = $$proc_val{name}; # process name
+	$$self{fh} = $$proc_val{fh};
+	$$self{pool} = $$proc_val{pool};
 	$$self{select} = new IO::Select($$proc_val{fh}); # select handle
 	$$self{writer} = new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii");
 	$$self{parser} = new XML::Parser(Style => "tree"); # incomming data parser
@@ -258,8 +263,6 @@ sub run() {
 		}
 		Aux::print_dbg_run("GMPLS connection: forking $$self{name}\n");
 
-		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
-
 		# start client queue
 		eval {
 			Aux::spawn(undef, undef, \&start_gmpls_client, "Client Queue ($n)", $addr_c, $fh_c);
@@ -267,6 +270,8 @@ sub run() {
 		if($@) {
 			last;
 		}
+		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
+
 	}
 	Aux::print_dbg_run("exiting $$self{name}\n");
 	$$self{daemon}->shutdown(SHUT_RDWR);

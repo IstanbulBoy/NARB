@@ -2,6 +2,7 @@ package Aux;
 
 use strict;
 use sigtrap;
+use English '-no_match_vars';
 use IO::Socket;
 use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
@@ -12,9 +13,9 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS);
+	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -63,15 +64,15 @@ use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
 
 our %msg_addr_X = 	(
-	ADDR_TERCE => "TERCE",
-	ADDR_GMPLS_CORE => "GMPLS CORE",
-	ADDR_GMPLS_S => "GMPLS SERVER",
-	ADDR_GMPLS_NARB_C => "GMPLS NARB CLIENT",
-	ADDR_GMPLS_RCE_C => "GMPLS RCE CLIENT",
-	ADDR_WEB_S => "WEB SERVER",
-	ADDR_SOAP_S => "SOAP SERVER",
-	ADDR_GMPLS_NARB_S => "GMPLS NARB SERVER",
-	ADDR_GMPLS_RCE_S => "GMPLS RCE SERVER"
+	0 => "TERCE",
+	1 => "GMPLS CORE",
+	2 => "GMPLS SERVER",
+	16 => "GMPLS NARB CLIENT",
+	18 => "GMPLS RCE CLIENT",
+	3 => "WEB SERVER",
+	4 => "SOAP SERVER",
+	15 => "GMPLS NARB SERVER",
+	17 => "GMPLS RCE SERVER"
 );
 
 my $dbg_sys = 0;
@@ -366,12 +367,11 @@ sub act_on_msg($$) {
 			Aux::print_dbg_msg("setting up a pipe queue on %s for %s\n", $$owner{name}, $$owner{proc}{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
 		}
-		my $o = length($$queue_ref{$src_n}{buffer});
 		my $dst;
 		my $n;
 		my $c_cnt = 0;
 		while(1) {
-			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, $o);
+			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, length($$queue_ref{$src_n}{buffer}));
 			if(!defined($n)) {
 				last;
 			}
@@ -379,17 +379,19 @@ sub act_on_msg($$) {
 			if(!$n) {
 				last;
 			}
-			$o += $n;
 			# lock on the message and discard anything before the message start tag
-			if($$queue_ref{$src_n}{buffer} =~ /<msg(.*?)>.*?<\/msg>/) {
-				my $attrs = $1;
-				$$queue_ref{$src_n}{msg} = $&;
-				$$queue_ref{$src_n}{buffer} = $'; # shorten the buffer to the unprocessed data
+			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
+				my $attrs = $2;
+				$$queue_ref{$src_n}{msg} = $1;
+				if(defined($3)) {
+					$$queue_ref{$src_n}{buffer} = $3; # shorten the buffer to the unprocessed data
+				}
+				else {
+					$$queue_ref{$src_n}{buffer} = "";
+				}
 				$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
 				$dst = $1;
 				$$queue_ref{$src_n}{dst} = $$owner{proc}{$dst}{fh};
-
-				$$queue_ref{$src_n}{buffer} = "";
 
 				# consume
 				if($dst == $$owner{addr}) {
@@ -404,7 +406,13 @@ sub act_on_msg($$) {
 						if(!length($$queue_ref{$k}{msg})) {
 							next;
 						}
-						$n = syswrite($$queue_ref{$k}{dst}, $$queue_ref{$k}{msg});
+						my @writeable = $$owner{select}->can_write();
+						foreach my $wh (@writeable) {
+							if($wh == $$queue_ref{$k}{dst}) {
+								$n = syswrite($$queue_ref{$k}{dst}, $$queue_ref{$k}{msg});
+								last;
+							}
+						}
 						if(!defined($n)) {
 							Log::log "warning", "message forwarding failed\n";
 							$$queue_ref{$k}{msg} = "";

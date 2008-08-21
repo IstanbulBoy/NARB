@@ -28,11 +28,12 @@ use warnings;
 use Socket;
 use GMPLS::Constants;
 use XML::Parser;
+use Aux;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -253,18 +254,18 @@ sub get_topo_type($) {
 #
 # inserts the temporary link block into the temporary tedb (if complete)
 #
-sub insert_link_blk($$$$) {
+sub insert_link_blk($) {
 	my $self = shift;
-	my($dr, $br, $hr, $cn) = @_;
-	if(exists($$dr{$$br})) {
+	my($src) = @_;
+	if(exists($$self{tedb}{$$self{lblock}})) {
 		# check if we have a link_id
-		if(exists(${$$hr}{status})) {
-			if((${$$hr}{status} & STAT_LINK_COMPLETE) == STAT_LINK_COMPLETE) {
-				$$dr{$$br}{${$$hr}{link_id}} = $$hr;
-				if(defined($$dr{$$br}{src}) && ($$dr{$$br}{src} ne $cn)) {
+		if(exists($$self{tmp}{status})) {
+			if(($$self{tmp}{status} & STAT_LINK_COMPLETE) == STAT_LINK_COMPLETE) {
+				$$self{tedb}{$$self{lblock}}{$$self{tmp}{link_id}} = $$self{tmp};
+				if(defined($$self{tedb}{$$self{lblock}}{src}) && ($$self{tedb}{$$self{lblock}}{src} ne $src)) {
 					Log::log "warning", "incoherent router block\n";
 				}
-				$$dr{$$br}{src} = $cn;
+				$$self{tedb}{$$self{lblock}}{src} = $src;
 			}
 			else {
 				Log::log "warning", "incomplete link block\n";
@@ -279,56 +280,43 @@ sub insert_link_blk($$$$) {
 		}
 		return 0;
 	}
+	return -1;
 }
 
 #
 # $d: data received via IPC
-# NOTE: Some of the following variables are references to variables holding references. 
-#       To access the hash elements they must be dereferenced twice.
-# $dr: reference to a reference to a temporary tedb
-# $br: reference to a variable which holds a link block ID
-# $tr: reference to a variable which holds a reference to a temporary anonymous hash
-#      which is used to store the link block while waiting for the complete data set
-# $sr: reference to a variable which holds the parser status
 #
-sub process_q($$$$$) {
+sub process_q($$) {
 	my $self = shift;
-	my($d, $dr, $br, $tr, $sr) = @_;
+	my($d, $src) = @_;
 	my @data = @{$$d{data}};
 	#add a valid OSPF-TE talker to TEDB
 	# (these will serve as validation for the sub-tlv insertions)
 	if($$d{cmd} == TEDB_RTR_ON) {
-		$$dr{$data[0]} = {"src" => undef, "tag" => undef};
+		$$self{tedb}{$data[0]} = {"src" => undef, "tag" => undef};
 		Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 		return 0;
 	}
 	#link subtlv delimiter
 	elsif($$d{cmd} == TEDB_LINK_MARK) {
-		if(exists($$dr{$$d{rtr}})) {
-			if(defined($$br)) {
+		if(exists($$self{tedb}{$$d{rtr}})) {
+			if(defined($$self{lblock})) {
 				# insert the old link block to the dr
-				my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
+				my $err = $self->insert_link_blk($src) if defined($$self{tmp});
 				Aux::print_dbg_tedb("  }");
 				if(!$err) {
-					Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
+					Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$self{lblock}, defined(WS::External::get_rtr_name($$self{lblock}))?WS::External::get_rtr_name($$self{lblock}):"unknown", $msg_addr_X{$src});
 				}
-				# and start a new one
-				$$tr = {"status" => 0};
-				$$br = $$d{rtr};
-				$$sr = $err;
+				$$self{stat} = $err;
 			}
-			# first run of the current TEDB batch
-			else {
-				$$tr = {"status" => 0};
-				$$br = $$d{rtr};
-			}
-			$$br = $$d{rtr};
-			Aux::print_dbg_tedb("  LINK BLOCK (%s) {\n", defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown");
+			$$self{tmp} = {"status" => 0};
+			$$self{lblock} = $$d{rtr};
+			Aux::print_dbg_tedb("  LINK BLOCK (%s) {\n", defined(WS::External::get_rtr_name($$self{lblock}))?WS::External::get_rtr_name($$self{lblock}):"unknown");
 		}
 		else {
 			# reset link tlv delimiters
-			$$tr = undef;
-			$$br = undef;
+			$$self{tmp} = undef;
+			$$self{lblock} = undef;
 			Log::log "warning", "receiving link subtlvs from unknown advertiser: $$d{rtr}\n";
 			Log::log "warning", "... sub-tlv discarded\n";
 		}
@@ -336,90 +324,90 @@ sub process_q($$$$$) {
 	}
 	elsif($$d{cmd} == TEDB_INSERT) {
 		# do something only if we saw the top level link tlv
-		if(defined($$br)) {
-			if(exists($$dr{$$d{rtr}})) {
+		if(defined($$self{lblock})) {
+			if(exists($$self{tedb}{$$d{rtr}})) {
 				my $v = "";
-				if(defined($$tr)) {
+				if(defined($$self{tmp})) {
 					if($$d{type} == TE_LINK_SUBTLV_LINK_ID) {
-						${$$tr}{status} |= STAT_LINK_ID; 
-						${$$tr}{link_id} = $data[0];
-						${$$tr}{rtr_id} = $$br; # parent router ID
-						${$$tr}{tag} = undef; # tag used for net-graph traversal
+						$$self{tmp}{status} |= STAT_LINK_ID; 
+						$$self{tmp}{link_id} = $data[0];
+						$$self{tmp}{rtr_id} = $$self{lblock}; # parent router ID
+						$$self{tmp}{tag} = undef; # tag used for net-graph traversal
 						$v = sprintf(" (%08x)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LINK_TYPE) {
-						${$$tr}{status} |= STAT_LINK_TYPE; 
-						${$$tr}{type} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_TYPE; 
+						$$self{tmp}{type} = $data[0];
 						$v = sprintf(" (%s)", $sub_tlvs_link_type_X{$data[0]}) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LCLIF_IPADDR) {
-						${$$tr}{status} |= STAT_LINK_LOCAL; 
-						${$$tr}{local} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_LOCAL; 
+						$$self{tmp}{local} = $data[0];
 						$v = sprintf(" (%08x)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_RMTIF_IPADDR) {
-						${$$tr}{status} |= STAT_LINK_REMOTE; 
-						${$$tr}{remote} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_REMOTE; 
+						$$self{tmp}{remote} = $data[0];
 						$v = sprintf(" (%08x)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_TE_METRIC) {
-						${$$tr}{status} |= STAT_LINK_METRIC; 
-						${$$tr}{metric} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_METRIC; 
+						$$self{tmp}{metric} = $data[0];
 						$v = sprintf(" (%d)", $data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_MAX_BW) {
-						${$$tr}{status} |= STAT_LINK_CAPACITY; 
-						${$$tr}{capacity} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_CAPACITY; 
+						$$self{tmp}{capacity} = $data[0];
 						$v = sprintf(" (%f)", 8*$data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_MAX_RSV_BW) {
-						${$$tr}{status} |= STAT_LINK_MAX_BW; 
-						${$$tr}{max_bw} = $data[0];
+						$$self{tmp}{status} |= STAT_LINK_MAX_BW; 
+						$$self{tmp}{max_bw} = $data[0];
 						$v = sprintf(" (%f)", 8*$data[0]) if Aux::dbg_tedb();
 					}
 					elsif($$d{type} == TE_LINK_SUBTLV_LINK_IFSWCAP) {
-						${$$tr}{sw_cap}{cap} = $data[0];
-						${$$tr}{sw_cap}{enc} = $data[1];
+						$$self{tmp}{sw_cap}{cap} = $data[0];
+						$$self{tmp}{sw_cap}{enc} = $data[1];
 						$v = sprintf("\n      (%s, %s)", 
 							$sub_tlvs_link_swcap_cap{$data[0]},
 							$sub_tlvs_link_swcap_enc{$data[1]}) if Aux::dbg_tedb();
 						if(!defined($$d{subtype})) {
-							${$$tr}{sw_cap}{vtags} = [];
+							$$self{tmp}{sw_cap}{vtags} = [];
 							for(my $i = 14; $i<@data; $i++) {
 								$v .= sprintf("\n      (%s)", $data[$i]) if Aux::dbg_tedb();
-								push(@{${$$tr}{sw_cap}{vtags}}, $data[$i]);
+								push(@{$$self{tmp}{sw_cap}{vtags}}, $data[$i]);
 							}
 						}
 						elsif($$d{subtype} eq "uni") {
-							${$$tr}{sw_cap}{uni}{id} = $data[12];
-							${$$tr}{sw_cap}{uni}{ts1} = $data[13];
-							${$$tr}{sw_cap}{uni}{swcap_ext} = $data[14];
-							${$$tr}{sw_cap}{uni}{enc_ext} = $data[15];
-							${$$tr}{sw_cap}{uni}{tna4} = $data[16];
-							${$$tr}{sw_cap}{uni}{nid4} = $data[17];
-							${$$tr}{sw_cap}{uni}{data4} = $data[18];
-							${$$tr}{sw_cap}{uni}{lpn} = $data[19];
-							${$$tr}{sw_cap}{uni}{eld} = $data[20];
-							${$$tr}{sw_cap}{uni}{elu} = $data[21];
-							${$$tr}{sw_cap}{uni}{node_name} = $data[22];
+							$$self{tmp}{sw_cap}{uni}{id} = $data[12];
+							$$self{tmp}{sw_cap}{uni}{ts1} = $data[13];
+							$$self{tmp}{sw_cap}{uni}{swcap_ext} = $data[14];
+							$$self{tmp}{sw_cap}{uni}{enc_ext} = $data[15];
+							$$self{tmp}{sw_cap}{uni}{tna4} = $data[16];
+							$$self{tmp}{sw_cap}{uni}{nid4} = $data[17];
+							$$self{tmp}{sw_cap}{uni}{data4} = $data[18];
+							$$self{tmp}{sw_cap}{uni}{lpn} = $data[19];
+							$$self{tmp}{sw_cap}{uni}{eld} = $data[20];
+							$$self{tmp}{sw_cap}{uni}{elu} = $data[21];
+							$$self{tmp}{sw_cap}{uni}{node_name} = $data[22];
 							$v = sprintf("\n      (%s)", $data[22]) if Aux::dbg_tedb();
 						}
-						${$$tr}{status} |= STAT_LINK_SWCAP; 
+						$$self{tmp}{status} |= STAT_LINK_SWCAP; 
 					}
 					Aux::print_dbg_tedb("    sub-level insert: %s%s%s\n", $sub_tlvs_link_X{$$d{type}}, 
-						defined($$d{subtype})?"($$d{subtype})":"",
+						($$d{subtype} eq "undef")?"":"($$d{subtype})",
 						$v);
 				}
 				else {
-					$$br = undef;
+					$$self{lblock} = undef;
 					Log::log "warning", "malformed link block\n";
 					Log::log "warning", "... entire link tlv discarded\n";
 				}
 			}
 			else {
 				# reset link tlv delimiters
-				$$tr = undef;
-				$$br = undef;
+				$$self{tmp} = undef;
+				$$self{lblock} = undef;
 				Log::log "warning", "attempting to insert sub-tlv from unknown advertiser: $$d{rtr}\n";
 				Log::log "warning", "... sub-tlv discarded\n";
 			}
@@ -428,13 +416,13 @@ sub process_q($$$$$) {
 	}
 	elsif($$d{cmd} == TEDB_ACTIVATE) {
 		# insert the last link block to the tedb
-		my $err = $self->insert_link_blk($dr, $br, $tr, $$d{client}) if defined($$tr);
+		my $err = $self->insert_link_blk($src) if defined($$self{tmp});
 		Aux::print_dbg_tedb("  }");
 		if(!$err) {
-			Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$br, defined(WS::External::get_rtr_name($$br))?WS::External::get_rtr_name($$br):"unknown", $$d{client});
+			Aux::print_dbg_tedb("  => inserted to %08x (%s) from %s\n", $$self{lblock}, defined(WS::External::get_rtr_name($$self{lblock}))?WS::External::get_rtr_name($$self{lblock}):"unknown", $msg_addr_X{$src});
 		}
-		$$tr = {"status" => 0};
-		$$br = undef; 
+		$$self{tmp} = {"status" => 0};
+		$$self{lblock} = undef; 
 		return 1;
 	}
 }
@@ -447,8 +435,10 @@ sub process_tedb_data($) {
 
 	# parse the message
 	my $tr;  # XML tree reference
+	my $src = undef;
 	eval {
 		$tr = $$self{parser}->parse($msg);
+		$src = ${${$$tr[1]}[0]}{src};
 		$d = Aux::xfrm_tree("msg", $$tr[1]);
 		if(!defined($d)) {
 			Log::log("warning", "IPC message parsing failed\n");
@@ -460,7 +450,7 @@ sub process_tedb_data($) {
 		return;
 	}
 
-	my $res = $self->process_q($d, $$self{tedb}, \$$self{lblock}, \$$self{tmp}, \$$self{stat});
+	my $res = $self->process_q($d, $src);
 
 	if($res == 1) {
 		if($$self{stat} == 0) {
