@@ -12,9 +12,9 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD RUN_Q_T TERM_T_T INIT_Q_T ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS);
+	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -41,9 +41,7 @@ use constant MSG_DBG => 11;
 use constant ASYNC_CMD => 0x0001;
 
 use constant CTRL_CMD => 0xffff;
-use constant RUN_Q_T => 1; # this dislodges a blocking queue  (so a condition can be checked)
-use constant TERM_T_T => 2; # this will force the termination of a thread run loop
-use constant INIT_Q_T => 3; # this will initialize a client queue and open the async socket
+use constant INIT_ASYNC => 1; # this will initialize the client queue and open the async socket
 
 use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
@@ -261,10 +259,9 @@ sub xfrm_tree($$) {
 	my $data = [];
 	my $ret = undef;
 
-
 	for(my $i=0; $i<@$tr; $i+=2) {
-		my $el = shift @$tr;
-		my $chld = shift @$tr;
+		my $el = $$tr[$i];
+		my $chld = $$tr[$i+1];
 		if($el eq "0") {
 			return {"seq"=>$$attrs{seq}, "item"=>$chld}; 
 		}
@@ -296,12 +293,16 @@ sub xfrm_tree($$) {
 			$rtr = $$attrs{rtr};
 		}
 		@$data = sort {$$a{seq} <=> $$b{seq}} @$data;
+		my $tmp = [];
+		for(my $i=0; $i<@$data; $i++) {
+			push(@$tmp, ${$$data[$i]}{item});
+		}
 		$ret = {
 			cmd => $cmd,
 			type => $type,
 			subtype => $subtype,
 			rtr => $rtr,
-			data => $data
+			data => $tmp
 		};
 		return $ret;
 	}
@@ -331,9 +332,9 @@ sub send_msg($$@) {
 		$$owner{writer}->startTag("data", 
 			"fmt" => $$hdr{fmt}, 
 			"cmd" => $$hdr{cmd}, 
-			"type" => defined($$hdr{type})?" $$hdr{type}":"undef",
-			"subtype" => defined($$hdr{subtype})?" $$hdr{subtype}":"undef",
-			"rtr" => defined($$hdr{rtr})?" $$hdr{rtr}":"undef");
+			"type" => defined($$hdr{type})?$$hdr{type}:"undef",
+			"subtype" => defined($$hdr{subtype})?$$hdr{subtype}:"undef",
+			"rtr" => defined($$hdr{rtr})?$$hdr{rtr}:"undef");
 		for(my $i=0; $i<@data; $i++) {
 			 $$owner{writer}->dataElement("item", $data[$i], "seq"=>$i);
 		}

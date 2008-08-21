@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.23 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.24 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -136,7 +136,7 @@ sub process_bin_msg($) {
 			# init the control channel
 			my @data = ($fh->peerhost(), $msg{$sn}{hdr}{tag2});
 			my $dst = ($$self{addr} == ADDR_GMPLS_NARB_S)?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C;
-			unshift(@data, {"fmt"=>"C/a*N", "cmd"=>CTRL_CMD, "type"=>INIT_Q_T});
+			unshift(@data, {"fmt"=>"C/a*N", "cmd"=>CTRL_CMD, "type"=>INIT_ASYNC});
 			Aux::send_msg($self, $dst, @data);
 			GMPLS::API::ack_msg($fh, $msg{$sn});
 		}

@@ -32,7 +32,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -59,7 +59,6 @@ sub new {
 			"processor" => \&process_msg, # msg processor
 
 			# object descriptor:
-			"status" => 0,
 			"ctrl_sock" => undef,
 		};
 	};
@@ -71,6 +70,7 @@ sub new {
 }
 
 sub open_ctrl_channel($$) {
+	my $self = shift;
 	my ($peer, $ctrl_p) = @_;
 	my $ctrl_sock = IO::Socket::INET->new(
 		PeerAddr => $peer,
@@ -78,6 +78,8 @@ sub open_ctrl_channel($$) {
 		Proto     => 'tcp') or die "control socket ".$peer.":".$ctrl_p.": $@\n";
 	if($ctrl_sock) {
 		if($ctrl_sock->connected()) {
+			$$self{select}->add($ctrl_sock);
+			$$self{ctrl_sock} = $ctrl_sock;
 			Aux::print_dbg_net("connected to %s:%d\n", $peer, $ctrl_p);
 		}
 	}
@@ -106,14 +108,9 @@ sub process_msg($) {
 	if(defined($d)) {
 		my @data = @{$$d{data}};
 		if($$d{cmd} == CTRL_CMD) {
-			if($$d{type} == TERM_T_T) {
-				last;
-			}
-			elsif($$d{type} == RUN_Q_T) {
-			}
-			elsif($$d{type} == INIT_Q_T) {
+			if($$d{type} == INIT_ASYNC) {
 				if(defined($data[0]) && defined($data[1])) {
-					$$self{ctrl_socket} = open_ctrl_channel($data[0], $data[1]);
+					$self->open_ctrl_channel($data[0], $data[1]);
 				}
 			}
 		}

@@ -32,7 +32,7 @@ use XML::Parser;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -82,7 +82,14 @@ sub new {
 			# object descriptor:
 			"abstract_tedb" => undef,
 			"control_tedb" => undef,
-			"data_tedb" => undef
+			"data_tedb" => undef,
+
+			# aux. data
+			"tedb" => {}, # temporary TEDB storage (before assembly to the net. graph)
+			"lblock" => undef, # link blocks
+			"tmp" => undef, # temporary storage for the link block data
+			"stat" => 0
+
 		};
 	};
 	if($@) {
@@ -114,9 +121,9 @@ sub find_remote($$) {
 
 # this probably creates a closure: we have to break up the graph after we are done with it
 # otherwise we'll run out of memory
-sub create_graph($) {
+sub create_graph() {
 	my $self = shift;
-	my($dr) = @_;
+	my($dr) = $$self{tedb};
 	foreach my $rtr (keys %$dr) {
 		foreach my $link (keys %{$$dr{$rtr}}) {
 			# skip the top-level descriptors
@@ -177,9 +184,9 @@ sub tag($$$) {
 	}
 }
 
-sub traverse($) {
+sub traverse() {
 	my $self = shift;
-	my($dr) = @_;
+	my($dr) = $$self{tedb};
 	my $t = 0;
 	foreach my $rtr (keys %$dr) {
 		if(!defined($$dr{$rtr}{tag})) {
@@ -192,9 +199,9 @@ sub traverse($) {
 	}
 }
 
-sub split_graph($) {
+sub split_graph() {
 	my $self = shift;
-	my($dr) = @_;
+	my($dr) = $$self{tedb};
 	my $t = undef;
 	my @ret = ();
 	my $tedb_ref = {};
@@ -275,7 +282,7 @@ sub insert_link_blk($$$$) {
 }
 
 #
-# $d: data received via the queue
+# $d: data received via IPC
 # NOTE: Some of the following variables are references to variables holding references. 
 #       To access the hash elements they must be dereferenced twice.
 # $dr: reference to a reference to a temporary tedb
@@ -436,11 +443,6 @@ sub process_tedb_data($) {
 	my $self = shift;
 	my ($msg)  = @_;
 	my $d;
-
-	my $tedb = {};
-	my $lblock = undef;
-	my $tmp = undef; #temporary storage for the link block data
-	my $stat = 0;
 	my @tedbs = ();
 
 	# parse the message
@@ -458,15 +460,15 @@ sub process_tedb_data($) {
 		return;
 	}
 
-	my $res = $self->process_q($d, $tedb, \$lblock, \$tmp, \$stat);
+	my $res = $self->process_q($d, $$self{tedb}, \$$self{lblock}, \$$self{tmp}, \$$self{stat});
 
 	if($res == 1) {
-		if($stat == 0) {
+		if($$self{stat} == 0) {
 			# create net graph
-			$self->create_graph($tedb);
+			$self->create_graph();
 			eval {
-				$self->traverse($tedb);
-				@tedbs = $self->split_graph($tedb);
+				$self->traverse();
+				@tedbs = $self->split_graph();
 			};
 			if($@) {
 				Log::log("err", "$@\n");
@@ -508,8 +510,8 @@ sub process_tedb_data($) {
 		else {
 			Aux::print_dbg_tedb("TEDB not updated\n");
 		}
-		$tedb = {};
-		$stat = 0;
+		$$self{tedb} = {};
+		$$self{stat} = 0;
 	}
 }
 
