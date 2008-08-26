@@ -104,8 +104,8 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
     u_int16_t mlen = sizeof(cspf_req.app_req_data) + (vtag_bitmask == NULL? 0 : sizeof(msg_narb_vtag_mask));
     if (pce_spec != NULL)
     {
-        memcpy(buf+mlen, pce_spec, sizeof(msg_narb_pce_spec));
-        mlen += sizeof(msg_narb_pce_spec);
+        memcpy(buf+mlen, pce_spec, sizeof(te_tlv_header) + ntohs(pce_spec->length));
+        mlen += (sizeof(te_tlv_header) + ntohs(pce_spec->length));
     }
     if (cspf_req.lspb_id != 0)
     {
@@ -169,8 +169,8 @@ void RCE_APIClient::QueryLsp_MRN (msg_narb_cspf_request &cspf_req, msg_app2narb_
     }
     if (pce_spec != NULL)
     {
-        memcpy(buf+mlen, pce_spec, sizeof(msg_narb_pce_spec));
-        mlen += sizeof(msg_narb_pce_spec);
+        memcpy(buf+mlen, pce_spec, sizeof(te_tlv_header) + ntohs(pce_spec->length));
+        mlen += (sizeof(te_tlv_header) + ntohs(pce_spec->length));
     }
     if (cspf_req.lspb_id != 0)
     {

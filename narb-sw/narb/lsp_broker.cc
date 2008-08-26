@@ -1932,10 +1932,10 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             ; //do nothing
             break;
         case TLV_TYPE_NARB_PCE_SPEC:
-            tlv_len = sizeof(msg_narb_pce_spec);
+            tlv_len = sizeof(te_tlv_header) + ntohs(tlv->length);
             if (!pce_spec)
                 pce_spec = new (struct msg_narb_pce_spec);
-            memcpy(pce_spec, tlv, sizeof(msg_narb_pce_spec));
+            memcpy(pce_spec, tlv, tlv_len);
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(msg_narb_vtag_mask);

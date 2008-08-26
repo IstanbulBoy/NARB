@@ -67,7 +67,10 @@ struct msg_narb_pce_spec
     u_int16_t type;
     u_int16_t length;
     char module_name[16]; //c-string of length up to 15 characters
+    union {
+    u_int32_t flags;
     u_int8_t reserved[16]; //reserved bytes for future extension
+    };
 };
 
 // APP->NARB optional constraint structs

@@ -143,7 +143,10 @@ struct narb_lsp_pce_spec_tlv
     u_int16_t type;
     u_int16_t length;
     char module_name[16]; //c-string of length up to 15 characters
+    union {
+    u_int32_t flags;
     u_int8_t reserved[16]; //reserved bytes for future extension
+    };
 };
 
 struct narb_lsp_vtagmask_tlv

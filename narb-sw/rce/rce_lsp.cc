@@ -102,10 +102,10 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             ; //do nothing
             break;
         case TLV_TYPE_NARB_PCE_SPEC:
-            tlv_len = sizeof(narb_lsp_pce_spec_tlv);
+            tlv_len = sizeof(te_tlv_header) + ntohs(tlv->length);
             if (!pce_spec)
                 pce_spec = new (struct narb_lsp_pce_spec_tlv);
-            memcpy(pce_spec, tlv, sizeof(narb_lsp_pce_spec_tlv));
+            memcpy(pce_spec, tlv, tlv_len);
             break;
         case TLV_TYPE_NARB_VTAG_MASK:
             tlv_len = sizeof(narb_lsp_vtagmask_tlv);

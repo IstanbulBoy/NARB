@@ -122,8 +122,8 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
     //pce_spec TLV
     if (pce_spec != NULL)
     {
-        memcpy(msgbody+msglen, pce_spec, sizeof(msg_narb_pce_spec));
-        msglen += sizeof(msg_narb_pce_spec);
+        memcpy(msgbody+msglen, pce_spec, ntohs(pce_spec->length) + sizeof(te_tlv_header));
+        msglen += (ntohs(pce_spec->length) + sizeof(te_tlv_header));
     }
     //lspb_id TLV
     if (rec_cspf_req.lspb_id != 0)
