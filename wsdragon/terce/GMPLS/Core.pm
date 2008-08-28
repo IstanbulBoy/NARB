@@ -33,7 +33,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -228,11 +228,11 @@ sub get_topo_type($) {
 	my $self = shift;
 	my($dr) = @_;
 	foreach my $rtr (keys %$dr) {
-		if($$dr{$rtr}{src} eq "narb") {
+		if($$dr{$rtr}{src} == ADDR_GMPLS_NARB_S) {
 			#abstract topology
 			return "abstract";
 		}
-		elsif($$dr{$rtr}{src} eq "rce") {
+		elsif($$dr{$rtr}{src} == ADDR_GMPLS_RCE_S) {
 			foreach my $l (keys %{$$dr{$rtr}}) {
 				# skip the top-level descriptors
 				if(ref($$dr{$rtr}{$l}) ne "HASH") {
