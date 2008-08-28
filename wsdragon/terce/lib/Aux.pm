@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.32 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
@@ -354,7 +354,7 @@ sub send_msg($$@) {
 # this will either forward, consume the IPC message or return the socket handle
 # if it does not belong to the IPC address space
 sub act_on_msg($$) {
-	my ($owner, $map_ref, $queue_ref) = @_;
+	my ($owner, $queue_ref) = @_;
 
 	my @readable = $$owner{select}->can_read();
 
