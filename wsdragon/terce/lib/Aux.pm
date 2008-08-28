@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.32 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.33 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
@@ -544,12 +544,12 @@ sub spawn($$$$$$@) {
 	my %proc;
 	# a doubly-keyed hash 
 	if(defined($pool_fh)) {
-		$tmp = {"fh" => $pool_fh, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
+		$tmp = {"fh" => $pool_fh, "addr" => $proc_addr, "cpid" => $$, "name" => $proc_name, "pool" => $s_pool};
 		$proc{$proc_addr} = $tmp;
 		$proc{$pool_fh} = $tmp;
 	}
 	else {
-		$tmp = {"fh" => $to_ph, "addr" => $proc_addr, "cpid" => $pid, "name" => $proc_name, "pool" => $s_pool};
+		$tmp = {"fh" => $to_ph, "addr" => $proc_addr, "cpid" => $$, "name" => $proc_name, "pool" => $s_pool};
 		$proc{$proc_addr} = $tmp;
 		$proc{$to_ph} = $tmp;
 	}

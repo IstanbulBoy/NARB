@@ -32,7 +32,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -49,6 +49,7 @@ sub new {
 		$self = {
 			# process descriptor:
 			"proc" => $proc,
+			"pid" => $$proc_val{cpid}, # process PID
 			"addr" => $$proc_val{addr}, # process IPC address
 			"fh" => $$proc_val{fh},
 			"name" => $$proc_val{name}, # process name
@@ -128,11 +129,11 @@ sub run() {
 	my $self = shift;
 	my %pipe_queue;
 
-	Log::log "info", "starting $$self{name}\n";
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%pipe_queue);
 	}
-	Aux::print_dbg_run("exiting $$self{name}\n");
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 	if(defined($$self{ctrl_sock})) {
 		close($$self{ctrl_sock});
 	}

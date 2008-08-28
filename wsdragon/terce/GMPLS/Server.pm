@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -64,6 +64,7 @@ sub new {
 		$self = {
 			# process descriptor:
 			"proc" => $proc,
+			"pid" => $$proc_val{cpid}, # process' PID 
 			"addr" => $$proc_val{addr}, # process IPC address
 			"name" => $$proc_val{name}, # process name
 			"fh" => $$proc_val{fh},
@@ -180,6 +181,7 @@ sub start_gmpls_server($$$) {
 	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 
 	$$self{proc} = $proc;
+	$$self{pid} = $$proc_val{cpid}; # process PID
 	$$self{addr} = $$proc_val{addr}; # process IPC address
 	$$self{name} = $$proc_val{name}; # process name
 	$$self{fh} = $$proc_val{fh};
@@ -192,6 +194,7 @@ sub start_gmpls_server($$$) {
 	$$self{select}->add($sock);
 	my $gmpls_fh;
 	my %pipe_queue;
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		if(!$sock->connected()) {
 			Log::log "err", "client disconnect\n";
@@ -209,6 +212,7 @@ sub start_gmpls_server($$$) {
 			}
 		}
 	}
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 	if($$self{select}->exists($sock)) {
 		$$self{select}->remove($sock);
 	}
@@ -223,7 +227,7 @@ sub run() {
 
 	$SIG{CHLD} = \&grim;
 
-	Log::log "info", "starting $$self{name}\n";
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		# WS server
 		@conn = $$self{daemon}->accept();
@@ -261,7 +265,6 @@ sub run() {
 			$client_sock->shutdown(SHUT_RDWR);
 			next;
 		}
-		Aux::print_dbg_run("GMPLS connection: forking $$self{name}\n");
 
 		# start client queue
 		eval {
@@ -274,7 +277,7 @@ sub run() {
 		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
 
 	}
-	Aux::print_dbg_run("exiting $$self{name}\n");
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 	$$self{daemon}->shutdown(SHUT_RDWR);
 }
 

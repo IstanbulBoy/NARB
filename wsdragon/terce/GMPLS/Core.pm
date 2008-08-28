@@ -33,7 +33,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -71,6 +71,7 @@ sub new {
 		$self = {
 			# process descriptor:
 			"proc" => $proc, # process info
+			"pid" => $$proc_val{cpid}, # process PID
 			"addr" => $$proc_val{addr}, # process IPC address
 			"name" => $$proc_val{name}, # process name
 			"fh" => $$proc_val{fh}, # IPC filehandle 
@@ -78,7 +79,7 @@ sub new {
 			"select" => new IO::Select($$proc_val{fh}), # corresponding select object
 			"writer" => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii"),
 			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
-			"processor" => \&process_tedb_data, # data processor
+			"processor" => \&process_msg, # msg processor
 
 			# object descriptor:
 			"abstract_tedb" => undef,
@@ -286,7 +287,7 @@ sub insert_link_blk($) {
 #
 # $d: data received via IPC
 #
-sub process_q($$) {
+sub process_tedb_part($$) {
 	my $self = shift;
 	my($d, $src) = @_;
 	my @data = @{$$d{data}};
@@ -427,11 +428,10 @@ sub process_q($$) {
 	}
 }
 
-sub process_tedb_data($) {
+sub process_msg($) {
 	my $self = shift;
 	my ($msg)  = @_;
 	my $d;
-	my @tedbs = ();
 
 	# parse the message
 	my $tr;  # XML tree reference
@@ -450,7 +450,22 @@ sub process_tedb_data($) {
 		return;
 	}
 
-	my $res = $self->process_q($d, $src);
+	if($$d{cmd} == TEDB_RTR_ON ||
+		$$d{cmd} == TEDB_INSERT ||
+		$$d{cmd} == TEDB_UPDATE ||
+		$$d{cmd} == TEDB_DELETE ||
+		$$d{cmd} == TEDB_ACTIVATE ||
+		$$d{cmd} == TEDB_LINK_MARK) {
+		$self->process_tedb_data($d, $src);
+	}
+}
+
+sub process_tedb_data($$) {
+	my $self = shift;
+	my ($d, $src) = @_;
+	my @tedbs = ();
+
+	my $res = $self->process_tedb_part($d, $src);
 
 	if($res == 1) {
 		if($$self{stat} == 0) {
@@ -509,11 +524,11 @@ sub run() {
 	my $self = shift;
 	my %pipe_queue;
 
-	Log::log "info", "starting $$self{name}\n";
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%pipe_queue);
 	}
-	Aux::print_dbg_run("exiting $$self{name}\n");
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 }
 
 1;

@@ -202,10 +202,12 @@ sub start_gmpls_server($$) {
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
+		return 1;
 	}
 	else {
 		$srvr->run();
 	}
+	return 0;
 }
 
 # GMPLS Core provides all the TEDB-related processing
@@ -217,10 +219,12 @@ sub start_gmpls_core($) {
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
+		return 1;
 	}
 	else {
 		$core->run();
 	}
+	return 0;
 }
 
 # WS Server handles external web services requests
@@ -237,10 +241,12 @@ sub start_ws_server($$) {
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
+		return 1;
 	}
 	else {
 		$srvr->run();
 	}
+	return 0;
 }
 
 # HTTP Server is a simple web server (wsdl, description, etc.)
@@ -252,10 +258,12 @@ sub start_http_server($$) {
 	};
 	if($@) {
 		Log::log "err",  "$@\n";
+		return 1;
 	}
 	else {
 		$srvr->run();
 	}
+	return 0;
 }
 
 ################################################################################
@@ -442,6 +450,7 @@ eval {
 		$self = {
 			# process descriptor:
 			"proc" => \%child_map, # process info
+			"pid" => $$, # process' PID 
 			"addr" => ADDR_TERCE, # process IPC address
 			"name" => "TERCE", # process name
 			"fh" => undef, # many handles available 

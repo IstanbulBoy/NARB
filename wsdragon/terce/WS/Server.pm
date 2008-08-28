@@ -38,7 +38,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.42 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.43 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -88,6 +88,7 @@ sub new {
 		eval {
 			# process descriptor (prefix with class name so we won't clash with superclasses):
 			$self->{_ws_srvr_proc} = $proc; # process info
+			$self->{_ws_srvr_pid} = $$proc_val{cpid}; # process PID
 			$self->{_ws_srvr_addr} = $$proc_val{addr}; # process IPC address
 			$self->{_ws_srvr_name} = $$proc_val{name}; # process name
 			$self->{_ws_srvr_fh} = $$proc_val{fh}; # IPC filehandle 
@@ -109,7 +110,7 @@ sub new {
 }
 
 # fork a child handling the request
-sub start_ws_server($) {
+sub start_ws_server($$) {
 	my $self = shift;
 	my ($c) = @_;
 	while (my $r = $c->get_request) {
@@ -130,7 +131,7 @@ sub run() {
 
 	$SIG{CHLD} = \&grim;
 
-	Log::log "info", "starting $$self{_ws_srvr_name} on port $port\n";
+	Log::log "info", "starting $$self{_ws_srvr_name} ($$self{_ws_srvr_pid}) on port $port\n";
 	while(!$::ctrlC) {
 		# WS server
 		$c = $$self{_ws_daemon}->accept();
@@ -147,10 +148,10 @@ sub run() {
 			}
 		}
 		Aux::print_dbg_run("WS request: forking $$self{_ws_srvr_name}\n");
-		Aux::spawn(undef, undef, $self->start_ws_server, $$self{_ws_srvr_name}."($i)", $$self{_ws_srvr_addr}+$i, $fh);
+		Aux::spawn(undef, undef, \&start_ws_server, $$self{_ws_srvr_name}."($i)", $$self{_ws_srvr_addr}+$i, $fh, $self, $c);
 	}
 	$$self{_ws_daemon}->shutdown(SHUT_RDWR);
-	Aux::print_dbg_run("exiting $$self{_ws_srvr_name}\n");
+	Aux::print_dbg_run("exiting $$self{_ws_srvr_name} ($$self{_ws_srvr_pid})\n");
 }
 
 1;

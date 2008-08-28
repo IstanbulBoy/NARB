@@ -31,7 +31,7 @@ use HTTP::Status;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -48,6 +48,7 @@ sub new {
 		$self = {
 			# process descriptor:
 			"proc" => $proc,
+			"pid" => $$proc_val{cpid}, # process PID
 			"addr" => $$proc_val{addr}, # process IPC address
 			"name" => $$proc_val{name}, # process name
 			"fh" => $$proc_val{fh},
@@ -78,7 +79,7 @@ sub new {
 sub run() {
 	my $self = shift;
 	my $c;
-	Log::log "info", "starting $$self{name}\n";
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		while ($c = $$self{server}->accept) {
 			while (my $r = $c->get_request) {
@@ -132,7 +133,7 @@ sub run() {
 	}
 	$c->close if defined;
 	undef($c);
-	Aux::print_dbg_run("exiting $$self{name}\n");
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 }
 
 1;
