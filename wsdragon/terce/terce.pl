@@ -408,7 +408,7 @@ if($daemonize) {
 
 ########################### initial setup ############################
 eval {
-	my %proc_queue;
+	my %proc_queue = ();
 	my $sel = new IO::Select();
 
 

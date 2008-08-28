@@ -4,6 +4,8 @@ use strict;
 use sigtrap;
 use English '-no_match_vars';
 use IO::Socket;
+use Errno qw( EAGAIN EINPROGRESS EPIPE ECONNRESET );
+use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use FileHandle;
 use Sys::Syslog qw(:DEFAULT setlogsock);
 use Fcntl ':flock';
@@ -13,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
@@ -366,19 +368,26 @@ sub act_on_msg($$) {
 			# create new stream buffer and start scanning
 			Aux::print_dbg_msg("setting up a pipe queue on %s for %s\n", $$owner{name}, $$owner{proc}{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
+			$$queue_ref{$src_n}{src} = $h;
 		}
 		my $dst;
-		my $n;
-		my $c_cnt = 0;
+		my $addr;
+
 		while(1) {
-			$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, length($$queue_ref{$src_n}{buffer}));
-			if(!defined($n)) {
+			#$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, length($$queue_ref{$src_n}{buffer}));
+			my $tmp;
+			$addr = $h->recv($tmp, TERCE_MSG_SCAN_L, MSG_DONTWAIT);
+			$$queue_ref{$src_n}{buffer} .= $tmp;
+			if(!defined($addr) || $!) {
+				if(($! != EAGAIN)) {
+					Log::log "err",  "recv on $$owner{proc}{$h}{name} failed\n";
+				}
 				last;
 			}
-			$c_cnt += $n;
-			if(!$n) {
-				last;
-			}
+#			if(!$n) {
+#				print("ZERO\n");
+#				last;
+#			}
 			# lock on the message and discard anything before the message start tag
 			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
 				my $attrs = $2;
@@ -407,9 +416,10 @@ sub act_on_msg($$) {
 							next;
 						}
 						my @writeable = $$owner{select}->can_write();
+						my $n = 0;
 						foreach my $wh (@writeable) {
 							if($wh == $$queue_ref{$k}{dst}) {
-								$n = syswrite($$queue_ref{$k}{dst}, $$queue_ref{$k}{msg});
+								$n = $$queue_ref{$k}{dst}->send($$queue_ref{$k}{msg}, MSG_DONTWAIT);
 								last;
 							}
 						}
@@ -424,16 +434,11 @@ sub act_on_msg($$) {
 							$$queue_ref{$k}{msg} = substr($$queue_ref{$k}{msg}, $n);
 						}
 						else {
+							Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}}{name});
 							$$queue_ref{$k}{msg} = "";
 						}
 					}
 				}
-			}
-			# give another pipe a chance
-			if((@readable > 1) && ($c_cnt > TERCE_MSG_CHUNK)) {
-				Aux::print_dbg_msg("interrupting message\n");
-				$c_cnt = 0;
-				last;
 			}
 		}
 	}
@@ -457,10 +462,14 @@ sub spawn($$$$$$@) {
 	# $to_ph: socket descriptor ... the socket used by child to talk to parent
 	if(!defined($pool_fh)) {
 		($to_ch, $to_ph) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+		#$to_ch->sockopt(O_NONBLOCK, 1);
+		#$to_ph->sockopt(O_NONBLOCK, 1);
 		# create a pool of socket pairs for the SOAP server
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				#$to_ch_pool->sockopt(O_NONBLOCK, 1);
+				#$to_ph_pool->sockopt(O_NONBLOCK, 1);
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
@@ -468,6 +477,8 @@ sub spawn($$$$$$@) {
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				#$to_ch_pool->sockopt(O_NONBLOCK, 1);
+				#$to_ph_pool->sockopt(O_NONBLOCK, 1);
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}

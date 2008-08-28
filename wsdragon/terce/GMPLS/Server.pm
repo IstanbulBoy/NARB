@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -268,6 +268,7 @@ sub run() {
 			Aux::spawn(undef, undef, \&start_gmpls_client, "Client Queue ($n)", $addr_c, $fh_c);
 		};
 		if($@) {
+			Log::log "err", "client instantiation failed: $@\n";
 			last;
 		}
 		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
