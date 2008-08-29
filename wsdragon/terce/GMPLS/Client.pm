@@ -32,7 +32,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -108,15 +108,15 @@ sub process_msg($) {
 	}
 	if(defined($d)) {
 		my @data = @{$$d{data}};
-		if($$d{cmd} == CTRL_CMD) {
-			if($$d{type} == INIT_ASYNC) {
+		if($$d{cmd} == CLIENT_Q_INIT) {
+			if($$d{type} == CLIENT_Q_INIT_PORT) {
 				if(defined($data[0]) && defined($data[1])) {
 					$self->open_ctrl_channel($data[0], $data[1]);
 				}
 			}
 		}
 		# findPath
-		if($$d{cmd} == ASYNC_CMD) {
+		if($$d{cmd} == WS_FIND_PATH) {
 			if($$d{type} == RCE_MSG_LSP) {
 				if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
 				}

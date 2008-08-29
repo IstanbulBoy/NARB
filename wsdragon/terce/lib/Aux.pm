@@ -3,7 +3,7 @@ package Aux;
 use strict;
 use sigtrap;
 use English '-no_match_vars';
-use IO::Socket;
+use IO::Socket::INET;
 use Errno qw( EAGAIN EINPROGRESS EPIPE ECONNRESET );
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use FileHandle;
@@ -15,9 +15,12 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.34 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.35 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
-	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
+	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
+				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
+				WS_GET_TEDB WS_FIND_PATH
+			   	ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
 }
@@ -25,6 +28,23 @@ our @EXPORT_OK;
 
 sub dump_config($;$);
 
+# messaging commands
+#    management commands
+use constant CLIENT_Q_INIT => 1;
+
+#    GMPLS commands
+use constant TEDB_RTR_ON => 2;
+use constant TEDB_INSERT => 3;
+use constant TEDB_UPDATE => 4;
+use constant TEDB_DELETE => 5;
+use constant TEDB_LINK_MARK => 6;
+use constant TEDB_ACTIVATE => 7;
+
+#    GMPLS commands
+use constant WS_GET_TEDB => 8;
+use constant WS_FIND_PATH => 9;
+
+# debugging
 use constant RUN_DBG => 0;
 use constant CFG_DBG => 1;
 use constant NARB_DBG => 2;
@@ -38,14 +58,11 @@ use constant WS_DBG => 9;
 use constant RAW_DBG => 10;
 use constant MSG_DBG => 11;
 
-# commands/types for controlling the interthread client queues
-# NOTE: the "type" key in this construct translates directly to "action" of 
-# the API message format
-use constant ASYNC_CMD => 0x0001;
+# messaging types
+#    management command types
+use constant CLIENT_Q_INIT_PORT => 1;
 
-use constant CTRL_CMD => 0xffff;
-use constant INIT_ASYNC => 1; # this will initialize the client queue and open the async socket
-
+# system constants
 use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
 
@@ -357,7 +374,7 @@ sub act_on_msg($$) {
 	my ($owner, $queue_ref) = @_;
 
 	my @readable = $$owner{select}->can_read();
-	if($!) {
+	if(!scalar(@readable)) {
 		return undef;
 	}
 
@@ -459,18 +476,18 @@ sub spawn($$$$$$@) {
 	# $to_ch: socket descriptor ... the socket used by parent to talk to child
 	# $to_ph: socket descriptor ... the socket used by child to talk to parent
 	if(!defined($pool_fh)) {
-		($to_ch, $to_ph) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+		($to_ch, $to_ph) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
 		# create a pool of socket pairs for the SOAP server
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
-				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				my ($to_ch_pool, $to_ph_pool) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
 		# create a pool of socket pairs for the GMPLS server
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
-				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				my ($to_ch_pool, $to_ph_pool) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}

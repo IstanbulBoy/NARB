@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -75,7 +75,8 @@ sub new {
 			"processor" => undef,
 
 			# object descriptor:
-			"daemon" => IO::Socket::INET->new(Listen => 5,
+			"daemon" => IO::Socket::INET->new(
+				Listen => 5,
 				LocalAddr => inet_ntoa(INADDR_ANY),
 				LocalPort => $::cfg{gmpls}{port}{v},
 				ReuseAddr => 1,
@@ -137,7 +138,7 @@ sub process_bin_msg($) {
 			# init the control channel
 			my @data = ($fh->peerhost(), $msg{$sn}{hdr}{tag2});
 			my $dst = ($$self{addr} == ADDR_GMPLS_NARB_S)?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C;
-			unshift(@data, {"fmt"=>"C/a*N", "cmd"=>CTRL_CMD, "type"=>INIT_ASYNC});
+			unshift(@data, {"fmt"=>"C/a*N", "cmd"=>CLIENT_Q_INIT, "type"=>CLIENT_Q_INIT_PORT});
 			Aux::send_msg($self, $dst, @data);
 			GMPLS::API::ack_msg($fh, $msg{$sn});
 		}
@@ -275,7 +276,6 @@ sub run() {
 			last;
 		}
 		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
-
 	}
 	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 	$$self{daemon}->shutdown(SHUT_RDWR);

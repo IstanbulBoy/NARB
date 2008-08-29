@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -120,7 +120,7 @@ sub findPath {
 	Aux::print_dbg_ws("findPath()\n");
 
 	push(@data, $lsp_opt, @args);
-	unshift(@data, {"fmt"=>"", "cmd"=>ASYNC_CMD, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
+	unshift(@data, {"fmt"=>"", "cmd"=>WS_FIND_PATH, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
 	#Aux::send_msg($self, ADDR_, @data);
 }
 
@@ -150,6 +150,8 @@ sub selectNetworkTopology {
 		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
 		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
+		#my @cmd = ({"fmt" => "", "cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+
 		WS::Formaters::generate_soap_resp($$self{ws}, $scope_m);
 	}
 	return $$self{ws}{xml}; 
