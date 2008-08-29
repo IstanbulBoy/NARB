@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -217,8 +217,8 @@ sub start_gmpls_server($$$) {
 		$$self{select}->remove($sock);
 	}
 	$$self{select}->remove($$self{fh});
-	Aux::print_dbg_run("exiting $$self{name}\n");
-	close($sock);
+	$sock->shutdown(SHUT_RDWR);
+	return 0;
 }
 
 sub run() {

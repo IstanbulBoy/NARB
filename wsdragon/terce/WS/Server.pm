@@ -38,7 +38,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.43 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.44 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -65,12 +65,20 @@ use constant STAT_LINK_COMPLETE => 	(
 	STAT_LINK_SWCAP);
 
 
+our $pool_ref;
+
 sub tag($$$);
 
 sub grim {
 	my $child;
 	while ((my $waitedpid = waitpid(-1,WNOHANG)) > 0) {
 		Aux::print_dbg_run("reaped $waitedpid with exit $?\n" ) if $? != 0;
+		for(my $i=0; $i<MAX_SOAP_SRVR; $i++) {
+			if(${$$pool_ref[$i]}{pid} == $waitedpid) {
+				${$$pool_ref[$i]}{in_use} = 0;
+				last;
+			}
+		}
 	}
 	$SIG{CHLD} = \&grim;
 }
@@ -87,39 +95,84 @@ sub new {
 		my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
 		eval {
 			# process descriptor (prefix with class name so we won't clash with superclasses):
-			$self->{_ws_srvr_proc} = $proc; # process info
-			$self->{_ws_srvr_pid} = $$proc_val{cpid}; # process PID
-			$self->{_ws_srvr_addr} = $$proc_val{addr}; # process IPC address
-			$self->{_ws_srvr_name} = $$proc_val{name}; # process name
-			$self->{_ws_srvr_fh} = $$proc_val{fh}; # IPC filehandle 
-			$self->{_ws_srvr_pool} = $$proc_val{pool}; # socket pool for forked children
-			$self->{_ws_srvr_select} = new IO::Select($$proc_val{fh}); # corresponding select object
+			$self->{proc} = $proc; # process info
+			$self->{pid} = $$proc_val{cpid}; # process PID
+			$self->{addr} = $$proc_val{addr}; # process IPC address
+			$self->{name} = $$proc_val{name}; # process name
+			$self->{fh} = $$proc_val{fh}; # IPC filehandle 
+			$self->{pool} = $$proc_val{pool}; # socket pool for forked children
+			$self->{select} = undef;
 			$self->{writer} = undef;
-			$self->{_ws_srvr_parser} = undef;
+			$self->{parser} = undef;
+			$self->{processor} = undef;
 
 			# object descriptor:
-			$self->{_ws_daemon} = new HTTP::Daemon(@params) or die "Can't create daemon: $!\n";
-			$self->{_ws_srvr_xml} = undef;
+			$self->{daemon} = new HTTP::Daemon(@params) or die "Can't create daemon: $!\n";
+			$self->{xml} = undef;
 			};
 		if($@) {
 			die "$$proc_val{name} instantiation failed: $@\n";
 		}
+		$pool_ref = $self->{pool};
 		$self->dispatch_to(new WS::Handlers($self));
 	}
 	return $self;
 }
 
-# fork a child handling the request
-sub start_ws_server($$) {
+sub process_msg() {
 	my $self = shift;
-	my ($c) = @_;
-	while (my $r = $c->get_request) {
-		$self->request($r);
-		$self->handle();
-		$c->send_response($self->response)
+	my ($msg)  = @_;
+
+}
+
+# fork a child handling the request
+sub start_ws_server($$$) {
+	my ($proc, $self, $sock) = @_;
+	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
+
+	$$self{proc} = $proc; # process info
+	$$self{pid} = $$proc_val{cpid}; # process PID
+	$$self{addr} = $$proc_val{addr}; # process IPC address
+	$$self{name} = $$proc_val{name}; # process name
+	$$self{fh} = $$proc_val{fh}; # IPC filehandle 
+	$$self{pool} = undef;
+	$$self{select} = new IO::Select($$proc_val{fh}); # select handle
+	$$self{writer} = new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii");
+	$$self{parser} = new XML::Parser(Style => "tree"); # incomming data parser
+	$$self{processor} = \&process_msg; # msg processor
+
+	$$self{select}->add($sock);
+
+	my $ws_fh;
+	my %pipe_queue;
+
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	while(!$::ctrlC) {
+		$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
+		if(defined($ws_fh)) {
+			eval {
+				while (my $r = $ws_fh->get_request) {
+					$self->request($r);
+					$self->handle();
+					$ws_fh->send_response($self->response)
+				}
+				UNIVERSAL::isa($ws_fh, 'shutdown') ? $ws_fh->shutdown(2) : $ws_fh->close(); 
+				$$self{select}->remove($ws_fh);
+				$::ctrlC = 1;
+			};
+			if($@) {
+				Log::log "err", "$@\n";
+				last;
+			}
+		}
 	}
-	UNIVERSAL::isa($c, 'shutdown') ? $c->shutdown(2) : $c->close(); 
-	$c->close;
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	if($$self{select}->exists($sock)) {
+		$$self{select}->remove($sock);
+		$sock->shutdown(SHUT_RDWR);
+	}
+	$$self{select}->remove($$self{fh});
+	return 0;
 }
 
 sub run() {
@@ -127,31 +180,31 @@ sub run() {
 	my $pid;
 	my $c;
 	my $fh = undef;
-	my $port = $$self{_ws_daemon}->sockport();
+	my $port = $$self{daemon}->sockport();
 
 	$SIG{CHLD} = \&grim;
 
-	Log::log "info", "starting $$self{_ws_srvr_name} ($$self{_ws_srvr_pid}) on port $port\n";
+	Log::log "info", "starting $$self{name} ($$self{pid}) on port $port\n";
 	while(!$::ctrlC) {
 		# WS server
-		$c = $$self{_ws_daemon}->accept();
+		$c = $$self{daemon}->accept();
 		if(!$c) {
 			next;
 		}
-		# find an unused socket form the pool
+		# find an unused socket from the pool
 		my $i;
 		for($i=0; $i<MAX_SOAP_SRVR; $i++) {
-			if(!${${$$self{_ws_srvr_pool}}[$i]}{in_use}) {
-				$fh = ${${$$self{_ws_srvr_pool}}[$i]}{fh};
-				${${$$self{_ws_srvr_pool}}[$i]}{in_use} = 1;
+			if(!${${$$self{pool}}[$i]}{in_use}) {
+				$fh = ${${$$self{pool}}[$i]}{fh};
+				${${$$self{pool}}[$i]}{in_use} = 1;
 				last;
 			}
 		}
-		Aux::print_dbg_run("WS request: forking $$self{_ws_srvr_name}\n");
-		Aux::spawn(undef, undef, \&start_ws_server, $$self{_ws_srvr_name}."($i)", $$self{_ws_srvr_addr}+$i, $fh, $self, $c);
+		$pid = Aux::spawn(undef, undef, \&start_ws_server, $$self{name}."($i)", $$self{addr}+$i, $fh, $self, $c);
+		${${$$self{pool}}[$i]}{pid} = $pid;
 	}
-	$$self{_ws_daemon}->shutdown(SHUT_RDWR);
-	Aux::print_dbg_run("exiting $$self{_ws_srvr_name} ($$self{_ws_srvr_pid})\n");
+	$$self{daemon}->shutdown(SHUT_RDWR);
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 }
 
 1;

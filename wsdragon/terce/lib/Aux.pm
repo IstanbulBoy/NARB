@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.33 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.34 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( CTRL_CMD ASYNC_CMD INIT_ASYNC ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
@@ -357,6 +357,9 @@ sub act_on_msg($$) {
 	my ($owner, $queue_ref) = @_;
 
 	my @readable = $$owner{select}->can_read();
+	if($!) {
+		return undef;
+	}
 
 	foreach my $h (@readable) {
 		# return if not an IPC socket
@@ -374,7 +377,6 @@ sub act_on_msg($$) {
 		my $addr;
 
 		while(1) {
-			#$n = sysread($h, $$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, length($$queue_ref{$src_n}{buffer}));
 			my $tmp;
 			$addr = $h->recv($tmp, TERCE_MSG_SCAN_L, MSG_DONTWAIT);
 			$$queue_ref{$src_n}{buffer} .= $tmp;
@@ -384,10 +386,6 @@ sub act_on_msg($$) {
 				}
 				last;
 			}
-#			if(!$n) {
-#				print("ZERO\n");
-#				last;
-#			}
 			# lock on the message and discard anything before the message start tag
 			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
 				my $attrs = $2;
@@ -462,14 +460,10 @@ sub spawn($$$$$$@) {
 	# $to_ph: socket descriptor ... the socket used by child to talk to parent
 	if(!defined($pool_fh)) {
 		($to_ch, $to_ph) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
-		#$to_ch->sockopt(O_NONBLOCK, 1);
-		#$to_ph->sockopt(O_NONBLOCK, 1);
 		# create a pool of socket pairs for the SOAP server
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
-				#$to_ch_pool->sockopt(O_NONBLOCK, 1);
-				#$to_ph_pool->sockopt(O_NONBLOCK, 1);
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
@@ -477,8 +471,6 @@ sub spawn($$$$$$@) {
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
-				#$to_ch_pool->sockopt(O_NONBLOCK, 1);
-				#$to_ph_pool->sockopt(O_NONBLOCK, 1);
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
@@ -518,7 +510,7 @@ sub spawn($$$$$$@) {
 				}
 			}
 		}
-		return;
+		return $pid;
 	}
 	my $s_pool = [];
 	if(!defined($pool_fh)) {
@@ -526,13 +518,13 @@ sub spawn($$$$$$@) {
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
 				close ${$$sp_pool[$i]}[0];
-				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0});
+				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0, pid => 0});
 			}
 		}
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
 				close ${$$sp_pool[$i]}[0];
-				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0});
+				push(@$s_pool, {fh => ${$$sp_pool[$i]}[1], in_use => 0, pid => 0});
 			}
 		}
 	}

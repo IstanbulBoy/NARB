@@ -442,7 +442,6 @@ eval {
 	#     2. the relay will forward only full messages
 	#     => if we get an incomplete message from a src we can come back
 	#        and continue to build the same queue when more data is available
-	Aux::print_dbg_run("entering message relay loop\n") if !$::ctrlC;
 
 	# terce self descriptor NOTE: this one is not an object
 	my $self;
@@ -452,7 +451,7 @@ eval {
 			"proc" => \%child_map, # process info
 			"pid" => $$, # process' PID 
 			"addr" => ADDR_TERCE, # process IPC address
-			"name" => "TERCE", # process name
+			"name" => "TERCE Core", # process name
 			"fh" => undef, # many handles available 
 			"pool" => [], # empty
 			"select" => $sel, # corresponding select object
@@ -465,9 +464,11 @@ eval {
 	}
 
 	# msg router
+	Log::log "info", "starting $$self{name} ($$self{pid})\n";
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%proc_queue);
 	}
+	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
 };
 if($@) {
 	Log::log("err", "$@\n");
