@@ -33,7 +33,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -524,11 +524,11 @@ sub run() {
 	my $self = shift;
 	my %pipe_queue;
 
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%pipe_queue);
 	}
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 }
 
 1;

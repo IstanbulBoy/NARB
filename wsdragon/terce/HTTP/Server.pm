@@ -31,7 +31,7 @@ use HTTP::Status;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Daemon);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -79,7 +79,7 @@ sub new {
 sub run() {
 	my $self = shift;
 	my $c;
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid}) on port $$self{port}\n";
 	while(!$::ctrlC) {
 		while ($c = $$self{server}->accept) {
 			while (my $r = $c->get_request) {
@@ -133,7 +133,7 @@ sub run() {
 	}
 	$c->close if defined;
 	undef($c);
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 }
 
 1;

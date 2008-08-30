@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.25 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -125,49 +125,43 @@ sub ack_msg($$;$) {
 
 sub get_msg($$) {
 	my ($fh, $mr) = @_;
-	#get the header
 	my $hdr;
 	my $data;
 	my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2);
 
-	my $n = $fh->sysread($hdr, 24);
-	if(!defined($n)) {
-		Log::log("err", "recv hdr: $!\n");
-		die "client error: $!\n";
+	if(!defined($fh->connected())) {
+		die "client not connected\n";
 	}
-	if($n==0) {
-		die "client disconnected\n";
-	}
-	if($fh->connected()) {
-		($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
-		$$mr{$sn} = {
-			"hdr" => {
-				"type" => $type,
-				"action" => $action,
-				"length" => $len,
-				"ucid" => $ucid,
-				"seqn" => $sn,
-				"chksum" => $chksum,
-				"tag1" => $tag1,
-				"tag2" => $tag2
-			},
-			"data" => undef
-		};
-
-	}
-	else {
-		Log::log("err", "recv hdr: $@\n");
+	if($fh->eof()) {
 		die "client disconnect\n";
 	}
+	my $addr = $fh->recv($hdr, 2);
+	if(!defined($addr)) {
+		if($! != Errno::EINTR) {
+			die "socket error\n";
+		}
+		die "connection terminated\n";
+	}
+	($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
+	$$mr{$sn} = {
+		"hdr" => {
+			"type" => $type,
+			"action" => $action,
+			"length" => $len,
+			"ucid" => $ucid,
+			"seqn" => $sn,
+			"chksum" => $chksum,
+			"tag1" => $tag1,
+			"tag2" => $tag2
+		},
+		"data" => undef
+	};
+
 	# and the body
 	if($len > 0) {
-		$n = $fh->sysread($data, $len);
-		if(!defined($n)) {
-			Log::log("err", "recv hdr: $!\n");
-			die "client error: $!\n";
-		}
-		if($n==0) {
-			die "client disconnected\n";
+		$addr = $fh->recv($data, $len);
+		if(!defined($addr)) {
+			die "socket error\n";
 		}
 		$$mr{$sn}{data} =  $data;
 	}

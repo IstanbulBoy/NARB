@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.35 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.36 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -379,6 +379,15 @@ sub act_on_msg($$) {
 	}
 
 	foreach my $h (@readable) {
+		if(!defined($h->connected())) {
+			$$owner{select}->remove($h);
+			next;
+		}
+		# this will terminate all the "TERCE Core" connection after SIGTERM or SIGINT
+		if($h->eof()) {
+			$$owner{select}->remove($h);
+			next;
+		}
 		# return if not an IPC socket
 		if(!exists($$owner{proc}{$h})) {
 			return $h;
@@ -391,18 +400,17 @@ sub act_on_msg($$) {
 			$$queue_ref{$src_n}{src} = $h;
 		}
 		my $dst;
-		my $addr;
 
 		while(1) {
 			my $tmp;
-			$addr = $h->recv($tmp, TERCE_MSG_SCAN_L, MSG_DONTWAIT);
-			$$queue_ref{$src_n}{buffer} .= $tmp;
-			if(!defined($addr) || $!) {
+			$h->recv($tmp, TERCE_MSG_SCAN_L, MSG_DONTWAIT);
+			if($!) {
 				if(($! != EAGAIN)) {
-					Log::log "err",  "recv on $$owner{proc}{$h}{name} failed\n";
+					Log::log "err",  "recv on $$owner{proc}{$h}{name} failed with $!\n";
+					return undef;
 				}
-				last;
 			}
+			$$queue_ref{$src_n}{buffer} .= $tmp;
 			# lock on the message and discard anything before the message start tag
 			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
 				my $attrs = $2;

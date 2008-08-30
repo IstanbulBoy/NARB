@@ -38,7 +38,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.44 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.45 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -146,7 +146,7 @@ sub start_ws_server($$$) {
 	my $ws_fh;
 	my %pipe_queue;
 
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
 		if(defined($ws_fh)) {
@@ -166,7 +166,7 @@ sub start_ws_server($$$) {
 			}
 		}
 	}
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 	if($$self{select}->exists($sock)) {
 		$$self{select}->remove($sock);
 		$sock->shutdown(SHUT_RDWR);
@@ -184,7 +184,7 @@ sub run() {
 
 	$SIG{CHLD} = \&grim;
 
-	Log::log "info", "starting $$self{name} ($$self{pid}) on port $port\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid}) on port $port\n";
 	while(!$::ctrlC) {
 		# WS server
 		$c = $$self{daemon}->accept();
@@ -204,7 +204,7 @@ sub run() {
 		${${$$self{pool}}[$i]}{pid} = $pid;
 	}
 	$$self{daemon}->shutdown(SHUT_RDWR);
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 }
 
 1;

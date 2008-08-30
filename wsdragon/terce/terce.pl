@@ -48,6 +48,7 @@ use Getopt::Long;
 %::cfg = ();
 $::ctrlC = 0;
 
+
 sub usage() {
 	print <<USG;
 usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
@@ -82,11 +83,21 @@ USG
 }
 
 my %child_map;
+my $sel = new IO::Select();
+
 
 #signal handlers
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating ... (SIG$signame)\n");
+	#foreach my $k (keys %child_map) {
+	#	if($k =~ /\d+/) {
+	#		$sel->remove($child_map{$k}{fh});
+	#		my $pid = $child_map{$k}{cpid};
+	#		delete $child_map{$k};
+	#		kill 15, $pid;
+	#	}
+	#}
 	$::ctrlC = 1;
 }
 
@@ -97,8 +108,10 @@ sub grim {
 		if($?) {
 			$::ctrlC = 1;
 			foreach my $k (keys %child_map) {
-				if(ref($k) eq "SCALAR") {
-					kill 9, $child_map{$k}{cpid};
+				if($k =~ /\d+/) {
+					my $pid = $child_map{$k}{cpid};
+					delete $child_map{$k};
+					kill 9, $pid;
 				}
 			}
 		}
@@ -417,15 +430,13 @@ if($daemonize) {
 ########################### initial setup ############################
 eval {
 	my %proc_queue = ();
-	my $sel = new IO::Select();
-
 
 	# start the GMPLS Processor Core
 	Aux::spawn(\%child_map, \$sel, \&start_gmpls_core, "GMPLS Core", ADDR_GMPLS_CORE, undef);
 
 	# start the HTTP server
 	if(defined($::cfg{http}{root}{v}) && defined($::cfg{ws}{wsdl}{v})) {
-		Aux::spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S, undef);
+		Aux::spawn(\%child_map, \$sel, \&start_http_server, "Web Server", ADDR_WEB_S, undef, $::cfg{http}{port}{v});
 	}
 
 	# start the SOAP/HTTP server
@@ -464,11 +475,11 @@ eval {
 	}
 
 	# msg router
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		Aux::act_on_msg($self, \%proc_queue);
 	}
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 };
 if($@) {
 	Log::log("err", "$@\n");

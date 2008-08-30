@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -130,6 +130,7 @@ sub process_bin_msg($) {
 		$sn = GMPLS::API::get_msg($fh, \%msg);
 	};
 	if($@) {
+		$$self{select}->remove($fh);
 		die "$@\n";
 	}
 	eval {
@@ -141,12 +142,14 @@ sub process_bin_msg($) {
 			unshift(@data, {"fmt"=>"C/a*N", "cmd"=>CLIENT_Q_INIT, "type"=>CLIENT_Q_INIT_PORT});
 			Aux::send_msg($self, $dst, @data);
 			GMPLS::API::ack_msg($fh, $msg{$sn});
+			$msg{$sn} = {};
 		}
 		elsif(GMPLS::API::is_sync_insert($msg{$sn})) {
 			if(GMPLS::API::parse_msg($msg{$sn}{data}, $self) <0) {
 				$err = 1;
 			}
 			GMPLS::API::ack_msg($fh, $msg{$sn}, $err);
+			$msg{$sn} = {};
 		}
 		elsif(GMPLS::API::is_delim($msg{$sn})) {
 			$self->activate_tedb();
@@ -162,9 +165,11 @@ sub process_bin_msg($) {
 }
 
 # GMPLS Client provides the async interface to narb and rce
-sub start_gmpls_client($) {
-	my ($proc) = @_;
+sub start_gmpls_client($$$) {
+	my ($proc, $sock1, $sock2) = @_;
 	my $client;
+	$sock1->close();
+	$sock2->close();
 	eval {
 		$client = new GMPLS::Client($proc);
 	};
@@ -192,10 +197,11 @@ sub start_gmpls_server($$$) {
 	$$self{parser} = new XML::Parser(Style => "tree"); # incomming data parser
 	$$self{processor} = \&process_msg; # msg processor
 
+	$$self{daemon}->close();
 	$$self{select}->add($sock);
 	my $gmpls_fh;
 	my %pipe_queue;
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		if(!$sock->connected()) {
 			Log::log "err", "client disconnect\n";
@@ -213,7 +219,7 @@ sub start_gmpls_server($$$) {
 			}
 		}
 	}
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 	if($$self{select}->exists($sock)) {
 		$$self{select}->remove($sock);
 	}
@@ -225,10 +231,11 @@ sub start_gmpls_server($$$) {
 sub run() {
 	my $self = shift;
 	my @conn;
+	my $port = $$self{daemon}->sockport();
 
 	$SIG{CHLD} = \&grim;
 
-	Log::log "info", "starting $$self{name} ($$self{pid})\n";
+	Log::log "info", "starting $$self{name} (pid: $$self{pid}) on port $port\n";
 	while(!$::ctrlC) {
 		# WS server
 		@conn = $$self{daemon}->accept();
@@ -269,15 +276,16 @@ sub run() {
 
 		# start client queue
 		eval {
-			Aux::spawn(undef, undef, \&start_gmpls_client, "Client Queue ($n)", $addr_c, $fh_c);
+			Aux::spawn(undef, undef, \&start_gmpls_client, "Client Queue ($n)", $addr_c, $fh_c,  $$self{daemon}, $client_sock);
 		};
 		if($@) {
 			Log::log "err", "client instantiation failed: $@\n";
 			last;
 		}
 		Aux::spawn(undef, undef, \&start_gmpls_server, "GMPLS Server ($n)", $addr, $fh, $self, $client_sock);
+		$client_sock->close();
 	}
-	Aux::print_dbg_run("exiting $$self{name} ($$self{pid})\n");
+	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 	$$self{daemon}->shutdown(SHUT_RDWR);
 }
 
