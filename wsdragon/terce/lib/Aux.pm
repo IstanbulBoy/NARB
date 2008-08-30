@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.37 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.38 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -267,11 +267,10 @@ sub chksum($$@) {
 # $root: root element for this recursion level
 # $tr: element tree reference (message element tree from the parser)
 ############## data structure ####################
-#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"fmt"=>"NN","cmd"=>3,"type"=>5...} item [{"seq"=>0},0,STRING0], item [{"seq"=>1},0,STRING1]]]]
+#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"seq"=>0},0,STRING0], item [{"seq"=>1},0,STRING1]]]]
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
 	my $attrs = shift(@$tr);
-	my $fmt = undef;
 	my $cmd = undef;
 	my $type = undef;
 	my $subtype = undef;
@@ -291,12 +290,6 @@ sub xfrm_tree($$) {
 	}
 
 	if(lc($root) eq "data") {
-		if(exists($$attrs{fmt}) && defined($$attrs{fmt})) {
-			$fmt = $$attrs{fmt};
-		}
-		else {
-			die "missing \"fmt\" attribute\n";
-		}
 		if(exists($$attrs{cmd}) && defined($$attrs{cmd})) {
 			$cmd = $$attrs{cmd};
 		}
@@ -341,7 +334,6 @@ sub send_msg($$@) {
 	my ($owner, $dst, @data) = @_;  
 	my $hdr = shift @data;
 	# $hdr: internal header describing the encapsulated data: 
-	# 	fmt: template for packing and unpacking (required)
 	#	cmd: processing instruction (required)
 	#	type: type of data (optional)
 	#	subtype: usually, tlv subtype such as "uni" (optional)
@@ -350,7 +342,6 @@ sub send_msg($$@) {
 		$$owner{writer}->startTag("msg", "dst" => $dst, "src" => $$owner{addr});
 
 		$$owner{writer}->startTag("data", 
-			"fmt" => $$hdr{fmt}, 
 			"cmd" => $$hdr{cmd}, 
 			"type" => defined($$hdr{type})?$$hdr{type}:"undef",
 			"subtype" => defined($$hdr{subtype})?$$hdr{subtype}:"undef",

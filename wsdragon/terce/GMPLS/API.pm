@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -232,13 +232,13 @@ sub parse_tlv($$$;$) {
 			$fmt = "N";
 			parse_tlv_data($md, $o, $fmt, \@res);
 			Aux::print_dbg_lsa("   ROUTER ADDRESS: 0x%08x\n", $res[0]);
-			unshift(@res, {"fmt" => "N", "cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+			unshift(@res, {"cmd"=>TEDB_RTR_ON, "type"=>$tlv_type, "rtr"=>$adv_rtr});
 			Aux::send_msg($owner, ADDR_GMPLS_CORE, @res);
 			return (0);
 		}
 		elsif($tlv_type == TE_TLV_LINK) {
 			Aux::print_dbg_lsa("TLV: %s(%d)\n", $tlvs_X{$tlv_type}, $tlv_len);
-			my @cmd = ({"fmt" => "", "cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr});
+			my @cmd = ({"cmd"=>TEDB_LINK_MARK, "type"=>$tlv_type, "rtr"=>$adv_rtr});
 			Aux::send_msg($owner, ADDR_GMPLS_CORE, @cmd);
 			return(parse_tlv($md, $o, $owner, TE_TLV_LINK));
 		}
@@ -525,7 +525,7 @@ sub parse_tlv($$$;$) {
 			Log::log "warning", "unknown sub-TLV type ($tlv_type)\n";
 			return (-1);
 		}
-		unshift(@res, {"fmt" => $tmp_fmt, "cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr});
+		unshift(@res, {"cmd"=>TEDB_INSERT, "type"=>$tlv_type, "subtype"=>$tlv_stype, "rtr"=>$adv_rtr});
 		Aux::send_msg($owner, ADDR_GMPLS_CORE, @res);
 	}
 	return(0);
