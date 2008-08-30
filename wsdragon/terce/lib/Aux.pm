@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.36 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.37 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -379,18 +379,13 @@ sub act_on_msg($$) {
 	}
 
 	foreach my $h (@readable) {
-		if(!defined($h->connected())) {
-			$$owner{select}->remove($h);
-			next;
-		}
-		# this will terminate all the "TERCE Core" connection after SIGTERM or SIGINT
-		if($h->eof()) {
-			$$owner{select}->remove($h);
-			next;
-		}
 		# return if not an IPC socket
 		if(!exists($$owner{proc}{$h})) {
 			return $h;
+		}
+		if(!defined($h->connected())) {
+			$$owner{select}->remove($h);
+			next;
 		}
 		my $src_n = fileno($h);
 		if(!exists($$queue_ref{$src_n}{buffer})) {
@@ -400,17 +395,23 @@ sub act_on_msg($$) {
 			$$queue_ref{$src_n}{src} = $h;
 		}
 		my $dst;
+		my $n;
 
 		while(1) {
-			my $tmp;
-			$h->recv($tmp, TERCE_MSG_SCAN_L, MSG_DONTWAIT);
-			if($!) {
+			$n = $h->sysread($$queue_ref{$src_n}{buffer}, TERCE_MSG_SCAN_L, length($$queue_ref{$src_n}{buffer}));
+			if(!defined($n)) {
 				if(($! != EAGAIN)) {
 					Log::log "err",  "recv on $$owner{proc}{$h}{name} failed with $!\n";
+					$$owner{select}->remove($h);
 					return undef;
 				}
+				last;
 			}
-			$$queue_ref{$src_n}{buffer} .= $tmp;
+			# this will terminate all the "TERCE Core" connection after SIGTERM or SIGINT
+			if(!$n) {
+				$$owner{select}->remove($h);
+				last;
+			}
 			# lock on the message and discard anything before the message start tag
 			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
 				my $attrs = $2;
@@ -442,7 +443,7 @@ sub act_on_msg($$) {
 						my $n = 0;
 						foreach my $wh (@writeable) {
 							if($wh == $$queue_ref{$k}{dst}) {
-								$n = $$queue_ref{$k}{dst}->send($$queue_ref{$k}{msg}, MSG_DONTWAIT);
+								$n = $$queue_ref{$k}{dst}->syswrite($$queue_ref{$k}{msg});
 								last;
 							}
 						}
@@ -478,6 +479,7 @@ sub act_on_msg($$) {
 sub spawn($$$$$$@) {
 	my ($child_mapref, $selref, $coderef, $proc_name, $proc_addr, $pool_fh, @args) = @_;
 	my $pid;
+	my $flags;
 	my $to_ch;
 	my $to_ph;
 	my $sp_pool = []; # socketpair pool
@@ -485,10 +487,18 @@ sub spawn($$$$$$@) {
 	# $to_ph: socket descriptor ... the socket used by child to talk to parent
 	if(!defined($pool_fh)) {
 		($to_ch, $to_ph) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpair: $!\n";
+		$flags = fcntl($to_ch, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+		$flags = fcntl($to_ch, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
+		$flags = fcntl($to_ph, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+		$flags = fcntl($to_ph, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
 		# create a pool of socket pairs for the SOAP server
 		if($proc_addr == ADDR_SOAP_S) {
 			for(my $i = 0; $i<MAX_SOAP_SRVR; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				$flags = fcntl($to_ch_pool, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+				$flags = fcntl($to_ch_pool, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
+				$flags = fcntl($to_ph_pool, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+				$flags = fcntl($to_ph_pool, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}
@@ -496,6 +506,10 @@ sub spawn($$$$$$@) {
 		elsif($proc_addr == ADDR_GMPLS_S) {
 			for(my $i = 0; $i<MAX_GMPLS_CS; $i++) {
 				my ($to_ch_pool, $to_ph_pool) = IO::Socket::INET->socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC) or  die "socketpool: $!\n";
+				$flags = fcntl($to_ch_pool, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+				$flags = fcntl($to_ch_pool, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
+				$flags = fcntl($to_ph_pool, F_GETFL, 0) or die "Can't get flags for the socket: $!\n";
+				$flags = fcntl($to_ph_pool, F_SETFL, $flags | O_NONBLOCK) or die "Can't set flags for the socket: $!\n";
 				push(@$sp_pool, [$to_ch_pool, $to_ph_pool]);
 			}
 		}

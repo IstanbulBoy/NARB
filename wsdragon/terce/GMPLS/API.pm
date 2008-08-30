@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.26 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.27 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -132,17 +132,31 @@ sub get_msg($$) {
 	if(!defined($fh->connected())) {
 		die "client not connected\n";
 	}
-	if($fh->eof()) {
-		die "client disconnect\n";
-	}
-	my $addr = $fh->recv($hdr, 2);
-	if(!defined($addr)) {
+	my $n = $fh->sysread($hdr, 24);
+	if(!defined($n)) {
 		if($! != Errno::EINTR) {
 			die "socket error\n";
 		}
 		die "connection terminated\n";
 	}
+	if(!$n) {
+		die "client disconnect\n";
+	}
+	if($n != 24) {
+		die "GMPLS: malformed msg. header (wrong length)\n";
+	}
 	($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2) = unpack("CCnNNNNN", $hdr);	
+	if(!(
+			defined($type) && 
+			defined($action) && 
+			defined($len) && 
+			defined($ucid) && 
+			defined($sn) && 
+			defined($chksum) && 
+			defined($tag1) && 
+			defined($tag2))) {
+		die "GMPLS: malformed msg. header\n";
+	}
 	$$mr{$sn} = {
 		"hdr" => {
 			"type" => $type,
@@ -159,8 +173,8 @@ sub get_msg($$) {
 
 	# and the body
 	if($len > 0) {
-		$addr = $fh->recv($data, $len);
-		if(!defined($addr)) {
+		$n = $fh->sysread($data, $len);
+		if(!defined($n)) {
 			die "socket error\n";
 		}
 		$$mr{$sn}{data} =  $data;
