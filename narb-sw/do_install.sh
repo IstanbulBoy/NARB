@@ -96,6 +96,38 @@ case `uname` in
 esac
 
 echo ""
+if  [ -f $PREFIX/etc/schema_combo.rsd ]; then
+    echo -n "Checking whether $PREFIX/etc/schema_combo.rsd is current..."
+    `diff $PREFIX/etc/schema_combo.rsd.sample $PREFIX/etc/schema_combo.rsd > /dev/null 2> /dev/null`;
+    if [ $? != 0 ]; then
+	echo "detected changes"
+	echo ""
+        echo "diff -u $PREFIX/etc/schema_combo.rsd.sample $PREFIX/etc/schema_combo.rsd:"
+	diff -u $PREFIX/etc/schema_combo.rsd.sample $PREFIX/etc/schema_combo.rsd
+	echo ""
+        echo "NOTE: RCE may not be stable if you use an old version of schema_combo.rsd!"
+	echo -n "Would you like to overwrite your existing schema_combo.rsd file? [y/n]: "
+	ans=0;
+	while [ $ans == 0 ]; do
+	    read ans;
+	    if [ "$ans" != "y" ] && [ "$ans" != "Y" ] && [ "$ans" != "n" ] && [ "$ans" != "N" ]; then
+		echo -n "Would you like to overwrite your existing schema_combo.rsd file? [y/n]: "
+                ans=0;
+	    fi
+	done
+	if [ "$ans" == "y" ] || [ "$ans" == "Y" ]; then
+	    echo "Installing schema_combo.rsd..."
+	    cp $PREFIX/etc/schema_combo.rsd.sample $PREFIX/etc/schema_combo.rsd
+	fi
+    else
+	echo "it is"
+    fi
+else
+    echo "Installing schema_combo.rsd..."
+    cp $PREFIX/etc/schema_combo.rsd.sample $PREFIX/etc/schema_combo.rsd
+fi
+
+echo ""
 echo "    #######################################################"
 echo "    #                                                     #"
 echo "    #      Instructions for configuration and running     #"
