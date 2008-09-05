@@ -59,8 +59,8 @@ void LSAHandler::Run()
                 RadixNode<Resource>* linknode_incomplete= RDB.LookupIncompleteLinkNode(rc->Type(), &prefix_incomplete);
                 if (linknode_incomplete)
                 {
-                    RDB.RemoveIncompleteLinkNode(linknode_incomplete); //delete incomplete node
                     RDB.Delete(linknode_incomplete->Data()); //delete incomplete node from regular RDB tree
+                    RDB.RemoveIncompleteLinkNode(linknode_incomplete); //delete incomplete node
                 }
             }
         }
