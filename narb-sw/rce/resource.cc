@@ -860,7 +860,7 @@ void ResourceDB::BookmarkIncompleteLink(Link* link)
 
 void ResourceDB::RemoveIncompleteLinkNode(ResourceType rcIncompleteType, RadixNode<Resource>* node)
 {
-    if (rcIncompleteType != RTYPE_LOC_PHY_LNK_INCOMPLETE || rcIncompleteType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
+    if (rcIncompleteType != RTYPE_LOC_PHY_LNK_INCOMPLETE && rcIncompleteType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return;
     node->SetData(NULL);
     r_trees[rcIncompleteType].DeleteNode(node);
