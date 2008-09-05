@@ -516,7 +516,7 @@ public:
     //Hanlding incomplete local physical links
     static RadixNode<Resource>* LookupIncompleteLinkNode(ResourceType rcType, Prefix* prefix);
     static void BookmarkIncompleteLink(Link* link);
-    static void RemoveIncompleteLinkNode(RadixNode<Resource>* node);
+    static void RemoveIncompleteLinkNode(ResourceType rcIncompleteType, RadixNode<Resource>* node);
 
     //testing code
     static void WalkTree(ResourceType type);

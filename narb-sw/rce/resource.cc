@@ -858,18 +858,11 @@ void ResourceDB::BookmarkIncompleteLink(Link* link)
     r_trees[rcIncompleteType].InsertNode(&prefix_incomplete, (Resource*)link);
 }
 
-void ResourceDB::RemoveIncompleteLinkNode(RadixNode<Resource>* node)
+void ResourceDB::RemoveIncompleteLinkNode(ResourceType rcIncompleteType, RadixNode<Resource>* node)
 {
-    Link* link  = (Link*)node->Data();
-    if (!link)
+    if (rcIncompleteType != RTYPE_LOC_PHY_LNK_INCOMPLETE || rcIncompleteType != RTYPE_GLO_ABS_LNK_INCOMPLETE)
         return;
-    ResourceType rcIncompleteType;
-    if (link->Type() == RTYPE_LOC_PHY_LNK)
-        rcIncompleteType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
-    else if (link->Type() == RTYPE_GLO_ABS_LNK)
-        rcIncompleteType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
-    else
-        return;
+    node->SetData(NULL);
     r_trees[rcIncompleteType].DeleteNode(node);
     //do not remove node data (pointed to by node in a regular RDB tree)
 }

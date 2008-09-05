@@ -59,8 +59,13 @@ void LSAHandler::Run()
                 RadixNode<Resource>* linknode_incomplete= RDB.LookupIncompleteLinkNode(rc->Type(), &prefix_incomplete);
                 if (linknode_incomplete)
                 {
+                   ResourceType rcIncompleteType;
+                   if (rc->Type() == RTYPE_LOC_PHY_LNK)
+                       rcIncompleteType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
+                   else
+                       rcIncompleteType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
                     RDB.Delete(linknode_incomplete->Data()); //delete incomplete node from regular RDB tree
-                    RDB.RemoveIncompleteLinkNode(linknode_incomplete); //delete incomplete node
+                    RDB.RemoveIncompleteLinkNode(rcIncompleteType, linknode_incomplete); //delete incomplete node
                 }
             }
         }
@@ -74,7 +79,12 @@ void LSAHandler::Run()
             RadixNode<Resource>* linknode_incomplete= RDB.LookupIncompleteLinkNode(rc->Type(), &prefix_incomplete);
             if (linknode_incomplete)
             {
-                RDB.RemoveIncompleteLinkNode(linknode_incomplete);
+               ResourceType rcIncompleteType;
+               if (rc->Type() == RTYPE_LOC_PHY_LNK)
+                   rcIncompleteType = RTYPE_LOC_PHY_LNK_INCOMPLETE;
+               else
+                   rcIncompleteType = RTYPE_GLO_ABS_LNK_INCOMPLETE;
+                RDB.RemoveIncompleteLinkNode(rcIncompleteType, linknode_incomplete);
             }
         }
         RDB.Delete(rc);
