@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -150,9 +150,6 @@ sub selectNetworkTopology {
 		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
 		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		Aux::print_dbg_ws("selectNetworkTopology($scope)\n");
-		my @cmd = ({"cmd"=>WS_GET_TEDB, "type"=>$scope_m});
-
-		WS::Formaters::generate_soap_resp($$self{ws}, $scope_m);
 	}
 	return $$self{ws}{xml}; 
 }

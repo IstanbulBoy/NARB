@@ -31,6 +31,7 @@ use Socket;
 use GMPLS::Constants;
 use WS::External;
 use WS::Handlers;
+use WS::Constants;
 use SOAP::Lite;
 use SOAP::Transport::HTTP;
 use Aux;
@@ -38,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.45 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.46 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -83,6 +84,22 @@ sub grim {
 	$SIG{CHLD} = \&grim;
 }
 
+sub piper {
+	Log::log("warning", "the ws client closed connection prematurely\n");
+	$::ctrlC = 1;
+	$SIG{PIPE} = \&piper;
+}
+
+sub nice_piper {
+	Log::log("warning", "unexpected: WS daemon caught SIGPIPE\n");
+	$SIG{PIPE} = \&nice_piper;
+}
+
+sub data_timeout() {
+	$::ctrlC = 1;
+	die "data retrieval failed\n";
+}
+
 # this is a subclass of SOAP::Transport::HTTP::Server
 sub new {
 	my $self = shift;
@@ -101,10 +118,10 @@ sub new {
 			$self->{name} = $$proc_val{name}; # process name
 			$self->{fh} = $$proc_val{fh}; # IPC filehandle 
 			$self->{pool} = $$proc_val{pool}; # socket pool for forked children
-			$self->{select} = undef;
-			$self->{writer} = undef;
-			$self->{parser} = undef;
-			$self->{processor} = undef;
+			$self->{select} = undef; # will be defined after forking
+			$self->{writer} = undef; # will be defined after forking
+			$self->{parser} = undef; # will be defined after forking
+			$self->{processor} = undef; # will be defined after forking
 
 			# object descriptor:
 			$self->{daemon} = new HTTP::Daemon(@params) or die "Can't create daemon: $!\n";
@@ -119,16 +136,84 @@ sub new {
 	return $self;
 }
 
+sub retrieve_data() {
+	my $self = shift;
+	if(!$self->request()) {
+		die "undefined request\n";
+	}
+	if(defined($$self{xml})) {
+		return 1;
+	}
+	# peep into the content: we need to know what data
+	# to retrieve before handling the request
+	my $req = eval { $self->deserializer->deserialize($self->request()->content()) };
+	if($@) {
+		die "deserializer failed: $@\n";
+	}
+	my $b = $req->body();
+	foreach my $k (keys %$b) {
+		if(lc($k) eq "selectnetworktopology") {
+			foreach my $kk (keys %{$$b{$k}}) {
+				if(lc($kk) eq "scope") {
+					my $scope = $$b{$k}{$kk};
+					my $scope_m = 0;
+					if(defined($scope)) {
+						$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
+						$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
+						$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
+						$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
+						# send the request to GMPLS Core
+						my @cmd = ({"cmd"=>WS_GET_TEDB, "type"=>$scope_m});
+						Aux::send_msg($self, ADDR_GMPLS_CORE, @cmd);
+					}
+					last;
+				}
+			}
+			last;	
+		}
+	}
+	return 0;
+}
+
 sub process_msg() {
 	my $self = shift;
 	my ($msg)  = @_;
+	my $d;
 
+	# parse the message
+	my $tr;  # XML tree reference
+	eval {
+		$tr = $$self{parser}->parse($msg);
+		$d = Aux::xfrm_tree("msg", $$tr[1]);
+		if(!defined($d)) {
+			Log::log("warning", "IPC message parsing failed\n");
+			return;
+		}
+	};
+	if($@) {
+		Log::log("err", "$@\n");
+		return;
+	}
+	if(defined($d)) {
+		my @data = @{$$d{data}};
+		if($$d{cmd} == WS_SET_TEDB) {
+			if($data[0] ne "undef") {
+				$$self{xml} = $data[0];
+			}
+			else {
+				$$self{xml} = undef;
+			}
+		}
+	}
+	%::ctrlC = 1;
 }
 
 # fork a child handling the request
 sub start_ws_server($$$) {
 	my ($proc, $self, $sock) = @_;
 	my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
+
+	$SIG{PIPE} = \&piper;
 
 	$$self{proc} = $proc; # process info
 	$$self{pid} = $$proc_val{cpid}; # process PID
@@ -147,25 +232,32 @@ sub start_ws_server($$$) {
 	my %pipe_queue;
 
 	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
-	while(!$::ctrlC) {
-		$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
-		if(defined($ws_fh)) {
-			eval {
-				while (my $r = $ws_fh->get_request) {
+	eval {
+		local $SIG{ALRM} = \&data_timeout;
+		alarm 5;
+		while(!$::ctrlC) {
+			$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
+			# this is the client's WS request
+			if(defined($ws_fh)) {
+				while(my $r = $ws_fh->get_request) {
 					$self->request($r);
-					$self->handle();
-					$ws_fh->send_response($self->response)
+					if($self->retrieve_data()) {
+						$self->handle();
+						$ws_fh->send_response($self->response);
+					}
 				}
-				UNIVERSAL::isa($ws_fh, 'shutdown') ? $ws_fh->shutdown(2) : $ws_fh->close(); 
-				$$self{select}->remove($ws_fh);
-				$::ctrlC = 1;
-			};
-			if($@) {
-				Log::log "err", "$@\n";
-				last;
 			}
 		}
+		alarm 0;
+	};
+	if($@) {
+		Log::log "err", "$@\n";
 	}
+	if(defined($sock->connected())) {
+		$self->handle();
+		$sock->send_response($self->response);
+	}
+
 	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 	if($$self{select}->exists($sock)) {
 		$$self{select}->remove($sock);
@@ -183,6 +275,7 @@ sub run() {
 	my $port = $$self{daemon}->sockport();
 
 	$SIG{CHLD} = \&grim;
+	$SIG{PIPE} = \&nice_piper;
 
 	Log::log "info", "starting $$self{name} (pid: $$self{pid}) on port $port\n";
 	while(!$::ctrlC) {
@@ -202,6 +295,7 @@ sub run() {
 		}
 		$pid = Aux::spawn(undef, undef, \&start_ws_server, $$self{name}."($i)", $$self{addr}+$i, $fh, $self, $c);
 		${${$$self{pool}}[$i]}{pid} = $pid;
+		$c->close();
 	}
 	$$self{daemon}->shutdown(SHUT_RDWR);
 	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");

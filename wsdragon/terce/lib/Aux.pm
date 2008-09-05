@@ -15,11 +15,11 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.38 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.39 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
-				WS_GET_TEDB WS_FIND_PATH
+				WS_GET_TEDB WS_SET_TEDB WS_FIND_PATH
 			   	ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
@@ -40,9 +40,10 @@ use constant TEDB_DELETE => 5;
 use constant TEDB_LINK_MARK => 6;
 use constant TEDB_ACTIVATE => 7;
 
-#    GMPLS commands
+#    WS commands
 use constant WS_GET_TEDB => 8;
-use constant WS_FIND_PATH => 9;
+use constant WS_SET_TEDB => 9;
+use constant WS_FIND_PATH => 10;
 
 # debugging
 use constant RUN_DBG => 0;
@@ -329,7 +330,7 @@ sub receive_msg($) {
 
 # $owner: sender process descriptor
 # $dst: destination address
-# @data: raw data
+# @data: raw data (it could be another xml doc)
 sub send_msg($$@) {
 	my ($owner, $dst, @data) = @_;  
 	my $hdr = shift @data;
@@ -347,7 +348,7 @@ sub send_msg($$@) {
 			"subtype" => defined($$hdr{subtype})?$$hdr{subtype}:"undef",
 			"rtr" => defined($$hdr{rtr})?$$hdr{rtr}:"undef");
 		for(my $i=0; $i<@data; $i++) {
-			 $$owner{writer}->dataElement("item", $data[$i], "seq"=>$i);
+			 $$owner{writer}->dataElement("item", defined($data[$i])?$data[$i]:"undef", "seq"=>$i);
 		}
 
 		$$owner{writer}->endTag("data");
