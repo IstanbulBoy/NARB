@@ -27,13 +27,14 @@ use strict;
 use warnings;
 use Socket;
 use GMPLS::Constants;
+use WS::Constants;
 use XML::Parser;
 use Aux;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -458,11 +459,15 @@ sub process_msg($) {
 		$$d{cmd} == TEDB_LINK_MARK) {
 		$self->process_tedb_data($d, $src);
 	}
+	elsif($$d{cmd} == WS_GET_TEDB) {
+		my @data = ({"cmd"=>WS_SET_TEDB, "type"=>$$d{type}}, 
+			($$d{type} & SCOPE_ABS_M)?$$self{abstract_tedb}:
+			($$d{type} & SCOPE_CRL_M)?$$self{control_tedb}:
+			($$d{type} & SCOPE_DAT_M)?$$self{data_tedb}:"undef");
+		# send back to the source
+		Aux::send_msg($self, $src, @data);
+	}
 
-	#my $xml = WS::Formaters::generate_soap_resp($self, SCOPE_ABS_M);
-	#						my @data = ({"cmd"=>WS_SET_TEDB, "type"=>$$d{type}}, $xml);
-	#						# send back to the source
-	#						Aux::send_msg($self, ADDR_SOAP_S, @data);
 }
 
 sub process_tedb_data($$) {

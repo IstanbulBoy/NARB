@@ -147,30 +147,30 @@ sub generate_soap_fault($$$$) {
 }
 
 sub generate_soap_resp($$) {
-	my ($core, $scope_m) = @_;
+	my ($ws, $scope_m) = @_;
 	my $xml = {};
 	my $done = 0;
 
-	if(($scope_m & SCOPE_ABS_M) && !defined($$core{abstract_tedb})) {
+	if(($scope_m & SCOPE_ABS_M) && !defined($$ws{abstract_tedb})) {
 		generate_soap_fault('Receiver', 
 			'abstract topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
-	elsif(($scope_m & SCOPE_CRL_M) && !defined($$core{control_tedb})) {
+	elsif(($scope_m & SCOPE_CRL_M) && !defined($$ws{control_tedb})) {
 		generate_soap_fault('Receiver', 
 			'control topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
-	elsif(($scope_m & SCOPE_DAT_M) && !defined($$core{data_tedb})) {
+	elsif(($scope_m & SCOPE_DAT_M) && !defined($$ws{data_tedb})) {
 		generate_soap_fault('Receiver', 
 			'data topology not ready', 
 			'TerceTedbFault', 
 			'TERCE has not received all the necessary information from narb/rce to form the response');
 	}
 	else {
-		my @dbs = ($$core{abstract_tedb}, $$core{control_tedb}, $$core{data_tedb});
+		my @dbs = ($$ws{abstract_tedb}, $$ws{control_tedb}, $$ws{data_tedb});
 		for(my $i=0; $i<SCOPE_MAX; $i++) {
 			if(defined($dbs[$i]) && ($scope_m & (1<<$i))) {
 				my @nodes = ();

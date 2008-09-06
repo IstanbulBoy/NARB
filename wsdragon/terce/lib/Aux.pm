@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.39 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.40 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -27,6 +27,7 @@ BEGIN {
 our @EXPORT_OK;
 
 sub dump_config($;$);
+sub serialize($$);
 
 # messaging commands
 #    management commands
@@ -268,7 +269,7 @@ sub chksum($$@) {
 # $root: root element for this recursion level
 # $tr: element tree reference (message element tree from the parser)
 ############## data structure ####################
-#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"seq"=>0},0,STRING0], item [{"seq"=>1},0,STRING1]]]]
+#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"idx"=>0},0,STRING0], item [{"idx"=>1},0,STRING1]]]]
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
 	my $attrs = shift(@$tr);
@@ -283,7 +284,7 @@ sub xfrm_tree($$) {
 		my $el = $$tr[$i];
 		my $chld = $$tr[$i+1];
 		if($el eq "0") {
-			return {"seq"=>$$attrs{seq}, "item"=>$chld}; 
+			return {"idx"=>$$attrs{idx}, "item"=>$chld}; 
 		}
 		else {
 			push(@$data, xfrm_tree($el, $chld));
@@ -306,7 +307,7 @@ sub xfrm_tree($$) {
 		if(exists($$attrs{rtr})) {
 			$rtr = $$attrs{rtr};
 		}
-		@$data = sort {$$a{seq} <=> $$b{seq}} @$data;
+		@$data = sort {$$a{idx} <=> $$b{idx}} @$data;
 		my $tmp = [];
 		for(my $i=0; $i<@$data; $i++) {
 			push(@$tmp, ${$$data[$i]}{item});
@@ -326,6 +327,59 @@ sub xfrm_tree($$) {
 }
 
 sub receive_msg($) {
+}
+
+# this recursive function will serialize even data structures containing 
+# circular references such as TEDBs (connected graphs)
+# $w: XML writer
+# $d: data chunk
+sub serialize($$) {
+	my ($w, $d) = @_;
+	if(!defined($d)) {
+		return "undef";
+	}
+	my $type = ref($d);
+	# no function, io, lvalue ref serialization
+	if(($type eq "CODE") || ($type eq "GLOB") || ($type eq "LVALUE")) {
+		return "undef";
+	}
+	# not a reference
+	if($type eq "") {
+		return $d;
+	}
+	# scalar ref
+	elsif($type eq "SCALAR") {
+		$w->dataElement($type, $$d);
+	}
+	# array ref
+	elsif($type eq "ARRAY") {
+		for(my $i=0; $i<@$d; $i++) {
+			# we have to restore array order on deserialize
+			$w->dataElement($type, serialize($w, $$d[$i]), "idx"=>$i);
+		}
+	}
+	# hash ref
+	elsif($type eq "HASH") {
+		foreach my $k (keys %$d) {
+			if(($k eq "remote") && (ref($$d{$k}) eq "HASH")) {
+				$w->dataElement($type, serialize($w, ${$$d{$k}}{link_id}), "key"=>$k);
+			}
+			else {
+				$w->dataElement($type, serialize($w, $$d{$k}), "key"=>$k);
+			}
+		}
+	}
+	# ref ref
+	elsif($type eq "REF") {
+		# just dereference and keep running
+		$w->dataElement($type, serialize($w, $$d));
+	}
+	# all what remains is an object ref -> a bit tricky
+	else {
+		foreach my $k (keys %$d) {
+			$w->dataElement($type, serialize($w, $$d{$k}), "key"=>$k);
+		}
+	}
 }
 
 # $owner: sender process descriptor
@@ -348,7 +402,7 @@ sub send_msg($$@) {
 			"subtype" => defined($$hdr{subtype})?$$hdr{subtype}:"undef",
 			"rtr" => defined($$hdr{rtr})?$$hdr{rtr}:"undef");
 		for(my $i=0; $i<@data; $i++) {
-			 $$owner{writer}->dataElement("item", defined($data[$i])?$data[$i]:"undef", "seq"=>$i);
+			 $$owner{writer}->dataElement("item", serialize($$owner{writer}, $data[$i]), "idx"=>$i);
 		}
 
 		$$owner{writer}->endTag("data");
@@ -425,7 +479,7 @@ sub act_on_msg($$) {
 					}
 					$$queue_ref{$src_n}{msg} = "";
 				}
-				# forward everything in the queues (only the parent is allowed to forward)
+				# forward everything in the queues (only TERCE Core is allowed to forward)
 				elsif($$owner{addr} == ADDR_TERCE) {
 					foreach my $k (keys %$queue_ref)  {
 						if(!length($$queue_ref{$k}{msg})) {

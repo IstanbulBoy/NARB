@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.46 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.47 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -141,9 +141,6 @@ sub retrieve_data() {
 	if(!$self->request()) {
 		die "undefined request\n";
 	}
-	if(defined($$self{xml})) {
-		return 1;
-	}
 	# peep into the content: we need to know what data
 	# to retrieve before handling the request
 	my $req = eval { $self->deserializer->deserialize($self->request()->content()) };
@@ -172,7 +169,6 @@ sub retrieve_data() {
 			last;	
 		}
 	}
-	return 0;
 }
 
 sub process_msg() {
@@ -180,6 +176,7 @@ sub process_msg() {
 	my ($msg)  = @_;
 	my $d;
 
+	print("$msg\n");
 	# parse the message
 	my $tr;  # XML tree reference
 	eval {
@@ -205,7 +202,7 @@ sub process_msg() {
 			}
 		}
 	}
-	%::ctrlC = 1;
+	$::ctrlC = 1;
 }
 
 # fork a child handling the request
@@ -226,6 +223,10 @@ sub start_ws_server($$$) {
 	$$self{parser} = new XML::Parser(Style => "tree"); # incomming data parser
 	$$self{processor} = \&process_msg; # msg processor
 
+	$$self{abstract_tedb} = undef;
+	$$self{control_tedb} = undef;
+	$$self{data_tedb} = undef;
+
 	$$self{select}->add($sock);
 
 	my $ws_fh;
@@ -239,13 +240,10 @@ sub start_ws_server($$$) {
 			$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
 			# this is the client's WS request
 			if(defined($ws_fh)) {
-				while(my $r = $ws_fh->get_request) {
-					$self->request($r);
-					if($self->retrieve_data()) {
-						$self->handle();
-						$ws_fh->send_response($self->response);
-					}
-				}
+				my $r = $ws_fh->get_request;
+				$self->request($r);
+				$self->retrieve_data();
+				$$self{select}->remove($ws_fh);
 			}
 		}
 		alarm 0;
@@ -293,7 +291,7 @@ sub run() {
 				last;
 			}
 		}
-		$pid = Aux::spawn(undef, undef, \&start_ws_server, $$self{name}."($i)", $$self{addr}+$i, $fh, $self, $c);
+		$pid = Aux::spawn(undef, undef, \&start_ws_server, $$self{name}."($i)", ADDR_SOAP_S_BASE+$i, $fh, $self, $c);
 		${${$$self{pool}}[$i]}{pid} = $pid;
 		$c->close();
 	}
