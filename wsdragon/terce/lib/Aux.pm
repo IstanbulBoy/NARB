@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.40 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.41 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -99,6 +99,7 @@ our %msg_addr_X = 	(
 my $dbg_sys = 0;
 
 sub xfrm_tree($$);
+sub reconstruct_payload($$$);
 
 sub catch_quiet_term {
 	$::ctrlC = 1;
@@ -266,10 +267,97 @@ sub chksum($$@) {
 ############################# IPC ####################################
 ######################################################################
 
+# NOTE: the <item> element ALWAYS corresponds to just ONE data variable
+# on the top of the tree structure.
+sub reconstruct_payload($$$) {
+	my ($root, $tr, $plr) = @_;
+
+	# simple scalar 
+	if($root eq "0") {
+		$$plr = $tr;
+		return;
+	}
+
+	my $attrs = shift(@$tr);
+	my $el;
+	my $chld;
+
+	# reconstruct the data structures expressed by 
+	# the XML message
+	for(my $i=0; $i<@$tr; $i+=2) {
+		$el = $$tr[$i];
+		$chld = $$tr[$i+1];
+		if($root eq "SCALAR") {
+			my $pl;
+			reconstruct_payload($el, $chld, \$pl);
+			$$plr = \$pl;
+		}
+		elsif($root eq "ARRAY") {
+			my $pl = [];
+			reconstruct_payload($el, $chld, $pl);
+			$$plr = $pl;
+		}
+		elsif($root eq "HASH") {
+			my $pl = {};
+			reconstruct_payload($el, $chld, $pl);
+			$$plr = $pl;
+		}
+		elsif($root eq "value") {
+			my $pl;
+			reconstruct_payload($el, $chld, \$pl);
+			# array
+			if(exists($$attrs{idx})) {
+				push(@$plr,$pl);
+			}
+			# hash
+			elsif(exists($$attrs{key})) {
+				$$plr{$$attrs{key}} = $pl;
+
+				# broken up circular reference
+				if(exists($$attrs{ref})) {
+				}
+			}
+
+		}
+	}
+}
+
 # $root: root element for this recursion level
 # $tr: element tree reference (message element tree from the parser)
 ############## data structure ####################
-#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"idx"=>0},0,STRING0], item [{"idx"=>1},0,STRING1]]]]
+#[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"idx"=>0},0,STRING0], item [{"idx"=>1},"HASH",[....etc...]]]]]
+# this function can process only a structure resulting from the IPC msg XML schema:
+# e.g.:
+# <msg dst="2", src="3">
+#	  <data cmd="3", type = "5", .....>
+#		<item idx="0">
+#			1250000
+#		</item>
+#		<item idx="1">
+#			10
+#		</item>
+#		<item idx="2">
+#			<SCALAR>333</SCALAR>
+#		</item>
+#		<item idx="3">
+#			<HASH key="174331113">
+#				<HASH key="sw_cap">
+#					<HASH key="cap">51</HASH>
+#					<HASH key="enc">2</HASH>
+#				</HASH>
+#				<HASH key="status">255</HASH>
+#				<HASH key="metric">100</HASH>
+#				<HASH key="max_bw">1250000000</HASH>
+#				<HASH key="local">174346405</HASH>
+#				<HASH key="capacity">1250000000</HASH>
+#				<HASH key="link_id">174331113</HASH>
+#				<HASH key="rtr_id">174346446</HASH>
+#				<HASH key="tag">0</HASH>
+#				<HASH key="type">1</HASH>
+#			</HASH>
+#		</item>
+#	  </data>
+#</msg>
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
 	my $attrs = shift(@$tr);
@@ -277,21 +365,29 @@ sub xfrm_tree($$) {
 	my $type = undef;
 	my $subtype = undef;
 	my $rtr = undef;
-	my $data = [];
 	my $ret = undef;
 
-	for(my $i=0; $i<@$tr; $i+=2) {
-		my $el = $$tr[$i];
-		my $chld = $$tr[$i+1];
-		if($el eq "0") {
-			return {"idx"=>$$attrs{idx}, "item"=>$chld}; 
-		}
-		else {
+
+	my $el;
+	my $chld;
+	if(lc($root) eq "msg") {
+		$el = $$tr[0];
+		$chld = $$tr[1];
+		# examine <data>
+		return xfrm_tree($el, $chld);
+	}
+	elsif(lc($root) eq "data") {
+		# iterate over all the <item> elements
+		my $data = [];
+		for(my $i=0; $i<@$tr; $i+=2) {
+			$el = $$tr[$i];
+			$chld = $$tr[$i+1];
 			push(@$data, xfrm_tree($el, $chld));
 		}
-	}
+		# NOTE: all the functions a recursive. All the data is
+		# more or less processed at this point.
+		@$data = sort {$$a{idx} <=> $$b{idx}} @$data;
 
-	if(lc($root) eq "data") {
 		if(exists($$attrs{cmd}) && defined($$attrs{cmd})) {
 			$cmd = $$attrs{cmd};
 		}
@@ -307,7 +403,6 @@ sub xfrm_tree($$) {
 		if(exists($$attrs{rtr})) {
 			$rtr = $$attrs{rtr};
 		}
-		@$data = sort {$$a{idx} <=> $$b{idx}} @$data;
 		my $tmp = [];
 		for(my $i=0; $i<@$data; $i++) {
 			push(@$tmp, ${$$data[$i]}{item});
@@ -321,8 +416,12 @@ sub xfrm_tree($$) {
 		};
 		return $ret;
 	}
-	if(lc($root) eq "msg") {
-		return $$data[0];
+	elsif(lc($root) eq "item") {
+		my $pl;
+		$el = $$tr[0];
+		$chld = $$tr[1];
+		reconstruct_payload($el, $chld, \$pl);
+		return {idx=>$$attrs{idx}, item=>$pl};
 	}
 }
 
@@ -331,54 +430,62 @@ sub receive_msg($) {
 
 # this recursive function will serialize even data structures containing 
 # circular references such as TEDBs (connected graphs)
+# Only SCALARs and refs to SCALAR, ARRAY, HASH are serialized
+# NOTE: it can break up the TEDB data structures only (for now ... it
+# makes a faster code)
 # $w: XML writer
 # $d: data chunk
 sub serialize($$) {
 	my ($w, $d) = @_;
 	if(!defined($d)) {
-		return "undef";
+		$w->characters("undef");
 	}
 	my $type = ref($d);
-	# no function, io, lvalue ref serialization
-	if(($type eq "CODE") || ($type eq "GLOB") || ($type eq "LVALUE")) {
-		return "undef";
+	# no function, io, lvalue ref serialization maybe in the furure
+	if(($type eq "CODE") || ($type eq "GLOB") || ($type eq "REF") || ($type eq "LVALUE")) {
+		$w->characters("undef");
 	}
-	# not a reference
+	# not a reference -> data
 	if($type eq "") {
-		return $d;
+		$w->characters($d);
 	}
 	# scalar ref
 	elsif($type eq "SCALAR") {
-		$w->dataElement($type, $$d);
+		$w->startTag($type);
+		serialize($w, $$d);
+		$w->endTag($type);
 	}
 	# array ref
 	elsif($type eq "ARRAY") {
+		$w->startTag($type);
 		for(my $i=0; $i<@$d; $i++) {
 			# we have to restore array order on deserialize
-			$w->dataElement($type, serialize($w, $$d[$i]), "idx"=>$i);
+			$w->startTag("value", "idx"=>$i);
+			serialize($w, $$d[$i]);
+			$w->endTag("value");
 		}
+		$w->endTag($type);
 	}
 	# hash ref
 	elsif($type eq "HASH") {
+		$w->startTag($type);
 		foreach my $k (keys %$d) {
 			if(($k eq "remote") && (ref($$d{$k}) eq "HASH")) {
-				$w->dataElement($type, serialize($w, ${$$d{$k}}{link_id}), "key"=>$k);
+				# break up recursive link references
+				$w->emptyTag("value", "key"=>$k, "ref"=>${$$d{$k}}{link_id});
 			}
 			else {
-				$w->dataElement($type, serialize($w, $$d{$k}), "key"=>$k);
+				$w->startTag("value", "key"=>$k);
+				serialize($w, $$d{$k}),;
+				$w->endTag("value");
 			}
 		}
+		$w->endTag($type);
 	}
-	# ref ref
-	elsif($type eq "REF") {
-		# just dereference and keep running
-		$w->dataElement($type, serialize($w, $$d));
-	}
-	# all what remains is an object ref -> a bit tricky
+	# all what remains is an object ref -> a bit tricky:
+	# would have to be re-blessed, reconstructed, etc. ignore for now
 	else {
-		foreach my $k (keys %$d) {
-			$w->dataElement($type, serialize($w, $$d{$k}), "key"=>$k);
-		}
+		$w->characters("undef");
 	}
 }
 
@@ -402,7 +509,9 @@ sub send_msg($$@) {
 			"subtype" => defined($$hdr{subtype})?$$hdr{subtype}:"undef",
 			"rtr" => defined($$hdr{rtr})?$$hdr{rtr}:"undef");
 		for(my $i=0; $i<@data; $i++) {
-			 $$owner{writer}->dataElement("item", serialize($$owner{writer}, $data[$i]), "idx"=>$i);
+			 $$owner{writer}->startTag("item", "idx"=>$i);
+			 serialize($$owner{writer}, $data[$i]);
+			 $$owner{writer}->endTag("item");
 		}
 
 		$$owner{writer}->endTag("data");
