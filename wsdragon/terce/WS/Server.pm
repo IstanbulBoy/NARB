@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.48 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.49 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -176,7 +176,6 @@ sub process_msg() {
 	my ($msg)  = @_;
 	my $d;
 
-	print("$msg\n");
 	# parse the message
 	my $tr;  # XML tree reference
 	eval {
@@ -192,13 +191,19 @@ sub process_msg() {
 		return;
 	}
 	if(defined($d)) {
+		my $type = $$d{type};
 		my @data = @{$$d{data}};
 		if($$d{cmd} == WS_SET_TEDB) {
 			if($data[0] ne "undef") {
-				$$self{xml} = $data[0];
-			}
-			else {
-				$$self{xml} = undef;
+				if($type & SCOPE_ABS_M) {
+					$$self{abstract_tedb} = $data[0];
+				}
+				if($type & SCOPE_CRL_M) {
+					$$self{control_tedb} = $data[0];
+				}
+				if($type & SCOPE_DAT_M) {
+					$$self{data_tedb} = $data[0];
+				}
 			}
 		}
 	}

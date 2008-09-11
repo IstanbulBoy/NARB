@@ -185,7 +185,7 @@ sub generate_soap_resp($$) {
 				# construct the document
 				$xml = SOAP::Data->name('topology' => \SOAP::Data->value($idcID_xml, $domain_xml));
 				$xml->attr({ ' id' => TERCE_TOPO_ID, xmlns => TERCE_TOPO_XMLNS });
-				return $xml;
+				$$ws{xml} = $xml;
 			}
 		}
 	}

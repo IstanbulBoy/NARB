@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.32 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -204,7 +204,7 @@ sub start_gmpls_server($$$) {
 	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		if(!$sock->connected()) {
-			Log::log "err", "client disconnect\n";
+			Log::log "warning", "client disconnect\n";
 			$$self{select}->remove($sock);
 			last;
 		}

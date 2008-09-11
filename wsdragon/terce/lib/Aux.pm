@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.41 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.42 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -328,36 +328,6 @@ sub reconstruct_payload($$$) {
 #[ msg, [ {"dst"=>2,"src"=>3}, data, [ {"cmd"=>3,"type"=>5...} item [{"idx"=>0},0,STRING0], item [{"idx"=>1},"HASH",[....etc...]]]]]
 # this function can process only a structure resulting from the IPC msg XML schema:
 # e.g.:
-# <msg dst="2", src="3">
-#	  <data cmd="3", type = "5", .....>
-#		<item idx="0">
-#			1250000
-#		</item>
-#		<item idx="1">
-#			10
-#		</item>
-#		<item idx="2">
-#			<SCALAR>333</SCALAR>
-#		</item>
-#		<item idx="3">
-#			<HASH key="174331113">
-#				<HASH key="sw_cap">
-#					<HASH key="cap">51</HASH>
-#					<HASH key="enc">2</HASH>
-#				</HASH>
-#				<HASH key="status">255</HASH>
-#				<HASH key="metric">100</HASH>
-#				<HASH key="max_bw">1250000000</HASH>
-#				<HASH key="local">174346405</HASH>
-#				<HASH key="capacity">1250000000</HASH>
-#				<HASH key="link_id">174331113</HASH>
-#				<HASH key="rtr_id">174346446</HASH>
-#				<HASH key="tag">0</HASH>
-#				<HASH key="type">1</HASH>
-#			</HASH>
-#		</item>
-#	  </data>
-#</msg>
 sub xfrm_tree($$) {
 	my ($root, $tr) = @_;
 	my $attrs = shift(@$tr);
@@ -439,6 +409,7 @@ sub serialize($$) {
 	my ($w, $d) = @_;
 	if(!defined($d)) {
 		$w->characters("undef");
+		return;
 	}
 	my $type = ref($d);
 	# no function, io, lvalue ref serialization maybe in the furure
@@ -446,7 +417,7 @@ sub serialize($$) {
 		$w->characters("undef");
 	}
 	# not a reference -> data
-	if($type eq "") {
+	elsif($type eq "") {
 		$w->characters($d);
 	}
 	# scalar ref
@@ -547,6 +518,7 @@ sub act_on_msg($$) {
 			# create new stream buffer and start scanning
 			Aux::print_dbg_msg("setting up a pipe queue on %s for %s\n", $$owner{name}, $$owner{proc}{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
+			$$queue_ref{$src_n}{msg} = "";
 			$$queue_ref{$src_n}{src} = $h;
 		}
 		my $dst;
@@ -562,7 +534,7 @@ sub act_on_msg($$) {
 				}
 				last;
 			}
-			# this will terminate all the "TERCE Core" connection after SIGTERM or SIGINT
+			# this will terminate all the "TERCE Core" connections after SIGTERM or SIGINT
 			if(!$n) {
 				$$owner{select}->remove($h);
 				last;

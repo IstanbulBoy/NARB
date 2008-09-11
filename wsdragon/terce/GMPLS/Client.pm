@@ -32,7 +32,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -125,18 +125,42 @@ sub process_msg($) {
 	}
 }
 
+sub process_bin_msg($) {
+	my $self = shift;
+	my ($fh) = @_;
+	my $buf;
+	my $n = 0;
+	if(!defined($n = $fh->sysread($buf, 1))) {
+		$::ctrlC = 1;
+	}
+	if(!$n) {
+		$::ctrlC = 1;
+	}
+}
+
 sub run() {
 	my $self = shift;
 	my %pipe_queue;
+	my $gmpls_fh;
 
 	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
-		Aux::act_on_msg($self, \%pipe_queue);
+		$gmpls_fh = Aux::act_on_msg($self, \%pipe_queue);
+		if(defined($gmpls_fh)) {
+			eval {
+				$self->process_bin_msg($gmpls_fh);
+			};
+			if($@) {
+				Log::log "err", "$@\n";
+				last;
+			}
+		}
 	}
 	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
 	if(defined($$self{ctrl_sock})) {
-		close($$self{ctrl_sock});
+		$$self{ctrl_sock}->shutdown(SHUT_RDWR);;
 	}
+	return 0;
 }
 
 1;
