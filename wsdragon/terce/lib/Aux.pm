@@ -15,11 +15,12 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.42 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.43 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
 				WS_GET_TEDB WS_SET_TEDB WS_FIND_PATH
+				ALRM_WS_SELECT_TOPO
 			   	ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
@@ -27,6 +28,7 @@ BEGIN {
 our @EXPORT_OK;
 
 sub dump_config($;$);
+sub dump_data_structure($;$$);
 sub serialize($$);
 
 # messaging commands
@@ -67,6 +69,8 @@ use constant CLIENT_Q_INIT_PORT => 1;
 # system constants
 use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
+
+use constant ALRM_WS_SELECT_TOPO => 15; # [sec]
 
 use constant ADDR_TERCE => 0;
 use constant ADDR_GMPLS_CORE => 1;
@@ -256,6 +260,37 @@ sub dump_config($;$) {
 	}
 }
 
+sub dump_data_structure($;$$) {
+	my ($data, $ind, $nl) = @_;
+	if(!defined($ind)) {
+		$ind = 0;
+	}
+
+	if(ref($data) eq "") {
+			printf("%*s%s\n", (defined($nl)?$ind:0), "", $data);
+	}
+	elsif(ref($data) eq "SCALAR") {
+			printf("%*s%s\n", (defined($nl)?$ind:0), "", $$data);
+	}
+	elsif(ref($data) eq "HASH") {
+		printf("{\n");
+		$ind += 2;
+		foreach my $k (keys %$data) {
+			printf("%*s%s => ", $ind, "", $k);
+			dump_data_structure($$data{$k}, $ind);
+		}
+		printf("%*s}\n", $ind-2, "");
+	}
+	elsif(ref($data) eq "ARRAY") {
+		printf("[\n");
+		$ind += 2;
+		for(my $i=0; $i<@$data; $i++) {
+			dump_data_structure($$data[$i], $ind, 1);
+		}
+		printf("%*s]\n", $ind-2, "");
+	}
+}
+
 sub chksum($$@) {
 	my ($ppat, $upat, @d) = @_;
 	my $block = pack($ppat, @d);
@@ -278,40 +313,39 @@ sub reconstruct_payload($$$) {
 		return;
 	}
 
-	my $attrs = shift(@$tr);
-	my $el;
-	my $chld;
+	my $attrs = shift(@$tr); # of the root (the parser creates a really confusing data structure)
+	my $element;
+	my $cont;
+	my $pl;
 
 	# reconstruct the data structures expressed by 
 	# the XML message
 	for(my $i=0; $i<@$tr; $i+=2) {
-		$el = $$tr[$i];
-		$chld = $$tr[$i+1];
+		$element = $$tr[$i];
+		$cont = $$tr[$i+1];
 		if($root eq "SCALAR") {
-			my $pl;
-			reconstruct_payload($el, $chld, \$pl);
+			reconstruct_payload($element, $cont, \$pl);
 			$$plr = \$pl;
 		}
 		elsif($root eq "ARRAY") {
-			my $pl = [];
-			reconstruct_payload($el, $chld, $pl);
+			$pl = [] if !defined($pl);
+			reconstruct_payload($element, $cont, \$pl);
 			$$plr = $pl;
 		}
 		elsif($root eq "HASH") {
-			my $pl = {};
-			reconstruct_payload($el, $chld, $pl);
+			$pl = {} if !defined($pl);
+			reconstruct_payload($element, $cont, \$pl);
 			$$plr = $pl;
 		}
 		elsif($root eq "value") {
-			my $pl;
-			reconstruct_payload($el, $chld, \$pl);
+			reconstruct_payload($element, $cont, \$pl);
 			# array
 			if(exists($$attrs{idx})) {
-				push(@$plr,$pl);
+				push(@{$$plr},$pl);
 			}
 			# hash
 			elsif(exists($$attrs{key})) {
-				$$plr{$$attrs{key}} = $pl;
+				${$$plr}{$$attrs{key}} = $pl;
 
 				# broken up circular reference
 				if(exists($$attrs{ref})) {
@@ -338,21 +372,21 @@ sub xfrm_tree($$) {
 	my $ret = undef;
 
 
-	my $el;
-	my $chld;
+	my $element;
+	my $cont;
 	if(lc($root) eq "msg") {
-		$el = $$tr[0];
-		$chld = $$tr[1];
+		$element = $$tr[0];
+		$cont = $$tr[1];
 		# examine <data>
-		return xfrm_tree($el, $chld);
+		return xfrm_tree($element, $cont);
 	}
 	elsif(lc($root) eq "data") {
 		# iterate over all the <item> elements
 		my $data = [];
 		for(my $i=0; $i<@$tr; $i+=2) {
-			$el = $$tr[$i];
-			$chld = $$tr[$i+1];
-			push(@$data, xfrm_tree($el, $chld));
+			$element = $$tr[$i];
+			$cont = $$tr[$i+1];
+			push(@$data, xfrm_tree($element, $cont));
 		}
 		# NOTE: all the functions a recursive. All the data is
 		# more or less processed at this point.
@@ -388,9 +422,12 @@ sub xfrm_tree($$) {
 	}
 	elsif(lc($root) eq "item") {
 		my $pl;
-		$el = $$tr[0];
-		$chld = $$tr[1];
-		reconstruct_payload($el, $chld, \$pl);
+		$element = $$tr[0];
+		$cont = $$tr[1];
+		reconstruct_payload($element, $cont, \$pl);
+		if(ref($pl) eq "HASH") {
+			dump_data_structure($pl);
+		}
 		return {idx=>$$attrs{idx}, item=>$pl};
 	}
 }

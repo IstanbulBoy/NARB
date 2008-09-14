@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.49 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.50 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -150,6 +150,7 @@ sub retrieve_data() {
 	my $b = $req->body();
 	foreach my $k (keys %$b) {
 		if(lc($k) eq "selectnetworktopology") {
+			alarm ALRM_WS_SELECT_TOPO;
 			foreach my $kk (keys %{$$b{$k}}) {
 				if(lc($kk) eq "scope") {
 					my $scope = $$b{$k}{$kk};
@@ -240,7 +241,6 @@ sub start_ws_server($$$) {
 	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
 	eval {
 		local $SIG{ALRM} = \&data_timeout;
-		alarm 5;
 		while(!$::ctrlC) {
 			$ws_fh = Aux::act_on_msg($self, \%pipe_queue);
 			# this is the client's WS request
