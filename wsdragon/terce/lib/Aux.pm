@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.43 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.44 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -70,7 +70,7 @@ use constant CLIENT_Q_INIT_PORT => 1;
 use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
 
-use constant ALRM_WS_SELECT_TOPO => 15; # [sec]
+use constant ALRM_WS_SELECT_TOPO => 60; # [sec]
 
 use constant ADDR_TERCE => 0;
 use constant ADDR_GMPLS_CORE => 1;
@@ -87,6 +87,9 @@ use constant ADDR_GMPLS_RCE_C => ADDR_GMPLS_S_BASE + 3;
 
 use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
+
+use constant TERCE_MSG_RDY => (1<<0);
+use constant TERCE_MSG_PENDING => (1<<1);
 
 our %msg_addr_X = 	(
 	0 => "TERCE",
@@ -425,9 +428,6 @@ sub xfrm_tree($$) {
 		$element = $$tr[0];
 		$cont = $$tr[1];
 		reconstruct_payload($element, $cont, \$pl);
-		if(ref($pl) eq "HASH") {
-			dump_data_structure($pl);
-		}
 		return {idx=>$$attrs{idx}, item=>$pl};
 	}
 }
@@ -555,6 +555,8 @@ sub act_on_msg($$) {
 			# create new stream buffer and start scanning
 			Aux::print_dbg_msg("setting up a pipe queue on %s for %s\n", $$owner{name}, $$owner{proc}{$h}{name});
 			$$queue_ref{$src_n}{buffer} = "";  # stream buffer
+			$$queue_ref{$src_n}{status} = 0;  # queue status
+			$$queue_ref{$src_n}{dst} = undef;  # current destination
 			$$queue_ref{$src_n}{msg} = "";
 			$$queue_ref{$src_n}{src} = $h;
 		}
@@ -577,53 +579,60 @@ sub act_on_msg($$) {
 				last;
 			}
 			# lock on the message and discard anything before the message start tag
-			if($$queue_ref{$src_n}{buffer} =~ /.*?(<msg(.*?)>.*?<\/msg>)(.*)/) {
+			if($$queue_ref{$src_n}{buffer} =~ /(<msg(.*?)>.*)/) {
+				$$queue_ref{$src_n}{buffer} = $1;
+				$$queue_ref{$src_n}{msg} = "";
+				$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
 				my $attrs = $2;
-				$$queue_ref{$src_n}{msg} = $1;
-				if(defined($3)) {
-					$$queue_ref{$src_n}{buffer} = $3; # shorten the buffer to the unprocessed data
-				}
-				else {
-					$$queue_ref{$src_n}{buffer} = "";
-				}
 				$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
 				$dst = $1;
-				$$queue_ref{$src_n}{dst} = $$owner{proc}{$dst}{fh};
-
-				# consume
-				if($dst == $$owner{addr}) {
-					if(defined($$owner{processor})) {
-						$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
+				$$queue_ref{$src_n}{dst}{addr} = $dst;
+				$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
+			}
+			if($$queue_ref{$src_n}{status} == TERCE_MSG_PENDING) {
+				if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr}) {
+					if($$queue_ref{$src_n}{buffer} =~ /(.*<\/msg>)(.*)/) {
+						$$queue_ref{$src_n}{msg} .= $1;
+						$$queue_ref{$src_n}{buffer} = $2;
+						$$queue_ref{$src_n}{status} = 0;
+						# consume
+						if(defined($$owner{processor})) {
+							$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
+						}
+						$$queue_ref{$src_n}{msg} = "";
 					}
-					$$queue_ref{$src_n}{msg} = "";
+					else {
+						$$queue_ref{$src_n}{msg} .= $$queue_ref{$src_n}{buffer};
+						$$queue_ref{$src_n}{buffer} = "";
+					}
 				}
-				# forward everything in the queues (only TERCE Core is allowed to forward)
 				elsif($$owner{addr} == ADDR_TERCE) {
 					foreach my $k (keys %$queue_ref)  {
-						if(!length($$queue_ref{$k}{msg})) {
+						if(!length($$queue_ref{$k}{buffer})) {
 							next;
 						}
 						my @writeable = $$owner{select}->can_write();
 						my $n = 0;
+						# make sure that the dst is writeable
 						foreach my $wh (@writeable) {
-							if($wh == $$queue_ref{$k}{dst}) {
-								$n = $$queue_ref{$k}{dst}->syswrite($$queue_ref{$k}{msg});
+							if($wh == $$queue_ref{$k}{dst}{fh}) {
+								$n = $$queue_ref{$k}{dst}{fh}->syswrite($$queue_ref{$k}{buffer});
 								last;
 							}
 						}
 						if(!defined($n)) {
 							Log::log "warning", "message forwarding failed\n";
-							$$queue_ref{$k}{msg} = "";
+							$$queue_ref{$k}{buffer} = "";
 							last;
 						}
-						if($n < length($$queue_ref{$k}{msg})) {
-							Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{msg}));
+						if($n < length($$queue_ref{$k}{buffer})) {
+							Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{buffer}));
 							# store to the queue buffer
-							$$queue_ref{$k}{msg} = substr($$queue_ref{$k}{msg}, $n);
+							$$queue_ref{$k}{buffer} = substr($$queue_ref{$k}{buffer}, $n);
 						}
 						else {
-							Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}}{name});
-							$$queue_ref{$k}{msg} = "";
+							Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}{fh}}{name});
+							$$queue_ref{$k}{buffer} = "";
 						}
 					}
 				}
