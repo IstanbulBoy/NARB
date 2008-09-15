@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.44 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.45 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -579,23 +579,26 @@ sub act_on_msg($$) {
 				last;
 			}
 			# lock on the message and discard anything before the message start tag
-			if($$queue_ref{$src_n}{buffer} =~ /(<msg(.*?)>.*)/) {
-				$$queue_ref{$src_n}{buffer} = $1;
-				$$queue_ref{$src_n}{msg} = "";
-				$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
-				my $attrs = $2;
-				$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
-				$dst = $1;
-				$$queue_ref{$src_n}{dst}{addr} = $dst;
-				$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
+			if($$queue_ref{$src_n}{status} == 0) {
+				if($$queue_ref{$src_n}{buffer} =~ /(<msg(.*?)>.*)/) {
+					$$queue_ref{$src_n}{buffer} = $1;
+					$$queue_ref{$src_n}{msg} = "";
+					$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
+					my $attrs = $2;
+					$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
+					$dst = $1;
+					$$queue_ref{$src_n}{dst}{addr} = $dst;
+					$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
+				}
 			}
 			if($$queue_ref{$src_n}{status} == TERCE_MSG_PENDING) {
 				if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr}) {
 					if($$queue_ref{$src_n}{buffer} =~ /(.*<\/msg>)(.*)/) {
+						# consume
 						$$queue_ref{$src_n}{msg} .= $1;
 						$$queue_ref{$src_n}{buffer} = $2;
 						$$queue_ref{$src_n}{status} = 0;
-						# consume
+						$$queue_ref{$src_n}{dst} = undef;
 						if(defined($$owner{processor})) {
 							$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
 						}
