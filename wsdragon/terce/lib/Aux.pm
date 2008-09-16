@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.45 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.46 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -432,6 +432,14 @@ sub xfrm_tree($$) {
 	}
 }
 
+sub in_addr_space($) {
+	my ($addr) = @_;
+	if(!defined($addr)) {
+		return 0 
+	}
+	return(($addr >= ADDR_TERCE) && ($addr <= ADDR_GMPLS_RCE_C));
+}
+
 sub receive_msg($) {
 }
 
@@ -578,65 +586,78 @@ sub act_on_msg($$) {
 				$$owner{select}->remove($h);
 				last;
 			}
-			# lock on the message and discard anything before the message start tag
-			if($$queue_ref{$src_n}{status} == 0) {
-				if($$queue_ref{$src_n}{buffer} =~ /(<msg(.*?)>.*)/) {
-					$$queue_ref{$src_n}{buffer} = $1;
-					$$queue_ref{$src_n}{msg} = "";
-					$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
-					my $attrs = $2;
+			# scan the buffer and lock on the message 
+			if($$queue_ref{$src_n}{buffer} =~ /(.*?)(<msg(.*?)>)(.*)/) {
+				my $b1 = $1;
+				my $b2 = $2;
+				my $b3 = $4;
+				my $attrs = $3;
+				if($$queue_ref{$src_n}{status} == TERCE_MSG_PENDING) {
+					# if the message is formed correctly, it will 
+					# get completed below. If not, the queue resets
+					# and starts anew
+					$$queue_ref{$src_n}{status} = 0;
+				}
+				else {
 					$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
 					$dst = $1;
-					$$queue_ref{$src_n}{dst}{addr} = $dst;
-					$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
-				}
-			}
-			if($$queue_ref{$src_n}{status} == TERCE_MSG_PENDING) {
-				if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr}) {
-					if($$queue_ref{$src_n}{buffer} =~ /(.*<\/msg>)(.*)/) {
-						# consume
-						$$queue_ref{$src_n}{msg} .= $1;
-						$$queue_ref{$src_n}{buffer} = $2;
-						$$queue_ref{$src_n}{status} = 0;
-						$$queue_ref{$src_n}{dst} = undef;
-						if(defined($$owner{processor})) {
-							$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
-						}
-						$$queue_ref{$src_n}{msg} = "";
+					# reset the queue
+					if(in_addr_space($dst)) {
+						$$queue_ref{$src_n}{msg} = $b2.$b3;
+						$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
+						$$queue_ref{$src_n}{dst}{addr} = $dst;
+						$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
 					}
 					else {
-						$$queue_ref{$src_n}{msg} .= $$queue_ref{$src_n}{buffer};
-						$$queue_ref{$src_n}{buffer} = "";
+						Log::log "err", "IPC message header corrupted\n";
+						$$queue_ref{$src_n}{msg} = "";
+						$$queue_ref{$src_n}{buffer} = $b3;
+						$$queue_ref{$src_n}{status} = 0;
+						$$queue_ref{$src_n}{dst} = undef;
 					}
 				}
-				elsif($$owner{addr} == ADDR_TERCE) {
-					foreach my $k (keys %$queue_ref)  {
-						if(!length($$queue_ref{$k}{buffer})) {
-							next;
-						}
-						my @writeable = $$owner{select}->can_write();
-						my $n = 0;
-						# make sure that the dst is writeable
-						foreach my $wh (@writeable) {
-							if($wh == $$queue_ref{$k}{dst}{fh}) {
-								$n = $$queue_ref{$k}{dst}{fh}->syswrite($$queue_ref{$k}{buffer});
-								last;
-							}
-						}
-						if(!defined($n)) {
-							Log::log "warning", "message forwarding failed\n";
-							$$queue_ref{$k}{buffer} = "";
+			}
+			$$queue_ref{$src_n}{msg} .= $$queue_ref{$src_n}{buffer};
+			$$queue_ref{$src_n}{buffer} = "";
+			if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr}) {
+				if($$queue_ref{$src_n}{msg} =~ /(.*?<\/msg>)(.*)/) {
+					# consume
+					$$queue_ref{$src_n}{msg} = $1;
+					$$queue_ref{$src_n}{buffer} = $2;
+					$$queue_ref{$src_n}{dst} = undef;
+					if(defined($$owner{processor})) {
+						$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
+					}
+					$$queue_ref{$src_n}{msg} = "";
+				}
+			}
+			elsif($$owner{addr} == ADDR_TERCE) {
+				foreach my $k (keys %$queue_ref)  {
+					if(!length($$queue_ref{$k}{msg})) {
+						next;
+					}
+					my @writeable = $$owner{select}->can_write();
+					my $n = 0;
+					# make sure that the dst is writeable
+					foreach my $wh (@writeable) {
+						if($wh == $$queue_ref{$k}{dst}{fh}) {
+							$n = $wh->syswrite($$queue_ref{$k}{msg});
 							last;
 						}
-						if($n < length($$queue_ref{$k}{buffer})) {
-							Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{buffer}));
-							# store to the queue buffer
-							$$queue_ref{$k}{buffer} = substr($$queue_ref{$k}{buffer}, $n);
-						}
-						else {
-							Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}{fh}}{name});
-							$$queue_ref{$k}{buffer} = "";
-						}
+					}
+					if(!defined($n)) {
+						Log::log "warning", "message forwarding failed\n";
+						$$queue_ref{$k}{msg} = "";
+						last;
+					}
+					if($n < length($$queue_ref{$k}{msg})) {
+						Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{buffer}));
+						# store to the queue buffer
+						$$queue_ref{$k}{buffer} = substr($$queue_ref{$k}{buffer}, $n);
+					}
+					else {
+						Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}{fh}}{name});
+						$$queue_ref{$k}{buffer} = "";
 					}
 				}
 			}
