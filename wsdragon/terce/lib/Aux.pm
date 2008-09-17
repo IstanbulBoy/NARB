@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.47 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.48 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -592,13 +592,14 @@ sub act_on_msg($$) {
 				last;
 			}
 			# scan the buffer and lock on the message
-			if($$queue_ref{$src_n}{buffer} =~ /<\/msg>/) {
-				$$queue_ref{$src_n}{status} |= TERCE_MSG_E_IN_BUFF;
-			}
 			if($$queue_ref{$src_n}{buffer} =~ /<msg.*?>/) {
-				if(!($$queue_ref{$src_n}{status} & TERCE_MSG_E_IN_BUFF)) {
+				# don'l look for a new msg while processing the old one
+				if(!($$queue_ref{$src_n}{status} & TERCE_MSG_IN_PROGRESS)) {
 					$$queue_ref{$src_n}{status} |= TERCE_MSG_S_IN_BUFF;
 				}
+			}
+			if($$queue_ref{$src_n}{buffer} =~ /<\/msg>/) {
+				$$queue_ref{$src_n}{status} |= TERCE_MSG_E_IN_BUFF;
 			}
 
 			# process the header
@@ -615,7 +616,6 @@ sub act_on_msg($$) {
 					$$queue_ref{$src_n}{dst}{addr} = $dst;
 					$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
 					$$queue_ref{$src_n}{status} |= TERCE_MSG_IN_PROGRESS;
-					print("+++ $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
 				}
 				else {
 					Log::log "err", "IPC message header corrupted\n";
@@ -629,7 +629,6 @@ sub act_on_msg($$) {
 			if($$queue_ref{$src_n}{status} & TERCE_MSG_E_IN_BUFF) {
 				$$queue_ref{$src_n}{buffer} =~ /^(.*?<\/msg>)/s;
 				$$queue_ref{$src_n}{msg} .= $1;
-				print("--- $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
 				$$queue_ref{$src_n}{buffer} = substr($$queue_ref{$src_n}{buffer}, length($1));
 				$$queue_ref{$src_n}{status} &= ~TERCE_MSG_E_IN_BUFF;
 				$$queue_ref{$src_n}{status} &= ~TERCE_MSG_IN_PROGRESS;
@@ -641,7 +640,6 @@ sub act_on_msg($$) {
 					$l = TMTL;
 				}
 				$$queue_ref{$src_n}{msg} .= substr($$queue_ref{$src_n}{buffer}, 0, $l - TMTL);
-				print("... $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
 				# make sure we don't split the terminator: </msg>
 				$$queue_ref{$src_n}{buffer} = substr($$queue_ref{$src_n}{buffer}, $l - TMTL);
 			}
