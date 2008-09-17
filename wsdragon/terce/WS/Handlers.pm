@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -121,7 +121,7 @@ sub findPath {
 
 	push(@data, $lsp_opt, @args);
 	unshift(@data, {"cmd"=>WS_FIND_PATH, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
-	#Aux::send_msg($self, ADDR_, @data);
+	Aux::send_msg($$self{ws}, ADDR_GMPLS_RCE_C, @data);
 }
 
 sub selectNetworkTopology {

@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.48 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.49 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -70,7 +70,7 @@ use constant CLIENT_Q_INIT_PORT => 1;
 use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
 
-use constant ALRM_WS_SELECT_TOPO => 60; # [sec]
+use constant ALRM_WS_SELECT_TOPO => 10; # [sec]
 
 use constant ADDR_TERCE => 0;
 use constant ADDR_GMPLS_CORE => 1;
@@ -111,7 +111,7 @@ our %msg_addr_X = 	(
 my $dbg_sys = 0;
 
 sub xfrm_tree($$);
-sub reconstruct_payload($$$);
+sub reconstruct_payload($$$$$);
 
 sub catch_quiet_term {
 	$::ctrlC = 1;
@@ -306,14 +306,21 @@ sub chksum($$@) {
 	return $chksum;
 }
 
+sub reconnect_graph($$) {
+	my ($rr, $lr) = @_;
+	foreach my $lid (keys %$rr) {
+		${$$rr{$lid}}{remote} = $$lr{$lid};
+	}
+}
+
 ######################################################################
 ############################# IPC ####################################
 ######################################################################
 
 # NOTE: the <item> element ALWAYS corresponds to just ONE data variable
 # on the top of the tree structure.
-sub reconstruct_payload($$$) {
-	my ($root, $tr, $plr) = @_;
+sub reconstruct_payload($$$$$) {
+	my ($root, $tr, $plr, $rmtr, $lnkr) = @_;
 
 	# simple scalar 
 	if($root eq "0") {
@@ -332,21 +339,21 @@ sub reconstruct_payload($$$) {
 		$element = $$tr[$i];
 		$cont = $$tr[$i+1];
 		if($root eq "SCALAR") {
-			reconstruct_payload($element, $cont, \$pl);
+			reconstruct_payload($element, $cont, \$pl, $rmtr, $lnkr);
 			$$plr = \$pl;
 		}
 		elsif($root eq "ARRAY") {
 			$pl = [] if !defined($pl);
-			reconstruct_payload($element, $cont, \$pl);
+			reconstruct_payload($element, $cont, \$pl, $rmtr, $lnkr);
 			$$plr = $pl;
 		}
 		elsif($root eq "HASH") {
 			$pl = {} if !defined($pl);
-			reconstruct_payload($element, $cont, \$pl);
+			reconstruct_payload($element, $cont, \$pl, $rmtr, $lnkr);
 			$$plr = $pl;
 		}
 		elsif($root eq "value") {
-			reconstruct_payload($element, $cont, \$pl);
+			reconstruct_payload($element, $cont, \$pl, $rmtr, $lnkr);
 			# array
 			if(exists($$attrs{idx})) {
 				push(@{$$plr},$pl);
@@ -354,12 +361,16 @@ sub reconstruct_payload($$$) {
 			# hash
 			elsif(exists($$attrs{key})) {
 				${$$plr}{$$attrs{key}} = $pl;
-
-				# broken up circular reference
-				if(exists($$attrs{ref})) {
+				# for later reconstruction of broken circular references
+				if($$attrs{key} eq "link_id") {
+					$$lnkr{$pl} = $$plr;
+				}
+				if($$attrs{key} eq "remote") {
+					if(exists($$attrs{ref})) {
+						$$rmtr{$$attrs{ref}} = $$plr;
+					}
 				}
 			}
-
 		}
 	}
 }
@@ -430,9 +441,12 @@ sub xfrm_tree($$) {
 	}
 	elsif(lc($root) eq "item") {
 		my $pl;
+		my %rmt_w_links = ();
+		my %links_w_rmt = ();
 		$element = $$tr[0];
 		$cont = $$tr[1];
-		reconstruct_payload($element, $cont, \$pl);
+		reconstruct_payload($element, $cont, \$pl, \%rmt_w_links, \%links_w_rmt);
+		reconnect_graph(\%rmt_w_links, \%links_w_rmt);
 		return {idx=>$$attrs{idx}, item=>$pl};
 	}
 }
@@ -493,11 +507,13 @@ sub serialize($$) {
 		foreach my $k (keys %$d) {
 			if(($k eq "remote") && (ref($$d{$k}) eq "HASH")) {
 				# break up recursive link references
-				$w->emptyTag("value", "key"=>$k, "ref"=>${$$d{$k}}{link_id});
+				$w->startTag("value", "key"=>$k, "ref"=>${$$d{$k}}{link_id});
+				serialize($w, undef);
+				$w->endTag("value");
 			}
 			else {
 				$w->startTag("value", "key"=>$k);
-				serialize($w, $$d{$k}),;
+				serialize($w, $$d{$k});
 				$w->endTag("value");
 			}
 		}
