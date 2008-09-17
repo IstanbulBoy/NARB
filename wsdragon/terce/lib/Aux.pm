@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.46 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.47 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -88,8 +88,13 @@ use constant ADDR_GMPLS_RCE_C => ADDR_GMPLS_S_BASE + 3;
 use constant TERCE_MSG_SCAN_L => 64;
 use constant TERCE_MSG_CHUNK => 16384;
 
-use constant TERCE_MSG_RDY => (1<<0);
-use constant TERCE_MSG_PENDING => (1<<1);
+use constant TERCE_MSG_S_IN_BUFF => (1<<0); # msg start in buffer
+use constant TERCE_MSG_E_IN_BUFF => (1<<1); # msg end in buffer
+use constant TERCE_MSG_IN_PROGRESS => (1<<2); # in the middle of a valid message
+use constant TERCE_MSG_RDY => (1<<3); # ready for further processing
+
+use constant TERCE_MSG_TERM => "</msg>";
+use constant TMTL => length(TERCE_MSG_TERM); # Terce Msg Terminator Length
 
 our %msg_addr_X = 	(
 	0 => "TERCE",
@@ -586,51 +591,71 @@ sub act_on_msg($$) {
 				$$owner{select}->remove($h);
 				last;
 			}
-			# scan the buffer and lock on the message 
-			if($$queue_ref{$src_n}{buffer} =~ /(.*?)(<msg(.*?)>)(.*)/) {
-				my $b1 = $1;
-				my $b2 = $2;
-				my $b3 = $4;
-				my $attrs = $3;
-				if($$queue_ref{$src_n}{status} == TERCE_MSG_PENDING) {
-					# if the message is formed correctly, it will 
-					# get completed below. If not, the queue resets
-					# and starts anew
-					$$queue_ref{$src_n}{status} = 0;
-				}
-				else {
-					$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
-					$dst = $1;
-					# reset the queue
-					if(in_addr_space($dst)) {
-						$$queue_ref{$src_n}{msg} = $b2.$b3;
-						$$queue_ref{$src_n}{status} = TERCE_MSG_PENDING;
-						$$queue_ref{$src_n}{dst}{addr} = $dst;
-						$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
-					}
-					else {
-						Log::log "err", "IPC message header corrupted\n";
-						$$queue_ref{$src_n}{msg} = "";
-						$$queue_ref{$src_n}{buffer} = $b3;
-						$$queue_ref{$src_n}{status} = 0;
-						$$queue_ref{$src_n}{dst} = undef;
-					}
+			# scan the buffer and lock on the message
+			if($$queue_ref{$src_n}{buffer} =~ /<\/msg>/) {
+				$$queue_ref{$src_n}{status} |= TERCE_MSG_E_IN_BUFF;
+			}
+			if($$queue_ref{$src_n}{buffer} =~ /<msg.*?>/) {
+				if(!($$queue_ref{$src_n}{status} & TERCE_MSG_E_IN_BUFF)) {
+					$$queue_ref{$src_n}{status} |= TERCE_MSG_S_IN_BUFF;
 				}
 			}
-			$$queue_ref{$src_n}{msg} .= $$queue_ref{$src_n}{buffer};
-			$$queue_ref{$src_n}{buffer} = "";
-			if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr}) {
-				if($$queue_ref{$src_n}{msg} =~ /(.*?<\/msg>)(.*)/) {
-					# consume
-					$$queue_ref{$src_n}{msg} = $1;
-					$$queue_ref{$src_n}{buffer} = $2;
+
+			# process the header
+			if($$queue_ref{$src_n}{status} & TERCE_MSG_S_IN_BUFF) {
+				# get the dst info and process the header
+				$$queue_ref{$src_n}{buffer} =~ /^.*?(<msg(.*?)>)(.*)$/s;
+				my $msg_hdr = $1;
+				my $attrs = $2;
+				$$queue_ref{$src_n}{buffer} = $3; # discard garbage before the header (e.g. \n) 
+				$attrs =~ /dst.*?=.*?"(\d+?)"(?:\s|$)/;
+				$dst = $1;
+				if(in_addr_space($dst)) {
+					$$queue_ref{$src_n}{msg} = $msg_hdr;
+					$$queue_ref{$src_n}{dst}{addr} = $dst;
+					$$queue_ref{$src_n}{dst}{fh} = $$owner{proc}{$dst}{fh};
+					$$queue_ref{$src_n}{status} |= TERCE_MSG_IN_PROGRESS;
+					print("+++ $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
+				}
+				else {
+					Log::log "err", "IPC message header corrupted\n";
+					$$queue_ref{$src_n}{msg} = "";
+					$$queue_ref{$src_n}{dst} = undef;
+					$$queue_ref{$src_n}{status} &= ~TERCE_MSG_E_IN_BUFF;
+				}
+				$$queue_ref{$src_n}{status} &= ~TERCE_MSG_S_IN_BUFF;
+			}
+			# process the end
+			if($$queue_ref{$src_n}{status} & TERCE_MSG_E_IN_BUFF) {
+				$$queue_ref{$src_n}{buffer} =~ /^(.*?<\/msg>)/s;
+				$$queue_ref{$src_n}{msg} .= $1;
+				print("--- $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
+				$$queue_ref{$src_n}{buffer} = substr($$queue_ref{$src_n}{buffer}, length($1));
+				$$queue_ref{$src_n}{status} &= ~TERCE_MSG_E_IN_BUFF;
+				$$queue_ref{$src_n}{status} &= ~TERCE_MSG_IN_PROGRESS;
+				$$queue_ref{$src_n}{status} |= TERCE_MSG_RDY;
+			}
+			if($$queue_ref{$src_n}{status} & TERCE_MSG_IN_PROGRESS) {
+				my $l = length($$queue_ref{$src_n}{buffer});
+				if($l<TMTL) {
+					$l = TMTL;
+				}
+				$$queue_ref{$src_n}{msg} .= substr($$queue_ref{$src_n}{buffer}, 0, $l - TMTL);
+				print("... $$queue_ref{$src_n}{msg}\n") if($$queue_ref{$src_n}{dst}{addr} == $$owner{addr});
+				# make sure we don't split the terminator: </msg>
+				$$queue_ref{$src_n}{buffer} = substr($$queue_ref{$src_n}{buffer}, $l - TMTL);
+			}
+
+			# consume if ready
+			if(($$queue_ref{$src_n}{status} & TERCE_MSG_RDY) && ($$queue_ref{$src_n}{dst}{addr} == $$owner{addr})) {
 					$$queue_ref{$src_n}{dst} = undef;
 					if(defined($$owner{processor})) {
 						$$owner{processor}($owner, $$queue_ref{$src_n}{msg});
 					}
 					$$queue_ref{$src_n}{msg} = "";
-				}
+					$$queue_ref{$src_n}{status} &= ~TERCE_MSG_RDY;
 			}
+			# forward as soon as we know where
 			elsif($$owner{addr} == ADDR_TERCE) {
 				foreach my $k (keys %$queue_ref)  {
 					if(!length($$queue_ref{$k}{msg})) {
@@ -640,6 +665,9 @@ sub act_on_msg($$) {
 					my $n = 0;
 					# make sure that the dst is writeable
 					foreach my $wh (@writeable) {
+						if(!defined($$queue_ref{$k}{dst})) {
+							next;
+						}
 						if($wh == $$queue_ref{$k}{dst}{fh}) {
 							$n = $wh->syswrite($$queue_ref{$k}{msg});
 							last;
@@ -650,15 +678,7 @@ sub act_on_msg($$) {
 						$$queue_ref{$k}{msg} = "";
 						last;
 					}
-					if($n < length($$queue_ref{$k}{msg})) {
-						Aux::print_dbg_msg("incomplete forwarding (%d of %d)", $n, length($$queue_ref{$k}{buffer}));
-						# store to the queue buffer
-						$$queue_ref{$k}{buffer} = substr($$queue_ref{$k}{buffer}, $n);
-					}
-					else {
-						Aux::print_dbg_msg("forward: %s -> %s\n", $$owner{proc}{$$queue_ref{$k}{src}}{name}, $$owner{proc}{$$queue_ref{$k}{dst}{fh}}{name});
-						$$queue_ref{$k}{buffer} = "";
-					}
+					$$queue_ref{$k}{msg} = substr($$queue_ref{$k}{msg}, $n);
 				}
 			}
 		}
