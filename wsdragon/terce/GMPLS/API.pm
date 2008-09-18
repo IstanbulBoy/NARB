@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.28 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -109,7 +109,8 @@ sub ack_msg($$;$) {
 		$$ack_msg{hdr}{tag1},
 		$$ack_msg{hdr}{tag2}
 	);
-	if(defined($s->send($ack_msg_bin, 0))) {
+	# TODO: implement it with checking select and handling incomplete writes
+	if(defined($s->syswrite($ack_msg_bin))) {
 		Aux::print_dbg_api("sent ACK for %s to %s:%s\n", $msg_action_X{$$mr{hdr}{action}},
 			$s->peerhost(), $s->peerport()
 		);
