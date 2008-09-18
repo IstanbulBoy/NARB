@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.49 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.50 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -362,7 +362,7 @@ sub reconstruct_payload($$$$$) {
 			elsif(exists($$attrs{key})) {
 				${$$plr}{$$attrs{key}} = $pl;
 				# for later reconstruction of broken circular references
-				if($$attrs{key} eq "link_id") {
+				if($$attrs{key} eq "local") {
 					$$lnkr{$pl} = $$plr;
 				}
 				if($$attrs{key} eq "remote") {
@@ -507,7 +507,7 @@ sub serialize($$) {
 		foreach my $k (keys %$d) {
 			if(($k eq "remote") && (ref($$d{$k}) eq "HASH")) {
 				# break up recursive link references
-				$w->startTag("value", "key"=>$k, "ref"=>${$$d{$k}}{link_id});
+				$w->startTag("value", "key"=>$k, "ref"=>${$$d{$k}}{local});
 				serialize($w, undef);
 				$w->endTag("value");
 			}

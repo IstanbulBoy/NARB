@@ -34,7 +34,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -263,6 +263,7 @@ sub insert_link_blk($) {
 		# check if we have a link_id
 		if(exists($$self{tmp}{status})) {
 			if(($$self{tmp}{status} & STAT_LINK_COMPLETE) == STAT_LINK_COMPLETE) {
+				#              rtr_id             link_id               link
 				$$self{tedb}{$$self{lblock}}{$$self{tmp}{link_id}} = $$self{tmp};
 				if(defined($$self{tedb}{$$self{lblock}}{src}) && ($$self{tedb}{$$self{lblock}}{src} ne $src)) {
 					Log::log "warning", "incoherent router block\n";
