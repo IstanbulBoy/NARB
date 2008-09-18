@@ -3,6 +3,6 @@ Content-Type: text/xml; charset=utf-8
 SOAPAction: "http://dcn.internet2.edu/WS/Handlers/findPath"
 User-Agent: Axis/#axisVersion#
 Host: pssc6.dragon.maxgigapop.net
-Content-Length:533
+Content-Length:534
 
-<?xml version="1.0" encoding="UTF-8"?><env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Body><findPath xmlns="http://dcn.internet2.edu/WS/Handlers" strict="false" prefered="true"><destEndpoint>urn:ogf:network:domain=dcn.internet2.edu:node=CHIC:port=S27647</destEndpoint><bandwidth>1000000000</bandwidth><encoding>ethernet</encoding><srcEndpoint>urn:ogf:network:domain=dcn.internet2.edu:node=NEWY:port=S27391</srcEndpoint><swcap>l2sc</swcap><gpid>123456</gpid><vtag>any</vtag></findPath></env:Body></env:Envelope>
+<?xml version="1.0" encoding="UTF-8"?><env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Body><findPath xmlns="http://dcn.internet2.edu/WS/Handlers" strict="false" preferred="true"><destEndpoint>urn:ogf:network:domain=dcn.internet2.edu:node=CHIC:port=S27647</destEndpoint><bandwidth>1000000000</bandwidth><encoding>ethernet</encoding><srcEndpoint>urn:ogf:network:domain=dcn.internet2.edu:node=NEWY:port=S27391</srcEndpoint><swcap>l2sc</swcap><gpid>123456</gpid><vtag>any</vtag></findPath></env:Body></env:Envelope>

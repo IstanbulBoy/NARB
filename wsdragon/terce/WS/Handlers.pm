@@ -33,7 +33,7 @@ use WS::Constants;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Server::Parameters);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -76,52 +76,8 @@ sub findPath {
 				$msg);
 		}
 	}
-	my $som = pop @_;
-	my $attrs = $som->dataof('//findPath')->attr;
-	my $lsp_opt = 0;
-	my $lsp_act = ACT_QUERY;
-	my @data = ();
-	foreach my $a (keys %$attrs) {
-		if(lc($a) eq "strict") {
-			$lsp_opt |= LSP_OPT_STRICT_HOP;
-		}
-		if(lc($a) eq "preferred") {
-			$lsp_opt |= LSP_OPT_N_FORCE_HOP;
-		}
-		if(lc($a) eq "mrn") {
-			$lsp_act = ACT_QUERY_MRN;
-		}
-		if(lc($a) eq "bidirectional") {
-			$lsp_opt |= LSP_OPT_BI_DIR;
-		}
-		if(lc($a) eq "e2evtag") {
-		}
-		if(lc($a) eq "vtagmask") {
-			$lsp_opt |= LSP_OPT_VLAN_BMP;
-		}
-		if(lc($a) eq "queryhold") {
-			$lsp_opt |= LSP_OPT_QHOLD;
-		}
-		if(lc($a) eq "subnetero") {
-			$lsp_opt |= LSP_OPT_SUB_ERO;
-		}
-		if(lc($a) eq "subnetdtl") {
-			$lsp_opt |= LSP_OPT_SUB_DTL;
-		}
-		if(lc($a) eq "altpaths") {
-		}
-		if(lc($a) eq "allvtags") {
-			$lsp_opt |= LSP_OPT_VTAG_ALL;
-		}
-		if(lc($a) eq "allwaves") {
-			$lsp_opt |= LSP_OPT_LAMBDA_ALL;
-		}
-	}
 	Aux::print_dbg_ws("findPath()\n");
 
-	push(@data, $lsp_opt, @args);
-	unshift(@data, {"cmd"=>WS_FIND_PATH, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
-	Aux::send_msg($$self{ws}, ADDR_GMPLS_RCE_C, @data);
 }
 
 sub selectNetworkTopology {

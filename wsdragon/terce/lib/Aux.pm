@@ -15,12 +15,12 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.50 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.51 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
 				WS_GET_TEDB WS_SET_TEDB WS_FIND_PATH
-				ALRM_WS_SELECT_TOPO
+				ALRM_WS_SELECT_TOPO ALRM_WS_FIND_PATH
 			   	ADDR_TERCE ADDR_GMPLS_CORE ADDR_GMPLS_S ADDR_GMPLS_NARB_S ADDR_GMPLS_RCE_S ADDR_GMPLS_NARB_C ADDR_GMPLS_RCE_C ADDR_WEB_S ADDR_SOAP_S ADDR_SOAP_S_BASE MAX_SOAP_SRVR ADDR_GMPLS_S_BASE MAX_GMPLS_CS %msg_addr_X);
 	%EXPORT_TAGS = ();
 	@EXPORT_OK   = qw();
@@ -71,6 +71,7 @@ use constant MAX_SOAP_SRVR => 10;
 use constant MAX_GMPLS_CS => 4; #client/server
 
 use constant ALRM_WS_SELECT_TOPO => 10; # [sec]
+use constant ALRM_WS_FIND_PATH => 10; # [sec]
 
 use constant ADDR_TERCE => 0;
 use constant ADDR_GMPLS_CORE => 1;

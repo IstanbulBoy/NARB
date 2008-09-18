@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.50 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.51 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -136,6 +136,97 @@ sub new {
 	return $self;
 }
 
+sub retrieve_tedb($) {
+	my $self = shift;
+	my ($scope) = @_;
+	alarm ALRM_WS_SELECT_TOPO;
+	my $scope_m = 0;
+	if(defined($scope)) {
+		$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
+		$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
+		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
+		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
+		# send the request to GMPLS Core
+		my @cmd = ({"cmd"=>WS_GET_TEDB, "type"=>$scope_m});
+		Aux::send_msg($self, ADDR_GMPLS_CORE, @cmd);
+	}
+}
+
+sub retrieve_path($) {
+	my $self = shift;
+	my ($som) = @_;
+	my @args = ();
+
+	if($som->match('//srcEndpoint')) {
+		push(@args, $som->valueof('//srcEndpoint'));
+	}
+	if($som->match('//destEndpoint')) {
+		push(@args, $som->valueof('//destEndpoint'));
+	}
+	if($som->match('//bandwidth')) {
+		push(@args, $som->valueof('//bandwidth'));
+	}
+	if($som->match('//encoding')) {
+		push(@args, $som->valueof('//encoding'));
+	}
+	if($som->match('//swcap')) {
+		push(@args, $som->valueof('//swcap'));
+	}
+	if($som->match('//gpid')) {
+		push(@args, $som->valueof('//gpid'));
+	}
+	if($som->match('//vtag')) {
+		push(@args, $som->valueof('//vtag'));
+	}
+
+	my $attrs = $som->dataof('//findPath')->attr;
+
+	my $lsp_opt = 0;
+	my $lsp_act = ACT_QUERY;
+	my @data = ();
+	foreach my $a (keys %$attrs) {
+		if(lc($a) eq "strict") {
+			$lsp_opt |= LSP_OPT_STRICT_HOP if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "preferred") {
+			$lsp_opt |= LSP_OPT_N_FORCE_HOP if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "mrn") {
+			$lsp_act = ACT_QUERY_MRN if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "bidirectional") {
+			$lsp_opt |= LSP_OPT_BI_DIR if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "e2evtag") {
+		}
+		if(lc($a) eq "vtagmask") {
+			$lsp_opt |= LSP_OPT_VLAN_BMP if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "queryhold") {
+			$lsp_opt |= LSP_OPT_QHOLD if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "subnetero") {
+			$lsp_opt |= LSP_OPT_SUB_ERO if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "subnetdtl") {
+			$lsp_opt |= LSP_OPT_SUB_DTL if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "altpaths") {
+		}
+		if(lc($a) eq "allvtags") {
+			$lsp_opt |= LSP_OPT_VTAG_ALL if(lc($$attrs{$a}) eq 'true');
+		}
+		if(lc($a) eq "allwaves") {
+			$lsp_opt |= LSP_OPT_LAMBDA_ALL if(lc($$attrs{$a}) eq 'true');
+		}
+	}
+	alarm ALRM_WS_FIND_PATH;
+
+	push(@data, $lsp_opt, @args);
+	unshift(@data, {"cmd"=>WS_FIND_PATH, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
+	Aux::send_msg($self, ADDR_GMPLS_RCE_C, @data);
+}
+
 sub retrieve_data() {
 	my $self = shift;
 	if(!$self->request()) {
@@ -147,28 +238,11 @@ sub retrieve_data() {
 	if($@) {
 		die "deserializer failed: $@\n";
 	}
-	my $b = $req->body();
-	foreach my $k (keys %$b) {
-		if(lc($k) eq "selectnetworktopology") {
-			alarm ALRM_WS_SELECT_TOPO;
-			foreach my $kk (keys %{$$b{$k}}) {
-				if(lc($kk) eq "scope") {
-					my $scope = $$b{$k}{$kk};
-					my $scope_m = 0;
-					if(defined($scope)) {
-						$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
-						$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
-						$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
-						$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
-						# send the request to GMPLS Core
-						my @cmd = ({"cmd"=>WS_GET_TEDB, "type"=>$scope_m});
-						Aux::send_msg($self, ADDR_GMPLS_CORE, @cmd);
-					}
-					last;
-				}
-			}
-			last;	
-		}
+	if($req->match('/Envelope/Body/selectNetworkTopology/scope')) {
+		$self->retrieve_tedb($req->valueof('//scope'));
+	}
+	elsif(my $som = $req->match('/Envelope/Body/findPath')) {
+		$self->retrieve_path($som);
 	}
 }
 
