@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.52 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.53 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -224,7 +224,7 @@ sub retrieve_path($) {
 
 	push(@data, $lsp_opt, @args);
 	unshift(@data, {'cmd'=>WS_FIND_PATH, 'type'=>RCE_MSG_LSP, 'subtype'=>$lsp_act});
-	Aux::send_msg($self, ADDR_GMPLS_RCE_C, @data);
+	Aux::send_msg($self, ADDR_GMPLS_NARB_C, @data);
 }
 
 sub retrieve_data() {
