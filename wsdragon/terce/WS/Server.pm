@@ -39,7 +39,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.51 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.52 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter SOAP::Transport::HTTP::Server);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -85,19 +85,19 @@ sub grim {
 }
 
 sub piper {
-	Log::log("warning", "the ws client closed connection prematurely\n");
+	Log::log('warning', 'the ws client closed connection prematurely\n');
 	$::ctrlC = 1;
 	$SIG{PIPE} = \&piper;
 }
 
 sub nice_piper {
-	Log::log("warning", "unexpected: WS daemon caught SIGPIPE\n");
+	Log::log('warning', 'unexpected: WS daemon caught SIGPIPE\n');
 	$SIG{PIPE} = \&nice_piper;
 }
 
 sub data_timeout() {
 	$::ctrlC = 1;
-	die "data retrieval failed\n";
+	die 'data retrieval failed\n';
 }
 
 # this is a subclass of SOAP::Transport::HTTP::Server
@@ -106,7 +106,7 @@ sub new {
 	unless (ref $self) {
 		my $class = ref($self) || $self;
 		my $proc = shift;
-		eval "require HTTP::Daemon" or die "$@\n" unless UNIVERSAL::can('HTTP::Daemon' => 'new');
+		eval 'require HTTP::Daemon' or die "$@\n" unless UNIVERSAL::can('HTTP::Daemon' => 'new');
 		my @params = @_;
 		$self = $class->SUPER::new();
 		my ($k, $proc_val) = each %$proc;  # child processes hold only self-descriptors
@@ -142,12 +142,12 @@ sub retrieve_tedb($) {
 	alarm ALRM_WS_SELECT_TOPO;
 	my $scope_m = 0;
 	if(defined($scope)) {
-		$scope_m |= (lc($scope) eq "abstract")?SCOPE_ABS_M:0;
-		$scope_m |= (lc($scope) eq "control")?SCOPE_CRL_M:0;
-		$scope_m |= (lc($scope) eq "data")?SCOPE_DAT_M:0;
-		$scope_m |= (lc($scope) eq "all")?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
+		$scope_m |= (lc($scope) eq 'abstract')?SCOPE_ABS_M:0;
+		$scope_m |= (lc($scope) eq 'control')?SCOPE_CRL_M:0;
+		$scope_m |= (lc($scope) eq 'data')?SCOPE_DAT_M:0;
+		$scope_m |= (lc($scope) eq 'all')?(SCOPE_CRL_M | SCOPE_DAT_M | SCOPE_ABS_M):0;
 		# send the request to GMPLS Core
-		my @cmd = ({"cmd"=>WS_GET_TEDB, "type"=>$scope_m});
+		my @cmd = ({'cmd'=>WS_GET_TEDB, 'type'=>$scope_m});
 		Aux::send_msg($self, ADDR_GMPLS_CORE, @cmd);
 	}
 }
@@ -185,52 +185,52 @@ sub retrieve_path($) {
 	my $lsp_act = ACT_QUERY;
 	my @data = ();
 	foreach my $a (keys %$attrs) {
-		if(lc($a) eq "strict") {
+		if(lc($a) eq 'strict') {
 			$lsp_opt |= LSP_OPT_STRICT_HOP if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "preferred") {
+		if(lc($a) eq 'preferred') {
 			$lsp_opt |= LSP_OPT_N_FORCE_HOP if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "mrn") {
+		if(lc($a) eq 'mrn') {
 			$lsp_act = ACT_QUERY_MRN if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "bidirectional") {
+		if(lc($a) eq 'bidirectional') {
 			$lsp_opt |= LSP_OPT_BI_DIR if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "e2evtag") {
+		if(lc($a) eq 'e2evtag') {
 		}
-		if(lc($a) eq "vtagmask") {
+		if(lc($a) eq 'vtagmask') {
 			$lsp_opt |= LSP_OPT_VLAN_BMP if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "queryhold") {
+		if(lc($a) eq 'queryhold') {
 			$lsp_opt |= LSP_OPT_QHOLD if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "subnetero") {
+		if(lc($a) eq 'subnetero') {
 			$lsp_opt |= LSP_OPT_SUB_ERO if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "subnetdtl") {
+		if(lc($a) eq 'subnetdtl') {
 			$lsp_opt |= LSP_OPT_SUB_DTL if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "altpaths") {
+		if(lc($a) eq 'altpaths') {
 		}
-		if(lc($a) eq "allvtags") {
+		if(lc($a) eq 'allvtags') {
 			$lsp_opt |= LSP_OPT_VTAG_ALL if(lc($$attrs{$a}) eq 'true');
 		}
-		if(lc($a) eq "allwaves") {
+		if(lc($a) eq 'allwaves') {
 			$lsp_opt |= LSP_OPT_LAMBDA_ALL if(lc($$attrs{$a}) eq 'true');
 		}
 	}
 	alarm ALRM_WS_FIND_PATH;
 
 	push(@data, $lsp_opt, @args);
-	unshift(@data, {"cmd"=>WS_FIND_PATH, "type"=>RCE_MSG_LSP, "subtype"=>$lsp_act});
+	unshift(@data, {'cmd'=>WS_FIND_PATH, 'type'=>RCE_MSG_LSP, 'subtype'=>$lsp_act});
 	Aux::send_msg($self, ADDR_GMPLS_RCE_C, @data);
 }
 
 sub retrieve_data() {
 	my $self = shift;
 	if(!$self->request()) {
-		die "undefined request\n";
+		die 'undefined request\n';
 	}
 	# peep into the content: we need to know what data
 	# to retrieve before handling the request
@@ -255,21 +255,21 @@ sub process_msg() {
 	my $tr;  # XML tree reference
 	eval {
 		$tr = $$self{parser}->parse($msg);
-		$d = Aux::xfrm_tree("msg", $$tr[1]);
+		$d = Aux::xfrm_tree('msg', $$tr[1]);
 		if(!defined($d)) {
-			Log::log("warning", "IPC message parsing failed\n");
+			Log::log('warning', 'IPC message parsing failed\n');
 			return;
 		}
 	};
 	if($@) {
-		Log::log("err", "$@\n");
+		Log::log('err', "$@\n");
 		return;
 	}
 	if(defined($d)) {
 		my $type = $$d{type};
 		my @data = @{$$d{data}};
 		if($$d{cmd} == WS_SET_TEDB) {
-			if($data[0] ne "undef") {
+			if($data[0] ne 'undef') {
 				if($type & SCOPE_ABS_M) {
 					$$self{abstract_tedb} = $data[0];
 				}
@@ -299,8 +299,8 @@ sub start_ws_server($$$) {
 	$$self{fh} = $$proc_val{fh}; # IPC filehandle 
 	$$self{pool} = undef;
 	$$self{select} = new IO::Select($$proc_val{fh}); # select handle
-	$$self{writer} = new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii");
-	$$self{parser} = new XML::Parser(Style => "tree"); # incomming data parser
+	$$self{writer} = new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => 'us-ascii');
+	$$self{parser} = new XML::Parser(Style => 'tree'); # incomming data parser
 	$$self{processor} = \&process_msg; # msg processor
 
 	$$self{abstract_tedb} = undef;
@@ -312,7 +312,7 @@ sub start_ws_server($$$) {
 	my $ws_fh;
 	my %pipe_queue;
 
-	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
+	Log::log 'info', "starting $$self{name} (pid: $$self{pid})\n";
 	eval {
 		local $SIG{ALRM} = \&data_timeout;
 		while(!$::ctrlC) {
@@ -328,7 +328,7 @@ sub start_ws_server($$$) {
 		alarm 0;
 	};
 	if($@) {
-		Log::log "err", "$@\n";
+		Log::log 'err', "$@\n";
 	}
 	if(defined($sock->connected())) {
 		$self->handle();
@@ -354,7 +354,7 @@ sub run() {
 	$SIG{CHLD} = \&grim;
 	$SIG{PIPE} = \&nice_piper;
 
-	Log::log "info", "starting $$self{name} (pid: $$self{pid}) on port $port\n";
+	Log::log 'info', "starting $$self{name} (pid: $$self{pid}) on port $port\n";
 	while(!$::ctrlC) {
 		# WS server
 		$c = $$self{daemon}->accept();

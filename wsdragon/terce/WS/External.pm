@@ -23,8 +23,6 @@
 
 package WS::External;
 
-use threads;
-use threads::shared;
 use strict;
 use warnings;
 use Socket;
@@ -32,7 +30,7 @@ use Socket;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -40,37 +38,41 @@ BEGIN {
 }
 our @EXPORT_OK;
 
-my $defs = &share({});
+my $ip_to_name = {};
+my $ip_to_urn = {};
 
 sub add($$$$) {
 	my($rtr_id, $rtr_name, $link_id, $port_name) = @_;
 	return if !(defined($rtr_id) && defined($rtr_name)); 
-	if(!exists($$defs{$rtr_id})) {
-		$$defs{$rtr_id} = &share({});
+	if(!exists($$ip_to_name{$rtr_id})) {
+		$$ip_to_name{$rtr_id} = {};
 	}
-	$$defs{$rtr_id}{$link_id} = &share({});
-	$$defs{$rtr_id}{name} = uc($rtr_name);
-	$$defs{$rtr_id}{$link_id}{name} = uc($port_name);
+	$$ip_to_name{$rtr_id}{$link_id} = {};
+	$$ip_to_name{$rtr_id}{name} = uc($rtr_name);
+	$$ip_to_name{$rtr_id}{$link_id}{name} = uc($port_name);
 }
 
 sub flush () {
-	$defs = {};
+	$ip_to_name = {};
 }
 
 sub get_rtr_name($) {
 	my($rtr_id) = @_;
 	my $idIP = inet_ntoa(pack("N", $rtr_id));
-	return undef if(!exists($$defs{$idIP}));
-	return $$defs{$idIP}{name};
+	return undef if(!exists($$ip_to_name{$idIP}));
+	return $$ip_to_name{$idIP}{name};
 }
 
 sub get_port_name($$) {
 	my($rtr_id, $link_id) = @_;
 	my $idIP = inet_ntoa(pack("N", $rtr_id));
 	my $lidIP = inet_ntoa(pack("N", $link_id));
-	return undef if(!exists($$defs{$idIP}));
-	return undef if(!exists($$defs{$idIP}{$lidIP}));
-	return $$defs{$idIP}{$lidIP}{name};
+	return undef if(!exists($$ip_to_name{$idIP}));
+	return undef if(!exists($$ip_to_name{$idIP}{$lidIP}));
+	return $$ip_to_name{$idIP}{$lidIP}{name};
+}
+
+sub get_urn($;$) {
 }
 
 1;

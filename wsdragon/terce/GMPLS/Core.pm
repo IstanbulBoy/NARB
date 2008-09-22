@@ -34,7 +34,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -86,6 +86,7 @@ sub new {
 			"abstract_tedb" => undef,
 			"control_tedb" => undef,
 			"data_tedb" => undef,
+			"urn_ip_map" => undef,
 
 			# aux. data
 			"tedb" => {}, # temporary TEDB storage (before assembly to the net. graph)
@@ -103,6 +104,9 @@ sub new {
 }
 
 ####################################################################
+
+sub create_urn_ip_map() {
+}
 
 sub find_remote($$) {
 	my $self = shift;

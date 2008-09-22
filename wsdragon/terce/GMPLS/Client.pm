@@ -26,13 +26,14 @@ package GMPLS::Client;
 use strict;
 use warnings;
 use Socket;
+use GMPLS::API;
 use GMPLS::Constants;
 use Aux;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -48,19 +49,30 @@ sub new {
 	eval {
 		$self = {
 			# process descriptor:
-			"proc" => $proc,
-			"pid" => $$proc_val{cpid}, # process PID
-			"addr" => $$proc_val{addr}, # process IPC address
-			"fh" => $$proc_val{fh},
-			"name" => $$proc_val{name}, # process name
-			"pool" => $$proc_val{pool}, # empty
-			"select" => new IO::Select($$proc_val{fh}), # select handle
-			"writer" => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => "us-ascii"),
-			"parser" => new XML::Parser(Style => "tree"), # incomming data parser
-			"processor" => \&process_msg, # msg processor
+			'proc' => $proc,
+			'pid' => $$proc_val{cpid}, # process PID
+			'addr' => $$proc_val{addr}, # process IPC address
+			'fh' => $$proc_val{fh},
+			'name' => $$proc_val{name}, # process name
+			'pool' => $$proc_val{pool}, # empty
+			'select' => new IO::Select($$proc_val{fh}), # select handle
+			'writer' => new XML::Writer(OUTPUT => $$proc_val{fh}, ENCODING => 'us-ascii'),
+			'parser' => new XML::Parser(Style => 'tree'), # incomming data parser
+			'processor' => \&process_msg, # msg processor
 
-			# object descriptor:
-			"ctrl_sock" => undef,
+			# every object handling external GMPLS data must implement the following:
+			'bin_queue' => {
+				'fh' => undef,
+				'in' => {
+					'hdr' => undef,
+					'data' => undef,
+				},
+				'out' => {
+					'hdr' => undef,
+					'data' => undef,
+					'queue' => ''
+				}
+			} 
 		};
 	};
 	if($@) {
@@ -76,11 +88,11 @@ sub open_ctrl_channel($$) {
 	my $ctrl_sock = IO::Socket::INET->new(
 		PeerAddr => $peer,
 		PeerPort => $ctrl_p,
-		Proto     => 'tcp') or die "control socket ".$peer.":".$ctrl_p.": $@\n";
+		Proto     => 'tcp') or die 'control socket '.$peer.':'.$ctrl_p.": $@\n";
 	if($ctrl_sock) {
 		if($ctrl_sock->connected()) {
 			$$self{select}->add($ctrl_sock);
-			$$self{ctrl_sock} = $ctrl_sock;
+			$$self{bin_queue}{fh} = $ctrl_sock;
 			Aux::print_dbg_net("connected to %s:%d\n", $peer, $ctrl_p);
 		}
 	}
@@ -96,14 +108,14 @@ sub process_msg($) {
 	my $tr;  # XML tree reference
 	eval {
 		$tr = $$self{parser}->parse($msg);
-		$d = Aux::xfrm_tree("msg", $$tr[1]);
+		$d = Aux::xfrm_tree('msg', $$tr[1]);
 		if(!defined($d)) {
-			Log::log("warning", "IPC message parsing failed\n");
+			Log::log('warning', 'IPC message parsing failed\n');
 			return;
 		}
 	};
 	if($@) {
-		Log::log("err", "$@\n");
+		Log::log('err', "$@\n");
 		return;
 	}
 	if(defined($d)) {
@@ -119,7 +131,7 @@ sub process_msg($) {
 		if($$d{cmd} == WS_FIND_PATH) {
 			if($$d{type} == RCE_MSG_LSP) {
 				if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
-					# ask for mapping from GMPLS Core
+					
 				}
 			}
 		}
@@ -144,7 +156,7 @@ sub run() {
 	my %pipe_queue;
 	my $gmpls_fh;
 
-	Log::log "info", "starting $$self{name} (pid: $$self{pid})\n";
+	Log::log 'info', "starting $$self{name} (pid: $$self{pid})\n";
 	while(!$::ctrlC) {
 		$gmpls_fh = Aux::act_on_msg($self, \%pipe_queue);
 		if(defined($gmpls_fh)) {
@@ -152,14 +164,14 @@ sub run() {
 				$self->process_bin_msg($gmpls_fh);
 			};
 			if($@) {
-				Log::log "err", "$@\n";
+				Log::log 'err', "$@\n";
 				last;
 			}
 		}
 	}
 	Aux::print_dbg_run("exiting $$self{name} (pid: $$self{pid})\n");
-	if(defined($$self{ctrl_sock})) {
-		$$self{ctrl_sock}->shutdown(SHUT_RDWR);;
+	if(defined($$self{bin_queue}{fh})) {
+		$$self{bin_queue}{fh}->shutdown(SHUT_RDWR);;
 	}
 	return 0;
 }

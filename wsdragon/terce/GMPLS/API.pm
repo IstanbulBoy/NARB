@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.29 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -79,61 +79,92 @@ sub dump_data($) {
 	}
 }
 
-sub ack_msg($$;$) {
-	my ($s, $mr, $e) = @_;
-	my $err = 0; 
-	if(defined($e)) {
-		$err = $e;
+sub queue_bin_msg($$$$$) {
+	my ($owner, $act, $data, $pars, $err) = @_;
+	my ($type, $len, $ucid, $sn);
+
+	if(($act == ACT_ACK) && (defined($$owner{bin_queue}{in}))) {
+		$type = $$owner{bin_queue}{in}{hdr}{type};
+		$ucid = $$owner{bin_queue}{in}{hdr}{ucid};
+		$sn = $$owner{bin_queue}{in}{hdr}{seqn};
 	}
-	my $chksum = Aux::chksum("CCnNN", "%32N3", $$mr{hdr}{type}, ACT_ACK, 0, $$mr{hdr}{ucid}, $$mr{hdr}{seqn});
-	my $ack_msg = {
-		"hdr" => {
-			"type" => $$mr{hdr}{type},
-			"action" => ($err==0)?ACT_ACK:ACT_ERROR,
-			"length" => 0,
-			"ucid" => $$mr{hdr}{ucid},
-			"seqn" => $$mr{hdr}{seqn},
-			"chksum" => $chksum,
-			"tag1" => 0,
-			"tag2" => $err
-		},
-		"data" => undef
-	};
-	my $ack_msg_bin = pack("CCnNNNNN", 
-		$$ack_msg{hdr}{type}, 
-		$$ack_msg{hdr}{action}, 
-		$$ack_msg{hdr}{length}, 
-		$$ack_msg{hdr}{ucid},
-		$$ack_msg{hdr}{seqn},
-		$$ack_msg{hdr}{chksum},, 
-		$$ack_msg{hdr}{tag1},
-		$$ack_msg{hdr}{tag2}
-	);
-	# TODO: implement it with checking select and handling incomplete writes
-	if(defined($s->syswrite($ack_msg_bin))) {
-		Aux::print_dbg_api("sent ACK for %s to %s:%s\n", $msg_action_X{$$mr{hdr}{action}},
-			$s->peerhost(), $s->peerport()
-		);
-		dump_data($ack_msg);
+	if(@$pars == 3) {
+		($type, $ucid, $sn) = @$pars;
+	} 
+
+	# process data (TLVs) if any
+	if(defined($data)) {
 	}
 	else {
-		Aux::print_dbg_api("failed to send ACK for %s to %s:%s\n", $msg_action_X{$$mr{hdr}{action}},
-			$s->peerhost(), $s->peerport()
-		);
+		$len = 0;
 	}
-	$mr = {};
+
+	# form a header
+	if($err != 0) {
+		$act = ACT_ERROR;
+		$len = 0;
+	}
+
+	my $chksum = Aux::chksum("CCnNN", "%32N3", $type, $act, $len, $ucid, $sn);
+	$$owner{bin_queue}{out}{hdr} = {
+		"type" => $type,
+		"action" => ($err==0)?$act:ACT_ERROR,
+		"length" => $len,
+		"ucid" => $ucid,
+		"seqn" => $sn,
+		"chksum" => $chksum,
+		"tag1" => 0,
+		"tag2" => $err
+	};
+	$$owner{bin_queue}{out}{queue} .= pack("CCnNNNNN", 
+		$type,
+		($err==0)?$act:ACT_ERROR,
+		$len,
+		$ucid,
+		$sn,
+		$chksum,
+		0,
+		$err
+	);
 }
 
-sub get_msg($$) {
-	my ($fh, $mr) = @_;
+sub send_bin_msg($) {
+	my ($owner) = @_;
+	my $n = 0;
+	
+	my @witeable = $$owner{select}->can_write();
+	$n = $$owner{bin_queue}{fh}->syswrite($$owner{bin_queue}{out}{queue});
+	if(defined($n)) {
+		$$owner{bin_queue}{out}{queue} = substr($$owner{bin_queue}{out}{queue}, $n);
+		Aux::print_dbg_api("sent %s for %s to %s:%s\n", 
+			$msg_action_X{$$owner{bin_queue}{out}{hdr}{action}}, 
+			$msg_type_X{$$owner{bin_queue}{out}{hdr}{type}},
+			$$owner{bin_queue}{fh}->peerhost(), 
+			$$owner{bin_queue}{fh}->peerport()
+		);
+		dump_data($$owner{bin_queue}{out});
+	}
+	else {
+		$$owner{bin_queue}{out}{queue} = '';
+		Aux::print_dbg_api("failed to send %s for %s to %s:%s\n", 
+			$msg_action_X{$$owner{bin_queue}{out}{hdr}{action}}, 
+			$msg_type_X{$$owner{bin_queue}{out}{hdr}{type}},
+			$$owner{bin_queue}{fh}->peerhost(), 
+			$$owner{bin_queue}{fh}->peerport()
+		);
+	}
+}
+
+sub get_bin_msg($) {
+	my ($owner) = @_;
 	my $hdr;
 	my $data;
 	my ($type, $action, $len, $ucid, $sn, $chksum, $tag1, $tag2);
 
-	if(!defined($fh->connected())) {
+	if(!defined($$owner{bin_queue}{fh}->connected())) {
 		die "client not connected\n";
 	}
-	my $n = $fh->sysread($hdr, 24);
+	my $n = $$owner{bin_queue}{fh}->sysread($hdr, 24);
 	if(!defined($n)) {
 		if($! != Errno::EINTR) {
 			die "socket error\n";
@@ -158,33 +189,35 @@ sub get_msg($$) {
 			defined($tag2))) {
 		die "GMPLS: malformed msg. header\n";
 	}
-	$$mr{$sn} = {
-		"hdr" => {
-			"type" => $type,
-			"action" => $action,
-			"length" => $len,
-			"ucid" => $ucid,
-			"seqn" => $sn,
-			"chksum" => $chksum,
-			"tag1" => $tag1,
-			"tag2" => $tag2
-		},
-		"data" => undef
+	$$owner{bin_queue}{in}{hdr} = {
+		"type" => $type,
+		"action" => $action,
+		"length" => $len,
+		"ucid" => $ucid,
+		"seqn" => $sn,
+		"chksum" => $chksum,
+		"tag1" => $tag1,
+		"tag2" => $tag2
 	};
+	$$owner{bin_queue}{in}{data} = undef;
 
 	# and the body
 	if($len > 0) {
-		$n = $fh->sysread($data, $len);
+		$n = $$owner{bin_queue}{fh}->sysread($data, $len);
 		if(!defined($n)) {
 			die "socket error\n";
 		}
-		$$mr{$sn}{data} =  $data;
+		$$owner{bin_queue}{in}{data} = $data;
 	}
-	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action_X{$$mr{$sn}{hdr}{action}},
-		$fh->peerhost(), $fh->peerport()
+	Aux::print_dbg_api("received %s from %s:%s\n", $msg_action_X{$$owner{bin_queue}{in}{hdr}{action}},
+		$$owner{bin_queue}{fh}->peerhost(), $$owner{bin_queue}{fh}->peerport()
 	);
-	dump_data($$mr{$sn});
-	return $sn;
+	dump_data($$owner{bin_queue}{in});
+}
+
+sub clean_bin_msg($) {
+	my ($owner) = @_;
+	$$owner{bin_queue}{in} = undef;
 }
 
 sub parse_tlv_data($$$$) {
@@ -532,11 +565,11 @@ sub parse_tlv($$$;$) {
 	return(0);
 }
 
-sub parse_msg($$) {
-	my ($md, $owner) = @_;
+sub parse_msg($) {
+	my ($owner) = @_;
 	my $ret = 0;
 	# LSA header
-	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $md);	
+	my ($age, $opts, $type, $id, $rtr, $seqn, $chksum, $len) = unpack("nCCNNNnn", $$owner{bin_queue}{in}{data});	
 	if(!(defined($age) && defined($age) && defined($age) && defined($age) && 
 			defined($age) && defined($age) && defined($age) && defined($age))) {
 		Log::log "err", "corrupted LSA (LSA Header)\n";
@@ -548,24 +581,24 @@ sub parse_msg($$) {
 	}
 	Aux::print_dbg_lsa("----------------- parsed data ------------------------\n");
 	Aux::print_dbg_lsa("%s from %s (%d)\n", $lsa_type_X{$type}, inet_ntoa(pack("N", $rtr)), $len);
-	$ret = parse_tlv($md, LSA_HDR_SIZE, $owner);
+	$ret = parse_tlv($$owner{bin_queue}{in}{data}, LSA_HDR_SIZE, $owner);
 	Aux::print_dbg_lsa("------------------------------------------------------\n");
 	return($ret);
 }
 
 sub is_sync_init($) {
-	my ($mr) = @_;
-	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INIT));
+	my ($owner) = @_;
+	return (($$owner{bin_queue}{in}{hdr}{type} == TERCE_TOPO_SYNC) && ($$owner{bin_queue}{in}{hdr}{action} == ACT_INIT));
 }
 
 sub is_delim($) {
-	my ($mr) = @_;
-	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_NOP));
+	my ($owner) = @_;
+	return (($$owner{bin_queue}{in}{hdr}{type} == TERCE_TOPO_SYNC) && ($$owner{bin_queue}{in}{hdr}{action} == ACT_NOP));
 }
 
 sub is_sync_insert($) {
-	my ($mr) = @_;
-	return (($$mr{hdr}{type} == TERCE_TOPO_SYNC) && ($$mr{hdr}{action} == ACT_INSERT));
+	my ($owner) = @_;
+	return (($$owner{bin_queue}{in}{hdr}{type} == TERCE_TOPO_SYNC) && ($$owner{bin_queue}{in}{hdr}{action} == ACT_INSERT));
 }
 
 1;
