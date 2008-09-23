@@ -607,7 +607,7 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
 {
     LSAHandler * lsaEvent;
 
-    switch (ntons(msg->header.type))
+    switch (ntohs(msg->header.type))
     {
     case NARB_MSG_LSPQ:
         server->GetLSPBroker()->HandleMessage(msg);
