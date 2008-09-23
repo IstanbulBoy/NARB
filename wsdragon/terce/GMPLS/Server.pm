@@ -36,7 +36,7 @@ use IO::Select;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.33 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.34 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -135,26 +135,29 @@ sub process_bin_msg($) {
 	eval {
 		$err = 0;
 		if(GMPLS::API::is_sync_init($self)) {
-			# init the control channel
-			my @data = ($fh->peerhost(), $$self{bin_queue}{in}{hdr}{tag2});
+			# init the control channel and the client process
+			my @data = ($fh->peerhost(), 
+				$$self{bin_queue}{in}{hdr}{tag2}, 
+				$$self{bin_queue}{in}{hdr}{ucid}, 
+				$$self{bin_queue}{in}{hdr}{seqn});
 			my $dst = ($$self{addr} == ADDR_GMPLS_NARB_S)?ADDR_GMPLS_NARB_C:ADDR_GMPLS_RCE_C;
 			unshift(@data, {'cmd'=>CLIENT_Q_INIT, 'type'=>CLIENT_Q_INIT_PORT});
 			Aux::send_msg($self, $dst, @data);
-			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, [], $err);
+			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, $err);
 			GMPLS::API::send_bin_msg($self);
 		}
 		elsif(GMPLS::API::is_sync_insert($self)) {
 			if(GMPLS::API::parse_msg($self) <0) {
 				$err = 1;
 			}
-			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, [], $err);
+			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, $err);
 			GMPLS::API::send_bin_msg($self);
 		}
 		elsif(GMPLS::API::is_delim($self)) {
 			$self->activate_tedb();
 		}
 		else {
-			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, [], $err);
+			GMPLS::API::queue_bin_msg($self, ACT_ACK, undef, $err);
 			GMPLS::API::send_bin_msg($self);
 		}
 		GMPLS::API::clean_bin_msg($self);
@@ -199,11 +202,14 @@ sub start_gmpls_server($$$) {
 
 	$$self{bin_queue} = {# every object handling external GMPLS data must implement this data structure
 		'fh' => $sock,
+		'ucid' => undef,
 		'in' => {
+			'seqn' => undef,
 			'hdr' => undef,
 			'data' => undef,
 		},
 		'out' => {
+			'seqn' => undef,
 			'hdr' => undef,
 			'data' => undef,
 			'queue' => ''

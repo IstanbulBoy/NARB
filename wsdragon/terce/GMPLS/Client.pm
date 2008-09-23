@@ -33,7 +33,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -63,11 +63,14 @@ sub new {
 			# every object handling external GMPLS data must implement the following:
 			'bin_queue' => {
 				'fh' => undef,
+				'ucid' => undef,
 				'in' => {
+					'seqn' => 0,
 					'hdr' => undef,
 					'data' => undef,
 				},
 				'out' => {
+					'seqn' => 0,
 					'hdr' => undef,
 					'data' => undef,
 					'queue' => ''
@@ -122,8 +125,11 @@ sub process_msg($) {
 		my @data = @{$$d{data}};
 		if($$d{cmd} == CLIENT_Q_INIT) {
 			if($$d{type} == CLIENT_Q_INIT_PORT) {
-				if(defined($data[0]) && defined($data[1])) {
+				if(defined($data[0]) && defined($data[1]) && defined($data[2]) && defined($data[3])) {
 					$self->open_ctrl_channel($data[0], $data[1]);
+					$$self{bin_queue}{ucid} = $data[2];
+					$$self{bin_queue}{in}{seqn} = $data[3];
+					$$self{bin_queue}{in}{seqn} &= 0xffffffff;
 				}
 			}
 		}
@@ -131,7 +137,9 @@ sub process_msg($) {
 		if($$d{cmd} == WS_FIND_PATH) {
 			if($$d{type} == RCE_MSG_LSP) {
 				if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
-					
+					# the query message's got the action unified with the 
+					# type to a 16-bit field
+					GMPLS::API::queue_bin_msg($self, undef, NARB_MSG_LSPQ, 0);
 				}
 			}
 		}

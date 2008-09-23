@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.30 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -79,18 +79,19 @@ sub dump_data($) {
 	}
 }
 
-sub queue_bin_msg($$$$$) {
-	my ($owner, $act, $data, $pars, $err) = @_;
-	my ($type, $len, $ucid, $sn);
+sub queue_bin_msg($$$$;$) {
+	my ($owner, $act, $type, $err, $data) = @_;
+	my ($len, $ucid, $sn);
 
 	if(($act == ACT_ACK) && (defined($$owner{bin_queue}{in}))) {
 		$type = $$owner{bin_queue}{in}{hdr}{type};
 		$ucid = $$owner{bin_queue}{in}{hdr}{ucid};
 		$sn = $$owner{bin_queue}{in}{hdr}{seqn};
 	}
-	if(@$pars == 3) {
-		($type, $ucid, $sn) = @$pars;
-	} 
+	else {
+		$ucid = $$owner{bin_queue}{ucid};
+		$sn = $$owner{bin_queue}{out}{seqn}++;
+	}
 
 	# process data (TLVs) if any
 	if(defined($data)) {
