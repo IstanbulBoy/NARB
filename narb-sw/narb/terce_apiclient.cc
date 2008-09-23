@@ -607,7 +607,15 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
 {
     LSAHandler * lsaEvent;
 
-    switch (msg->header.type)
+    switch (ntons(msg->header.type))
+    {
+    case NARB_MSG_LSPQ:
+        server->GetLSPBroker()->HandleMessage(msg);
+        return; // done
+    //default: contue to next switch
+    }
+    
+    switch (msg->header.type_8)
     {
     case MSG_TERCE_TOPO_SYNC: 
         LOG("Unexpected MSG_TERCE_TOPO_SYNC terce messsage: action=" << (int)msg->header.action << endl
@@ -640,12 +648,8 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
         }
         break;
 
-    case NARB_MSG_LSPQ:
-        server->GetLSPBroker()->HandleMessage(msg);
-        break;
-
     default:
-        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->header.type)
+        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->header.type_8)
             << ", action=" << (int)msg->header.action << ")." << endl);
         api_msg_delete(msg);
     }    
