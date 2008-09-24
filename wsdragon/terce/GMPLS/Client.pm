@@ -27,13 +27,14 @@ use strict;
 use warnings;
 use Socket;
 use GMPLS::API;
+use GMPLS::TLV;
 use GMPLS::Constants;
 use Aux;
 
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -139,7 +140,9 @@ sub process_msg($) {
 				if(($$d{subtype} == ACT_QUERY) || ($$d{subtype} == ACT_QUERY_MRN)) {
 					# the query message's got the action unified with the 
 					# type to a 16-bit field
-					GMPLS::API::queue_bin_msg($self, undef, NARB_MSG_LSPQ, 0);
+					my $tlv = new GMPLS::TLV(MSG_APP_REQUEST);
+
+					GMPLS::API::queue_bin_msg($self, undef, NARB_MSG_LSPQ, 0, new GMPLS::TLV(MSG_APP_REQUEST));
 				}
 			}
 		}
