@@ -59,7 +59,8 @@ int SystemConfig::max_ospf_sync_attempts = 10;
 
 int SystemConfig::delta_expire_query = 10;
 int SystemConfig::delta_expire_reserve = 20;
-int SystemConfig::delta_expire_subnet_reserve = 86400; // 86400 seconds == 24 hours
+int SystemConfig::delta_expire_subnet_reserve = 8640000; // 8640000 seconds == 100 days
+//$$$$ assumption: no circuit lasts more than 100 days...
 
 string SystemConfig::narb_host("localhost");
 int SystemConfig::narb_port = 2609;

@@ -567,10 +567,10 @@ void Link::deleteExpiredDeltas()
             // $$$$ write off the expired delta with states added back to the link
             // only add back the resources held by 'query'
             // 'reserved' resources won't be implicitly added back --> only by release message
-            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query)
-       	    {
+            if (delta->expiration.tv_sec == SystemConfig::delta_expire_query || delta->expiration.tv_sec == SystemConfig::delta_expire_subnet_reserve)
+            {
                 (*this) += (*delta);
-       	    }
+            }
             delete delta; 
             iter = this->pDeltaList->erase(iter);
             modifiedTime = timeNow;
