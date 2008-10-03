@@ -34,7 +34,7 @@ use Compress::Zlib;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.31 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.32 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -82,8 +82,9 @@ sub dump_data($) {
 sub queue_bin_msg($$$$;$) {
 	my ($owner, $act, $type, $err, $data) = @_;
 	my ($len, $ucid, $sn);
+	my $dq = "";
 
-	if(($act == ACT_ACK) && (defined($$owner{bin_queue}{in}))) {
+	if((defined($act)) && ($act == ACT_ACK) && (defined($$owner{bin_queue}{in}))) {
 		$type = $$owner{bin_queue}{in}{hdr}{type};
 		$ucid = $$owner{bin_queue}{in}{hdr}{ucid};
 		$sn = $$owner{bin_queue}{in}{hdr}{seqn};
@@ -95,6 +96,8 @@ sub queue_bin_msg($$$$;$) {
 
 	# process data (TLVs) if any
 	if(defined($data)) {
+		$dq = $data->get_bin();
+		$len = 20;
 	}
 	else {
 		$len = 0;
@@ -106,7 +109,13 @@ sub queue_bin_msg($$$$;$) {
 		$len = 0;
 	}
 
-	my $chksum = Aux::chksum("CCnNN", "%32N3", $type, $act, $len, $ucid, $sn);
+	my $chksum;
+	if(defined($act)) {
+		$chksum = Aux::chksum("CCnNN", "%32N3", $type, $act, $len, $ucid, $sn);
+	}
+	else {
+		$chksum = Aux::chksum("nnNN", "%32N3", $type, $len, $ucid, $sn);
+	}
 	$$owner{bin_queue}{out}{hdr} = {
 		"type" => $type,
 		"action" => ($err==0)?$act:ACT_ERROR,
@@ -117,16 +126,30 @@ sub queue_bin_msg($$$$;$) {
 		"tag1" => 0,
 		"tag2" => $err
 	};
-	$$owner{bin_queue}{out}{queue} .= pack("CCnNNNNN", 
-		$type,
-		($err==0)?$act:ACT_ERROR,
-		$len,
-		$ucid,
-		$sn,
-		$chksum,
-		0,
-		$err
-	);
+	if(defined($act)) {
+		$$owner{bin_queue}{out}{queue} .= pack("CCnNNNNN", 
+			$type,
+			($err==0)?$act:ACT_ERROR,
+			$len,
+			$ucid,
+			$sn,
+			$chksum,
+			0,
+			$err
+		);
+	}
+	else {
+		$$owner{bin_queue}{out}{queue} .= pack("nnNNNNN", 
+			$type,
+			$len,
+			$ucid,
+			$sn,
+			$chksum,
+			0,
+			$err
+		);
+	}
+	$$owner{bin_queue}{out}{queue} .= $dq;
 }
 
 sub send_bin_msg($) {
