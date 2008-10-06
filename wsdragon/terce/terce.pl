@@ -71,6 +71,7 @@ usage: terce [-h] [-d] [-c <config file>] [-l <log file>] [-p <port>]
               NOTE: its location is relative to www_root
        --subnet_cfg <subnet config file>: load some additional info 
               from the file 
+       --edge_cfg <edge port config file>: load edge port configuration
        --www_port <port>: serve the wsdl file on this port (default 80)
               (only if te wsdl file is specified)
        --www_root <dir>: root of the web server
@@ -90,14 +91,6 @@ my $sel = new IO::Select();
 sub catch_term {
 	my $signame = shift;
 	Log::log("info", "terminating ... (SIG$signame)\n");
-	#foreach my $k (keys %child_map) {
-	#	if($k =~ /\d+/) {
-	#		$sel->remove($child_map{$k}{fh});
-	#		my $pid = $child_map{$k}{cpid};
-	#		delete $child_map{$k};
-	#		kill 15, $pid;
-	#	}
-	#}
 	$::ctrlC = 1;
 }
 
@@ -139,6 +132,7 @@ sub process_opts($$) {
 	if($n eq "ws_port")			{$k1 = "ws"; $k2 = "port";}
 	if($n eq "wsdl")			{$k1 = "ws"; $k2 = "wsdl";}
 	if($n eq "subnet_cfg")			{$k1 = "ws"; $k2 = "subnet_cfg";}
+	if($n eq "edge_cfg")			{$k1 = "ws"; $k2 = "edge_cfg";}
 
 	if(defined($k1) && !defined($k2) && !$is_array) {
 		if($k1 eq "dbg") {
@@ -340,6 +334,10 @@ $::ctrlC = 0;
 		"subnet_cfg" => {
 			"v" => undef,
 			"s" => 'd'
+		},
+		"edge_cfg" => {
+			"v" => undef,
+			"s" => 'd'
 		}
 	},
 	"log" => {
@@ -364,6 +362,7 @@ if(!GetOptions ('d' =>			\&process_opts,
 		'ws_port=s' =>		\&process_opts,
 		'wsdl=s' =>		\&process_opts,
 		'subnet_cfg=s' =>	\&process_opts,
+		'edge_cfg=s' =>		\&process_opts,
 		'l=s' =>		\&process_opts,
 		'log=s' =>		\&process_opts,
 		'dbg:s{,}' =>		\&process_opts,
@@ -401,6 +400,20 @@ if(defined($::cfg{ws}{subnet_cfg}{v})) {
 if(!defined($::cfg{ws}{subnet_cfg}{v})) {
 	Log::log "warning", "WARNING: subnet config file was not loaded\n";
 	Log::log "warning", "WARNING: some data such as router names will be generated\n";
+}
+
+if(defined($::cfg{ws}{edge_cfg}{v})) {
+	eval {
+		Parser::load_configuration($::cfg{ws}{edge_cfg}{v});
+	};
+	if($@) {
+		$::cfg{ws}{edge_cfg}{v} = undef;	
+	}
+}
+
+if(!defined($::cfg{ws}{edge_cfg}{v})) {
+	Log::log "warning", "WARNING: edge port config file was not loaded\n";
+	Log::log "warning", "WARNING: this will result in incomplete XML topology output\n";
 }
 Log::close();
 
