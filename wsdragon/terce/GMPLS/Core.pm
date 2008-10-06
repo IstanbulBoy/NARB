@@ -34,7 +34,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.22 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -143,8 +143,10 @@ sub insert_edge_ports() {
 					foreach my $data_rtr (keys %{$$self{data_tedb}}) {
 						if(defined($$self{data_tedb}{$data_rtr}{name}) && 
 							($$self{data_tedb}{$data_rtr}{name} eq $$self{control_tedb}{$rtr}{$link}{sw_cap}{uni}{node_name})) {
-							#insert into this router block 
-							$$self{data_tedb}{$data_rtr}{$link} = $$self{control_tedb}{$rtr}{$link};
+							#insert into this router block by copying data
+							$$self{data_tedb}{$data_rtr}{$link} = Aux::copy_data_structure($$self{control_tedb}{$rtr}{$link});
+							# update this parent router ID to this data plane rtr ID
+							$$self{data_tedb}{$data_rtr}{$link}{rtr_id} = $data_rtr;
 							Aux::print_dbg_tedb("inserting link ID %s to %s\n", $$self{control_tedb}{$rtr}{$link}{link_id}, $$self{data_tedb}{$data_rtr}{name});
 							last;
 						}
