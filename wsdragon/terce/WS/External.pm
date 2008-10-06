@@ -30,7 +30,7 @@ use Socket;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ( );
@@ -39,6 +39,7 @@ BEGIN {
 our @EXPORT_OK;
 
 my $ip_to_name = {};
+my $edge_info = {};
 my $ip_to_urn = {};
 
 sub add($$$$) {
@@ -50,6 +51,13 @@ sub add($$$$) {
 	$$ip_to_name{$rtr_id}{$link_id} = {};
 	$$ip_to_name{$rtr_id}{name} = uc($rtr_name);
 	$$ip_to_name{$rtr_id}{$link_id}{name} = uc($port_name);
+}
+
+sub add_edge($$$$) {
+	my($rtr_urn, $local_id, $vtags, $bw) = @_;
+	return if !(defined($rtr_urn) && defined($local_id)); 
+	$$edge_info{$rtr_urn}{$local_id}{vtags} = $vtags;
+	$$edge_info{$rtr_urn}{$local_id}{bw} = $bw;
 }
 
 sub flush () {
