@@ -34,7 +34,7 @@ use Aux;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.20 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.21 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -124,6 +124,35 @@ sub find_remote($$) {
 		}
 	}
 	return undef;
+}
+
+# loop through the control topology and insert the edgeports to the data TEDB
+sub insert_edge_ports() {
+	my $self = shift;
+	if(!defined($$self{data_tedb})) {
+		return;
+	}
+	foreach my $rtr (keys %{$$self{control_tedb}}) {
+		foreach my $link (keys %{$$self{control_tedb}{$rtr}}) {
+			# skip the top-level descriptors
+			if(ref($$self{control_tedb}{$rtr}{$link}) ne "HASH") {
+				next;
+			}
+			if(exists($$self{control_tedb}{$rtr}{$link}{sw_cap}{uni}) && exists($$self{control_tedb}{$rtr}{$link}{sw_cap}{uni}{node_name})) {
+				if(defined($$self{control_tedb}{$rtr}{$link}{sw_cap}{uni}{node_name})) {
+					foreach my $data_rtr (keys %{$$self{data_tedb}}) {
+						if(defined($$self{data_tedb}{$data_rtr}{name}) && 
+							($$self{data_tedb}{$data_rtr}{name} eq $$self{control_tedb}{$rtr}{$link}{sw_cap}{uni}{node_name})) {
+							#insert into this router block 
+							$$self{data_tedb}{$data_rtr}{$link} = $$self{control_tedb}{$rtr}{$link};
+							Aux::print_dbg_tedb("inserting link ID %s to %s\n", $$self{control_tedb}{$rtr}{$link}{link_id}, $$self{data_tedb}{$data_rtr}{name});
+							last;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 # this probably creates a closure: we have to break up the graph after we are done with it
@@ -300,7 +329,7 @@ sub process_tedb_part($$) {
 	#add a valid OSPF-TE talker to TEDB
 	# (these will serve as validation for the sub-tlv insertions)
 	if($$d{cmd} == TEDB_RTR_ON) {
-		$$self{tedb}{$data[0]} = {"src" => undef, "tag" => undef};
+		$$self{tedb}{$data[0]} = {"src" => undef, "tag" => undef, "name" => WS::External::get_rtr_name($data[0])};
 		Aux::print_dbg_tedb("top level rtr insert: 0x%08x\n", ${$$d{data}}[0]);
 		return 0;
 	}
@@ -524,6 +553,9 @@ sub process_tedb_data($$) {
 						Log::log("err", "unknown source\n");
 						Aux::print_dbg_tedb("TEDB not updated\n");
 					}
+				}
+				if(defined($$self{control_tedb})) {
+					$self->insert_edge_ports();
 				}
 			}
 		}
