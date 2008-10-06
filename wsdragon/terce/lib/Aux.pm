@@ -15,7 +15,7 @@ use XML::Writer;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.51 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.52 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw( 	TEDB_RTR_ON TEDB_INSERT TEDB_UPDATE TEDB_DELETE TEDB_ACTIVATE TEDB_LINK_MARK 
 				CLIENT_Q_INIT CLIENT_Q_INIT_PORT
@@ -29,6 +29,7 @@ our @EXPORT_OK;
 
 sub dump_config($;$);
 sub dump_data_structure($;$$);
+sub copy_data_structure($);
 sub serialize($$);
 
 # messaging commands
@@ -266,6 +267,32 @@ sub dump_config($;$) {
 		else {
 			dump_config($$hr{$k}, defined($u)?"$u:$k":$k);
 		}
+	}
+}
+
+sub copy_data_structure($) {
+	my ($data) = @_;
+	my $ret;
+	if(ref($data) eq "SCALAR") {
+		my $tmp = $$data;
+		return \$tmp;
+	}
+	elsif(ref($data) eq "ARRAY") {
+		$ret = [];
+		for(my $i=0; $i<@$data; $i++) {
+			push(@$ret, copy_data_structure($$data[$i]));
+		}
+		return $ret;
+	}
+	elsif(ref($data) eq "HASH") {
+		$ret = {};
+		foreach my $k (keys %$data) {
+			$$ret{$k} = copy_data_structure($$data{$k});
+		}
+		return $ret;
+	}
+	elsif(ref($data) eq "") {
+		return $data;
 	}
 }
 
