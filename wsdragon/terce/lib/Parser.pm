@@ -11,7 +11,7 @@ use WS::External;
 BEGIN {
 	use Exporter   ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-	$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)/g;
+	$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)/g;
 	@ISA         = qw(Exporter);
 	@EXPORT      = qw();
 	%EXPORT_TAGS = ();
@@ -140,6 +140,12 @@ sub process_cfg() {
 				$::cfg{ws}{subnet_cfg}{s} = 'f';
 			}
 		}
+		if($ws[0] =~ /edgeport_config\s+(\S+)\s*;/) { 
+			if($::cfg{ws}{edge_cfg}{s} ne 'c') {
+				$::cfg{ws}{edge_cfg}{v} = $1;
+				$::cfg{ws}{edge_cfg}{s} = 'f';
+			}
+		}
 	}
 }
 
@@ -202,6 +208,17 @@ sub parse_cfg($) {
 				die "syntax error in $fn (missing link id)";
 			}
 		}
+	}
+	#get the edge port configuration
+	my @edge = $cfg_s =~ /edge_port\s*({(?{$d=1})(?:{(?{$d++})|(?(?{$d>0})}(?{$d--})|$)|(?(?{$d>0})[^{}]*|$))*)/g;
+	if(defined(pos)) { pos = 0;};
+	
+	for(my $i=0; $i<@edge; $i++) {
+		my $edge_id = ($edge[$i]=~/[\s{]id\s+(.*?)[\s}]/)?$1:undef;
+		my $edge_lid = ($edge[$i]=~/[\s{]local_id\s+(.*?)[\s}]/)?$1:undef;
+		my $vtags = ($edge[$i]=~/[\s{]vtags\s+(.*?)[\s}]/)?$1:undef;
+		my $bw = ($edge[$i]=~/[\s{]bw\s+(.*?)[\s}]/)?$1:undef;
+		WS::External::add_edge($edge_id, $edge_lid, $vtags, $bw);
 	}
 }
 
