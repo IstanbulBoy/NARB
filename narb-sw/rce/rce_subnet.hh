@@ -114,6 +114,7 @@ protected:
     void InternalInit() {
         routerType = RTYPE_LOC_RTID;
         linkType = RTYPE_LOC_PHY_LNK;
+        //may be commented out to turn off Ciena subnet handling for non-ciena subnet
         SystemConfig::should_incorporate_subnet = true; 
     }
     string subnetDescription;

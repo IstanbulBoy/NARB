@@ -40,9 +40,9 @@ using namespace std;
 
 #define CURRENT_CONFIG_FILE "rce.conf"
 #define DEFAULT_CONFIG_FILE "/usr/local/dragon/etc/rce.conf"
-#define CONFIG_BUFSIZ 0x10000
-#define CONFIG_BLKSIZ 0x1000
-#define CONFIG_LINESIZ 0x800
+#define CONFIG_BUFSIZ 0x40000
+#define CONFIG_BLKSIZ 0x2000
+#define CONFIG_LINESIZ 0x1000
 #define MAXADDRLEN 60
 #define MAXPATHLEN 256
 
@@ -94,6 +94,7 @@ public:
     static string schema_file;
 
     static PceAlgorithm pce_algorithm;
+    static int pce_k;
 
     static string ospfd_inter_host;
     static int ospfd_inter_port;

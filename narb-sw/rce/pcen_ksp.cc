@@ -576,7 +576,7 @@ void PCEN_KSP::Run()
     PCENNode* dest_node = GetNodeByIp(routers,&destination);
     assert (src_node && dest_node);
 
-    SearchKSP(src_node->ref_num, dest_node->ref_num, 10);
+    SearchKSP(src_node->ref_num, dest_node->ref_num, SystemConfig::pce_k);
     LOGF("Found %d shortest paths...\n", KSP.size());
 
     PathT* bestPath = ConstrainKSPaths(KSP);

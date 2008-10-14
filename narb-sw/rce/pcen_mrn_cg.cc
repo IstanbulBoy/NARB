@@ -2618,7 +2618,7 @@ void PCEN_MRN_CG::Run()
 		LOGF("\nIt is a multi-layer network!!!\n");
 */	
 
-    if((ret = SearchMRNKSP(src_node->ref_num, dest_node->ref_num, switching_type_egress, encoding_type_egress, bandwidth_egress, 1)) != 0)
+    if((ret = SearchMRNKSP(src_node->ref_num, dest_node->ref_num, switching_type_egress, encoding_type_egress, bandwidth_egress, SystemConfig::pce_k)) != 0)
     {
     	  LOGF("PCEN_MRN_CG::SearchMRNKSP() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
     	  ReplyErrorCode(ret);

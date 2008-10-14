@@ -208,7 +208,7 @@ PathT* PCEN_TEST::SearchLowerLayerPath(PCENNode*  src_node, PCENNode*  dest_node
             iter++;
     }
 
-    SearchKSP(src_node->ref_num, dest_node->ref_num, 10);
+    SearchKSP(src_node->ref_num, dest_node->ref_num, SystemConfig::pce_k);
     LOGF("Found %d shortest paths...\n", KSP.size());
 
     return ConstrainKSPaths(KSP);
