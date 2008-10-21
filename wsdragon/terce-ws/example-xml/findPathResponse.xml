@@ -1,21 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
-	<soapenv:Header />
-	<soapenv:Body>
-		<ns1:findPathResponse xmlns:ns1="http://hopi.internet2.edu/DRAGON/TERCE">
-			<ns1:path>
-				<ns1:hops>
-					<ns1:hop loose="false">207.75.174.204</ns1:hop>
-					<ns1:hop loose="false">207.75.174.207</ns1:hop>
-				</ns1:hops>
-				<ns1:vtag>610</ns1:vtag>
-				<ns1:availableVtags>
-					<ns1:vtag>610</ns1:vtag>
-					<ns1:vtag>611</ns1:vtag>
-					<ns1:vtag>3001</ns1:vtag>
-				</availableVtags>
-			</ns1:path>
-		</ns1:findPathResponse>
-	</soapenv:Body>
-</soapenv:Envelope>
-
