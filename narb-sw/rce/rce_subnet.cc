@@ -71,7 +71,7 @@ void Subnet::AddLink(link_info* link)
     linkVector.push_back(link);
     RDB.Update(link);
 }
-
+	
 void Subnet::HideTopology()
 {
     int i, nR = routerVector.size(), nL = linkVector.size();

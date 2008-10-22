@@ -1366,6 +1366,91 @@ COMMAND (cmd_set_ospfd, (char*)"set ospfd {interdomain|intradomain} HOST  LCL_PO
     cli_node->ShowPrompt();
 }
 
+static Link* link_to_update = NULL;
+#define SHOW_LINK(L)   in_addr ip; int i, k; \
+    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3]; \
+    list<ISCD*>::iterator iter; \
+    ip.s_addr = L->Id(); \
+    strcpy (addr_buf1, inet_ntoa (ip)); \
+    ip.s_addr = L->AdvRtId(); \
+    strcpy (addr_buf2, inet_ntoa (ip)); \
+    ip.s_addr = L->LclIfAddr(); \
+    strcpy (addr_buf3, inet_ntoa (ip)); \
+    ip.s_addr = L->RmtIfAddr(); \
+    strcpy (addr_buf4, inet_ntoa (ip)); \
+    CLI_OUT("%s\t ## TE LINK - %s  - Modified @ %d.%d ## %s\t Advertising Router: %s%s\t Link ID: %s%s", cli_cstr_newline, \
+        L->Type() == RTYPE_GLO_ABS_LNK? "Abstract Global Link":"Physical Local Link",  L->ModifiedTime().tv_sec, \
+        L->ModifiedTime().tv_usec, cli_cstr_newline, addr_buf2, cli_cstr_newline, addr_buf1, cli_cstr_newline); \
+    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s", \
+                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline); \
+    CLI_OUT("\t Traffic Engineering Metric: %d%s", L->Metric(), cli_cstr_newline); \
+    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", L->MaxBandwidth(), cli_cstr_newline); \
+    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", L->MaxReservableBandwidth(), cli_cstr_newline); \
+    for (k=1, iter = L->Iscds().begin(); iter != L->Iscds().end(); k++, iter++) \
+    { \
+        CLI_OUT("\t Interface Switching Capability Descriptor #%d: %s %s%s", k, \
+                value_to_string(&str_val_conv_switching, (u_int32_t)(*iter)->swtype), \
+                value_to_string(&str_val_conv_encoding, (u_int32_t)(*iter)->encoding), cli_cstr_newline); \
+        for (i = 0; i < 8; i++) \
+        { \
+            CLI_OUT ("\t    Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline); \
+        } \
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)) \
+        { \
+            CLI_OUT ("\t    -- L2SC specific information--%s\t       --> Available VLAN tag set:", cli_cstr_newline); \
+            for (i = 1; i <= MAX_VLAN_NUM; i++) \
+                if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i); \
+            CLI_OUT("%s", cli_cstr_newline); \
+            CLI_OUT ("\t      --> Allocated VLAN tag set:"); \
+            for (i = 1; i <= MAX_VLAN_NUM; i++) \
+                if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i); \
+            CLI_OUT("%s", cli_cstr_newline); \
+        } \
+        if (((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || (*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) \
+            && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) \
+        { \
+            CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline); \
+            for (i = 1; i <= MAX_TIMESLOTS_NUM; i++) \
+                if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i); \
+            CLI_OUT("%s", cli_cstr_newline); \
+        } \
+    } \
+    list<LinkStateDelta*>* pDeltaList = L->DeltaListPointer(); \
+    if (pDeltaList) { \
+        list<LinkStateDelta*>::iterator it; \
+        LinkStateDelta* delta; \
+        for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++) { \
+            delta = *it; \
+            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s @ %d.%d<<<%s", cli_cstr_newline, k, \
+                (delta->flags & DELTA_QUERIED) != 0 || (delta->expiration.tv_sec <= SystemConfig::delta_expire_query)  ? "Queried" : "", \
+                (delta->flags & DELTA_RESERVED) != 0 ? "-Reserved" : "", \
+                (delta->flags & DELTA_UPDATED) != 0 ? "-Updated" : "", \
+                delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline); \
+            CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline); \
+            if (delta->flags & DELTA_VLANTAG) \
+                CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline); \
+            else if (delta->flags & DELTA_WAVELENGTH) \
+                CLI_OUT ("\t    ---> Used wavelength: %d%s", delta->wavelength, cli_cstr_newline); \
+            else if (delta->flags & DELTA_VTAGMASK) { \
+                CLI_OUT ("\t    ---> Used VLAN tags:"); \
+                for (i = 1; i <= MAX_VLAN_NUM; i++) { \
+                    if (HAS_VLAN(delta->vtag_mask, i)) \
+                        CLI_OUT (" %d", i); \
+                } \
+                CLI_OUT("%s", cli_cstr_newline); \
+            } \
+            else if (delta->flags & DELTA_TIMESLOTS) { \
+               CLI_OUT ("\t    ---> Used time slots:"); \
+                for (i = 1; i <= MAX_TIMESLOTS_NUM; i++) { \
+                    if (HAS_TIMESLOT(delta->timeslots, i)) \
+                        CLI_OUT (" %d", i); \
+                } \
+                CLI_OUT("%s", cli_cstr_newline); \
+            } \
+        } \
+    } \
+
+
 COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
 	 (char*)"Show \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
 {
@@ -1384,14 +1469,7 @@ COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_add
         return;
     }
 
-    //general link TE parameters
-    in_addr ip; 
-    int i, k; 
-    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3];
-    list<ISCD*>::iterator iter;
-
-_show_more_links:
-
+    /*
     ip.s_addr = link->Id();
     strcpy (addr_buf1, inet_ntoa (ip));
     ip.s_addr = link->AdvRtId();
@@ -1488,9 +1566,11 @@ _show_more_links:
             }
         }
     }
-
-    if ((link = RDB.LookupNextLinkByLclRmtIf(link)) != NULL)
-        goto _show_more_links;
+    */
+    do
+    {
+	SHOW_LINK(link)
+    } while ((link = RDB.LookupNextLinkByLclRmtIf(link)) != NULL);
 
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
@@ -1537,6 +1617,179 @@ _out:
     cli_node->ShowPrompt();
 }
 
+COMMAND(cmd_edit_link, (char*)"edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
+	(char*)"Edit/Update \n TE link \nLocal interface address\nIP\nRemote interface address\nIP")
+{
+    in_addr lcl_if, rmt_if;
+    Link * link;
+  
+    inet_aton(argv[0].c_str(), &lcl_if);
+    inet_aton(argv[1].c_str(), &rmt_if);
+  
+    link = RDB.LookupLinkByLclRmtIf(RTYPE_LOC_PHY_LNK, lcl_if, rmt_if);
+    if (!link)
+    {
+        CLI_OUT("Unknown TE link [%s-%s] in the current domain!%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    if (SystemConfig::FindHomeVlsrByRouterId(link->Id()) == 0)
+    {
+        CLI_OUT("Unknown TE link [%s-%s] in the Subnet topology! (Note: only subnet links can be edited.)%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        cli_node->ShowPrompt();
+        return;
+    }
+
+    link_to_update = new Link(link);
+    cli_node->Reader()->GoDown((char*)"edit-link-node");
+    string prompt = cli_node->Prompt(); 
+    prompt += '(';
+    prompt += argv[0];
+    prompt +='-';
+    prompt += argv[1];
+    prompt +=')';
+    cli_node->Reader()->CurrentNode()->SetPrompt(prompt);
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
+COMMAND(cmd_set_link, (char*)"set {link_id | adv_router |metric | lcl_if |rmt_if} VALUE",
+	(char*)"Set configuration...\n")
+{
+    assert (link_to_update);
+    in_addr ip;
+    if (argv[0] == "link_id")
+    {
+        
+        inet_aton(argv[1].c_str(), &ip);
+        link_to_update->SetId(ip.s_addr);
+    }
+    else if (argv[0] == "adv_router")
+    {
+        inet_aton(argv[1].c_str(), &ip);
+        link_to_update->SetAdvRtId(ip.s_addr);
+    }
+    else if (argv[0] == "metric")
+    {
+        link_to_update->SetMetric(atoi(argv[1].c_str()));
+    }
+    else if (argv[0] == "lcl_if")
+    {
+        inet_aton(argv[1].c_str(), &ip);
+        link_to_update->SetLclIfAddr(ip.s_addr);
+    }
+    else if (argv[0] == "rmt_if")
+    {
+        inet_aton(argv[1].c_str(), &ip);
+        link_to_update->SetRmtIfAddr(ip.s_addr);
+    }
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
+	(char*)"Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
+{
+    assert (link_to_update);
+
+    ISCD* iscd = NULL;
+    if (link_to_update->Iscds().size() > 0)
+    {
+        iscd = link_to_update->Iscds().front();
+        iscd->swtype= string_to_value(&str_val_conv_switching, argv[0].c_str());
+        iscd->encoding = string_to_value(&str_val_conv_encoding, argv[1].c_str());
+    }
+    else 
+    {
+        CLI_OUT("Failed to update swcap (no ISCD found)%s", cli_cstr_newline);	
+    }
+    
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_set_link_bandwidth, (char*)"set bandwidth FLOAT",
+	(char*)"Set configuration \nBandwidth\nFloat in mbps")
+{
+    assert (link_to_update);
+    float bw;
+    sscanf(argv[0].c_str(), "%f", &bw);
+    ISCD* iscd = NULL;
+    if (link_to_update->Iscds().size() > 0)
+    {
+        iscd = link_to_update->Iscds().front();
+        for (int i = 0; i < 8; i++)
+        {
+            link_to_update->UnreservedBandwidth()[i] = bw;
+            iscd->max_lsp_bw[i] = bw;
+        }
+    }
+    else 
+    {
+        CLI_OUT("Failed to update bandwidth (no ISCD found)%s", cli_cstr_newline);	
+    }
+
+    cli_node->ShowPrompt();
+}
+
+
+COMMAND(cmd_edit_link_show, (char*)"show {updated|original}",
+	(char*)"Show editing\n Updated | Original TE parameters")
+{
+    assert (link_to_update);
+    Link * link = NULL;
+
+    if (argv[0] == "updated")
+    {
+        link = link_to_update;
+    }
+    else
+    {
+        in_addr ip1, ip2;
+        ip1.s_addr = link_to_update->LclIfAddr();
+        ip2.s_addr = link_to_update->RmtIfAddr();
+        link = RDB.LookupLinkByLclRmtIf(RTYPE_LOC_PHY_LNK, ip1, ip2);
+        assert (link);
+    }
+
+    SHOW_LINK(link);
+
+    cli_node->ShowPrompt();
+}
+  
+COMMAND(cmd_edit_link_cancel, (char*)"cancel",
+	(char*)"Cancel edited TE link parameters\n")
+{
+    if (link_to_update)
+    {
+        delete link_to_update;
+        link_to_update = NULL;
+    }
+    cli_node->Reader()->GoUp();
+    CLI_OUT("\t Cancelled the currently edited link... %s", cli_cstr_newline);
+
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
+//Alias of "cancel"
+cmd_edit_link_cancel cmd_edit_link_exit_instance((char*)"exit", (char*)"Exit the current command level (cancel)\n");
+
+COMMAND(cmd_edit_link_commit, (char*)"commit",
+	(char*)"Commit edited TE link parameters\n")
+{
+    in_addr ip1, ip2;
+    ip1.s_addr = link_to_update->LclIfAddr();
+    ip2.s_addr = link_to_update->RmtIfAddr();
+    Link* link = RDB.LookupLinkByLclRmtIf(RTYPE_LOC_PHY_LNK, ip1, ip2);
+
+    *link = *link_to_update;
+    delete link_to_update;
+    link_to_update = NULL;
+
+    CLI_OUT("\t Subnet TE link 0x%x-0x%x has been updated...%s", ip1.s_addr, ip2.s_addr, cli_cstr_newline);
+
+    cli_node->Reader()->GoUp();  
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 /////////////////////////////////////////////////////////////////////
 //COMMAND_DECLARE(cmd_test6);
 //cmd_test5 cmd_test5_ins2("configure ospfd-peer IP port NUM", "Configure \n OSPF Daemon \n IP");
@@ -1545,6 +1798,7 @@ void CLIReader::InitSession()
 {
     cli_root = new CLINode(this, cli_writer);
     CLINode* node;
+    CLINode* node_level2;
     string s;
     if (SystemConfig::cli_password.size() > 0)
     {
@@ -1581,6 +1835,17 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
+    node->AddCommand(&cmd_edit_link_instance);
+    //Edit-link level under configure
+    node_level2 = node->MakeChild((char*)"edit-link-node");
+    node_level2->AddCommand(&cmd_set_link_instance);
+    node_level2->AddCommand(&cmd_set_link_swcap_instance);
+    node_level2->AddCommand(&cmd_set_link_bandwidth_instance);
+    node_level2->AddCommand(&cmd_edit_link_show_instance);
+    node_level2->AddCommand(&cmd_edit_link_cancel_instance);
+    node_level2->AddCommand(&cmd_edit_link_exit_instance);
+    node_level2->AddCommand(&cmd_edit_link_commit_instance);
+
     //////////////// End /////////////////
     current_node = cli_root;
 }

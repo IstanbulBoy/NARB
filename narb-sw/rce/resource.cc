@@ -273,6 +273,103 @@ Link::~Link()
     // Clean up dependency?
 }
 
+Link& Link::operator=(Link& link)
+{
+    //Resource
+    this->type = link.type;
+    this->domainMask = link.domainMask;
+    this->domainId = link.domainId;
+    this->advRtId = link.advRtId;
+    this->id = link.id;
+    //Link
+    this->linkType = link.linkType;
+    this->lclIfAddr = link.lclIfAddr;
+    this->rmtIfAddr = link.rmtIfAddr;
+    this->metric = link.metric;
+    this->maxBandwidth = link.maxBandwidth;
+    this->maxReservableBandwidth = link.maxReservableBandwidth;
+    this->minReservableBandwidth = link.minReservableBandwidth;
+    for (int i = 0; i < 8; i++)
+        this->unreservedBandwidth[i] = link.unreservedBandwidth[i];
+    this->rcClass = link.rcClass;
+    this->lclId = link.lclId;
+    this->rmtId = link.rmtId;
+    this->resvTable = link.resvTable;
+    this->dependings = link.dependings;
+    this->dependents= link.dependents;
+
+    this->iscds.clear();
+    list<ISCD*>::iterator it1;
+    for (it1 = link.iscds.begin(); it1 != link.iscds.end(); it1++)
+    {
+        ISCD *iscd = new ISCD;
+        *iscd = *(*it1);
+        this->iscds.push_back(iscd);
+    }
+    this->iacds.clear();
+    list<IACD*>::iterator it2;
+    for (it2 = link.iacds.begin(); it2 != link.iacds.end(); it2++)
+    {
+        IACD *iacd = new IACD(*(*it2));
+        this->iacds.push_back(iacd);
+    }
+    this->wavelenths.clear();
+    list<Wavelength*>::iterator it3;
+    for (it3 = link.wavelenths.begin(); it3 != link.wavelenths.end(); it3++)
+    {
+        Wavelength* wave = new Wavelength(*(*it3));
+        this->wavelenths.push_back(wave);
+    }
+
+    if (link.pDeltaList)
+    {
+        this->pDeltaList = new list<LinkStateDelta*>;
+        list<LinkStateDelta*>::iterator it4 = link.pDeltaList->begin();
+        for ( ; it4 != link.pDeltaList->end(); it4++)
+        {
+            LinkStateDelta* delta1 = new LinkStateDelta;
+            LinkStateDelta* delta2 = *it4;
+            memcpy(delta1, delta2, sizeof(LinkStateDelta));
+            this->pDeltaList->push_back(delta1);
+        }
+   }
+   else
+       this->pDeltaList = NULL;
+
+#ifdef HAVE_EXT_ATTR
+    this->attrTable.assign(link.attrTable.begin(), link.attrTable.end());
+    for (int i = 0; i < link.attrTable.size(); i++)
+    {
+        TLP* tlp1 = &link.attrTable[i];
+        TLP* tlp2 = &this->attrTable[i]; 
+        char* pData;
+        if (tlp1->t == N_LIST || tlp1->t == P_LIST || tlp1->t == N_VECTOR || tlp1->t == P_VECTOR)
+        {
+            if (tlp1->p)
+            {
+                tlp2->p = new list<void*>;
+                list<void*>::iterator iter = ((list<void*> *)tlp1->p)->begin();
+                while (iter != ((list<void*> *)tlp1->p)->end())
+                {
+                    if ((*iter) !=NULL)
+                    {
+                        char* p_tmp = new char[tlp1->l];
+                        memcpy(p_tmp, tlp1->p, tlp1->l);
+                        ((list<void*> *)tlp2->p)->push_back(p_tmp);
+                    }
+                    iter++;
+                }
+            }
+        }
+        else if (tlp1->p)
+        {
+            tlp2->p = new char[tlp1->l];
+            memcpy(tlp2->p, tlp1->p, tlp1->l);
+        }
+    }
+#endif
+}
+
 Link& Link::operator+= (LinkStateDelta& delta)
 {
     int i;

@@ -125,7 +125,7 @@ public:
     friend class link_info;
     friend class Subnet;
     friend class Subnet_ConfigFile;
-	friend class TerceApiTopoOriginator;
+    friend class TerceApiTopoOriginator;
 };
 
 class RouterId: public Resource
@@ -394,6 +394,7 @@ public:
             lclId = rmtId = 0; memset(unreservedBandwidth, 0, 32); rcClass = 0; pDeltaList = NULL; gettimeofday (&modifiedTime, NULL);
         }
     virtual ~Link();
+    Link& operator=(Link& link);
     u_int32_t LclIfAddr() {return lclIfAddr;}
     void SetLclIfAddr(u_int32_t x) { lclIfAddr = x;}
     u_int32_t RmtIfAddr() {return rmtIfAddr;}
@@ -403,6 +404,7 @@ public:
     float MaxBandwidth() {return maxBandwidth;}
     float MaxReservableBandwidth() {return maxReservableBandwidth;}
     void SetMaxBandwidth(float x) {maxBandwidth = x;}
+    float* UnreservedBandwidth() { return unreservedBandwidth; }
     list<ISCD*>& Iscds() {return iscds;}
     list<IACD*>& Iacds() {return iacds;}
     list<LinkStateDelta*>* DeltaListPointer() {return pDeltaList;}
