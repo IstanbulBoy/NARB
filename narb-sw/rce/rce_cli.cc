@@ -1636,9 +1636,9 @@ COMMAND(cmd_edit_link, (char*)"edit link local_if_addr LCL_IF_ADDR remote_if_add
 
     if (SystemConfig::FindHomeVlsrByRouterId(link->Id()) == 0)
     {
-        CLI_OUT("Unknown TE link [%s-%s] in the Subnet topology! (Note: only subnet links can be edited.)%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        CLI_OUT("TE link [%s-%s] exits in TEDB but not in Subnet topology! (Note: only subnet links can be edited.)%s", argv[0].c_str(), argv[1].c_str(), cli_cstr_newline);
+        CLI_OUT("We recomand only subnet links be edited. You may want to 'cancel' the editing...%s", cli_cstr_newline);
         cli_node->ShowPrompt();
-        return;
     }
 
     link_to_update = new Link(link);
@@ -1725,6 +1725,22 @@ COMMAND(cmd_set_link_bandwidth, (char*)"set bandwidth FLOAT",
     else 
     {
         CLI_OUT("Failed to update bandwidth (no ISCD found)%s", cli_cstr_newline);	
+    }
+
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_del_link_delta, (char*)"delete delta",
+	(char*)"Delete \n All resource Deltas")
+{
+    assert (link_to_update);
+    list<LinkStateDelta*>* deltaList = link_to_update->DeltaListPointer();
+    if (deltaList)
+    {
+        list<LinkStateDelta*>::iterator it;
+        for (it = deltaList->begin(); it != deltaList->end(); it++)
+            delete (*it);
+        deltaList->clear();
     }
 
     cli_node->ShowPrompt();
@@ -1841,6 +1857,7 @@ void CLIReader::InitSession()
     node_level2->AddCommand(&cmd_set_link_instance);
     node_level2->AddCommand(&cmd_set_link_swcap_instance);
     node_level2->AddCommand(&cmd_set_link_bandwidth_instance);
+    node_level2->AddCommand(&cmd_del_link_delta_instance);
     node_level2->AddCommand(&cmd_edit_link_show_instance);
     node_level2->AddCommand(&cmd_edit_link_cancel_instance);
     node_level2->AddCommand(&cmd_edit_link_exit_instance);
