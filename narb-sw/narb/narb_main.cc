@@ -83,7 +83,8 @@ void sigint (int sig)
 	 delete zebra_client;
     }
 
-    abort();
+    kill(getpid(), 9);
+    //exit(0);
 }
 
 // SIGSEGV handler.

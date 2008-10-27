@@ -171,8 +171,9 @@ void sigint (int sig)
         zebra_client_intra->Exit();
 
     // cli cleanup
-  
-    exit (0);
+
+    kill(getpid(), 9);
+    //exit(0);  
 }
 
 // Signal wrapper.
