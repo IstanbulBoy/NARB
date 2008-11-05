@@ -897,7 +897,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 	//cout<<KSP_MRN.size()<<" path has been found"<<endl;
 
 	list< list<PCENLink*> >::iterator onePath;
-	ConstraintTagSet head_vlan_tag_set, result_tag_set;
+	ConstraintTagSet head_vlan_tag_set(MAX_VLAN_NUM), result_tag_set(MAX_VLAN_NUM);
 	int best_path_num = 0;
 	u_int32_t best_vtag = 0;
 	double minCost = PCEN_INFINITE_COST;
@@ -1161,7 +1161,7 @@ ConstraintTagSet PCEN_MRN_CG::FindVlanTagSetForPath(ConstraintTagSet head_vtagse
 {
 //	LOGF("In function FindVlanTagSetForPath....\n");
 	list<PCENLink*>::iterator itLink;
-	ConstraintTagSet next_vtagset;
+	ConstraintTagSet next_vtagset(MAX_VLAN_NUM);
 	int link_number = 1;
 	
 	for(itLink = path.begin(); itLink != path.end(); itLink++)
@@ -1198,7 +1198,7 @@ int PCEN_MRN_CG::FindSpecificTagForPath(int vtag, list<PCENLink*> path)
 ConstraintTagSet PCEN_MRN_CG::FindVtagSetInLink(int link_num, ConstraintTagSet head_set, PCENLink* oneLink, bool any_vtag_ok)
 {
 //	cout<<"Search vlan tags in link "<<oneLink->lcl_end->ref_num<<" to "<<oneLink->rmt_end->ref_num<<"......"<<endl;
-	ConstraintTagSet vTagSet;
+	ConstraintTagSet vTagSet(MAX_VLAN_NUM);
 	list<ISCD*>::iterator it;
 	ISCD* iscd;
 	vTagSet.Clear();
@@ -1262,7 +1262,7 @@ ConstraintTagSet PCEN_MRN_CG::FindVtagSetInLink(int link_num, ConstraintTagSet h
 
 int PCEN_MRN_CG::FindTagInLink(int request_tag, int link_num, PCENLink* oneLink)
 {
-	ConstraintTagSet  vTagSet;
+	ConstraintTagSet  vTagSet(MAX_VLAN_NUM);
 	list<ISCD*>::iterator it;
 	ISCD* iscd;
 	vTagSet.Clear();
@@ -1340,7 +1340,7 @@ int PCEN_MRN_CG::CheckAllocatedTags(PCENLink* oneLink, int request_tag)
 //	cout<<"In CheckAllocatedTags function "<<endl;
 	list<ISCD*>::iterator it;
     	ISCD * iscd;
-	ConstraintTagSet vTagSet;
+	ConstraintTagSet vTagSet(MAX_VLAN_NUM);
 	vTagSet.Clear();
 	
 	for (it = oneLink->link->Iscds().begin(); it != oneLink->link->Iscds().end(); it++)

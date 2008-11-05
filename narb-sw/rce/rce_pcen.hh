@@ -185,8 +185,10 @@ private:
     int numBytes;
     bool hasAnyTag;
 
+    ConstraintTagSet() {}
+
 public:
-    ConstraintTagSet(int N = MAX_VLAN_NUM) 
+    ConstraintTagSet(int N) 
         { 
             numBits = N; 
             numBytes = (numBits-1)/8+1;
@@ -409,9 +411,9 @@ public:
             router_self_allocated = false;
         }
 
-    PCENNode(): ref_num(-1) { Init(); }
+    PCENNode(): waveset(MAX_WAVE_NUM), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
     PCENNode(int id);
-    PCENNode(RouterId *router_ptr): router(router_ptr), ref_num(-1)  { Init(); }
+    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
     ~PCENNode()  { if (router_self_allocated) delete router; }
 
     u_int32_t DomainId ();
