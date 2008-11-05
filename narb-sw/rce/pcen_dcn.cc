@@ -512,8 +512,8 @@ void PCEN_DCN::CleanUpTopology()
         pcen_node->tspec.Bandwidth = bandwidth_ingress;
         pcen_node->ero_track.clear();
         pcen_node->path.clear();
-        pcen_node->vtagset.TagSet().clear();
-        pcen_node->waveset.TagSet().clear();
+        pcen_node->vtagset.Clear();
+        pcen_node->waveset.Clear();
         pcen_node->minCost=PCEN_INFINITE_COST;
         pcen_node->path_visited = false;
         pcen_node->nflg.flag=0;

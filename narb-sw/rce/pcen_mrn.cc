@@ -870,7 +870,7 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
     if (reverseLink == NULL || p_list == NULL)
       return -1;
   
-    waveset.TagSet().clear();
+    waveset.Clear();
     list<void*>::iterator it;
     bool has_wave = false;
     for (it = p_list->begin(); it!= p_list->end(); it++)
@@ -1023,12 +1023,8 @@ void PCEN_MRN::SetVTagMask(ConstraintTagSet& vtagset)
     memset(vtag_mask, 0, sizeof(narb_lsp_vtagmask_tlv));
     vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
     vtag_mask->length= htons(sizeof(narb_lsp_vtagmask_tlv) - TLV_HDR_SIZE);
- 
-    list<u_int32_t>::iterator it = vtagset.TagSet().begin();
-    for (; it != vtagset.TagSet().end(); it++)
-    {
-        SET_VLAN(vtag_mask->bitmask, *it);
-    }
+
+    memcpy(vtag_mask->bitmask, vtagset.TagBitmask(), MAX_VLAN_NUM/8);
 }
 
 void PCEN_MRN::SetVTagToEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag)
@@ -1340,7 +1336,7 @@ int PCEN_MRN::PerformComputation()
             // @@@@ handling Wavelength Continuity constraints
             // A wavelength set has existed in headNode, now match it with the set of available waves on the link.
             //$$$$ Special handling for Movaz/ADVA private wavelength constraints
-            nextWaveSet.TagSet().clear();
+            nextWaveSet.Clear();
             if (has_wdm_layer &&  headNode->tspec.SWtype == MOVAZ_LSC)
             {
 #ifdef DISPLAY_ROUTING_DETAILS
@@ -1358,7 +1354,7 @@ int PCEN_MRN::PerformComputation()
             }
             
             //Handling E2E Tagged VLAN constraint
-            nextVtagSet.TagSet().clear();
+            nextVtagSet.Clear();
             if (is_e2e_tagged_vlan)
             {
                 // @@@@ bidirectional constraints (TODO)
@@ -1519,11 +1515,11 @@ int PCEN_MRN::PerformComputation()
         if (vtag == ANY_VTAG) {
 		//TODO: New VTAG selection logic to facilitate Q-Conf process (for example, random selection)
 		//$$$$ This logic would be better implemented in NARB...
-            vtag  = destNode->vtagset.TagSet().front();
+            vtag  = destNode->vtagset.LowestTag();
             if (vtag > MAX_VLAN_NUM)
                 vtag = 0;
             SetVTagToEROTrack(ero, vtag);
-            if ( destNode->vtagset.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS) ) //?LSP_OPT_VTAG_MASK
+            if ( !destNode->vtagset.IsEmpty() && (options & LSP_OPT_REQ_ALL_VTAGS) ) //?LSP_OPT_VTAG_MASK
                 SetVTagMask(destNode->vtagset);
         }
 

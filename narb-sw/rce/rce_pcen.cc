@@ -359,8 +359,8 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
 //$$$$ only Movaz specific handling for now
 void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset)
 {
-    next_waveset.TagSet().clear();
-    bool any_wave_ok = (head_waveset.TagSet().size() > 0 && head_waveset.TagSet().front() == ANY_WAVE);
+    next_waveset.Clear();
+    bool any_wave_ok = head_waveset.HasAnyTag();
 
     //$$$$ Movaz specific TE info
     // Retieve available wavelength information based on TE Wavelength Grid (present in LSAs originated from ROADMs)
@@ -416,7 +416,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
         {
             if(!next_waveset.HasTag(ntohl(*p_freq)))
             {
-                next_waveset.TagSet().clear();
+                next_waveset.Clear();
             }
         }
     }
@@ -427,10 +427,10 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
   
 void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset)
 {
-    next_vtagset.TagSet().clear();
+    next_vtagset.Clear();
     list<ISCD*>::iterator it;
     ISCD * iscd;
-    bool any_vlan_ok = (head_vtagset.TagSet().size() > 0 && head_vtagset.TagSet().front() == ANY_VTAG);
+    bool any_vlan_ok = head_vtagset.HasAnyTag();
     bool non_vlan_link = true;
 
     // Add VLAN tags available for this link.

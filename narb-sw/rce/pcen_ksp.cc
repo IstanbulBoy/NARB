@@ -644,8 +644,8 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
     if (vtag != 0)
         head_vtagset.AddTag(vtag);
     else         
-        head_vtagset.TagSet().clear();
-    head_waveset.TagSet().clear();        
+        head_vtagset.Clear();
+    head_waveset.Clear();        
     // verifying path
     for (iterL = path.begin(); iterL != path.end(); iterL++)
     {
@@ -680,7 +680,7 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
                 MovazTeLambda tel;
                 u_int32_t* p_freq;
                 PCENLink * reverseLink = L->reverse_link;
-                head_waveset.TagSet().clear();
+                head_waveset.Clear();
                 list<void*>::iterator it;
                 bool has_wave = false;
 
@@ -709,7 +709,7 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
             }
             else if (has_wdm_layer && (L->lcl_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->lcl_end->tspec.SWtype == MOVAZ_LSC))
             {
-                head_waveset.TagSet().clear();
+                head_waveset.Clear();
             }
         }       
         else

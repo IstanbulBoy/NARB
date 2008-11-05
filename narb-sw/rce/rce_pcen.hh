@@ -70,7 +70,8 @@ public:
 
 };
 
-class ConstraintTagSet
+/* Obsolete --> the original ConstraintTagSet in STL list<u_int32_t> implementation
+class ConstraintTagList
 {
 private:
     list<u_int32_t> tag_list;
@@ -153,7 +154,7 @@ public:
         }
     list<u_int32_t>& TagSet() {return tag_list;}
 
-    void Intersect(ConstraintTagSet & tagset)
+    void Intersect(ConstraintTagList & tagset)
         {
             list<u_int32_t>::iterator it = tag_list.begin();
             while (it != tag_list.end())
@@ -174,6 +175,193 @@ public:
             cout << endl;
         }
 };
+*/
+
+class ConstraintTagSet
+{
+private:
+    u_int8_t* byteArray;
+    int numBits;
+    int numBytes;
+    bool hasAnyTag;
+
+public:
+    ConstraintTagSet(int N = MAX_VLAN_NUM) 
+        { 
+            numBits = N; 
+            numBytes = (numBits-1)/8+1;
+            byteArray = new u_int8_t[numBytes]; 
+            memset(byteArray, 0, numBytes); 
+            hasAnyTag = false;
+        }
+    ~ConstraintTagSet() 
+        { 
+            delete []byteArray;
+        }
+    void AddTag(u_int32_t tag)
+        {
+            if (tag = ANY_VTAG)
+                hasAnyTag = true;
+            else
+                byteArray[(tag-1)/8] |= (0x80>>((tag-1)%8));
+        }
+    void AddTags(int num, u_int32_t* tags)
+        {
+            assert(tags);
+            for (int i = 0; i < num; i++)
+                AddTag(tags[i]);
+        }
+    void AddTags(int num, u_int16_t* tags)
+        {
+            assert(tags);
+            for (int i = 0; i < num; i++)
+                AddTag((u_int32_t)tags[i]);
+        }
+    void AddTags(u_char* bitmask, int max_num)
+        {
+            assert(bitmask);
+            for (int i = 0; i < max_num; i++)
+                byteArray[i] |= bitmask[i];
+        }
+    void DeleteTag(u_int32_t tag)
+        {
+            if (tag = ANY_VTAG)
+                hasAnyTag = false;
+            else
+                byteArray[(tag-1)/8] &= (~(0x80>>((tag-1)%8)));
+        }
+    void DeleteTags(int num, u_int32_t* tags)
+        {
+            assert(tags);
+            for (int i = 0; i < num; i++)
+                DeleteTag(tags[i]);
+        }
+    void DeleteTags(int num, u_int16_t* tags)
+        {
+            assert(tags);
+            for (int i = 0; i < num; i++)
+                DeleteTag((u_int32_t)tags[i]);
+        }
+    void DeleteTags(u_char* bitmask, int max_num)
+        {
+            assert(bitmask);
+            for (int i = 1; i < max_num; i++)
+                byteArray[i] &= (~bitmask[i]);
+        }
+    bool HasTag(u_int32_t tag)
+        {
+            if (tag == ANY_VTAG)
+                return (!IsEmpty());
+            if (tag == 0 || tag >= numBits)
+                return false;
+            return (byteArray[(tag-1)/8]&(0x80>>((tag-1)%8)));
+        }
+    bool HasAnyTag() { return hasAnyTag; }
+    bool IsEmpty()
+        {
+            if (hasAnyTag)
+                return false;
+
+            for (int i = 0; i < numBytes; i++)
+                if (byteArray[i] != 0)
+                    return false;
+
+            return true;
+        }
+    void Intersect(ConstraintTagSet & tagset)
+        {
+            if (tagset.HasAnyTag())
+                return;
+            for (int i = 0; i < this->numBytes && i < tagset.numBytes; i++)
+                this->byteArray[i] &= tagset.byteArray[i];
+            hasAnyTag = false;
+        }
+    u_int32_t LowestTag()
+        {
+            for (int i = 0; i < numBytes; i++)
+                if (byteArray[i] != 0)
+                {
+                    if (byteArray[i]&0x80)
+                        return i*8+1;
+                    else if (byteArray[i]&0x40)
+                        return i*8+2;
+                    else if (byteArray[i]&0x20)
+                        return i*8+3;
+                    else if (byteArray[i]&0x10)
+                        return i*8+4;
+                    else if (byteArray[i]&0x08)
+                        return i*8+5;
+                    else if (byteArray[i]&0x04)
+                        return i*8+6;
+                    else if (byteArray[i]&0x02)
+                        return i*8+7;
+                    else
+                        return i*8+8;
+                }
+            return 0;
+        }
+    u_int32_t HighestTag()
+        {
+            for (int i = numBytes-1; i >=0; i++)
+                if (byteArray[i] != 0)
+                {
+                    if (byteArray[i]&0x01)
+                        return i*8+8;
+                    else if (byteArray[i]&0x02)
+                        return i*8+7;
+                    else if (byteArray[i]&0x04)
+                        return i*8+6;
+                    else if (byteArray[i]&0x08)
+                        return i*8+5;
+                    else if (byteArray[i]&0x10)
+                        return i*8+4;
+                    else if (byteArray[i]&0x20)
+                        return i*8+3;
+                    else if (byteArray[i]&0x40)
+                        return i*8+2;
+                    else
+                        return i*8+1;
+                }
+            return 0;
+        }
+    int Size() 
+    {
+        int num = 0;
+        for (int i = numBytes-1; i >=0; i++)
+            if (byteArray[i] != 0)
+            {
+                if (byteArray[i]&0x01)
+                    num++;
+                if (byteArray[i]&0x02)
+                    num++;
+                if (byteArray[i]&0x04)
+                    num++;
+                if (byteArray[i]&0x08)
+                    num++;
+                if (byteArray[i]&0x10)
+                    num++;
+                if (byteArray[i]&0x20)
+                    num++;
+                if (byteArray[i]&0x40)
+                    num++;
+                if (byteArray[i]&0x80)
+                    num++;
+            }
+        return num;
+    }
+    void Clear() { memset(byteArray, 0, numBytes); }
+    u_int8_t* TagBitmask() { return byteArray; }
+    void DisplayTags()
+        {
+            if (IsEmpty()) return;
+            cout << "Tags:";
+            for (u_int32_t i = 1; i <= numBits; i++)
+                if (HasTag(i))
+                    cout << ' ' << i;
+            cout << endl;
+        }
+};
+
 
 class PCENLink;
 class PCENNode

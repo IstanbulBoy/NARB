@@ -915,7 +915,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 				head_vlan_tag_set.AddTags(vtag_mask->bitmask, ntohs(vtag_mask->length)*8);
 				result_tag_set = FindVlanTagSetForPath(head_vlan_tag_set, (*onePath), false);
 				SetVTagMask(result_tag_set);
-				LOGF("The number of all available vlan tags is:[%d]\n", result_tag_set.TagSet().size());
+				LOGF("The number of all available vlan tags is:[%d]\n", result_tag_set.Size());
 			}
 			if (vtag == ANY_VTAG)
 			{
@@ -932,7 +932,7 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 					
 					if(find_tag==false)
 					{
-						vlan_tag = result_tag_set.TagSet().front();
+						vlan_tag = result_tag_set.LowestTag();
 						find_tag = true;
 					}
 				}
@@ -1004,14 +1004,14 @@ int PCEN_MRN_CG::SearchMRNKSP(int source, int destination, u_char swtype, u_char
 				LOGF("Set vlan tag with: [%d]\n", best_vtag);
 				SetVTagToERO(best_vtag);
 			}
-			if(result_tag_set.TagSet().size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
+			if(result_tag_set.Size() >1 && (options & LSP_OPT_REQ_ALL_VTAGS))
 			{
 				LOGF("Setting vtag-mask\n");
 				SetVTagMask(result_tag_set);
 			}
 			 if (vtag_mask && (options & LSP_OPT_REQ_ALL_VTAGS))
 			{
-				LOGF("The number of all available vlan tags is:[%d]\n", result_tag_set.TagSet().size());
+				LOGF("The number of all available vlan tags is:[%d]\n", result_tag_set.Size());
 			}
 		}
 			
@@ -1142,12 +1142,8 @@ void PCEN_MRN_CG::SetVTagMask(ConstraintTagSet& vtagset)
    	 memset(vtag_mask, 0, sizeof(narb_lsp_vtagmask_tlv));
 	 vtag_mask->type = htons(TLV_TYPE_NARB_VTAG_MASK);
 	 vtag_mask->length= htons(sizeof(narb_lsp_vtagmask_tlv) - 4);
- 
-    	list<u_int32_t>::iterator it = vtagset.TagSet().begin();
-	for (; it != vtagset.TagSet().end(); it++)
-    	{
-       	 SET_VLAN(vtag_mask->bitmask, *it);
-    	}
+      
+	 memcpy(vtag_mask->bitmask, vtagset.TagBitmask(), MAX_VLAN_NUM/8);
 }
 
 double PCEN_MRN_CG::GetPathCost(list<PCENLink*>& path)
@@ -1170,15 +1166,11 @@ ConstraintTagSet PCEN_MRN_CG::FindVlanTagSetForPath(ConstraintTagSet head_vtagse
 	
 	for(itLink = path.begin(); itLink != path.end(); itLink++)
 	{
-		next_vtagset.TagSet().clear();
+		next_vtagset.Clear();
 		next_vtagset = FindVtagSetInLink(link_number, head_vtagset, *itLink, any_tag);
-//		LOGF("First vtag in next_vtagset is: %d\n", next_vtagset.TagSet().front());
-		head_vtagset.TagSet().clear();
-		list<u_int32_t>::iterator it;
-		for(it=next_vtagset.TagSet().begin(); it != next_vtagset.TagSet().end(); it++)
-		{
-			head_vtagset.AddTag(*it);
-		}
+//		LOGF("First vtag in next_vtagset is: %d\n", next_vtagset.LowestTag();
+		head_vtagset.Clear();
+              head_vtagset.AddTags(next_vtagset.TagBitmask(), MAX_VLAN_NUM/8);
 		link_number++;
 	}
 	return next_vtagset;
@@ -1209,8 +1201,8 @@ ConstraintTagSet PCEN_MRN_CG::FindVtagSetInLink(int link_num, ConstraintTagSet h
 	ConstraintTagSet vTagSet;
 	list<ISCD*>::iterator it;
 	ISCD* iscd;
-	vTagSet.TagSet().clear();
-	bool any_vlan_ok = (head_set.TagSet().size() > 0 && head_set.TagSet().front() == ANY_VTAG);
+	vTagSet.Clear();
+	bool any_vlan_ok = head_set.HasAnyTag();
        bool non_vlan_link = true;
 
 	// put all the available vlan tags in this link into vTagSet
@@ -1273,7 +1265,7 @@ int PCEN_MRN_CG::FindTagInLink(int request_tag, int link_num, PCENLink* oneLink)
 	ConstraintTagSet  vTagSet;
 	list<ISCD*>::iterator it;
 	ISCD* iscd;
-	vTagSet.TagSet().clear();
+	vTagSet.Clear();
 	bool has_l2sc = false; // if the link has L2SC switching type, the value is true;
 
 //	cout<<"Find the tag set for all the available vlan tags"<<endl;
@@ -1296,15 +1288,6 @@ int PCEN_MRN_CG::FindTagInLink(int request_tag, int link_num, PCENLink* oneLink)
 	if(!has_l2sc && link_num > 1)
 		return request_tag;
 	
-//	cout<<"The tag set size is "<<vTagSet.TagSet().size()<<endl;
-
-	//display tag list
-/*	cout << "Tags:";
-            list<u_int32_t>::iterator itTag;
-            for (itTag = vTagSet.TagSet().begin(); itTag != vTagSet.TagSet().end(); itTag++)
-                cout << ' ' << *itTag;
-            cout << endl;
-	*/
 	// if the available vlan tags don't include the request tag, return -1
 	if(!vTagSet.HasTag(request_tag))
 	{
@@ -1358,7 +1341,7 @@ int PCEN_MRN_CG::CheckAllocatedTags(PCENLink* oneLink, int request_tag)
 	list<ISCD*>::iterator it;
     	ISCD * iscd;
 	ConstraintTagSet vTagSet;
-	vTagSet.TagSet().clear();
+	vTagSet.Clear();
 	
 	for (it = oneLink->link->Iscds().begin(); it != oneLink->link->Iscds().end(); it++)
     	{
