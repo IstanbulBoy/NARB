@@ -184,6 +184,8 @@ private:
     int numBits;
     int numBytes;
     bool hasAnyTag;
+    int base;
+    int interval;
 
     ConstraintTagSet() {}
 
@@ -195,6 +197,18 @@ public:
             byteArray = new u_int8_t[numBytes]; 
             memset(byteArray, 0, numBytes); 
             hasAnyTag = false;
+            base = 1;
+            interval = 1; 
+        }
+    ConstraintTagSet(int N, int x, int y) 
+        { 
+            numBits = N; 
+            numBytes = (numBits-1)/8+1;
+            byteArray = new u_int8_t[numBytes]; 
+            memset(byteArray, 0, numBytes); 
+            hasAnyTag = false;
+            base = x;
+            interval = y; 
         }
     ~ConstraintTagSet() 
         { 
@@ -205,7 +219,10 @@ public:
             if (tag = ANY_VTAG)
                 hasAnyTag = true;
             else
-                byteArray[(tag-1)/8] |= (0x80>>((tag-1)%8));
+            {
+                tag = (tag-base)/interval;
+                byteArray[tag/8] |= (0x80>>(tag%8));
+            }
         }
     void AddTags(int num, u_int32_t* tags)
         {
@@ -230,7 +247,10 @@ public:
             if (tag = ANY_VTAG)
                 hasAnyTag = false;
             else
-                byteArray[(tag-1)/8] &= (~(0x80>>((tag-1)%8)));
+            {
+                tag = (tag-base)/interval;
+                byteArray[tag/8] &= (~(0x80>>(tag%8)));
+            }
         }
     void DeleteTags(int num, u_int32_t* tags)
         {
@@ -254,9 +274,10 @@ public:
         {
             if (tag == ANY_VTAG)
                 return (!IsEmpty());
-            if (tag == 0 || tag >= numBits)
+            tag = (tag-base)/interval;
+            if (tag >= numBits)
                 return false;
-            return (byteArray[(tag-1)/8]&(0x80>>((tag-1)%8)));
+            return (byteArray[tag/8]&(0x80>>(tag%8)));
         }
     bool HasAnyTag() { return hasAnyTag; }
     bool IsEmpty()
@@ -272,6 +293,7 @@ public:
         }
     void Intersect(ConstraintTagSet & tagset)
         {
+            assert(this->base == tagset.base && this->interval == tagset.interval);
             if (tagset.HasAnyTag())
                 return;
             for (int i = 0; i < this->numBytes && i < tagset.numBytes; i++)
@@ -284,21 +306,21 @@ public:
                 if (byteArray[i] != 0)
                 {
                     if (byteArray[i]&0x80)
-                        return i*8+1;
+                        return i*8*interval + base;
                     else if (byteArray[i]&0x40)
-                        return i*8+2;
+                        return (i*8+1)*interval + base;
                     else if (byteArray[i]&0x20)
-                        return i*8+3;
+                        return (i*8+2)*interval + base;
                     else if (byteArray[i]&0x10)
-                        return i*8+4;
+                        return (i*8+3)*interval + base;
                     else if (byteArray[i]&0x08)
-                        return i*8+5;
+                        return (i*8+4)*interval + base;
                     else if (byteArray[i]&0x04)
-                        return i*8+6;
+                        return (i*8+5)*interval + base;
                     else if (byteArray[i]&0x02)
-                        return i*8+7;
+                        return (i*8+6)*interval + base;
                     else
-                        return i*8+8;
+                        return (i*8+7)*interval + base;
                 }
             return 0;
         }
@@ -308,21 +330,21 @@ public:
                 if (byteArray[i] != 0)
                 {
                     if (byteArray[i]&0x01)
-                        return i*8+8;
+                        return (i*8+7)*interval+base;
                     else if (byteArray[i]&0x02)
-                        return i*8+7;
+                        return (i*8+6)*interval+base;
                     else if (byteArray[i]&0x04)
-                        return i*8+6;
+                        return (i*8+5)*interval+base;
                     else if (byteArray[i]&0x08)
-                        return i*8+5;
+                        return (i*8+4)*interval+base;
                     else if (byteArray[i]&0x10)
-                        return i*8+4;
+                        return (i*8+3)*interval+base;
                     else if (byteArray[i]&0x20)
-                        return i*8+3;
+                        return (i*8+2)*interval+base;
                     else if (byteArray[i]&0x40)
-                        return i*8+2;
+                        return (i*8+1)*interval+base;
                     else
-                        return i*8+1;
+                        return i*8*interval+base;
                 }
             return 0;
         }
@@ -357,9 +379,9 @@ public:
         {
             if (IsEmpty()) return;
             cout << "Tags:";
-            for (u_int32_t i = 1; i <= numBits; i++)
+            for (u_int32_t i = 0; i < numBits; i++)
                 if (HasTag(i))
-                    cout << ' ' << i;
+                    cout << ' ' << i*interval+base;
             cout << endl;
         }
 };
@@ -413,7 +435,7 @@ public:
 
     PCENNode(): waveset(MAX_WAVE_NUM), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
     PCENNode(int id);
-    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
+    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM, 192000, 100), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
     ~PCENNode()  { if (router_self_allocated) delete router; }
 
     u_int32_t DomainId ();
