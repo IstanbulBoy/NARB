@@ -210,14 +210,30 @@ public:
             base = x;
             interval = y; 
         }
-    ConstraintTagSet(ConstraintTagSet& tagset) 
+    ConstraintTagSet(const ConstraintTagSet& tagset) 
         { 
+            numBits = tagset.numBits; 
+            numBytes = tagset.numBytes;
+            hasAnyTag = tagset.hasAnyTag;
+            base = tagset.base;
+            interval = tagset.interval; 
             byteArray = new u_int8_t[tagset.numBytes];
-            memcpy(this->byteArray, tagset.byteArray, numBytes);
+            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
         }
     ~ConstraintTagSet() 
         { 
             delete []byteArray;
+        }
+    ConstraintTagSet& operator= (const ConstraintTagSet& tagset)
+        {
+            numBits = tagset.numBits; 
+            numBytes = tagset.numBytes;
+            hasAnyTag = tagset.hasAnyTag;
+            base = tagset.base;
+            interval = tagset.interval;
+            byteArray = new u_int8_t[tagset.numBytes];
+            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
+            return *this;
         }
     void AddTag(u_int32_t tag)
         {
