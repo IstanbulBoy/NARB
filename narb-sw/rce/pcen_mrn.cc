@@ -1308,7 +1308,7 @@ int PCEN_MRN::PerformComputation()
         PCENLink *nextLink;
         PCENNode *nextNode;
         bool link_visited;
-        ConstraintTagSet nextWaveSet(MAX_WAVE_NUM);
+        ConstraintTagSet nextWaveSet(MAX_WAVE_NUM, 192000, 100);
         ConstraintTagSet nextVtagSet(MAX_VLAN_NUM);
         TSpec tspec_egress;
         tspec_egress.Update(switching_type_egress, encoding_type_egress, bandwidth_egress);
