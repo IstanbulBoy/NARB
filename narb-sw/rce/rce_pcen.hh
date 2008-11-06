@@ -347,7 +347,7 @@ public:
         }
     u_int32_t HighestTag()
         {
-            for (int i = numBytes-1; i >=0; i++)
+            for (int i = numBytes-1; i >=0; i--)
                 if (byteArray[i] != 0)
                 {
                     if (byteArray[i]&0x01)
@@ -372,7 +372,7 @@ public:
     int Size() 
     {
         int num = 0;
-        for (int i = numBytes-1; i >=0; i++)
+        for (int i = numBytes-1; i >=0; i--)
             if (byteArray[i] != 0)
             {
                 if (byteArray[i]&0x01)
