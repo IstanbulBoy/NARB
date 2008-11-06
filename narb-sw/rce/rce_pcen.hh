@@ -210,9 +210,14 @@ public:
             base = x;
             interval = y; 
         }
+    ConstraintTagSet(ConstraintTagSet& tagset) 
+        { 
+            byteArray = new u_int8_t[tagset.numBytes];
+            memcpy(this->byteArray, tagset.byteArray, numBytes);
+        }
     ~ConstraintTagSet() 
         { 
-            delete byteArray;
+            delete []byteArray;
         }
     void AddTag(u_int32_t tag)
         {
