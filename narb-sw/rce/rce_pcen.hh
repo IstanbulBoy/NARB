@@ -212,7 +212,7 @@ public:
         }
     ~ConstraintTagSet() 
         { 
-            delete []byteArray;
+            delete byteArray;
         }
     void AddTag(u_int32_t tag)
         {
