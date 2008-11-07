@@ -237,7 +237,7 @@ public:
         }
     void AddTag(u_int32_t tag)
         {
-            if (tag = ANY_VTAG)
+            if (tag == ANY_VTAG)
                 hasAnyTag = true;
             else
             {
@@ -265,7 +265,7 @@ public:
         }
     void DeleteTag(u_int32_t tag)
         {
-            if (tag = ANY_VTAG)
+            if (tag == ANY_VTAG)
                 hasAnyTag = false;
             else
             {
