@@ -46,7 +46,7 @@ public:
     void Dijkstra(int source, int destination);
     void SearchKSP(int source, int destination, int K);
     PathT* ConstrainKSPaths(vector<PathT*>& KSP);
-    bool VerifyPathConstraints(list<PCENLink*>& path);
+    bool VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag, u_int32_t& pathWave);
     PCENNode* search_PCENNode(int NodeId);
     void RestoreGraphKeepFilter();
     void MaskParentPath(PathT* ParentPath); // mark the link list of the parent path
@@ -60,6 +60,9 @@ public:
     list<PCENLink*> MaskedLinkList;		// Remember the links masked before searching this path
     int DeviationNode;					// Node ID of deviation node along this path
     double cost;						// cost of this path
+    u_int32_t vlan_tag;
+    u_int32_t wavelength;
+
     union PathFlag 
     {
         unsigned long flag;        // flag that indicates whether this path has been visited

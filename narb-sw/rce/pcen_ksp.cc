@@ -331,7 +331,6 @@ int PathT::GetERO(list<ero_subobj>& ero)
     }
 }
 
-
 // This Search KSP is using the straightforward implementation of YEN's algorithm
 // Due to data structure reason, implementation is not following the paper
 // "A new implementation of YEN's ranking loopless paths algorithm"
@@ -448,6 +447,8 @@ PathT::PathT() {
     this->path.clear();
     this->MaskedLinkList.clear();
     this->pflg.flag=0;
+    this->vlan_tag = 0;
+    this->wavelength = 0;
 }
 
 void PathT::DisplayPath() {
@@ -583,7 +584,9 @@ void PCEN_KSP::Run()
     if (bestPath != NULL)
     {
         bestPath->GetERO(ero);
-       // $$$$ TODO: Set VLAN Tag and Wavelength to ERO if applicable
+        if (is_e2e_tagged_vlan && vtag == ANY_VTAG)
+            vtag = bestPath->vlan_tag;
+        // $$$$ TODO: Set VLAN Tag and Wavelength to ERO if applicable
         ReplyERO();
     }
     else
@@ -605,31 +608,23 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
     while (iterP != KSP.end())
     {
         P = (*iterP);
-        if (VerifyPathConstraints(P->path))
+        if (VerifyPathConstraints(P->path, P->vlan_tag, P->wavelength))
         {
             if (P->cost < minCost)
             {
                 minCost = P->cost;
                 bestPath = P;
-                /* $$$$ TODO
-                if (vtag == ANY_VTAG) {
-                    vtag  = next_vtagset.TagSet().front();
-                    if (vtag > MAX_VLAN_NUM)
-                        vtag = 0;
-                }
-                // Wavelength ?
-                */
             }
             iterP++;
         }
         else
             iterP = KSP.erase(iterP);
     }
-    
+
     return bestPath;
 }
 
-bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
+bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag, u_int32_t& pathWave)
 {
     PCENLink* L;
     list<PCENLink*>::iterator iterL;
@@ -717,5 +712,10 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path)
             L->rmt_end->tspec = L->lcl_end->tspec;
         }
     }
+
+    pathVtag = next_vtagset.LowestTag();
+    pathWave = next_waveset.LowestTag();
+
     return true;
 }
+

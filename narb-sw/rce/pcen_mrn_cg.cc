@@ -1561,7 +1561,7 @@ void PCEN_MRN_CG::ConstructNetworkPath()
 	 while(itPath != KSP_MRN.end())
 	 {
 		path = CGPathToNetPath2((*itPath)->path_mrn);
-		if (VerifyPathConstraints(path)) //PCEN_KSP function
+		if (VerifyPathConstraints(path, (*itPath)->vlan_tag, (*itPath)->wavelength)) //PCEN_KSP function
 		{
 			Net_Paths.push_back(path); //only constraint qualified paths are added
 		}
