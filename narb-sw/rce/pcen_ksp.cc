@@ -583,10 +583,10 @@ void PCEN_KSP::Run()
     PathT* bestPath = ConstrainKSPaths(KSP);
     if (bestPath != NULL)
     {
-        bestPath->GetERO(ero);
         if (is_e2e_tagged_vlan && vtag == ANY_VTAG)
             vtag = bestPath->vlan_tag;
-        // $$$$ TODO: Set VLAN Tag and Wavelength to ERO if applicable
+        GetPathERO(bestPath->path);
+        // $$$$ TOTO: Configure vtag-all (vtagmask) ?
         ReplyERO();
     }
     else

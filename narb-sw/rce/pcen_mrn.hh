@@ -61,7 +61,6 @@ public:
 
     bool IsLoop(list<PCENLink*> &path, PCENNode* new_node);
     bool IsInExcludedLayer(PCENNode* node);
-    void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
     void SetVTagMask(ConstraintTagSet& vtagset);
     void PreserveSceneToStacks(PCENNode& node);
     void RestoreSceneFromStacks(PCENNode& node);

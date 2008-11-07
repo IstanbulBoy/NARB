@@ -674,6 +674,8 @@ public:
     void BuildGraph(vector<PCENNode*>& routers, vector<PCENLink*>& links);
     void DJhop(float *graphhop, int node_number, int source, int* path, int* hop, float* cost);
     void ReplyErrorCode(u_int32_t ret);
+    void AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link);
+    void GetPathERO(list<PCENLink*>& path);
     void ReplyERO();
     void HoldLinkStatesUponQuery(narb_lsp_vtagmask_tlv* vtag_mask=NULL);
     void EnableConvSubnetERO2DTL() { is_subnet_ero2dtl_enabled = true;}
@@ -681,6 +683,7 @@ public:
     void SetUserSuppliedERO(list<ero_subobj>& u_ero) { user_ero.assign(u_ero.begin(), u_ero.end()); }
 
     api_msg* NewEROReplyMessage ();
+
     
     static int GetLinkEndsByIndex(vector<PCENNode*>& routers, vector<PCENLink*>& links, int j, int k, in_addr* head_ip, in_addr* tail_ip);
     static PCENLink* GetLinkByIp(vector<PCENLink*>& links, in_addr* head_ip, in_addr* tail_ip);
