@@ -59,6 +59,7 @@ enum config_code {
   CONFIG_EOS_MAP,
   CONFIG_HOLDING_TIME,
   CONFIG_CLI,
+  CONFIG_EXTRA_OPTIONS,
   CONFIG_UNKNOWN
 };
 
@@ -95,6 +96,8 @@ public:
 
     static PceAlgorithm pce_algorithm;
     static int pce_k;
+
+    static bool radix_lock_on;
 
     static string ospfd_inter_host;
     static int ospfd_inter_port;

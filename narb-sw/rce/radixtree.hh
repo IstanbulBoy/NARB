@@ -38,10 +38,11 @@
 #include <iostream>
 #include <assert.h>
 #include "rce_types.hh"
+#include "rce_config.hh"
+
 using namespace std;
 
 #define PREFIX_SIZE 6 //Counted by u_int32 = 192 bits
-#define HAVING_LOCK
 
 struct Prefix
 {
@@ -156,6 +157,7 @@ extern inline const Prefix operator&(const Prefix& p1, const Prefix& p2)
 
   return newIndex;
 }
+
 
 #define set_link(X,Y) (X)->link[check_bit((Y)->index.prefix, (X)->index.length)] = (Y); (Y)->parent = (X)
 #define set_node(X,Y, Z) (X)->index=(Y); (X)->tree = (Z)
@@ -547,36 +549,38 @@ T* RadixTree<T>::DeleteNode (RadixNode<T>* node)
   delete node;
   node = NULL;
 
-#ifdef HAVING_LOCK
-  /* If parent node is stub then delete it also. */
-  if (parent && parent->lock == 0)
-    DeleteNode(parent);
-#endif
-
+  if (SystemConfig::radix_lock_on)
+  {
+      /* If parent node is stub then delete it also. */
+      if (parent && parent->lock == 0)
+        DeleteNode(parent);
+  }
   return data;
 }
 
 template <class T>
 RadixNode<T>* RadixTree<T>::LockNode (RadixNode<T>* node)
 {
-#ifdef HAVING_LOCK
-  node->lock++;
-#endif
+  if (SystemConfig::radix_lock_on)
+  {
+      node->lock++;
+  }
   return node;
 }
 
 template <class T> 
 void RadixTree<T>::UnlockNode (RadixNode<T>* node)
 {
-#ifdef HAVING_LOCK
-  node->lock--;
-
-  if (node->lock == 0)
+  if (SystemConfig::radix_lock_on)
   {
-      //assert(!node->data);
-      DeleteNode(node);
+      node->lock--;
+
+      if (node->lock == 0)
+      {
+          //assert(!node->data);
+          DeleteNode(node);
+      }
   }
-#endif
 }
 
 //lookup and lock node

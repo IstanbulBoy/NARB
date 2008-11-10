@@ -41,6 +41,7 @@ string SystemConfig::schema_file;
 
 PceAlgorithm SystemConfig::pce_algorithm = PCE_NONE;
 int SystemConfig::pce_k = 100; //default k=100 for KSP (and related) algorithms
+bool SystemConfig::radix_lock_on = false;
 
 string SystemConfig::ospfd_inter_host("localhost");
 int SystemConfig::ospfd_inter_port = 2607;
@@ -415,6 +416,15 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
           }
           break;
 
+        case CONFIG_EXTRA_OPTIONS:
+          {
+              if (strstr(blk_body, "radix-lock") != NULL)
+              {
+                  SystemConfig::radix_lock_on = true;
+              }
+          }
+          break;
+        
       case  CONFIG_UNKNOWN:
       default:
          LOGF("Unknow configration block: %s {%s} for SystemConfig::ConfigFromFile()\n", blk_header, blk_body);
@@ -445,6 +455,8 @@ int SystemConfig::blk_code (char *buf)
         return CONFIG_HOLDING_TIME;
     else if (strstr(buf, "cli"))
         return CONFIG_CLI; 
+    else if (strstr(buf, "extra-options"))
+        return CONFIG_EXTRA_OPTIONS; 
     else
         return CONFIG_UNKNOWN;
 }
