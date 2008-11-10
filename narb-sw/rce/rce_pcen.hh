@@ -212,13 +212,13 @@ public:
         }
     ConstraintTagSet(const ConstraintTagSet& tagset) 
         { 
+            byteArray = new u_int8_t[tagset.numBytes];
+            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
             numBits = tagset.numBits; 
             numBytes = tagset.numBytes;
             hasAnyTag = tagset.hasAnyTag;
             base = tagset.base;
             interval = tagset.interval; 
-            byteArray = new u_int8_t[tagset.numBytes];
-            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
         }
     ~ConstraintTagSet() 
         { 
@@ -226,13 +226,17 @@ public:
         }
     ConstraintTagSet& operator= (const ConstraintTagSet& tagset)
         {
+            if (this->numBytes != tagset.numBytes)
+            {
+                delete []byteArray;
+                byteArray = new u_int8_t[tagset.numBytes];
+            }
+            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
             numBits = tagset.numBits; 
             numBytes = tagset.numBytes;
             hasAnyTag = tagset.hasAnyTag;
             base = tagset.base;
             interval = tagset.interval;
-            byteArray = new u_int8_t[tagset.numBytes];
-            memcpy(this->byteArray, tagset.byteArray, tagset.numBytes);
             return *this;
         }
     void AddTag(u_int32_t tag)
