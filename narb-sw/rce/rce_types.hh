@@ -57,7 +57,7 @@
 
 // Maximum number of available wavelenth's that a port/IP is assigned to
 #ifndef MAX_WAVE_NUM
-#define MAX_WAVE_NUM 40
+#define MAX_WAVE_NUM 80
 #endif
 
 #endif

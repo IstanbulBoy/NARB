@@ -190,7 +190,7 @@ void*  PCENLink::AttributeByTag (const char * tag)
 #endif
 
 
-PCENNode::PCENNode(int id): waveset(MAX_WAVE_NUM, 192000, 100), vtagset(MAX_VLAN_NUM)
+PCENNode::PCENNode(int id): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM)
 {
     ref_num=id;
     Init();

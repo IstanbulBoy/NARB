@@ -629,7 +629,7 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag,
     PCENLink* L;
     list<PCENLink*>::iterator iterL;
     ConstraintTagSet head_vtagset(MAX_VLAN_NUM), next_vtagset(MAX_VLAN_NUM);
-    ConstraintTagSet head_waveset(MAX_WAVE_NUM, 192000, 100), next_waveset(MAX_WAVE_NUM, 192000, 100);
+    ConstraintTagSet head_waveset(MAX_WAVE_NUM, 190000, 100), next_waveset(MAX_WAVE_NUM, 190000, 100);
     TSpec link_tspec;
 
     if (path.size() == 0)

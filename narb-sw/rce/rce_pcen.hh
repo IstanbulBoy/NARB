@@ -454,9 +454,9 @@ public:
             router_self_allocated = false;
         }
 
-    PCENNode(): waveset(MAX_WAVE_NUM, 192000, 100), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
+    PCENNode(): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
     PCENNode(int id);
-    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM, 192000, 100), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
+    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
     ~PCENNode()  { if (router_self_allocated) delete router; }
 
     u_int32_t DomainId ();
