@@ -412,10 +412,11 @@ int Subnet_ConfigFile::ReadConfigWdmTeGrid(char* buf, char* id, link_info* link)
         u_int32_t lambda;
 	 if(sscanf(str, "%d", &lambda) != 1)
             return 0;
-        int l = (lambda-192000)/100;
+        //$$$$ to be extended 
+        int l = (lambda-192000)/100; 
         if (l < 0 || l >= 40)
         {
-           LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid cannot take wavelength frequence %d \n", lambda);
+           LOGF("Subnet_ConfigFile::ReadConfigWdmTeGrid cannot take wavelength frequency %d \n", lambda);
            return 0;
         }
 

@@ -403,8 +403,8 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
             if (destNode->path.size()>0) 
             {
                 // concatenate subpk(s, vk_i) to shortest path found from vk_i to destination
-                nextpath=new PathT();
-                if (itLink!=headpath->path.begin()) 
+                nextpath=new PathT(); //$$ mem leak: delete first
+                if (itLink!=headpath->path.begin())  //$$ mem leak: clear list first
                 {
                     (nextpath->path).assign(headpath->path.begin(),itLink);
                     nextpath->DeviationNode=(*itLink)->lcl_end->ref_num;
