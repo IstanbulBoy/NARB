@@ -599,13 +599,6 @@ void PCEN_KSP::Run()
     {
         ReplyErrorCode(ERR_PCEN_NO_ROUTE);
     }
-
-    //$$ release PathT memory in KSP list
-    vector<PathT*>::iterator path_iter;
-    for (path_iter = KSP.begin();  path_iter != KSP.end(); path_iter++)
-        if (*path_iter)
-            delete *path_iter;
-    KSP.clear();
 }
 
 // verifying paths with VLAN continuity, WAVELENGTH continuity, and cross-layer adaptation constraints
