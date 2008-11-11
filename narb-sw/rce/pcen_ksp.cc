@@ -403,7 +403,6 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
             if (destNode->path.size()>0) 
             {
                 // concatenate subpk(s, vk_i) to shortest path found from vk_i to destination
-                delete nextpath;
                 nextpath=new PathT(); 
                 if (itLink!=headpath->path.begin()) 
                 {
@@ -440,7 +439,12 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
         //if (CandidatePaths.size()==0) 
         //    LOG("********** path exhausted..."<<endl);
     }
-    delete nextpath;
+    //$$ release memory of remaining paths in CandidatePaths list
+    for (int i = 0; i < CandidatePaths.size(); i++)
+    {
+        delete CandidatePaths[i];
+    }
+    CandidatePaths.clear();
 }
 
 PathT::PathT() {
@@ -588,7 +592,7 @@ void PCEN_KSP::Run()
         if (is_e2e_tagged_vlan && vtag == ANY_VTAG)
             vtag = bestPath->vlan_tag;
         GetPathERO(bestPath->path);
-        // $$$$ TOTO: Configure vtag-all (vtagmask) ?
+        //$$ TOTO: Configure vtag-all (vtagmask) ?
         ReplyERO();
     }
     else
@@ -620,7 +624,10 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
             iterP++;
         }
         else
+        {
+            delete (*iterP); //$$ release PathT memory
             iterP = KSP.erase(iterP);
+        }
     }
 
     return bestPath;
