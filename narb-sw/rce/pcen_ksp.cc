@@ -381,7 +381,7 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
         if (KSPcounter==K) 
         {
             delete headpath;
-            return;
+            break;;
         }
 
         // while we have not found d(pk), we just go ahead
@@ -406,7 +406,7 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
             if (destNode->path.size()>0) 
             {
                 // concatenate subpk(s, vk_i) to shortest path found from vk_i to destination
-                nextpath=new PathT(); 
+                nextpath=new PathT(); // $$ Memory leak...?
                 if (itLink!=headpath->path.begin()) 
                 {
                     (nextpath->path).assign(headpath->path.begin(),itLink);
@@ -607,6 +607,13 @@ void PCEN_KSP::Run()
     {
         ReplyErrorCode(ERR_PCEN_NO_ROUTE);
     }
+
+    //$$ release PathT memory in KSP list
+    vector<PathT*>::iterator path_iter;
+    for (path_iter = KSP.begin();  path_iter != KSP.end(); path_iter++)
+        if (*path_iter)
+            delete *path_iter;
+    KSP.clear();
 }
 
 // verifying paths with VLAN continuity, WAVELENGTH continuity, and cross-layer adaptation constraints
