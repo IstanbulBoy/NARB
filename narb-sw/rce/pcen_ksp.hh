@@ -73,6 +73,7 @@ public:
         } pfg;
     } pflg;
     PathT();
+    ~PathT();
     void CalculatePathCost();
     void DisplayPath();
     bool operator< (const PathT& p) const { return cost<p.cost; }

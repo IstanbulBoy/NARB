@@ -379,7 +379,10 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
         if (KSPcounter>1) 
             KSP.push_back(headpath);
         if (KSPcounter==K) 
+        {
+            delete headpath;
             return;
+        }
 
         // while we have not found d(pk), we just go ahead
         itLink=headpath->path.begin();
@@ -455,6 +458,11 @@ PathT::PathT() {
     this->pflg.flag=0;
     this->vlan_tag = 0;
     this->wavelength = 0;
+}
+
+PathT::~PathT() {
+    this->path.clear();
+    this->MaskedLinkList.clear();
 }
 
 void PathT::DisplayPath() {
