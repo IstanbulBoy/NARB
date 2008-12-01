@@ -107,7 +107,7 @@ void sigint (int sig)
     exit(0);
 }
 
-// SIGINT handler.
+// SIGSEGV handler.
 void sigsegv (int sig)
 {
     LOG("Terminating on signal SIGSEGV"<<endl);
