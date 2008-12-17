@@ -1277,7 +1277,7 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
   
     if (SystemConfig::rce_pri_host.length() > 0 && SystemConfig::rce_pri_port > 0)
     {
-        CLI_OUT("resource comp engine  %s/%-13d ", SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+        CLI_OUT("resource comp engine %s/%-13d ", SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
         connectable = module_connectable((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
         if (connectable)
         {
@@ -1291,7 +1291,7 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
 
     if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port > 0)
     {
-        CLI_OUT("TERCE server        %s/%-13d ", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        CLI_OUT("TERCE server         %s/%-13d ", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         connectable = module_connectable(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         if (connectable)
         {
@@ -1614,23 +1614,42 @@ COMMAND(cmd_delete_ospfd, (char*)"delete ospfd {interdomain | intradomain}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate \n Domain summary topology\n To OSPFd\n To TERCE")
+COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate \n Domain summary topology \n To TERCE | To OSPFd")
 {
     if (argv[0].compare(0, 5, "terce") == 0)
     {
-        if (terce_client)
+        if (terce_client && terce_client->GetReader() && terce_client->GetWriter())
+        {
+            if (terce_client->GetReader()->SyncSocket() < 0)
+                terce_client->Connect();
+            if (terce_client->GetReader()->SyncSocket() < 0)
+            {
+                CLI_OUT("Failed to connect to TERCE server %s:%d %s", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, cli_cstr_newline);
+                goto _out;
+            }
             NarbDomainInfo.OriginateTopology(terce_client->GetWriter());
+        }
         else
             CLI_OUT("No TERCE server info configured! %s", cli_cstr_newline);
     }
     else 
     {
-        if (zebra_client)
+        if (zebra_client && zebra_client->GetWriter())
+        {
+            if (zebra_client->GetReader()->Socket() < 0)
+                zebra_client->Connect();
+            if (zebra_client->GetReader()->Socket() < 0)
+            {
+                CLI_OUT("Failed to connect to inter-domain OSPFd %s:%d %s", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port, cli_cstr_newline);
+                goto _out;
+            }
             NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
+        }
         else
             CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
     }
 
+_out:
     cli_node->ShowPrompt();
 }
 

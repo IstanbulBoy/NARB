@@ -1215,7 +1215,7 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
 
     if (SystemConfig::terce_host.length() > 0 && SystemConfig::terce_port > 0)
     {
-        CLI_OUT("TERCE server        %s/%-13d ", (char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        CLI_OUT("TERCE server         %s/%-13d ", (char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
         connectable = module_connectable((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
         if (connectable)
         {

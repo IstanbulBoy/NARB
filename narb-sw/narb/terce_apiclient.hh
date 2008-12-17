@@ -116,6 +116,7 @@ public:
     TerceApiTopoReader(int fd, TerceApiTopoSync *server_ptr): Reader(fd), server(server_ptr), sync_fd(-1)
         {  assert(server_ptr); server_ptr->SetReader(this); }
     virtual ~TerceApiTopoReader() {}
+    int SyncSocket () {return sync_fd;}
     void SetSyncSocket (int sock);
     virtual void Run ();
     api_msg * ReadMessage( ); // <==> HandleAsyncMessage

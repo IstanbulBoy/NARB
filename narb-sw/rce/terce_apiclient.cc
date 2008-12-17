@@ -290,7 +290,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
             return -1;
         }
         assert(sync_fd > 0);
-        LOGF("RCE-TerceApiTopoSync has connected to TERCE server %s:%d.\n", terce_host, terce_port);        
+        LOGF("RCE-TerceApiTopoSync has (re)connected to TERCE server %s:%d.\n", terce_host, terce_port);        
     }
     if (writer == NULL)
     {
