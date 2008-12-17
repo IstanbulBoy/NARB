@@ -42,6 +42,7 @@
 #include "narb_config.hh"
 #include "rce_apiclient.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 #include "toolbox.hh"
 
 // NSF Dragon motd string. 
@@ -1139,6 +1140,7 @@ bool module_connectable (char * host, int port)
 
 extern ConfigFile configMaster;
 extern ZebraOspfSync* zebra_client;
+extern TerceApiTopoSync* terce_client;
 extern DomainTopologyOriginator* dts_originator;
 
 struct string_value_conversion str_val_conv_switching = 
@@ -1277,6 +1279,20 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
     {
         CLI_OUT("resource comp engine  %s/%-13d ", SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
         connectable = module_connectable((char*)SystemConfig::rce_pri_host.c_str(), SystemConfig::rce_pri_port);
+        if (connectable)
+        {
+               CLI_OUT("online%s", cli_cstr_newline);
+        }
+        else
+        {
+          	CLI_OUT("offline%s", cli_cstr_newline);
+        }
+    }
+
+    if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port > 0)
+    {
+        CLI_OUT("TERCE server            %s/%-13d ", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        connectable = module_connectable(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         if (connectable)
         {
                CLI_OUT("online%s", cli_cstr_newline);
@@ -1595,6 +1611,26 @@ COMMAND(cmd_delete_ospfd, (char*)"delete ospfd {interdomain | intradomain}",
             zebra_client->GetReader()->SetSocket(-1);
         }
     }
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate: \n Domain summary topology\n To OSPFd\n \n To TERCE")
+{
+    if (argv[0].compare(0, 5, "terce") == 0)
+    {
+        if (terce_client)
+            NarbDomainInfo.OriginateTopology(terce_client->GetWriter());
+        else
+            CLI_OUT("No TERCE server info configured! %s", cli_cstr_newline);
+    }
+    else 
+    {
+        if (zebra_client)
+            NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
+        else
+            CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
+    }
+
     cli_node->ShowPrompt();
 }
 
@@ -2699,6 +2735,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
     node->AddCommand(&cmd_delete_ospfd_instance);
+    node->AddCommand(&cmd_origintate_topology_instance);
     node->AddCommand(&cmd_set_peer_narb_instance);
     node->AddCommand(&cmd_set_routing_mode_instance);
     node->AddCommand(&cmd_show_routing_mode_instance);

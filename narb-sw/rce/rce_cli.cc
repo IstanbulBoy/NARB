@@ -1212,7 +1212,21 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
           	CLI_OUT("offline%s", cli_cstr_newline);
         }
     }
-  
+
+    if (SystemConfig::terce_host.length() > 0 && SystemConfig::terce_port > 0)
+    {
+        CLI_OUT("TERCE server            %s/%-13d ", (char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        connectable = module_connectable((char*)SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        if (connectable)
+        {
+               CLI_OUT("online%s", cli_cstr_newline);
+        }
+        else
+        {
+          	CLI_OUT("offline%s", cli_cstr_newline);
+        }
+    }
+
     cli_node->ShowPrompt();
 }
 
