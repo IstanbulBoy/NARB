@@ -1291,7 +1291,7 @@ COMMAND(cmd_show_module, (char*)"show module", (char*)"Show \n Status of softwar
 
     if (NarbDomainInfo.terce.addr[0] != 0 && NarbDomainInfo.terce.port > 0)
     {
-        CLI_OUT("TERCE server            %s/%-13d ", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        CLI_OUT("TERCE server        %s/%-13d ", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         connectable = module_connectable(NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         if (connectable)
         {
@@ -1614,7 +1614,7 @@ COMMAND(cmd_delete_ospfd, (char*)"delete ospfd {interdomain | intradomain}",
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate: \n Domain summary topology\n To OSPFd\n \n To TERCE")
+COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate \n Domain summary topology\n To OSPFd\n To TERCE")
 {
     if (argv[0].compare(0, 5, "terce") == 0)
     {
