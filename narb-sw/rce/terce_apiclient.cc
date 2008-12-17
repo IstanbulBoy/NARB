@@ -290,6 +290,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
             return -1;
         }
         assert(sync_fd > 0);
+        LOGF("RCE-TerceApiTopoSync has connected to TERCE server %s:%d.\n", terce_host, terce_port);        
     }
     if (writer == NULL)
     {
@@ -323,6 +324,7 @@ void TerceApiTopoSync::Run ()
             LOGF("RCE-TerceApiTopoSync connection attempt %d/3 ### Check TERCE server status %s:%d ###\n", attempt, terce_host, terce_port);
             return;
         }
+        LOGF("RCE-TerceApiTopoSync has (re)connected to TERCE server %s:%d.\n", terce_host, terce_port);        
     }
     if (writer == NULL)
     {
@@ -901,6 +903,7 @@ void TerceApiTopoOriginator::Run()
     {
         DeleteTopology();
         OriginateTopology();
+        LOGF("TerceApiTopoOriginator::OriginateTopology to TERCE server %s:%d.\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
     }
 }
 

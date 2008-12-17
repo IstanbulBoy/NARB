@@ -711,6 +711,8 @@ int DomainInfo::OriginateTopology (ZebraOspfWriter* oc_writer)
         link = NarbDomainInfo.NextLink();
     }
 
+    LOGF("NARB originated abstract topology to OSPFd %s:%d.\n", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port);
+
     return ret;
 }
 
@@ -756,6 +758,8 @@ int DomainInfo::DeleteTopology (ZebraOspfWriter* oc_writer)
         }
         link = NarbDomainInfo.NextLink();
     }
+
+    LOGF("NARB deleted abstract topology from OSPFd %s:%d.\n", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port);
 
     return ret;
 }
@@ -1197,6 +1201,8 @@ int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
 
     tc_writer->SendNoop();
 
+    LOGF("NARB originated abstract topology to TERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+
     return ret;
 }
 
@@ -1236,6 +1242,8 @@ int DomainInfo::DeleteTopology (TerceApiTopoWriter* tc_writer)
         }
         link = NarbDomainInfo.NextLink();
     }
+
+    LOGF("NARB deleted abstract topology from TERCE %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
 
     return ret;
 }

@@ -293,6 +293,7 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
             return -1;
         }
         assert(sync_fd > 0);
+        LOGF("NARB-TerceApiTopoSync has connected to TERCE server %s:%d.\n", terce_host, terce_port);        
     }
     if (writer == NULL)
     {
@@ -326,6 +327,7 @@ void TerceApiTopoSync::Run ()
             LOGF("NARB-TerceApiTopoSync connection attempt %d/3 ### Check TERCE server status %s:%d ###\n", attempt, terce_host, terce_port);
             return;
         }
+        LOGF("NARB-TerceApiTopoSync has (re)connected to TERCE server %s:%d.\n", terce_host, terce_port);
     }
     if (writer == NULL)
     {
