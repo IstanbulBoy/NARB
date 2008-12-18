@@ -1489,24 +1489,6 @@ _out:
     cli_node->ShowPrompt();
 }
 
-COMMAND(cmd_delete_topology, (char*)"delete topology", (char*)"Delete configuration: \n Domain summary topology\n")
-{
-    if (zebra_client)
-        NarbDomainInfo.DeleteTopology(zebra_client->GetWriter());
-    NarbDomainInfo.HideTopology();
-    cli_node->ShowPrompt();
-}
-
-COMMAND(cmd_undelete_topology, (char*)"undelete topology", (char*)"Undelete configuration: \n Domain summary topology\n")
-{
-    assert(cli_node->Reader());
-
-    NarbDomainInfo.ExposeTopology();
-    if (zebra_client)
-        NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
-    cli_node->ShowPrompt();
-}
-
 COMMAND(cmd_set_ospfd, (char*)"set ospfd {interdomain|intradomain} HOST  LCL_PORT RMT_PORT ORI_IF AREA",
 	(char*)"Set/Reset Configuration \n OSPF daemon \n Pick inter-domain instance |Pick intra-domain instance\n Host of the OSPFd\nThe local sync port on the NARB host\nThe apiserver port on the OSPFd host\nThe interface address on OSPFd through which LSA's are originated\nOSPF area ID")
 {
@@ -1616,6 +1598,8 @@ COMMAND(cmd_delete_ospfd, (char*)"delete ospfd {interdomain | intradomain}",
 
 COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (char*)"Originate \n Domain summary topology \n To TERCE | To OSPFd")
 {
+    NarbDomainInfo.ExposeTopology();
+
     if (argv[0].compare(0, 5, "terce") == 0)
     {
         if (terce_client)
@@ -1643,7 +1627,48 @@ COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (c
                 goto _out;
             }
             NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
-            LOGF("TerceApiTopoSync originated abstract topology to TERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            LOGF("TerceApiTopoSync originated abstract topology to inter-domain OSPFd %s:%d.\n", NarbDomainInfo.ospfd_inter.port, cli_cstr_newline);
+        }
+        else
+            CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
+    }
+
+_out:
+    cli_node->ShowPrompt();
+}
+
+COMMAND(cmd_delete_topology, (char*)"delete topology {terce | ospfd}", (char*)"Delete configuration: \n Domain summary topology\n To TERCE | To OSPFd")
+{
+    NarbDomainInfo.HideTopology();
+
+    if (argv[0].compare(0, 5, "terce") == 0)
+    {
+        if (terce_client)
+        {
+            if (!terce_client->NarbTerceApiReady() && terce_client->RunWithoutSyncTopology() < 0)
+            {
+                LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+                goto _out;
+            }
+            NarbDomainInfo.DeleteTopology(terce_client->GetWriter());
+            LOGF("TerceApiTopoSync deleted abstract topology fromTERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+        }
+        else
+            CLI_OUT("No TERCE server info configured! %s", cli_cstr_newline);
+    }
+    else 
+    {
+        if (zebra_client && zebra_client->GetWriter())
+        {
+            if (zebra_client->GetReader()->Socket() < 0)
+                zebra_client->Connect();
+            if (zebra_client->GetReader()->Socket() < 0)
+            {
+                CLI_OUT("Failed to connect to inter-domain OSPFd %s:%d %s", NarbDomainInfo.ospfd_inter.addr, NarbDomainInfo.ospfd_inter.port, cli_cstr_newline);
+                goto _out;
+            }
+            NarbDomainInfo.DeleteTopology(zebra_client->GetWriter());
+            LOGF("TerceApiTopoSync deleted abstract topology from inter-domain OSPFd %s:%d.\n", NarbDomainInfo.ospfd_inter.port, cli_cstr_newline);
         }
         else
             CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
@@ -2749,12 +2774,11 @@ void CLIReader::InitSession()
     node->SetPrompt((char*)"narb:cli#");
     node->AddCommand(&cmd_show_topology_instance);
     node->AddCommand(&cmd_set_topology_instance);
-    node->AddCommand(&cmd_delete_topology_instance);
-    node->AddCommand(&cmd_undelete_topology_instance);
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
     node->AddCommand(&cmd_delete_ospfd_instance);
     node->AddCommand(&cmd_origintate_topology_instance);
+    node->AddCommand(&cmd_delete_topology_instance);
     node->AddCommand(&cmd_set_peer_narb_instance);
     node->AddCommand(&cmd_set_routing_mode_instance);
     node->AddCommand(&cmd_show_routing_mode_instance);
