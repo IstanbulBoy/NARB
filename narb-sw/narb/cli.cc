@@ -1651,7 +1651,7 @@ COMMAND(cmd_delete_topology, (char*)"delete topology {terce | ospfd}", (char*)"D
                 goto _out;
             }
             NarbDomainInfo.DeleteTopology(terce_client->GetWriter());
-            LOGF("TerceApiTopoSync deleted abstract topology fromTERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            LOGF("TerceApiTopoSync deleted abstract topology from TERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
         else
             CLI_OUT("No TERCE server info configured! %s", cli_cstr_newline);
