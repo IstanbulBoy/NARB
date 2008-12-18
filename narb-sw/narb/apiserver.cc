@@ -136,7 +136,7 @@ void APIServer::Run()
     api_writer->SetAutoDelete(false);
     api_writer->SetRepeats(0);
 
-   APIReader* api_reader = CreateAPIReader(new_sock);
+    APIReader* api_reader = CreateAPIReader(new_sock);
     api_reader->SetAutoDelete(true);
     api_reader->SetRepeats(FOREVER);
     api_reader->SetWriter(api_writer);

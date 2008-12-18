@@ -2106,8 +2106,11 @@ int LSP_Broker::HandleReplyMessage (api_msg* rmsg)
     int ret = -1;
 
     if (rmsg) {
-        api_writer->PostMessage(rmsg);
-        ret = 0;
+        if (api_writer)
+        {
+            api_writer->PostMessage(rmsg);
+            ret = 0;
+        }
     }
 
     return ret;

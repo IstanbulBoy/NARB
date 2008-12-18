@@ -398,6 +398,15 @@ LSP_Broker* TerceApiTopoSync::GetLSPBroker()
     if (lspb == NULL)
     {
         lspb = new LSP_Broker(async_fd, narb_server);
+
+        //initiating the api-writer associated with this lspb
+        APIWriter *api_writer = new APIWriter(async_fd, narb_server);
+        api_writer->SetAutoDelete(false);
+        api_writer->SetObsolete(false);
+        api_writer->SetRepeats(0);
+        api_writer->SetReader(lspb);
+        lspb->SetWriter(api_writer);
+
         NARB_APIServer::lsp_brokers.push_back(lspb);
     }
     return lspb;
