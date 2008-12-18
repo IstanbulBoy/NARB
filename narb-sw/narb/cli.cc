@@ -1618,16 +1618,15 @@ COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (c
 {
     if (argv[0].compare(0, 5, "terce") == 0)
     {
-        if (terce_client && terce_client->GetReader() && terce_client->GetWriter())
+        if (terce_client)
         {
-            if (terce_client->GetReader()->SyncSocket() < 0)
-                terce_client->Connect();
-            if (terce_client->GetReader()->SyncSocket() < 0)
+            if (!terce_client->NarbTerceApiReady() && terce_client->RunWithoutSyncTopology() < 0)
             {
-                CLI_OUT("Failed to connect to TERCE server %s:%d %s", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port, cli_cstr_newline);
+                LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
                 goto _out;
             }
             NarbDomainInfo.OriginateTopology(terce_client->GetWriter());
+            LOGF("TerceApiTopoSync originated abstract topology to TERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
         else
             CLI_OUT("No TERCE server info configured! %s", cli_cstr_newline);
@@ -1644,6 +1643,7 @@ COMMAND(cmd_origintate_topology, (char*)"originate topology {terce | ospfd}", (c
                 goto _out;
             }
             NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
+            LOGF("TerceApiTopoSync originated abstract topology to TERCE server %s:%d.\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
         else
             CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
