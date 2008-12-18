@@ -1639,8 +1639,6 @@ _out:
 
 COMMAND(cmd_delete_topology, (char*)"delete topology {terce | ospfd}", (char*)"Delete configuration: \n Domain summary topology\n To TERCE | To OSPFd")
 {
-    NarbDomainInfo.HideTopology();
-
     if (argv[0].compare(0, 5, "terce") == 0)
     {
         if (terce_client)
@@ -1673,6 +1671,8 @@ COMMAND(cmd_delete_topology, (char*)"delete topology {terce | ospfd}", (char*)"D
         else
             CLI_OUT("No inter-domain OSPFd info configured! %s", cli_cstr_newline);
     }
+
+    NarbDomainInfo.HideTopology();
 
 _out:
     cli_node->ShowPrompt();
