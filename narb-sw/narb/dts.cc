@@ -1183,7 +1183,12 @@ int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
     {
         if (!router_id->hide)
         {
-            this->OriginateRouterId(tc_writer, router_id);
+            ret = this->OriginateRouterId(tc_writer, router_id);
+            if (ret != 0) 
+            {
+                LOGF("TERCE API OriginateRouterId() return error code %d.\n", ret); 
+                return ret;
+            }
          }
         router_id = NarbDomainInfo.NextRouterId();
     }
@@ -1194,7 +1199,12 @@ int DomainInfo::OriginateTopology (TerceApiTopoWriter* tc_writer)
     {
         if (!link->hide)
         {
-            this->OriginateTeLink(tc_writer, link);
+            ret = this->OriginateTeLink(tc_writer, link);
+            if (ret != 0) 
+            {
+                LOGF("TERCE API OriginateTeLink() return error code %d.\n", ret); 
+                return ret;
+            }
         }
         link = NarbDomainInfo.NextLink();
     }
@@ -1220,7 +1230,11 @@ int DomainInfo::DeleteTopology (TerceApiTopoWriter* tc_writer)
         if (!router_id->hide)
         {
             ret = tc_writer->DeleteLsa(*(in_addr*)&router_id->advRtId, lsa_type, opaque_type, router_id->opaque_id);
-            
+            if (ret != 0) 
+            {
+                LOGF("TERCE API DeleteLsa() return error code %d.\n", ret); 
+                return ret;
+            }
             LOGF("ROUTER_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
                lsa_type, opaque_type, router_id->opaque_id, NarbDomainInfo.terce.addr);
             LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", router_id->id, router_id->advRtId, ret);
@@ -1235,7 +1249,11 @@ int DomainInfo::DeleteTopology (TerceApiTopoWriter* tc_writer)
         if (!link->hide)
         {
             ret = tc_writer->DeleteLsa(*(in_addr*)&(link->advRtId), lsa_type, opaque_type, link->opaque_id);
-            
+            if (ret != 0) 
+            {
+                LOGF("TERCE API DeleteLsa() return error code %d.\n", ret); 
+                return ret;
+            }
             LOGF("LINK_ID (lsa-type[%d] opaque-type[%d]  opaque-id[%d]) deleted through NARB-TERCE API at %s.\n", 
                lsa_type, opaque_type, link->opaque_id, NarbDomainInfo.terce.addr);
             LOGF("\t ID = %X, ADV_ROUTER = %X, return code = %d.\n", link->id, link->advRtId, ret);

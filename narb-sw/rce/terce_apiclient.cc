@@ -927,7 +927,12 @@ int TerceApiTopoOriginator::OriginateTopology ()
         RouterId* router_id = (RouterId*)node->Data();
         if (router_id != NULL)
         {
-            this->OriginateRouterId(router_id);
+            ret = this->OriginateRouterId(router_id);
+            if (ret != 0)
+            {
+                LOGF("TERCE API OriginateRouterId() return error code %d.\n", ret); 
+                return ret;
+            }
         }
 
         node = tree->NextNode(node);
@@ -941,13 +946,23 @@ int TerceApiTopoOriginator::OriginateTopology ()
         Link* link = (Link*)node->Data();
         if (link != NULL)
         {
-            this->OriginateTeLink(link);
+            ret = this->OriginateTeLink(link);
+            if (ret != 0)
+            {
+                LOGF("TERCE API OriginateTeLink() return error code %d.\n", ret); 
+                return ret;
+            }
         }
 
         node = tree->NextNode(node);
     }
 
-    terce_client->GetWriter()->SendNoop();
+    if (!terce_client->GetWriter() ||!terce_client->GetWriter()->SendNoop())
+    {
+        LOGF("TERCE API could not perform SendNoop().\n"); 
+        return -1;
+    }
+
     return ret;
 }
 
@@ -971,9 +986,17 @@ int TerceApiTopoOriginator::DeleteTopology ()
         RouterId* router_id = (RouterId*)node->Data();
         if (router_id != NULL)
         {
-			u_int32_t adv_rt_id = router_id->AdvRtId();
-        	u_int32_t opaque_id = router_id->Id();
-            terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
+            u_int32_t adv_rt_id = router_id->AdvRtId();
+            u_int32_t opaque_id = router_id->Id();
+            if (terce_client->GetWriter())
+            {
+                ret = terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
+                if (ret != 0)
+                {
+                    LOGF("TERCE API DeleteLsa() return error code %d.\n", ret); 
+                    return ret;
+                }
+            }
         }
 
         node = tree->NextNode(node);
@@ -987,9 +1010,17 @@ int TerceApiTopoOriginator::DeleteTopology ()
         Link* link = (Link*)node->Data();
         if (link != NULL)
         {
-			u_int32_t adv_rt_id = link->AdvRtId();
-        	u_int32_t opaque_id = link->LclIfAddr();
-            terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
+            u_int32_t adv_rt_id = link->AdvRtId();
+            u_int32_t opaque_id = link->LclIfAddr();
+            if (terce_client->GetWriter())
+            {
+                terce_client->GetWriter()->DeleteLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, opaque_id);
+                if (ret != 0)
+                {
+                    LOGF("TERCE API DeleteLsa() return error code %d.\n", ret); 
+                    return ret;
+                }
+            }
         }
 
         node = tree->NextNode(node);
@@ -1010,13 +1041,13 @@ int TerceApiTopoOriginator::OriginateRouterId (RouterId* rtid)
     u_char lsa_type = 10;
     u_char opaque_type = 1;
 
-	TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
+    TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
     opaquedata = (void *)BuildRouterIdOpaqueData(rtid); 
     opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                   + sizeof (struct te_tlv_header);
 
     //using Router ID as the opaque ID, which TERCE should not care
-	u_int32_t adv_rt_id = rtid->AdvRtId();
+    u_int32_t adv_rt_id = rtid->AdvRtId();
     ret = tc_writer->OriginateLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, rtid->Id(), opaquedata, opaquelen);
     free(opaquedata);
     return ret;
@@ -1031,13 +1062,13 @@ int TerceApiTopoOriginator::OriginateTeLink (Link* link)
     u_char lsa_type = 10;
     u_char opaque_type = 1;
     
-	TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
+    TerceApiTopoWriter* tc_writer = terce_client->GetWriter();    
     void *opaquedata = BuildTeLinkOpaqueData(link);
     int opaquelen = ntohs(((struct te_tlv_header *)opaquedata)->length)
                       + sizeof (struct te_tlv_header);
 
     //using Link Local IfAddr as the opaque ID, which TERCE should not care
-	u_int32_t adv_rt_id = link->AdvRtId();
+    u_int32_t adv_rt_id = link->AdvRtId();
     ret = tc_writer->OriginateLsa(*(in_addr*)&adv_rt_id, lsa_type, opaque_type, link->LclIfAddr(), opaquedata, opaquelen);
     free(opaquedata);
     return ret;
