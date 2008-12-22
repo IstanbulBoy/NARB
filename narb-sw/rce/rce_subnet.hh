@@ -115,7 +115,10 @@ protected:
         routerType = RTYPE_LOC_RTID;
         linkType = RTYPE_LOC_PHY_LNK;
         //may be commented out to turn off Ciena subnet handling for non-ciena subnet
-        SystemConfig::should_incorporate_subnet = true; 
+        if (SystemConfig::wdm_subnet_on)
+            SystemConfig::should_incorporate_ciena_subnet = false;
+        else
+            SystemConfig::should_incorporate_ciena_subnet = true;
     }
     string subnetDescription;
     ResourceType routerType;

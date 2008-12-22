@@ -42,6 +42,7 @@ string SystemConfig::schema_file;
 PceAlgorithm SystemConfig::pce_algorithm = PCE_NONE;
 int SystemConfig::pce_k = 100; //default k=100 for KSP (and related) algorithms
 bool SystemConfig::radix_lock_on = false;
+bool SystemConfig::wdm_subnet_on = false;
 
 string SystemConfig::ospfd_inter_host("localhost");
 int SystemConfig::ospfd_inter_port = 2607;
@@ -80,7 +81,7 @@ u_int32_t SystemConfig::domainId = 0;
 string SystemConfig::sysDescription = "";
 
 string SystemConfig::subnet_file = "";
-bool  SystemConfig::should_incorporate_subnet = false;
+bool  SystemConfig::should_incorporate_ciena_subnet = false;
 
 HomeVlsrRouterPairList SystemConfig::home_vlsr_search_list;
 
@@ -421,6 +422,10 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
               if (strstr(blk_body, "radix-lock") != NULL)
               {
                   SystemConfig::radix_lock_on = true;
+              }
+              if (strstr(blk_body, "wdm-subnet") != NULL)
+              {
+                  SystemConfig::wdm_subnet_on = true;
               }
           }
           break;

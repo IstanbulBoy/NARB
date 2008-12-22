@@ -1484,7 +1484,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
 
     //Subnet UNI related
     u_int8_t ts = 0;  //one-based
-    if (SystemConfig::should_incorporate_subnet && pcen_link->link 
+    if (SystemConfig::should_incorporate_ciena_subnet && pcen_link->link 
         && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
         u_int8_t ts_start = 1, ts_num = 0;
@@ -1517,7 +1517,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         subobj1.l2sc_vlantag = 0;
     }
 
-    if ( SystemConfig::should_incorporate_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
+    if ( SystemConfig::should_incorporate_ciena_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
         && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
     {
         u_int8_t ts_start = 1, ts_num = 0;

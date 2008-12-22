@@ -98,6 +98,7 @@ public:
     static int pce_k;
 
     static bool radix_lock_on;
+    static bool wdm_subnet_on;
 
     static string ospfd_inter_host;
     static int ospfd_inter_port;
@@ -135,7 +136,7 @@ public:
     static string sysDescription;
 
     static string subnet_file;
-    static bool  should_incorporate_subnet;
+    static bool  should_incorporate_ciena_subnet;
 
     static HomeVlsrRouterPairList home_vlsr_search_list;
 

@@ -2059,7 +2059,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
     }
 	
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
-    if (SystemConfig::should_incorporate_subnet)
+    if (SystemConfig::should_incorporate_ciena_subnet)
     {
         PCENNode* new_pcen_source = NULL;
         PCENNode* new_pcen_destination = NULL;

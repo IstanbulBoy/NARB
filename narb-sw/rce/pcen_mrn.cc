@@ -203,7 +203,7 @@ bool PCEN_MRN::PostBuildTopology()
     }
 	
     // Building SubnetUNI 'jump' links to incorporate the UNI subnet (a Ciena SONET network in this specific implemenation)
-    if (SystemConfig::should_incorporate_subnet)
+    if (SystemConfig::should_incorporate_ciena_subnet)
     {
         PCENNode* new_pcen_source = NULL;
         PCENNode* new_pcen_destination = NULL;
@@ -623,7 +623,7 @@ void PCEN_MRN::Run()
     }
 
     //@@@@ moved here from end of PerformComputation
-    if (SystemConfig::should_incorporate_subnet)
+    if (SystemConfig::should_incorporate_ciena_subnet)
     {
         HandleSubnetUNIEROTrack(ero);
         if (ero.size() == 0)
@@ -1315,7 +1315,7 @@ int PCEN_MRN::PerformComputation()
 
                 //$$$$ TDM (Ciena CDs) subnet special handling 
                 //@@@@ We might make a special Ciena sw_type like CIENA_TDM (101) ...
-                if ( SystemConfig::should_incorporate_subnet ) 
+                if ( SystemConfig::should_incorporate_ciena_subnet ) 
                 {
                     // $$$$ Checking available timeslots on the region-border interface getting out of TDM region
                     if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)

@@ -313,7 +313,7 @@ int PCEN_DCN::VerifySubnetERO()
     if (subnet_ero.size() ==0)
         return -3;
     // there must be incorporated subnet topology
-    if (!SystemConfig::should_incorporate_subnet)
+    if (!SystemConfig::should_incorporate_ciena_subnet)
         return -4;
 
     int ln;
@@ -593,7 +593,7 @@ void PCEN_DCN::CreateMaxDisjointPaths()
     {
         subnet_ero.clear();
         ero_vlsr_alts.push_back(ero_alts[i]);
-        if (SystemConfig::should_incorporate_subnet)
+        if (SystemConfig::should_incorporate_ciena_subnet)
         {
             HandleSubnetUNIEROTrack(ero_vlsr_alts.back());
             ero_subnet_alts.push_back(subnet_ero); // could be empty
@@ -780,7 +780,7 @@ void PCEN_DCN::ReplyEROWithAltPaths()
         }
         msg = api_msg_append_tlv(msg, ero_tlv);
 
-        if (SystemConfig::should_incorporate_subnet && ero_subnet_alts[i].size() > 0)
+        if (SystemConfig::should_incorporate_ciena_subnet && ero_subnet_alts[i].size() > 0)
         {
             LOGF("++>> Alternate Path #%d Subnet ERO:\n", i);
             //$$$$ Making AltSubnetERO TLV
