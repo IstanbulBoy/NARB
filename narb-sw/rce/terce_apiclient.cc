@@ -957,7 +957,7 @@ int TerceApiTopoOriginator::OriginateTopology ()
         node = tree->NextNode(node);
     }
 
-    if (!terce_client->GetWriter() ||!terce_client->GetWriter()->SendNoop())
+    if (!terce_client->GetWriter() ||terce_client->GetWriter()->SendNoop() != 0)
     {
         LOGF("TERCE API could not perform SendNoop().\n"); 
         return -1;
