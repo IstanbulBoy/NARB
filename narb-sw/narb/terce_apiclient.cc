@@ -538,7 +538,7 @@ api_msg * TerceApiTopoReader::ReadSyncMessage ()
 
     if (rlen < 0)
     {
-        LOG("TerceApiTopoReader / Sync failed to read from"<<sync_fd<<endl);
+        LOG("TerceApiTopoReader / Sync failed to read from socket "<<sync_fd<<endl);
         server->Stop();
         return NULL;
     }
