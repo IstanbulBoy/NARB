@@ -1169,7 +1169,16 @@ struct string_value_conversion str_val_conv_encoding =
 	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
 };
 
+extern const char* DragonVersionString();
+
 /////////////////////////////////////////////////////////////////////
+
+COMMAND(cmd_show_version, (char*)"show version",
+	(char*)"Show \n NARB Version")
+{
+    CLI_OUT("DRAGON NARB -- %s%s", cli_cstr_newline);
+      cli_node->ShowPrompt();
+}
 
 COMMAND(cmd_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
@@ -2752,6 +2761,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_quit);
     cli_root->AddCommand(&cmd_configure_instance);
     cli_root->AddCommand(&cmd_test_instance);
+    cli_root->AddCommand(&cmd_show_version_instance);
     cli_root->AddCommand(&cmd_show_topology_instance);
     cli_root->AddCommand(&cmd_show_ospfd_instance);
     cli_root->AddCommand(&cmd_show_module_instance);

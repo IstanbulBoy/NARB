@@ -1152,6 +1152,18 @@ struct string_value_conversion str_val_conv_encoding =
 };
 
 
+extern const char* DragonVersionString();
+
+/////////////////////////////////////////////////////////////////////
+
+COMMAND(cmd_show_version, (char*)"show version",
+	(char*)"Show \n RCE Version")
+{
+    CLI_OUT("DRAGON RCE -- %s%s", cli_cstr_newline);
+      cli_node->ShowPrompt();
+}
+
+
 COMMAND(cmd_exit, (char*)"exit", (char*)"Exit the current command level\n")
 {
     cli_node->Reader()->Exit();
@@ -1853,6 +1865,7 @@ void CLIReader::InitSession()
     //Root level
     cli_root->AddCommand(&cmd_exit_instance);
     cli_root->AddCommand(&cmd_quit);
+    cli_root->AddCommand(&cmd_show_version_instance);
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_topology_instance);
     cli_root->AddCommand(&cmd_show_link_instance);

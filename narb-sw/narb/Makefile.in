@@ -91,11 +91,11 @@ INSTALL_SDATA = @INSTALL@ -m 600
 sbin_PROGRAMS = narb narb_test
 
 narb_SOURCES = \
-	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc narb_xmlserver.cc terce_apiclient.cc narb_main.cc
+	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc narb_xmlserver.cc terce_apiclient.cc narb_main.cc narb_version.cc
 
 
 narb_test_SOURCES = \
-	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc terce_apiclient.cc narb_test.cc
+	event.cc log.cc resource.cc apiserver.cc apiclient.cc rce_apiclient.cc narb_apiserver.cc narb_apiclient.cc lsa.cc toolbox.cc lsp_broker.cc zebra_ospfclient.cc clicmd.cc cmdtree.cc cli.cc narb_config.cc dts.cc terce_apiclient.cc narb_test.cc narb_version.cc
 
 
 narb_LDADD = -lc -lstdc++ -lxml2 -lz -L/usr/lib -L/usr/local/lib
@@ -111,7 +111,7 @@ CONFIG_CLEAN_FILES =
 sbin_PROGRAMS = narb$(EXEEXT) narb_test$(EXEEXT)
 PROGRAMS = $(sbin_PROGRAMS)
 
-am_narb_OBJECTS = event.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
+am_narb_OBJECTS = event.$(OBJEXT) narb_version.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
 	apiserver.$(OBJEXT) apiclient.$(OBJEXT) rce_apiclient.$(OBJEXT) \
 	narb_apiserver.$(OBJEXT) narb_apiclient.$(OBJEXT) lsa.$(OBJEXT) \
 	toolbox.$(OBJEXT) lsp_broker.$(OBJEXT) \
@@ -122,7 +122,7 @@ am_narb_OBJECTS = event.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
 narb_OBJECTS = $(am_narb_OBJECTS)
 narb_DEPENDENCIES =
 narb_LDFLAGS =
-am_narb_test_OBJECTS = event.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
+am_narb_test_OBJECTS = event.$(OBJEXT) narb_version.$(OBJEXT) log.$(OBJEXT) resource.$(OBJEXT) \
 	apiserver.$(OBJEXT) apiclient.$(OBJEXT) rce_apiclient.$(OBJEXT) \
 	narb_apiserver.$(OBJEXT) narb_apiclient.$(OBJEXT) lsa.$(OBJEXT) \
 	toolbox.$(OBJEXT) lsp_broker.$(OBJEXT) \
@@ -143,6 +143,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/clicmd.Po ./$(DEPDIR)/cmdtree.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/dts.Po ./$(DEPDIR)/event.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/log.Po ./$(DEPDIR)/lsa.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/narb_version.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/lsp_broker.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/narb_apiclient.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/narb_apiserver.Po \
@@ -251,6 +252,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/narb_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lsp_broker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/narb_apiclient.Po@am__quote@

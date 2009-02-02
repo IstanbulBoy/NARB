@@ -64,6 +64,9 @@ struct option longopts[] =
     { 0 }
 };
 
+
+extern const char* DragonVersionString();
+
 NARB_APIServer* narb_server = NULL; 
 ZebraOspfSync* zebra_client = NULL;
 TerceApiTopoSync* terce_client = NULL;
@@ -105,7 +108,6 @@ void sigsegv (int sig)
 }
 
 ConfigFile configMaster;
-
     
 int main( int argc, char* argv[])
 {
@@ -146,6 +148,7 @@ int main( int argc, char* argv[])
     Log::SetDebug(true);
     LOG(endl<<endl<<"#####################"<<endl
         <<"DRAGON NARB Started..."<<endl
+        <<DragonVersionString()<<endl
         <<"#####################"<<endl<<endl);
 
     //Install signal handlers

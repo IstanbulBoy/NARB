@@ -70,6 +70,8 @@ void usage()
     cout<<"\t rce [-d] (daemon)  [-f config_file] [-p CLI port] [-P API port] [-h] (help)" <<endl;
 }
 
+extern const char* DragonVersionString();
+
 ZebraOspfSync *zebra_client_inter = NULL;
 ZebraOspfSync *zebra_client_intra = NULL;
 TerceApiTopoSync *terce_client = NULL;
@@ -124,6 +126,7 @@ int main( int argc, char* argv[])
     Log::SetDebug(true);
     LOG(endl<<endl<<"#####################"<<endl
         <<"DRAGON RCE Started..."<<endl
+        <<DragonVersionString()<<endl
         <<"#####################"<<endl<<endl);
 
     if (has_config_file)
