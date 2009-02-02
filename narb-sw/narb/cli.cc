@@ -1176,7 +1176,7 @@ extern const char* DragonVersionString();
 COMMAND(cmd_show_version, (char*)"show version",
 	(char*)"Show \n NARB Version")
 {
-    CLI_OUT("DRAGON NARB -- %s%s", cli_cstr_newline);
+    CLI_OUT("DRAGON NARB -- %s%s",  DragonVersionString(), cli_cstr_newline);
       cli_node->ShowPrompt();
 }
 

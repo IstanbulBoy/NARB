@@ -7,8 +7,7 @@ const char* DragonVersionString() {
     char* revString = "$Rev$";
     char* dateString = "$LastChangedDate$";
     sprintf(dvString, "Code Revision: %s", revString+strlen("$Rev: "));
-    sprintf(dvString + strlen(dvString) - 2, " - Modification Date: %s", dateString+strlen("$LastChangedDate: "));
-    dvString[strlen(dvString) - 2] = '\n';
-    dvString[strlen(dvString) - 1] = '\000';
+    sprintf(dvString + strlen(dvString) - 2, " - Modification: %s", dateString+strlen("$LastChangedDate: "));
+    dvString[strlen(dvString) - 2] = '\000';
     return dvString;
 }

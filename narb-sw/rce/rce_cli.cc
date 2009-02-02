@@ -1159,7 +1159,7 @@ extern const char* DragonVersionString();
 COMMAND(cmd_show_version, (char*)"show version",
 	(char*)"Show \n RCE Version")
 {
-    CLI_OUT("DRAGON RCE -- %s%s", cli_cstr_newline);
+    CLI_OUT("DRAGON RCE -- %s%s", DragonVersionString(), cli_cstr_newline);
       cli_node->ShowPrompt();
 }
 
