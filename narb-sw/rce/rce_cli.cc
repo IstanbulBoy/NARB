@@ -1151,7 +1151,6 @@ struct string_value_conversion str_val_conv_encoding =
 	{ "fchannel", 	LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL, 		2}}
 };
 
-
 extern const char* DragonVersionString();
 
 /////////////////////////////////////////////////////////////////////
