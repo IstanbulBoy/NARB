@@ -1347,10 +1347,13 @@ void* TerceApiTopoOriginator::BuildTeLinkOpaqueData(Link* link)
 
   if (link->iscds.size() > 0)
     {
-      //Only sending the first ISCD
-//@@@@ISCD -- send all ISCD's if available --> Coordinate with Jarda
-      opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
-    		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)link->iscds.front());
+      //$$$$ -- sending more than one ISCD's if available --> Coordinate with Jarda
+      list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+      for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+      {
+          opaquedata = ospf_te_link_subtlv_append((te_tlv_header*)opaquedata,
+    		TE_LINK_SUBTLV_LINK_IFSWCAP, (void*)(*iter_iscd));
+      }
     }
 
   if (link->resvTable.reserves.size() > 0)

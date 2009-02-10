@@ -1958,7 +1958,7 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
                 subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
                 assert (link->iscds.size() > 0);
 
-//@@@@ISCD -- 
+                //$$$$ Assumption: subnet link has single ISCD
                 ISCD * iscd = link->iscds.front();
                 subobj1.sw_type = subobj2.sw_type = iscd->swtype;
                 subobj1.encoding = subobj2.encoding = iscd->encoding;

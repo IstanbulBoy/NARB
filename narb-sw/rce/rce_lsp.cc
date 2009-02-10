@@ -519,10 +519,15 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 vtag = lsp_vtag;
             }
 
-//@@@@ISCD -- 
+            list<ISCD*>::iterator iter_iscd = link1->Iscds().begin();
+            for ( ; iter_iscd != link1->Iscds().end(); iter_iscd++)
+            {
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+                    break; //found an L2SC ISCD
+            }
             if ((((lclid_src >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC)
                 || (lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
-                && link1->Iscds().size() > 0 && link1->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+                && link1->Iscds().size() > 0 && iter_iscd != link1->Iscds().end())
             {
                 //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
                 HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);

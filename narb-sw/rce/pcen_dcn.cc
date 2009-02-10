@@ -243,7 +243,8 @@ int PCEN_DCN::VerifyPathWithERO()
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
             //have no subnet_uni ISCD

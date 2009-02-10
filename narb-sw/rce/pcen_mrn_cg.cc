@@ -1988,7 +1988,8 @@ bool PCEN_MRN_CG::PostBuildTopology()
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
             if (iter_iscd == link->Iscds().end())
@@ -2101,7 +2102,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                 list<ISCD*>::iterator iter_iscd = link_src_backward->Iscds().begin();
                 for (; iter_iscd != link_src_backward->Iscds().end(); iter_iscd++)
                 {
-                    if ((htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+                    if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
                     {
                         *iscd = *(*iter_iscd);
                         has_l2vlan_iscd = true;
@@ -2127,7 +2128,8 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        if (link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -2202,7 +2204,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                 list<ISCD*>::iterator iter_iscd = link_dest_forward->Iscds().begin();
                 for (; iter_iscd != link_dest_forward->Iscds().end(); iter_iscd++)
                 {
-                    if ((htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+                    if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
                     {
                         *iscd = *(*iter_iscd);
                         has_l2vlan_iscd = true;
@@ -2227,7 +2229,8 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        if (link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())

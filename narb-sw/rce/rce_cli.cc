@@ -1711,18 +1711,27 @@ COMMAND(cmd_set_link, (char*)"set {link_id | adv_router |metric | lcl_if |rmt_if
     cli_node->ShowPrompt();
 }
 
-//@@@@ISCD -- 'set swcap NUM ...'
-COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
-	(char*)"Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
+COMMAND(cmd_set_link_swcap, (char*)"set swcap NUM swtype {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
+	(char*)"Set configuration \n Link interface switching capability \n the n-th ISCD \n Switching type \n Pick a switching type \nEncoding \n Pick a encoding type")
 {
     assert (link_to_update);
 
-    ISCD* iscd = NULL;
-    if (link_to_update->Iscds().size() > 0)
+    int nIscds = 0;
+    sscanf(argv[0].c_str(), "%d", &nIscds);
+    if (nIscds == 0)
     {
-        iscd = link_to_update->Iscds().front();
-        iscd->swtype= string_to_value(&str_val_conv_switching, argv[0].c_str());
-        iscd->encoding = string_to_value(&str_val_conv_encoding, argv[1].c_str());
+        CLI_OUT("Wrong ISCD number: must be between 1 and %d %s",  link_to_update->Iscds().size(), cli_cstr_newline);	
+    }
+        
+    ISCD* iscd = NULL;
+    if (link_to_update->Iscds().size() >= nIscds)
+    {
+        list<ISCD*>::iterator iter_iscd = link_to_update->Iscds().begin();
+        for (int i = 1; i < nIscds;  i++)
+            iter_iscd++;
+        iscd = (*iter_iscd);
+        iscd->swtype= string_to_value(&str_val_conv_switching, argv[1].c_str());
+        iscd->encoding = string_to_value(&str_val_conv_encoding, argv[2].c_str());
     }
     else 
     {
@@ -1732,26 +1741,22 @@ COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} enco
     cli_node->ShowPrompt();
 }
 
-//@@@@ISCD -- for all ISCD
 COMMAND(cmd_set_link_bandwidth, (char*)"set bandwidth FLOAT",
 	(char*)"Set configuration \nBandwidth\nFloat in mbps")
 {
     assert (link_to_update);
     float bw;
     sscanf(argv[0].c_str(), "%f", &bw);
+    for (int i = 0; i < 8; i++)
+        link_to_update->UnreservedBandwidth()[i] = bw;
+
     ISCD* iscd = NULL;
-    if (link_to_update->Iscds().size() > 0)
+    list<ISCD*>::iterator iter_iscd = link_to_update->Iscds().begin();
+    for (; iter_iscd != link_to_update->Iscds().end();  iter_iscd++)
     {
         iscd = link_to_update->Iscds().front();
         for (int i = 0; i < 8; i++)
-        {
-            link_to_update->UnreservedBandwidth()[i] = bw;
             iscd->max_lsp_bw[i] = bw;
-        }
-    }
-    else 
-    {
-        CLI_OUT("Failed to update bandwidth (no ISCD found)%s", cli_cstr_newline);	
     }
 
     cli_node->ShowPrompt();

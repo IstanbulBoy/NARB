@@ -909,14 +909,17 @@ Link* ResourceDB::LookupLinkBySubnetLocalId(in_addr rtId, u_int32_t localId)
     Link* link;
     while (node)
     {
-        if (link = (Link*)node->Data())
+        if ((link = (Link*)node->Data()) != NULL && link->advRtId == rtId.s_addr 
+         && (localId >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && link->Iscds().size() > 0)
         {
-//@@@@ISCD -- 
-            if (link->advRtId == rtId.s_addr && (localId >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID
-                && link->Iscds().size() > 0 && link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                && (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
-                && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((localId >> 8) & 0xff))
-                return link;
+            list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+            for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+            {
+                if ( (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
+                 && (((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
+                 && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((localId >> 8) & 0xff))
+                    return link;
+            }
         }
         node = link_tree->NextNode(node);
     }

@@ -508,7 +508,6 @@ int LSARetriever::RetrieveTopology (bool physical)
                 continue;
             if (link->Iscds().size() == 0)
                 continue;
-//@@@@ISCD -- 
             IfSwCapDesc *iscd = link->Iscds().front();
             if ((query_options&LSA_QUERY_FSC) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_FSC
               ||(query_options&LSA_QUERY_LSC) && iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC
