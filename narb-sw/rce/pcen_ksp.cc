@@ -502,7 +502,7 @@ bool PCEN_KSP::PostBuildTopology()
             list<ISCD*>::iterator iscd_iter = pcen_link->link->Iscds().begin();
             while(iscd_iter != pcen_link->link->Iscds().end())
             {
-                IfSwCapDesc* iscd = pcen_link->link->Iscds().front();
+                IfSwCapDesc* iscd = (*iscd_iter);
                 if (iscd->max_lsp_bw[7] >= bandwidth_ingress)
                     break;
                 iscd_iter++;

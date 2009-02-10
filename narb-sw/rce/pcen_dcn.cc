@@ -235,14 +235,26 @@ int PCEN_DCN::VerifyPathWithERO()
         while (node)
         {
             Link* link = (Link*)node->Data();
-            if (link == NULL || link->Iscds().size() == 0 ||
-               (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+            if (link == NULL || link->Iscds().size() == 0)
             {
                 node = tree->NextNode(node);
                 continue;
             }
+            list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+            for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+            {
+                if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                    break;
+            }
+            //have no subnet_uni ISCD
+            if (iter_iscd == link->Iscds().end())
+            {
+                node = tree->NextNode(node);
+                continue;
+            }
+            //have subnet_uni ISCD
             if (!lclid_link_src && link->AdvRtId() == source.s_addr
-                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+                 && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
             {
                 link->removeDeltaByOwner(ucid, seqnum);
                 link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
@@ -251,7 +263,7 @@ int PCEN_DCN::VerifyPathWithERO()
                 lclid_link_src->link_self_allocated = true;
             }
             else if (!lclid_link_dest && link->AdvRtId() == destination.s_addr
-                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+                 && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
             {
                 link->removeDeltaByOwner(ucid, seqnum);
                 link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)

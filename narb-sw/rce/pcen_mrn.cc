@@ -129,14 +129,24 @@ bool PCEN_MRN::PostBuildTopology()
         while (node)
         {
             Link* link = (Link*)node->Data();
-            if (link == NULL || link->Iscds().size() == 0 ||
-               (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) == 0)
+            if (link == NULL || link->Iscds().size() == 0)
+            {
+                node = tree->NextNode(node);
+                continue;
+            }
+            list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+            for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+            {
+                if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                    break;
+            }
+            if (iter_iscd == link->Iscds().end())
             {
                 node = tree->NextNode(node);
                 continue;
             }
             if (!lclid_link_src && link->AdvRtId() == source.s_addr
-                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
+                 && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((src_lcl_id >> 8) & 0xff))
             {
                 link->removeDeltaByOwner(ucid, seqnum);
                 link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
@@ -145,7 +155,7 @@ bool PCEN_MRN::PostBuildTopology()
                 lclid_link_src->link_self_allocated = true;
             }
             else if (!lclid_link_dest && link->AdvRtId() == destination.s_addr
-                 && link->Iscds().front()->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
+                 && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((dest_lcl_id >> 8) & 0xff))
             {
                 link->removeDeltaByOwner(ucid, seqnum);
                 link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
@@ -233,20 +243,43 @@ bool PCEN_MRN::PostBuildTopology()
                 link_src_backward->RmtIfAddr(), link_src_backward->LclIfAddr());
             // cutomizing link_src_forward with L2 ISCD
             iscd = new ISCD;
-            if (link_src_backward->Iscds().size() == 2) //@@@@ TODO in OSPFd?
+            bool has_l2vlan_iscd = false;
+            if (link_src_backward->Iscds().size() >= 2)
             {
-                *iscd = *link_src_backward->iscds.back();  
+                //looking for L2 VLAN ISCD
+                list<ISCD*>::iterator iter_iscd = link_src_backward->Iscds().begin();
+                for (; iter_iscd != link_src_backward->Iscds().end(); iter_iscd++)
+                {
+                    if ((htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+                    {
+                        *iscd = *(*iter_iscd);
+                        has_l2vlan_iscd = true;
+                        break;
+                    }
+                }
             }
-            else   // looking for corresponding inter-domain link and copy layer-2 specific information
-            {
+            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (subnet_ui ISCD must be availalbe when reaching here) --> Obsolete Logic!
+            { 
+                // looking for corresponding inter-domain link and copy layer-2 specific information
                 Link* link_inter = NULL;
                 tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
                 node = tree->Root();
                 while (node)
                 {
                     Link* link = (Link*)node->Data();
-                    if (link == NULL || link->Iscds().size() == 0 || link->Iscds().front()->swtype != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                       || (htons(link->Iscds().front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
+
+                    if (link == NULL || link->Iscds().size() == 0)
+                    {
+                        node = tree->NextNode(node);
+                        continue;
+                    }
+                    list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+                    for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+                    {
+                        if (link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                            break;
+                    }
+                    if (iter_iscd == link->Iscds().end())
                     {
                         node = tree->NextNode(node);
                         continue;
@@ -262,11 +295,12 @@ bool PCEN_MRN::PostBuildTopology()
                 {
                     *iscd = *link_inter->iscds.front();
                 }
-                else // fake l2 info if unavailable
+                else // fake L2 info if unavailable
                 {
                     memset(iscd, 0, sizeof(IfSwCapDesc));
                     iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
                     iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                    //refering the bandwidth of first ISCD
                     for (i = 0; i < 8; i++)
                         iscd->max_lsp_bw[i] = link_src_backward->Iscds().front()->max_lsp_bw[i];
                 }
@@ -310,20 +344,42 @@ bool PCEN_MRN::PostBuildTopology()
                 link_dest_forward->RmtIfAddr(), link_dest_forward->LclIfAddr());
             // cutomizing link_dest_backward
             iscd = new ISCD;
-            if (link_dest_forward->Iscds().size() == 2) //@@@@ TODO in OSPFd
+            bool has_l2vlan_iscd = false;
+            if (link_dest_forward->Iscds().size() >= 2)
             {
-                *iscd = *link_dest_forward->iscds.back();  
+                //looking for L2 VLAN ISCD
+                list<ISCD*>::iterator iter_iscd = link_dest_forward->Iscds().begin();
+                for (; iter_iscd != link_dest_forward->Iscds().end(); iter_iscd++)
+                {
+                    if ((htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+                    {
+                        *iscd = *(*iter_iscd);
+                        has_l2vlan_iscd = true;
+                        break;
+                    }
+                }
             }
-            else // looking for corresponding inter-domain link and copy layer-2 specific information
+            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (subnet_ui ISCD must be availalbe when reaching here) --> Obsolete Logic!
             {
+                // looking for corresponding inter-domain link and copy layer-2 specific information
                 Link* link_inter = NULL;
                 tree = RDB.Tree(RTYPE_GLO_ABS_LNK);
                 node = tree->Root();
                 while (node)
                 {
                     Link* link = (Link*)node->Data();
-                    if (link == NULL || link->Iscds().size() == 0 || link->Iscds().front()->swtype != LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
-                       || (htons(link->Iscds().front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) == 0)
+                    if (link == NULL || link->Iscds().size() == 0)
+                    {
+                        node = tree->NextNode(node);
+                        continue;
+                    }
+                    list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+                    for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+                    {
+                        if (link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                            break;
+                    }
+                    if (iter_iscd == link->Iscds().end())
                     {
                         node = tree->NextNode(node);
                         continue;
@@ -344,6 +400,7 @@ bool PCEN_MRN::PostBuildTopology()
                     memset(iscd, 0, sizeof(IfSwCapDesc));
                     iscd->swtype = LINK_IFSWCAP_SUBTLV_SWCAP_L2SC;
                     iscd->encoding = LINK_IFSWCAP_SUBTLV_ENC_ETH;
+                    //refering the bandwidth of first ISCD
                     for (i = 0; i < 8; i++)
                         iscd->max_lsp_bw[i] = link_dest_forward->Iscds().front()->max_lsp_bw[i];
                 }

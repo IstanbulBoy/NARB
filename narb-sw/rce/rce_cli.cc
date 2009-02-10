@@ -1711,6 +1711,7 @@ COMMAND(cmd_set_link, (char*)"set {link_id | adv_router |metric | lcl_if |rmt_if
     cli_node->ShowPrompt();
 }
 
+//@@@@ISCD -- 'set swcap NUM ...'
 COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} encoding {lambda|ethernet|packet|sdh}",
 	(char*)"Set configuration \n link interface switching capability\nPick a switching type\nEncoding")
 {
@@ -1731,6 +1732,7 @@ COMMAND(cmd_set_link_swcap, (char*)"set swcap {lsc|tdm|psc1|psc2|psc3|psc4} enco
     cli_node->ShowPrompt();
 }
 
+//@@@@ISCD -- for all ISCD
 COMMAND(cmd_set_link_bandwidth, (char*)"set bandwidth FLOAT",
 	(char*)"Set configuration \nBandwidth\nFloat in mbps")
 {

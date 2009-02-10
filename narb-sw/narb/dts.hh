@@ -101,6 +101,7 @@ public:
     u_int16_t info_flag;
 
 #define ifswcap iscds.front()
+    //$$$$ By default, (abstract) TE links come to / from NARB have only single ISCD
     ISCD* GetISCD () { return iscds.front(); }
     link_info();
     link_info(u_int32_t domain_id, in_addr advId, in_addr linkId);

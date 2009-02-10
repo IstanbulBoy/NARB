@@ -911,6 +911,7 @@ Link* ResourceDB::LookupLinkBySubnetLocalId(in_addr rtId, u_int32_t localId)
     {
         if (link = (Link*)node->Data())
         {
+//@@@@ISCD -- 
             if (link->advRtId == rtId.s_addr && (localId >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID
                 && link->Iscds().size() > 0 && link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
                 && (htons(link->Iscds().front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
