@@ -64,7 +64,6 @@ public:
     u_int16_t info_flag;
     u_int32_t dtl_id;
 
-#define _ifswcap iscds.front()
     ISCD* GetISCD () { return iscds.front(); }
     link_info(ResourceType link_type, u_int32_t domain_id, in_addr advId, in_addr linkId);
     virtual ~link_info() {}

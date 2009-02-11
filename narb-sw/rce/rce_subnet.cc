@@ -279,19 +279,19 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       ReadConfigParameter(link_body, (char*)"unrsv_bw5", (char*)"%f", &link->unreservedBandwidth[5]);
                       ReadConfigParameter(link_body, (char*)"unrsv_bw6", (char*)"%f", &link->unreservedBandwidth[6]);
                       ReadConfigParameter(link_body, (char*)"unrsv_bw7", (char*)"%f", &link->unreservedBandwidth[7]);
-                      memcpy(link->_ifswcap->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
+                      memcpy(link->GetISCD()->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"enc_type", (char*)"%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-                      link->_ifswcap->encoding = (u_char)encoding;
+                      link->GetISCD()->encoding = (u_char)encoding;
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"sw_type", (char*)"%d", &sw_type))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-                      link->_ifswcap->swtype = (u_char)sw_type;
+                      link->GetISCD()->swtype = (u_char)sw_type;
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"metric", (char*)"%d", &link->metric))

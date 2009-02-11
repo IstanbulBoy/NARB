@@ -1431,8 +1431,7 @@ static Link* link_to_update = NULL;
                 if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i); \
             CLI_OUT("%s", cli_cstr_newline); \
         } \
-        if (((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || (*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) \
-            && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) \
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) \
         { \
             CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline); \
             for (i = 1; i <= MAX_TIMESLOTS_NUM; i++) \
@@ -1533,8 +1532,7 @@ COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_add
                 if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
             CLI_OUT("%s", cli_cstr_newline);
         }
-        if (((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC || (*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) 
-            && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
             CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
             for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)

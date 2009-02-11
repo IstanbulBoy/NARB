@@ -1255,7 +1255,7 @@ te_tlv_header * ospf_te_link_subtlv_append(te_tlv_header * tlv_header, u_int16_t
             {
               sub_tlv_size += (sizeof(link_ifswcap_specific_vlan) - 8);
             }
-            else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC
+            else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM
             && (htons(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
             {
               sub_tlv_size += (sizeof(link_ifswcap_specific_subnet_uni) - 8);

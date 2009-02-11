@@ -310,7 +310,7 @@ Resource* LSAHandler::Parse()
                                         swcap->vlan_info.length = htons(bitmask_len + 4);
                                     }
                                 }
-                                if ( (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(swcap->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) 
+                                if ( (swcap->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) && (ntohs(swcap->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) 
                                 {
                                     memcpy((char*)swcap + ISCD_MADATORY_SIZE, (char*)sub_tlvh+TLV_HDR_SIZE + ISCD_MADATORY_SIZE, ntohs(swcap->subnet_uni_info.length));
                                 }

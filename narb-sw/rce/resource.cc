@@ -416,6 +416,7 @@ Link& Link::operator+= (LinkStateDelta& delta)
                     }
                 }
             }
+            /*Obsolete
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
                 if (delta.flags & DELTA_TIMESLOTS)
@@ -424,6 +425,7 @@ Link& Link::operator+= (LinkStateDelta& delta)
                         (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
                 }
             }
+            */
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
@@ -490,6 +492,7 @@ Link& Link::operator-= (LinkStateDelta& delta)
                     }
                 }
             }
+            /*Obsolete
             if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
             {
                 if (delta.flags & DELTA_TIMESLOTS)
@@ -498,6 +501,7 @@ Link& Link::operator-= (LinkStateDelta& delta)
                         (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
                 }
             }
+            */
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
@@ -915,7 +919,7 @@ Link* ResourceDB::LookupLinkBySubnetLocalId(in_addr rtId, u_int32_t localId)
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                if ( (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
+                if ( (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM 
                  && (((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 
                  && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((localId >> 8) & 0xff))
                     return link;

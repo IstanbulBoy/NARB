@@ -522,13 +522,13 @@ bool PCENLink::CrossingRegionBoundary(TSpec& tspec)
     }
 
     // Check implicit adaptation
-    if (this->reverse_link && this->reverse_link->link && 
-        this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1)
+    if (this->reverse_link && this->reverse_link->link)
     {
-        //@@@@ Does encoding matter?
-        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype
-            || this->link->iscds.front()->encoding != this->reverse_link->link->iscds.front()->encoding)
-            return true;
+        if (this->link->iscds.size()* this->reverse_link->link->iscds.size() > 1) 
+            return true; //at least one direction of the link supports multiple ISCDs
+        if (this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1
+            && this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype)
+            return true; //implicit adaptation
     }
 
     return false;
@@ -603,9 +603,7 @@ int PCENLink::GetNextRegionTspec(TSpec& tspec)
     if (this->reverse_link && this->reverse_link->link && 
         this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1)
     {
-        //@@@@ Does encoding matter?
-        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype
-            || this->link->iscds.front()->encoding != this->reverse_link->link->iscds.front()->encoding)
+        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype)
         {
             tspec.SWtype = this->reverse_link->link->iscds.front()->swtype;
             tspec.ENCtype = this->reverse_link->link->iscds.front()->encoding;
@@ -1471,83 +1469,111 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
     //E2E VLAN related
     if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->link)
     {
-        if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
+        list<ISCD*>::iterator iter_iscd = pcen_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
         {
-            subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+                break;
+            }
         }
     } 
     if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
-        if (pcen_link->reverse_link->link->iscds.front() && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
-            subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+        list<ISCD*>::iterator iter_iscd = pcen_link->reverse_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
+        {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+                break;
+            }
+        }
     } 
 
     //Subnet UNI related
-    u_int8_t ts = 0;  //one-based
-    if (SystemConfig::should_incorporate_ciena_subnet && pcen_link->link 
-        && (ntohs(pcen_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
+    if (SystemConfig::should_incorporate_ciena_subnet && pcen_link->link)
     {
-        u_int8_t ts_start = 1, ts_num = 0;
-        if ((dest_lcl_id & 0xff) > 0 &&  (dest_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((dest_lcl_id >> 8) & 0xff) == pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
-            ts_start = (dest_lcl_id & 0xff);
-        for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
+        u_int8_t ts = 0;  //one-based
+        list<ISCD*>::iterator iter_iscd = pcen_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
         {
-            if (HAS_TIMESLOT(pcen_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
-            {
-                ts_num++;
-            }
-            else
-            {
-                ts_num = 0;
-            }
-            if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->rmt_end->tspec.Bandwidth))
-            {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                 break;
+        }
+        if (iter_iscd != pcen_link->link->iscds.end())
+        {
+            u_int8_t ts_start = 1, ts_num = 0;
+            if ((dest_lcl_id & 0xff) > 0 &&  (dest_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((dest_lcl_id >> 8) & 0xff) == (*iter_iscd)->subnet_uni_info.subnet_uni_id)
+                ts_start = (dest_lcl_id & 0xff);
+            for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
+            {
+                if (HAS_TIMESLOT((*iter_iscd)->subnet_uni_info.timeslot_bitmask, ts))
+                {
+                    ts_num++;
+                }
+                else
+                {
+                    ts_num = 0;
+                }
+                if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->rmt_end->tspec.Bandwidth))
+                {
+                    break;
+                }
             }
+            if (ts > MAX_TIMESLOTS_NUM) 
+            {
+                ts = 0;
+            }
+            else 
+            {
+                ts = ts-ts_num+1;
+            }
+            subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |((*iter_iscd)->subnet_uni_info.subnet_uni_id << 8) | ts );
+            subobj1.l2sc_vlantag = 0;
         }
-        if (ts > MAX_TIMESLOTS_NUM) 
-        {
-            ts = 0;
-        }
-        else 
-        {
-            ts = ts-ts_num+1;
-        }
-        subobj1.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_DEST << 16) |(pcen_link->link->iscds.front()->subnet_uni_info.subnet_uni_id << 8) | ts );
-        subobj1.l2sc_vlantag = 0;
     }
 
-    if ( SystemConfig::should_incorporate_ciena_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link 
-        && (ntohs(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0 )
+    if ( SystemConfig::should_incorporate_ciena_subnet && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
-        u_int8_t ts_start = 1, ts_num = 0;
-        if ((src_lcl_id & 0xff) > 0 &&  (src_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((src_lcl_id >> 8) & 0xff) == pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id)
-            ts_start = (src_lcl_id & 0xff);
-        for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
+        list<ISCD*>::iterator iter_iscd = pcen_link->reverse_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->reverse_link->link->iscds.end(); iter_iscd++)
         {
-            if (HAS_TIMESLOT(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.timeslot_bitmask, ts))
-            {
-                ts_num++;
-            }
-            else
-            {
-                ts_num = 0;
-            }
-            if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->lcl_end->tspec.Bandwidth))
-            {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                 break;
+        }
+        if (iter_iscd != pcen_link->reverse_link->link->iscds.end())
+        {
+            u_int8_t ts = 0, ts_start = 1, ts_num = 0;
+            if ((src_lcl_id & 0xff) > 0 &&  (src_lcl_id & 0xff) <= MAX_TIMESLOTS_NUM && ((src_lcl_id >> 8) & 0xff) == (*iter_iscd)->subnet_uni_info.subnet_uni_id)
+                ts_start = (src_lcl_id & 0xff);
+            for (ts = ts_start; ts <= MAX_TIMESLOTS_NUM; ts++)
+            {
+                if (HAS_TIMESLOT((*iter_iscd)->subnet_uni_info.timeslot_bitmask, ts))
+                {
+                    ts_num++;
+                }
+                else
+                {
+                    ts_num = 0;
+                }
+                if (ts_num >= SystemConfig::MapBandwidthToNumberOfTimeslots(pcen_link->lcl_end->tspec.Bandwidth))
+                {
+                    break;
+                }
             }
+            if (ts > MAX_TIMESLOTS_NUM) 
+            {
+                ts = 0;
+            }
+            else 
+            {
+                ts = ts-ts_num+1;
+            }
+            subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) |((*iter_iscd)->subnet_uni_info.subnet_uni_id <<8) | ts );
+            subobj2.l2sc_vlantag = 0;
         }
-        if (ts > MAX_TIMESLOTS_NUM) 
-        {
-            ts = 0;
-        }
-        else 
-        {
-            ts = ts-ts_num+1;
-        }
-        subobj2.if_id = htonl( (LOCAL_ID_TYPE_SUBNET_UNI_SRC << 16) |(pcen_link->reverse_link->link->iscds.front()->subnet_uni_info.subnet_uni_id <<8) | ts );
-        subobj2.l2sc_vlantag = 0;
     }
 
     ero_track.push_back(subobj1);

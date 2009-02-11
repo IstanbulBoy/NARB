@@ -1098,18 +1098,28 @@ void PCEN_MRN_CG::AddLinkToERO(PCENLink* pcen_link)
     //E2E VLAN related
     if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->link)
     {
-        if (ntohs(pcen_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC)
+        list<ISCD*>::iterator iter_iscd = pcen_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
         {
-//        	LOGF("Addlinktoero 1: [%d]\n", vtag);
-            subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                //LOGF("Addlinktoero 1: [%d]\n", vtag);
+                subobj1.l2sc_vlantag = vtag; //*(u_int16_t *)subobj1.pad
+                break;
+            }
         }
     } 
     if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
-        if (pcen_link->reverse_link->link->iscds.front() && (ntohs(pcen_link->reverse_link->link->iscds.front()->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
+        list<ISCD*>::iterator iter_iscd = pcen_link->reverse_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
         {
-//        	LOGF("Addlinktoero 2:[%d]\n", vtag);
-		subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                //LOGF("Addlinktoero 2:[%d]\n", vtag);
+                subobj2.l2sc_vlantag = vtag; //*(u_int16_t *)subobj2.pad
+                break;
+            }
         }
     } 
 
@@ -1988,8 +1998,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
             if (iter_iscd == link->Iscds().end())
@@ -2128,8 +2137,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -2146,7 +2154,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                 }
                 if (link_inter != NULL)
                 {
-                    *iscd = *link_inter->iscds.front();
+                    *iscd = *link_inter->iscds.front(); // inter-domain links have at most one ISCD
                 }
                 else // fake L2 info if unavailable
                 {
@@ -2229,8 +2237,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -2247,7 +2254,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                 }
                 if (link_inter != NULL)
                 {
-                    *iscd = *link_inter->iscds.front();
+                    *iscd = *link_inter->iscds.front(); // inter-domain links have at most one ISCD
                 }
                 else // fake l2 info if unavailable
                 {
@@ -2301,69 +2308,77 @@ bool PCEN_MRN_CG::PostBuildTopology()
             while (node)
             {
                 Link* link = (Link*)node->Data();
-                if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
-                    && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
-                    && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
-                { // if found an intra-domain subnet edge link
-                    hopBackInterdomainPcenLink = NULL;
-                    for (i = 0; i < lNum; i++)
+                if (link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0)
+                { 
+                    list<ISCD*>::iterator iter_iscd = link->iscds.begin();
+                    for ( ; iter_iscd != link->iscds.end(); iter_iscd++)
                     {
-                        pcen_link = links[i];
-                        if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
-                        {
-                            //hop_back verified against the attaching-to subnet_vlsr, change source node now
-                            if ( hopback_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
-                            {
-                                source.s_addr = hopback_source;
-                            }
-                            //record the found hop back link candidate
-                            hopBackInterdomainPcenLink = pcen_link;
-                        }
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM 
+                            && (ntohs((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
+                            break;
                     }
-                    // fake hop-back intra-domain links will be added to replace the interdomain (border) links
-                    if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                    if  (iter_iscd != link->iscds.end()) // found an intra-domain subnet edge link
                     {
-                        //adding two new links into the PCEN topology
-                        PCENLink* linkForward = NewTransitLink(links);
-                        PCENLink* linkHopback = NewTransitLink(links);
-                        lNum += 2;
-                        PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
-                        PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
-                        assert(nodeHead && nodeTail);
-            
-                        // removing all links from nodeHead if it is a hop_back source
-                        if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
+                        hopBackInterdomainPcenLink = NULL;
+                        for (i = 0; i < lNum; i++)
                         {
-                            nodeHead->out_links.clear();
-                            nodeHead->in_links.clear();
+                            pcen_link = links[i];
+                            if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                            {
+                                //hop_back verified against the attaching-to subnet_vlsr, change source node now
+                                if ( hopback_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
+                                {
+                                    source.s_addr = hopback_source;
+                                }
+                                //record the found hop back link candidate
+                                hopBackInterdomainPcenLink = pcen_link;
+                            }
                         }
-            
-                        // allocating link resource and updating link parameters for forward link
-                        assert(hopBackInterdomainPcenLink->reverse_link->link);
-                        linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
-                        linkForward->link_self_allocated = true;
-                        linkForward->link->type = RTYPE_LOC_PHY_LNK;
-                        linkForward->lcl_end = nodeHead;
-                        linkForward->rmt_end = nodeTail;
-                        nodeHead->out_links.push_back(linkForward);
-                        nodeTail->in_links.push_back(linkForward);
-            
-                        // allocating link resource and updating link parameters for backward (hop back) link
-                        linkHopback->link = new Link(link);
-                        linkHopback->link_self_allocated = true;
-                        linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
-                        linkHopback->lcl_end = nodeTail;
-                        linkHopback->rmt_end = nodeHead;
-                        nodeHead->in_links.push_back(linkHopback);
-                        nodeTail->out_links.push_back(linkHopback);
-            
-                        // assigning reverse links for the links in both directions
-                        linkHopback->reverse_link = linkForward;
-                        linkForward->reverse_link = linkHopback;
-            
-                        //removing the links from the PCEN topology
-                        hopBackInterdomainPcenLink->linkID = -1;
-                        hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                        // fake hop-back intra-domain links will be added to replace the interdomain (border) links
+                        if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                        {
+                            //adding two new links into the PCEN topology
+                            PCENLink* linkForward = NewTransitLink(links);
+                            PCENLink* linkHopback = NewTransitLink(links);
+                            lNum += 2;
+                            PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
+                            PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
+                            assert(nodeHead && nodeTail);
+                
+                            // removing all links from nodeHead if it is a hop_back source
+                            if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
+                            {
+                                nodeHead->out_links.clear();
+                                nodeHead->in_links.clear();
+                            }
+                
+                            // allocating link resource and updating link parameters for forward link
+                            assert(hopBackInterdomainPcenLink->reverse_link->link);
+                            linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
+                            linkForward->link_self_allocated = true;
+                            linkForward->link->type = RTYPE_LOC_PHY_LNK;
+                            linkForward->lcl_end = nodeHead;
+                            linkForward->rmt_end = nodeTail;
+                            nodeHead->out_links.push_back(linkForward);
+                            nodeTail->in_links.push_back(linkForward);
+                
+                            // allocating link resource and updating link parameters for backward (hop back) link
+                            linkHopback->link = new Link(link);
+                            linkHopback->link_self_allocated = true;
+                            linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
+                            linkHopback->lcl_end = nodeTail;
+                            linkHopback->rmt_end = nodeHead;
+                            nodeHead->in_links.push_back(linkHopback);
+                            nodeTail->out_links.push_back(linkHopback);
+                
+                            // assigning reverse links for the links in both directions
+                            linkHopback->reverse_link = linkForward;
+                            linkForward->reverse_link = linkHopback;
+                
+                            //removing the links from the PCEN topology
+                            hopBackInterdomainPcenLink->linkID = -1;
+                            hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                        }
                     }
                 }
                 node = tree->NextNode(node);
@@ -2383,7 +2398,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     if(!iscd)	
                         continue;
 
-                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
                     {
                         for (j = 0; j < rNum; j++)
                         {

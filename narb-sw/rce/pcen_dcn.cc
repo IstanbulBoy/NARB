@@ -86,7 +86,7 @@ bool PCEN_DCN::PostBuildTopology()
                     iscd->max_lsp_bw[j] = pcen_link->link->maxBandwidth;
             }
             //$$$$ all possible vtags
-            if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
             {
                 for (j = 0; j < MAX_VLAN_NUM/8; j++)
                 {
@@ -97,7 +97,7 @@ bool PCEN_DCN::PostBuildTopology()
             //$$$$ all timeslots  (--> picked timeslots (fixed: 1) shoud be ignored by DCN!)
             if (user_ero.size() == 0 && subnet_ero.size() == 0) //$$$$ original path computation
             {
-                if ((htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons(iscd->vlan_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                 {
                     iscd->subnet_uni_info.first_timeslot = 0;
                     for (j = 0; j < MAX_TIMESLOTS_NUM/8; j++)
@@ -243,8 +243,7 @@ int PCEN_DCN::VerifyPathWithERO()
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
             //have no subnet_uni ISCD

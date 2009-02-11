@@ -138,7 +138,7 @@ bool PCEN_MRN::PostBuildTopology()
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
                 //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
             if (iter_iscd == link->Iscds().end())
@@ -277,8 +277,7 @@ bool PCEN_MRN::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -378,8 +377,7 @@ bool PCEN_MRN::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -450,10 +448,11 @@ bool PCEN_MRN::PostBuildTopology()
             while (node)
             {
                 Link* link = (Link*)node->Data();
+                //@@@@ISCD
                 if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
-                    && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC 
-                    && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
-                { // if found an intra-domain subnet edge link
+                    && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM 
+                    && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
+                { // found an intra-domain subnet edge link
                     hopBackInterdomainPcenLink = NULL;
                     for (i = 0; i < lNum; i++)
                     {
@@ -532,7 +531,7 @@ bool PCEN_MRN::PostBuildTopology()
                     if(!iscd)	
                         continue;
 
-                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) ) 
+                    if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
                     {
                         for (j = 0; j < rNum; j++)
                         {
@@ -777,118 +776,6 @@ bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
         return true;
     return false;
 }
-
-/*
-  * moved to PCENLink->GetNextResionTspec(TSpec& tspec)
-  *
-int PCEN_MRN::GetNextRegionTspec(PCENLink* pcen_link, TSpec& tspec)
-{
-    assert(pcen_link && pcen_link->link);
-
-    // Check adaptation defined by IACD(s)
-    list<IACD*>::iterator it_iacd;
-    for (it_iacd = pcen_link->link->iacds.begin(); it_iacd != pcen_link->link->iacds.end(); it_iacd++)
-    {
-        //crossing from lower layer to upper layer
-        if ((*it_iacd)->swtype_lower == tspec.SWtype && (*it_iacd)->encoding_lower == tspec.ENCtype)
-        {
-            tspec.SWtype = (*it_iacd)->swtype_upper;
-            tspec.ENCtype = (*it_iacd)->encoding_upper;
-            // Bandwidth adaptation for lower->upper layer
-            // @@@@ To be enhanced in the future
-            switch (tspec.SWtype)
-            {
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
-                //bandwidth constraint unchanged
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
-                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
-                break;
-            }
-            return 0;
-        }
-        
-        //crossing from upper layer to lower layer
-        if ((*it_iacd)->swtype_upper == tspec.SWtype && (*it_iacd)->encoding_upper == tspec.ENCtype)
-        {
-            tspec.SWtype = (*it_iacd)->swtype_lower;
-            tspec.ENCtype = (*it_iacd)->encoding_lower;
-            // Bandwidth adaptation for upper->lower layer
-            // @@@@ To be enhanced in the future
-            switch (tspec.SWtype)
-            {
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
-                //bandwidth constraint unchanged
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
-                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
-                //tspec.Bandwidth = (*it_iacd)->max_lsp_bw[7]; //?
-                break;
-            }
-            return 0;
-        }
-    }
-
-
-    // Check implicit adaptation
-    if (pcen_link->reverse_link && pcen_link->reverse_link->link && 
-        pcen_link->link->iscds.size() == 1 && pcen_link->reverse_link->link->iscds.size() == 1)
-    {
-        //@@@@ Does encoding matter?
-        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype
-            || pcen_link->link->iscds.front()->encoding != pcen_link->reverse_link->link->iscds.front()->encoding)
-        {
-            tspec.SWtype = pcen_link->reverse_link->link->iscds.front()->swtype;
-            tspec.ENCtype = pcen_link->reverse_link->link->iscds.front()->encoding;
-            //Bandwidth adaptation
-            // @@@@ To be enhanced in the future
-            switch (tspec.SWtype)
-            {
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC1:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC2:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC3:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_PSC4:
-            case LINK_IFSWCAP_SUBTLV_SWCAP_L2SC:
-                //bandwidth constraint unchanged
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_TDM:
-                //@@@@ bandwidth constraint unchanged
-                //if (!float_equal(pcen_link->reverse_link->link->iscds.front()->min_lsp_bw, 0))
-                //    tspec.Bandwidth = ceilf(tspec.Bandwidth /pcen_link->reverse_link->link->iscds.front()->min_lsp_bw)
-                //    pcen_link->reverse_link->link->iscds.front()->min_lsp_bw;
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_LSC:
-                //@@@@ bandwidth constraint unchanged
-                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
-                break;
-            case LINK_IFSWCAP_SUBTLV_SWCAP_FSC:
-                //@@@@ bandwidth constraint unchanged
-                //tspec.Bandwidth = pcen_link->reverse_link->link->iscds.front()->max_lsp_bw[7];//?
-                break;
-            }
-            return 0;
-        }
-    }
-
-    return -1;
-}
-*/
     
 int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
 {
@@ -897,7 +784,7 @@ int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
     list<ISCD*>::iterator it;
     for (it = pcen_link->link->iscds.begin(); it != pcen_link->link->iscds.end(); it++)
     {
-        if (ntohs((*it)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
+        if ((*it)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*it)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
         {
             iscd = *it;
             break;
