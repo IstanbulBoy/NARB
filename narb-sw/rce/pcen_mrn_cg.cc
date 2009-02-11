@@ -2119,7 +2119,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     }
                 }
             }
-            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (subnet_ui ISCD must be availalbe when reaching here) --> Obsolete Logic!
+            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (btw, TDM subnet_uni ISCD must be availalbe when reaching here) --> Obsolete Logic!
             { 
                 // looking for corresponding inter-domain link and copy layer-2 specific information
                 Link* link_inter = NULL;
@@ -2137,7 +2137,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
@@ -2220,7 +2220,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     }
                 }
             }
-            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (subnet_ui ISCD must be availalbe when reaching here) --> Obsolete Logic!
+            if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (TDM subnet_uni ISCD must be availalbe when reaching here) --> Obsolete Logic!
             {
                 // looking for corresponding inter-domain link and copy layer-2 specific information
                 Link* link_inter = NULL;
@@ -2237,7 +2237,7 @@ bool PCEN_MRN_CG::PostBuildTopology()
                     list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
                     for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
                     {
-                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
                             break;
                     }
                     if (iter_iscd == link->Iscds().end())
