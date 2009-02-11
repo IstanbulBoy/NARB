@@ -137,7 +137,7 @@ bool PCEN_MRN::PostBuildTopology()
             list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
             for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
             {
-                //$$$$ (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC ==> (*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM ? 
+                //$$$$ ntohs((*iter_iscd)->header.length) > 36+8 ?
                 if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
                     break;
             }
@@ -448,71 +448,85 @@ bool PCEN_MRN::PostBuildTopology()
             while (node)
             {
                 Link* link = (Link*)node->Data();
-                //@@@@ISCD
-                if ( link && link->lclIfAddr != 0 && link->rmtIfAddr == 0 && link->iscds.size() > 0 
-                    && link->iscds.front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM 
-                    && (ntohs(link->iscds.front()->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
-                { // found an intra-domain subnet edge link
-                    hopBackInterdomainPcenLink = NULL;
-                    for (i = 0; i < lNum; i++)
+
+                if (link == NULL || link->lclIfAddr == 0 || link->rmtIfAddr != 0 ||  link->Iscds().size() == 0)
+                {
+                    node = tree->NextNode(node);
+                    continue;
+                }
+                list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+                for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+                {
+                     //$$$$ ntohs((*iter_iscd)->header.length) > 36+8 ?
+                    if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0)
+                        break;
+                }
+                if (iter_iscd == link->Iscds().end())
+                {
+                    node = tree->NextNode(node);
+                    continue;
+                }
+
+                // found an intra-domain subnet edge link
+                hopBackInterdomainPcenLink = NULL;
+                for (i = 0; i < lNum; i++)
+                {
+                    pcen_link = links[i];
+                    if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
                     {
-                        pcen_link = links[i];
-                        if (pcen_link->link->lclIfAddr == link->lclIfAddr && pcen_link->reverse_link != NULL && pcen_link->link->type == RTYPE_GLO_ABS_LNK)
+                        //hop_back verified against the attaching-to subnet_vlsr, change source node now
+                        if ( hopback_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
                         {
-                            //hop_back verified against the attaching-to subnet_vlsr, change source node now
-                            if ( hopback_source !=0 && pcen_link->link->LclIfAddr() == hop_back && source.s_addr == pcen_link->link->AdvRtId())
-                            {
-                                source.s_addr = hopback_source;
-                            }
-                            //record the found hop back link candidate
-                            hopBackInterdomainPcenLink = pcen_link;
+                            source.s_addr = hopback_source;
                         }
+                        //record the found hop back link candidate
+                        hopBackInterdomainPcenLink = pcen_link;
                     }
-                    // fake hop-back intra-domain links will be added to replace the interdomain (border) links
-                    if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                }
+                // fake hop-back intra-domain links will be added to replace the interdomain (border) links
+                if (hopBackInterdomainPcenLink != NULL) // patten recoginized
+                {
+                    //adding two new links into the PCEN topology
+                    PCENLink* linkForward = NewTransitLink(links);
+                    PCENLink* linkHopback = NewTransitLink(links);
+                    lNum += 2;
+                    PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
+                    PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
+                    assert(nodeHead && nodeTail);
+        
+                    // removing all links from nodeHead if it is a hop_back source
+                    if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
                     {
-                        //adding two new links into the PCEN topology
-                        PCENLink* linkForward = NewTransitLink(links);
-                        PCENLink* linkHopback = NewTransitLink(links);
-                        lNum += 2;
-                        PCENNode* nodeHead = hopBackInterdomainPcenLink->rmt_end;
-                        PCENNode* nodeTail = hopBackInterdomainPcenLink->lcl_end;
-                        assert(nodeHead && nodeTail);
-            
-                        // removing all links from nodeHead if it is a hop_back source
-                        if (nodeHead->router->id == source.s_addr && hopBackInterdomainPcenLink->link->lclIfAddr == hop_back)
-                        {
-                            nodeHead->out_links.clear();
-                            nodeHead->in_links.clear();
-                        }
-            
-                        // allocating link resource and updating link parameters for forward link
-                        assert(hopBackInterdomainPcenLink->reverse_link->link);
-                        linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
-                        linkForward->link_self_allocated = true;
-                        linkForward->link->type = RTYPE_LOC_PHY_LNK;
-                        linkForward->lcl_end = nodeHead;
-                        linkForward->rmt_end = nodeTail;
-                        nodeHead->out_links.push_back(linkForward);
-                        nodeTail->in_links.push_back(linkForward);
-            
-                        // allocating link resource and updating link parameters for backward (hop back) link
-                        linkHopback->link = new Link(link);
-                        linkHopback->link_self_allocated = true;
-                        linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
-                        linkHopback->lcl_end = nodeTail;
-                        linkHopback->rmt_end = nodeHead;
-                        nodeHead->in_links.push_back(linkHopback);
-                        nodeTail->out_links.push_back(linkHopback);
-            
-                        // assigning reverse links for the links in both directions
-                        linkHopback->reverse_link = linkForward;
-                        linkForward->reverse_link = linkHopback;
-            
-                        //removing the links from the PCEN topology
-                        hopBackInterdomainPcenLink->linkID = -1;
-                        hopBackInterdomainPcenLink->reverse_link->linkID = -1;
+                        nodeHead->out_links.clear();
+                        nodeHead->in_links.clear();
                     }
+        
+                    // allocating link resource and updating link parameters for forward link
+                    assert(hopBackInterdomainPcenLink->reverse_link->link);
+                    linkForward->link = new Link(hopBackInterdomainPcenLink->reverse_link->link);
+                    linkForward->link_self_allocated = true;
+                    linkForward->link->type = RTYPE_LOC_PHY_LNK;
+                    linkForward->lcl_end = nodeHead;
+                    linkForward->rmt_end = nodeTail;
+                    nodeHead->out_links.push_back(linkForward);
+                    nodeTail->in_links.push_back(linkForward);
+        
+                    // allocating link resource and updating link parameters for backward (hop back) link
+                    linkHopback->link = new Link(link);
+                    linkHopback->link_self_allocated = true;
+                    linkHopback->link->rmtIfAddr = hopBackInterdomainPcenLink->link->rmtIfAddr;
+                    linkHopback->lcl_end = nodeTail;
+                    linkHopback->rmt_end = nodeHead;
+                    nodeHead->in_links.push_back(linkHopback);
+                    nodeTail->out_links.push_back(linkHopback);
+        
+                    // assigning reverse links for the links in both directions
+                    linkHopback->reverse_link = linkForward;
+                    linkForward->reverse_link = linkHopback;
+        
+                    //removing the links from the PCEN topology
+                    hopBackInterdomainPcenLink->linkID = -1;
+                    hopBackInterdomainPcenLink->reverse_link->linkID = -1;
                 }
                 node = tree->NextNode(node);
             }
@@ -531,6 +545,7 @@ bool PCEN_MRN::PostBuildTopology()
                     if(!iscd)	
                         continue;
 
+                     //$$$$ ntohs((*iter_iscd)->header.length) > 36+8 ?
                     if ( (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM) && (ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI) != 0) 
                     {
                         for (j = 0; j < rNum; j++)
@@ -1261,11 +1276,11 @@ int PCEN_MRN::PerformComputation()
                 }
 
                 //$$$$ TDM (Ciena CDs) subnet special handling 
-                //@@@@ We might make a special Ciena sw_type like CIENA_TDM (101) ...
+                //@@@@ We might want to make a special Ciena sw_type like CIENA_TDM (101) ...
                 if ( SystemConfig::should_incorporate_ciena_subnet ) 
                 {
                     // $$$$ Checking available timeslots on the region-border interface getting out of TDM region
-                    if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
+                    if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)  //$$$$ ntohs((*iter_iscd)->header.length) > 36+8 ?
                     {                    
                         if (CheckTimeslotsAvailability(nextLink, nextNode->tspec.Bandwidth) == 0)
                             continue;

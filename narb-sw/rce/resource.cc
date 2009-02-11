@@ -117,7 +117,7 @@ Resource::~Resource()
         TLP *tlp = &attrTable[i];
         if (tlp->t == N_LIST || tlp->t == P_LIST || tlp->t == N_VECTOR || tlp->t == P_VECTOR)
         {
-            /*@@@@ currently only ISCD and TE_LAMBDA are of LIST type in use; ISCD list should not be removed here but TE_LAMBDA has to.
+            /*@@@@ currently only ISCD and TE_LAMBDA are of LIST type; ISCD list should not be removed but TE_LAMBDA has to.
             if (tlp->p)
             {
                 list<void*>::iterator iter = ((list<void*> *)tlp->p)->begin();
