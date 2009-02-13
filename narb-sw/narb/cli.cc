@@ -1234,7 +1234,7 @@ COMMAND(cmd_show_topology, (char*)"show topology",  (char*)"Show configuration: 
         strcpy(addr_buf2, inet_ntoa(id));
         strcpy(addr_buf3, inet_ntoa(lcl_if));
         strcpy(addr_buf4, inet_ntoa(rmt_if));
-        CLI_OUT("[%s] Opaque ID (%d), Adv_router (%s), Router_id (%s), IfAddr[%s-%s] %s", 
+        CLI_OUT("[%s] Opaque ID (%d), Adv_router (%s), Link_id (%s), IfAddr[%s-%s] %s", 
             link->hide? "off":"on", link->opaque_id,  addr_buf1, addr_buf2, addr_buf3, addr_buf4, cli_cstr_newline);
     
         link = NarbDomainInfo.NextLink();
