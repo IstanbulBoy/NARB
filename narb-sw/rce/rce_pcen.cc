@@ -600,13 +600,27 @@ int PCENLink::GetNextRegionTspec(TSpec& tspec)
 
 
     // Check implicit adaptation
-    if (this->reverse_link && this->reverse_link->link && 
-        this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1)
+    if (this->reverse_link && this->reverse_link->link)
     {
-        if (this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype)
+        ISCD* iscd_adapted = NULL;         
+        if (this->link->iscds.size() == 1 && this->reverse_link->link->iscds.size() == 1&& this->link->iscds.front()->swtype != this->reverse_link->link->iscds.front()->swtype)
+            iscd_adapted = this->reverse_link->link->iscds.front();
+        else if (this->link->iscds.size() *this->reverse_link->link->iscds.size() > 1)
         {
-            tspec.SWtype = this->reverse_link->link->iscds.front()->swtype;
-            tspec.ENCtype = this->reverse_link->link->iscds.front()->encoding;
+            list<ISCD*>::iterator iter_iscd = this->reverse_link->link->iscds.begin();
+            for (; iter_iscd != this->reverse_link->link->iscds.end(); iter_iscd++)
+                if ((*iter_iscd)->swtype != iscd_adapted->swtype)
+                {
+                    iscd_adapted = *iter_iscd;
+                    break;
+                }
+        }
+        
+        if (iscd_adapted)
+        {
+            tspec.SWtype = iscd_adapted->swtype;
+            tspec.ENCtype = iscd_adapted->encoding;
+
             //Bandwidth adaptation
             // @@@@ To be enhanced in the future
             switch (tspec.SWtype)
