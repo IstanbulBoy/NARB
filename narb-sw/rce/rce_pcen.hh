@@ -406,7 +406,7 @@ public:
             cout << "Tags:";
             for (u_int32_t i = 0; i < numBits; i++)
                 if (HasTag(i))
-                    cout << ' ' << i*interval+base;
+                    cout << ' ' << (i-1)*interval+base;
             cout << endl;
         }
 };
