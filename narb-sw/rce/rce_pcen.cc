@@ -1482,7 +1482,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
     if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && pcen_link->reverse_link && pcen_link->reverse_link->link)
     {
         list<ISCD*>::iterator iter_iscd = pcen_link->reverse_link->link->iscds.begin();
-        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
+        for (; iter_iscd != pcen_link->reverse_link->link->iscds.end(); iter_iscd++)
         {
             if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
             {
