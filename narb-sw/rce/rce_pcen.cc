@@ -609,7 +609,7 @@ int PCENLink::GetNextRegionTspec(TSpec& tspec)
         {
             list<ISCD*>::iterator iter_iscd = this->reverse_link->link->iscds.begin();
             for (; iter_iscd != this->reverse_link->link->iscds.end(); iter_iscd++)
-                if ((*iter_iscd)->swtype != iscd_adapted->swtype)
+                if ((*iter_iscd)->swtype != tspec.SWtype)
                 {
                     iscd_adapted = *iter_iscd;
                     break;
