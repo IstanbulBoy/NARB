@@ -1801,50 +1801,50 @@ COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
         default:
             strcpy(pce_module, "undefined");
     }
-
     CLI_OUT("\t System default PCE module, original: [%s] %s", pce_module, cli_cstr_newline);
+
     if (strncasecmp(argv[0].c_str(), "spf", 3) == 0)
     {
         SystemConfig::pce_algorithm = SPF;
         strcpy(pce_module, "SPF-MODULE");
     }
-    if (strncasecmp(argv[0].c_str(), "mrn-def", 6) == 0 || strncasecmp(argv[0].c_str(), "mrn-bsf", 6) == 0)
+    else if (strncasecmp(argv[0].c_str(), "mrn-default", 6) == 0 || strncasecmp(argv[0].c_str(), "mrn-bsf", 6) == 0)
     {
         SystemConfig::pce_algorithm = MRN_DEFAULT;
         strcpy(pce_module, "MRN-BSF-MODULE");
     }
-    if (strncasecmp(argv[0].c_str(), "mrn-ksp", 6) == 0)
+    else if (strncasecmp(argv[0].c_str(), "mrn-ksp", 6) == 0)
     {
         SystemConfig::pce_algorithm = MRN_KSP;
         strcpy(pce_module, "MRN-KSP-MODULE");
     }
-    if (strncasecmp(argv[0].c_str(), "mrn-dcn", 6) == 0)
+    else if (strncasecmp(argv[0].c_str(), "mrn-dcn", 6) == 0)
     {
         SystemConfig::pce_algorithm = MRN_DCN;
         strcpy(pce_module, "MRN-DCN-MODULE");
     }
-    if (strncasecmp(argv[0].c_str(), "mrn-cg", 6) == 0)
+    else if (strncasecmp(argv[0].c_str(), "mrn-cg", 6) == 0)
     {
         SystemConfig::pce_algorithm = MRN_CG;
         strcpy(pce_module, "MRN-CG-MODULE");
     }
-    if (strncasecmp(argv[0].c_str(), "test", 4) == 0)
+    else if (strncasecmp(argv[0].c_str(), "test", 4) == 0)
     {
         SystemConfig::pce_algorithm = SPF;
         strcpy(pce_module, "TEST-MODULE");
     }
     else
     {
-        CLI_OUT("\t Unknown PCE module: [%s] %s", argv[0].c_str(), cli_cstr_newline);
+        CLI_OUT("\t ==> Unknown PCE module: [%s] %s", argv[0].c_str(), cli_cstr_newline);
         cli_node->Reader()->CurrentNode()->ShowPrompt();
         return;
     }
-
     CLI_OUT("\t ==> Default PCE module changed to: [%s] %s", pce_module, cli_cstr_newline);
     if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG)
     {
         CLI_OUT("\t     > default KSP-K = %d %s", SystemConfig::pce_k, cli_cstr_newline);        
     }
+
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
