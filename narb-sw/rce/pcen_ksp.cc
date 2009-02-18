@@ -633,6 +633,7 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
     return bestPath;
 }
 
+//$$$$ Not yet supporting subnetUNI 'jump' links ...
 bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag, u_int32_t& pathWave)
 {
     PCENLink* L;

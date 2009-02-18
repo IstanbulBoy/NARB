@@ -1842,7 +1842,7 @@ COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
     CLI_OUT("\t ==> Default PCE module changed to: [%s] %s", pce_module, cli_cstr_newline);
     if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG)
     {
-        CLI_OUT("\t     > default KSP-K = %d %s", SystemConfig::pce_k, cli_cstr_newline);        
+        CLI_OUT("\t   > Default KSP-K = %d %s", SystemConfig::pce_k, cli_cstr_newline);        
     }
 
     cli_node->Reader()->CurrentNode()->ShowPrompt();
