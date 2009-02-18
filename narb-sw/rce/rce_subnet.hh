@@ -64,7 +64,7 @@ public:
     u_int16_t info_flag;
     u_int32_t dtl_id;
 
-    ISCD* GetISCD () { return iscds.front(); }
+    list<ISCD*>& Iscds () { return iscds; }
     link_info(ResourceType link_type, u_int32_t domain_id, in_addr advId, in_addr linkId);
     virtual ~link_info() {}
 };

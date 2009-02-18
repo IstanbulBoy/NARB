@@ -46,9 +46,11 @@ link_info::link_info(ResourceType link_type, u_int32_t domain_id, in_addr advId,
 {
     hide = false;
     info_flag = 0;
+    /*
     ISCD * iscd = new ISCD;
     memset(iscd, 0, sizeof(ISCD));
     iscds.push_back(iscd);
+    */
 }
 
 void Subnet::AddRouter(router_id_info * router)
@@ -268,6 +270,10 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                   {
                       SET_LINK_PARA_FLAG(link->info_flag,  LINK_PARA_FLAG_MAX_RSV_BW);
                   }
+
+                  ISCD* iscd = new ISCD;
+                  memset(iscd, 0, sizeof(ISCD));
+                  link->Iscds().push_back(iscd);
   
                   if (ReadConfigParameter(link_body, (char*)"unrsv_bw0", (char*)"%f", &link->unreservedBandwidth[0]))
                   {
@@ -279,19 +285,19 @@ void Subnet_ConfigFile::ConfigFromFile(ifstream& inFile)
                       ReadConfigParameter(link_body, (char*)"unrsv_bw5", (char*)"%f", &link->unreservedBandwidth[5]);
                       ReadConfigParameter(link_body, (char*)"unrsv_bw6", (char*)"%f", &link->unreservedBandwidth[6]);
                       ReadConfigParameter(link_body, (char*)"unrsv_bw7", (char*)"%f", &link->unreservedBandwidth[7]);
-                      memcpy(link->GetISCD()->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
+                      memcpy(iscd->max_lsp_bw, link->unreservedBandwidth, 8*sizeof(float));
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"enc_type", (char*)"%d", &encoding))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-                      link->GetISCD()->encoding = (u_char)encoding;
+                      iscd->encoding = (u_char)encoding;
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"sw_type", (char*)"%d", &sw_type))
                   {
                       SET_LINK_PARA_FLAG(link->info_flag, LINK_PARA_FLAG_IFSW_CAP);
-                      link->GetISCD()->swtype = (u_char)sw_type;
+                      iscd->swtype = (u_char)sw_type;
                   }
   
                   if (ReadConfigParameter(link_body, (char*)"metric", (char*)"%d", &link->metric))
