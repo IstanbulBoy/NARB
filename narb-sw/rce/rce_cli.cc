@@ -1493,103 +1493,6 @@ COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_add
         return;
     }
 
-    /*
-    ip.s_addr = link->Id();
-    strcpy (addr_buf1, inet_ntoa (ip));
-    ip.s_addr = link->AdvRtId();
-    strcpy (addr_buf2, inet_ntoa (ip));
-    ip.s_addr = link->LclIfAddr();
-    strcpy (addr_buf3, inet_ntoa (ip));
-    ip.s_addr = link->RmtIfAddr();
-    strcpy (addr_buf4, inet_ntoa (ip));
-    CLI_OUT("%s\t ## TE LINK - %s  - Modified @ %d.%d ## %s\t Advertising Router: %s%s\t Link ID: %s%s", cli_cstr_newline,
-        rcType == RTYPE_GLO_ABS_LNK? "Abstract Global Link":"Physical Local Link",  link->ModifiedTime().tv_sec, 
-        link->ModifiedTime().tv_usec, cli_cstr_newline, addr_buf2, cli_cstr_newline, addr_buf1, cli_cstr_newline); 
-    CLI_OUT("\t Local Interface %s %s\t Remote Interface %s%s",
-                  addr_buf3, cli_cstr_newline, addr_buf4, cli_cstr_newline);
-    CLI_OUT("\t Traffic Engineering Metric: %d%s", link->Metric(), cli_cstr_newline);
-    CLI_OUT ("\t Maximum Bandwidth: %g (Mbps)%s", link->MaxBandwidth(), cli_cstr_newline);
-    CLI_OUT ("\t Maximum Reservable Bandwidth: %g (Mbps)%s", link->MaxReservableBandwidth(), cli_cstr_newline);
-
-    //ISCDs
-    for (k=1, iter = link->Iscds().begin(); iter != link->Iscds().end(); k++, iter++)
-    {
-        CLI_OUT("\t Interface Switching Capability Descriptor #%d: %s %s%s", k,
-                value_to_string(&str_val_conv_switching, (u_int32_t)(*iter)->swtype),
-                value_to_string(&str_val_conv_encoding, (u_int32_t)(*iter)->encoding), cli_cstr_newline); 
-        for (i = 0; i < 8; i++)
-        {
-            CLI_OUT ("\t    Max LSP Bandwidth (pri %d): %g (Mbps)%s", i, (*iter)->max_lsp_bw[i], cli_cstr_newline);
-        }
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (ntohs((*iter)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC))
-        {
-            CLI_OUT ("\t    -- L2SC specific information--%s\t       --> Available VLAN tag set:", cli_cstr_newline);
-            for (i = 1; i <= MAX_VLAN_NUM; i++)
-                if (HAS_VLAN((*iter)->vlan_info.bitmask, i)) CLI_OUT (" %d", i);
-            CLI_OUT("%s", cli_cstr_newline); 
-            CLI_OUT ("\t      --> Allocated VLAN tag set:");
-            for (i = 1; i <= MAX_VLAN_NUM; i++)
-                if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i);
-            CLI_OUT("%s", cli_cstr_newline);
-        }
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
-        {
-            CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline);
-            for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
-                if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i);
-            CLI_OUT("%s", cli_cstr_newline);
-        }
-    }
-    //Link state deltas
-    list<LinkStateDelta*>* pDeltaList = link->DeltaListPointer();
-    if (pDeltaList)
-    {
-        list<LinkStateDelta*>::iterator it;
-        LinkStateDelta* delta;
-        for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++)
-        {
-            delta = *it;
-            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s @ %d.%d<<<%s", cli_cstr_newline, k, 
-                (delta->flags & DELTA_QUERIED) != 0 || (delta->expiration.tv_sec <= SystemConfig::delta_expire_query)  ? "Queried" : "", 
-                (delta->flags & DELTA_RESERVED) != 0 ? "-Reserved" : "", 
-                (delta->flags & DELTA_UPDATED) != 0 ? "-Updated" : "", 
-                delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline);
-            CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline);
-            if (delta->flags & DELTA_VLANTAG)
-            {
-                CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline);
-            }
-            else if (delta->flags & DELTA_WAVELENGTH)
-            {
-                CLI_OUT ("\t    ---> Used wavelength: %d%s", delta->wavelength, cli_cstr_newline);
-         }
-            else if (delta->flags & DELTA_VTAGMASK)
-            {
-                CLI_OUT ("\t    ---> Used VLAN tags:");
-                for (i = 1; i <= MAX_VLAN_NUM; i++)
-                {
-                    if (HAS_VLAN(delta->vtag_mask, i)) 
-                    {
-                        CLI_OUT (" %d", i);
-                    }
-                }
-                CLI_OUT("%s", cli_cstr_newline);
-         }         
-            else if (delta->flags & DELTA_TIMESLOTS)
-            {
-               CLI_OUT ("\t    ---> Used time slots:");
-                for (i = 1; i <= MAX_TIMESLOTS_NUM; i++)
-                {
-                    if (HAS_TIMESLOT(delta->timeslots, i)) 
-                    {
-                        CLI_OUT (" %d", i);
-                    }
-                }
-                CLI_OUT("%s", cli_cstr_newline);
-            }
-        }
-    }
-    */
     do
     {
 	SHOW_LINK(link)
@@ -1836,6 +1739,115 @@ COMMAND(cmd_edit_link_commit, (char*)"commit",
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
+COMMAND(cmd_show_pce_module_default, (char*)"show pce-module-default",
+	(char*)"SHOW \n Default PCE Module")
+{
+    char pce_module[20];
+    switch (SystemConfig::pce_algorithm)
+    {
+        case SPF:
+            strcpy(pce_module, "SPF-MODULE");
+            break;
+        case MRN_DEFAULT:
+            strcpy(pce_module, "MRN-BSF-MODULE");
+            break;
+        case MRN_KSP:
+            strcpy(pce_module, "MRN-KSP-MODULE");
+            break;
+        case MRN_CG:
+            strcpy(pce_module, "MRN-CG-MODULE");
+            break;
+        case MRN_DCN:
+            strcpy(pce_module, "MRN-DCN-MODULE");
+            break;
+        case TEST_BASE:
+            strcpy(pce_module, "TEST-MODULE");
+            break;
+        case PCE_NONE:
+        default:
+            strcpy(pce_module, "undefined");
+    }
+
+    CLI_OUT("\t System default PCE module: [%s] %s", pce_module, cli_cstr_newline);
+
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
+COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
+	(char*)"SET \n Default PCE Module")
+{
+    char pce_module[20];
+    switch (SystemConfig::pce_algorithm)
+    {
+        case SPF:
+            strcpy(pce_module, "SPF-MODULE");
+            break;
+        case MRN_DEFAULT:
+            strcpy(pce_module, "MRN-BSF-MODULE");
+            break;
+        case MRN_KSP:
+            strcpy(pce_module, "MRN-KSP-MODULE");
+            break;
+        case MRN_CG:
+            strcpy(pce_module, "MRN-CG-MODULE");
+            break;
+        case MRN_DCN:
+            strcpy(pce_module, "MRN-DCN-MODULE");
+            break;
+        case TEST_BASE:
+            strcpy(pce_module, "TEST-MODULE");
+            break;
+        case PCE_NONE:
+        default:
+            strcpy(pce_module, "undefined");
+    }
+
+    CLI_OUT("\t System default PCE module, original: [%s] %s", cli_cstr_newline);
+    if (strncasecmp(argv[0].c_str(), "spf", 3) == 0)
+    {
+        SystemConfig::pce_algorithm = SPF;
+        strcpy(pce_module, "SPF-MODULE");
+    }
+    if (strncasecmp(argv[0].c_str(), "mrn-def", 6) == 0 || strncasecmp(argv[0].c_str(), "mrn-bsf", 6) == 0)
+    {
+        SystemConfig::pce_algorithm = MRN_DEFAULT;
+        strcpy(pce_module, "MRN-BSF-MODULE");
+    }
+    if (strncasecmp(argv[0].c_str(), "mrn-ksp", 6) == 0)
+    {
+        SystemConfig::pce_algorithm = MRN_KSP;
+        strcpy(pce_module, "MRN-KSP-MODULE");
+    }
+    if (strncasecmp(argv[0].c_str(), "mrn-dcn", 6) == 0)
+    {
+        SystemConfig::pce_algorithm = MRN_DCN;
+        strcpy(pce_module, "MRN-DCN-MODULE");
+    }
+    if (strncasecmp(argv[0].c_str(), "mrn-cg", 6) == 0)
+    {
+        SystemConfig::pce_algorithm = MRN_CG;
+        strcpy(pce_module, "MRN-CG-MODULE");
+    }
+    if (strncasecmp(argv[0].c_str(), "test", 4) == 0)
+    {
+        SystemConfig::pce_algorithm = SPF;
+        strcpy(pce_module, "TEST-MODULE");
+    }
+    else
+    {
+        CLI_OUT("\t Unknown PCE module: [%s] %s", argv[0].c_str(), cli_cstr_newline);
+        cli_node->Reader()->CurrentNode()->ShowPrompt();
+        return;
+    }
+
+    CLI_OUT("\t System default PCE module, changed to: [%s] %s", pce_module, cli_cstr_newline);
+    if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG)
+    {
+        CLI_OUT("\t   --> efault KSP-K is: [%d] %s", SystemConfig::pce_k, cli_cstr_newline);        
+    }
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 /////////////////////////////////////////////////////////////////////
 //COMMAND_DECLARE(cmd_test6);
 //cmd_test5 cmd_test5_ins2("configure ospfd-peer IP port NUM", "Configure \n OSPF Daemon \n IP");
@@ -1864,7 +1876,7 @@ void CLIReader::InitSession()
 
     //Start timer
     eventMaster.Schedule(&timer);
-
+    
     //////// Node and Cmd Structures ///////
     //Root level
     cli_root->AddCommand(&cmd_exit_instance);
@@ -1873,6 +1885,7 @@ void CLIReader::InitSession()
     cli_root->AddCommand(&cmd_show_module_instance);
     cli_root->AddCommand(&cmd_show_topology_instance);
     cli_root->AddCommand(&cmd_show_link_instance);
+    cli_root->AddCommand(&cmd_show_pce_module_default_instance);
     cli_root->AddCommand(&cmd_configure_instance);
     //Configure level
     node = cli_root->MakeChild((char*)"configure-node");
@@ -1883,6 +1896,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
     node->AddCommand(&cmd_edit_link_instance);
+    node->AddCommand(&cmd_set_pce_module_default_instance);
     //Edit-link level under configure
     node_level2 = node->MakeChild((char*)"edit-link-node");
     node_level2->AddCommand(&cmd_set_link_instance);
