@@ -1802,7 +1802,7 @@ COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
             strcpy(pce_module, "undefined");
     }
 
-    CLI_OUT("\t System default PCE module, original: [%s] %s", cli_cstr_newline);
+    CLI_OUT("\t System default PCE module, original: [%s] %s", pce_module, cli_cstr_newline);
     if (strncasecmp(argv[0].c_str(), "spf", 3) == 0)
     {
         SystemConfig::pce_algorithm = SPF;
@@ -1840,10 +1840,10 @@ COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
         return;
     }
 
-    CLI_OUT("\t System default PCE module, changed to: [%s] %s", pce_module, cli_cstr_newline);
+    CLI_OUT("\t ==> Default PCE module changed to: [%s] %s", pce_module, cli_cstr_newline);
     if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG)
     {
-        CLI_OUT("\t   --> efault KSP-K is: [%d] %s", SystemConfig::pce_k, cli_cstr_newline);        
+        CLI_OUT("\t     > default KSP-K = %d %s", SystemConfig::pce_k, cli_cstr_newline);        
     }
     cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
