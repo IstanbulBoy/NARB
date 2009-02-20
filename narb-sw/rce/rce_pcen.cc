@@ -356,13 +356,14 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
     return false;
 }
 
-//$$$$ only Movaz specific handling for now
+//$$$$ only ADVA/Movaz specific handling for now, other WDM foramt has to be converted into the ADVA/Movaz format
+//$$$$ only constrain the forward direction (not checking the reverse)
 void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset)
 {
     next_waveset.Clear();
     bool any_wave_ok = head_waveset.HasAnyTag();
 
-    //$$$$ Movaz specific TE info
+    //$$$$ ADVA/Movaz specific TE info
     // Retieve available wavelength information based on TE Wavelength Grid (present in LSAs originated from ROADMs)
     MovazWaveGrid* wavegrid = (MovazWaveGrid*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
     if (wavegrid != NULL)
@@ -380,7 +381,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
         }
     }
 
-    //$$$$ Movaz specific TE info
+    //$$$$ ADVA/Movaz specific TE info
     // Retieve available wavelength information based on TE Lambda list (present in LSAs originated from REs)
     list<void*> *p_list = (list<void*>*)(this->AttributeByTag("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA"));
     MovazTeLambda tel;
@@ -424,7 +425,8 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);
 }
-  
+
+//$$$$ Only constraining the forward direction (not checking the reverse; assuming symetric L2SC link configurations)
 void PCENLink::ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset)
 {
     next_vtagset.Clear();
