@@ -41,6 +41,17 @@
 using namespace std;
 #include <vector>
 
+// definition of NARB API msg types
+enum  app2narb_request_type
+{
+    MSG_APP_REQUEST = 0x01,
+    MSG_REPLY_ERO = 0x21,
+    MSG_REPLY_ERROR = 0x22,
+    MSG_REPLY_REMOVE_CONFIRM = 0x23,
+    MSG_REPLY_CONFIRMATION_ID = 0x24,
+    MSG_PEER_REQUEST = 0x41,
+};
+
 // each NARB<->APP contains a TLV in its message body
 enum  narb_tlv_type
 {
@@ -58,21 +69,10 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_ALTERNATE_ERO = 0x11,
     TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO = 0x12,
     TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
+    TLV_TYPE_NARB_APP_CONFIRM = 0x031,
+    TLV_TYPE_NARB_APP_REMOVE = 0x032,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
     TLV_TYPE_NARB_PCE_SPEC = 0x42,
-};
-
-// definition of NARB API msg types
-enum  app2narb_request_type
-{
-    MSG_APP_REQUEST = 0x01,
-    MSG_APP_CONFIRM = 0x03,
-    MSG_APP_REMOVE = 0x04,
-    MSG_REPLY_ERO = 0x21,
-    MSG_REPLY_ERROR = 0x22,
-    MSG_REPLY_REMOVE_CONFIRM = 0x23,
-    MSG_REPLY_CONFIRMATION_ID = 0x24,
-    MSG_PEER_REQUEST = 0x41,
 };
 
 // data structure of APP->NARB request message

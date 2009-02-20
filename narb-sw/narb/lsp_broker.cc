@@ -1440,7 +1440,7 @@ int LSPQ::HandleResvConfirm(api_msg* msg)
             return -1;
         }
     }
-    peer_narb->RelayMessageToPeer(MSG_APP_CONFIRM, msg, ero_confirm);
+    peer_narb->RelayMessageToPeer(TLV_TYPE_NARB_APP_CONFIRM, msg, ero_confirm);
 
     return 0;
 }
@@ -1659,7 +1659,7 @@ int LSPQ::HandleResvRelease(api_msg* msg)
             goto _out;
         }
     }
-    peer_narb->RelayMessageToPeer(MSG_APP_REMOVE, msg, ero_confirm);
+    peer_narb->RelayMessageToPeer(TLV_TYPE_NARB_APP_REMOVE, msg, ero_confirm);
 
 _out:
 
@@ -1759,7 +1759,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     {
     case TLV_TYPE_NARB_REQUEST:
        {
-            LOGF("LSP_Broker::MSG_APP_REQUEST--[TLV_TYPE_NARB_REQUEST]: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            LOGF("LSP_Broker::MSG_APP_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             if (!lspq)
             {
                 lspq = new LSPQ(this, *app_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));
@@ -1798,7 +1798,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             api_msg_delete(msg);
         }
         break;
-    case MSG_PEER_REQUEST:
+    case TLV_TYPE_NARB_PEER_REQUEST:
        {
             LOGF("LSP_Broker::MSG_PEER_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
 
@@ -1874,7 +1874,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             api_msg_delete(msg);
         }
         break;
-    case MSG_APP_CONFIRM:
+    case TLV_TYPE_NARB_APP_CONFIRM:
         {
             if (!lspq)
             {
@@ -1885,7 +1885,7 @@ int LSP_Broker::HandleMessage(api_msg * msg)
             lspq->HandleResvConfirm(msg);
         }
         break;
-    case MSG_APP_REMOVE:
+    case TLV_TYPE_NARB_APP_REMOVE:
         {
             if (!lspq)
             {
