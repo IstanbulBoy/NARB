@@ -620,7 +620,7 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
 
     switch (ntohs(msg->header.type))
     {
-    case NARB_MSG_LSPQ:
+    case MSG_APP_REQUEST:
         server->GetLSPBroker()->HandleMessage(msg);
         return; // done
     //default: contue to next switch

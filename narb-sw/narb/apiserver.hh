@@ -39,6 +39,7 @@
 
 #define API_MAX_MSG_SIZE 6000
 
+//The type_8 types are used for NARB--RCE API and others (not for APP--NARB API, which requires type_16)
 enum api_msg_type
 {
     NARB_MSG_LSPQ = 0x0001,

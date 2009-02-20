@@ -317,7 +317,7 @@ int narbapi_send (int fd, struct api_msg *msg)
 msg_app2narb_request * new_app_request()
 {
   msg_app2narb_request* app_req = new (struct msg_app2narb_request);
-  app_req->type = htons(MSG_APP_REQUEST);
+  app_req->type = htons(TLV_TYPE_NARB_REQUEST);
   app_req->length = htons(sizeof(struct msg_app2narb_request) - TLV_HDR_SIZE);
   app_req->src.s_addr = source.s_addr;
   app_req->dest.s_addr = destination.s_addr;
@@ -363,7 +363,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
     bodylen += sizeof (msg_narb_local_id);
   }
 
-  narb_msg = api_msg_new(NARB_MSG_LSPQ, bodylen, (void*)msgbody, ucid, seqnum, vtag);
+  narb_msg = api_msg_new(MSG_APP_REQUEST, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
         opt_query_hold | opt_query_with_confirmation | opt_query_subnet_ero | opt_alt_paths);

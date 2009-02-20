@@ -42,8 +42,8 @@ int NARB_APIClient::HandleMessage(api_msg* msg)
 {
     switch (ntohs(msg->header.type))
     {
-     case MSG_REPLY_ERO:
-     case MSG_REPLY_ERROR:
+    case MSG_REPLY_ERO:
+    case MSG_REPLY_ERROR:
     case MSG_REPLY_CONFIRMATION_ID:
         {
             LSPQ * lspq = FindOwnerLSPQ(msg);
@@ -144,7 +144,7 @@ void NARB_APIClient::QueryLspRecursive (msg_narb_recursive_cspf_request &rec_csp
             msglen += sizeof(msg_narb_hop_back);
     }
     
-    narb_msg = api_msg_new(NARB_MSG_LSPQ, msglen, (void*)msgbody, ucid, rec_cspf_req.app_seqnum, vtag);
+    narb_msg = api_msg_new(MSG_APP_REQUEST, msglen, (void*)msgbody, ucid, rec_cspf_req.app_seqnum, vtag);
     narb_msg->header.options = htonl(options);
     SendMessage(narb_msg); 
 }
@@ -160,7 +160,7 @@ void NARB_APIClient::RelayMessageToPeer(u_int16_t type, api_msg* msg, list<ero_s
     memcpy(buf + length, ero_msg->body, ntohs(ero_msg->header.length));
     length += ntohs(ero_msg->header.length);
     api_msg_delete(ero_msg);
-    narb_msg = api_msg_new(NARB_MSG_LSPQ, length, buf, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));
+    narb_msg = api_msg_new(MSG_APP_REQUEST, length, buf, ntohl(msg->header.ucid), ntohl(msg->header.seqnum), ntohl(msg->header.tag));
     SendMessage(narb_msg);
 }
 

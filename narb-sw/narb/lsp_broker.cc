@@ -53,7 +53,7 @@ broker(b), app_seqnum(seq), app_options(op)
     req_spec.bandwidth = bw; 
     req_spec.encoding_type = enc;  
     req_spec.switching_type = swt; 
-    req_spec.type = htons(MSG_APP_REQUEST); 
+    req_spec.type = htons(TLV_TYPE_NARB_REQUEST); 
     req_spec.length = htons(sizeof(req_spec));
     mrn_spec = req_spec; //@@@@
 }
@@ -1745,9 +1745,9 @@ int LSP_Broker::HandleMessage(api_msg * msg)
     LSPQ* lspq;
     msg_app2narb_request * app_req;
 	
-    if (ntohs(msg->header.type) != NARB_MSG_LSPQ)
+    if (ntohs(msg->header.type) != MSG_APP_REQUEST)
     {
-        LOGF("LSP_Broker:: The impossible happened:  Received a non-NARB_MSG_LSPQ message type: %d (ucid=0x%x, seqno=0x%x).\n",
+        LOGF("LSP_Broker:: The impossible happened:  Received a non-MSG_APP_REQUEST message type: %d (ucid=0x%x, seqno=0x%x).\n",
             ntohs(msg->header.type), ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
         goto _abnormal_out;
     }
@@ -1757,9 +1757,9 @@ int LSP_Broker::HandleMessage(api_msg * msg)
 
     switch (ntohs(app_req->type))
     {
-    case MSG_APP_REQUEST:
+    case TLV_TYPE_NARB_REQUEST:
        {
-            LOGF("LSP_Broker::MSG_APP_REQUEST: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
+            LOGF("LSP_Broker::MSG_APP_REQUEST--[TLV_TYPE_NARB_REQUEST]: The LSPQ (ucid=0x%x, seqno=0x%x).\n", ntohl(msg->header.ucid), ntohl(msg->header.seqnum));
             if (!lspq)
             {
                 lspq = new LSPQ(this, *app_req, ntohl(msg->header.seqnum), ntohl(msg->header.options));

@@ -289,7 +289,7 @@ LSPQ* XML_LSP_Broker::ParseLSPQuery(xmlNodePtr cur)
             u_int32_t vtag = 0;
             xmlChar* key;
 
-            app_req.type = htons(MSG_APP_REQUEST);
+            app_req.type = htons(TLV_TYPE_NARB_REQUEST);
             app_req.length = htons(sizeof(struct msg_app2narb_request) - TLV_HDR_SIZE);
 
             //source
