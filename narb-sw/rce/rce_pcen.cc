@@ -843,6 +843,12 @@ int PCEN::VerifyRequest()
         return ERR_PCEN_INVALID_REQ;
     }
 
+    if (is_e2e_tagged_vlan && ((vtag != ANY_VTAG && vtag >= MAX_VLAN_NUM) || vtag == 0))
+    {
+        LOGF("PCEN_MRN::PerformComputation() failed for source[%X]-destination[%X] due to invalid VTAG %d\n", source.s_addr, destination.s_addr, vtag);
+        return ERR_PCEN_INVALID_REQ;
+    }
+
     // We want all routers
     Prefix *pPrefix = new (Prefix);
     memset(pPrefix, 0 , sizeof(Prefix));
