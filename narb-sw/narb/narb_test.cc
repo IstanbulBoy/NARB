@@ -56,6 +56,9 @@
 #endif
 #include <getopt.h>
 
+static void show_bitmask(msg_narb_vtag_mask* vtagmask, int max_bits);
+#define SHOW_VLANS(BMASK) show_bitmask(BMASK, MAX_VLAN_NUM)
+
 char host[20];
 int port = 2609;
 int sock = -1;
@@ -382,6 +385,37 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
   return narb_msg;
 }
 
+static void 
+show_bitmask(msg_narb_vtag_mask* vtagmask, int max_bits)
+{
+  int i, i_start, i_end;
+  for (i = 1, i_start = 1, i_end = 0; i <= max_bits; i++) 
+    {
+      if (HAS_VLAN(vtagmask->bitmask, i))
+        {
+	  if (i_end < i_start)
+            {
+	      cout << " " << i;
+	      i_start = i;
+            }
+	  if (i == max_bits)
+            {
+	      if (i - i_start >= 2) cout << "-" << i;
+	      else if (i - i_start == 1) cout << " " << i;
+            }
+	  i_end = i;
+        }
+      else
+        {
+	  if (i_end - i_start >= 2)
+	    cout << "-" << i_end;
+	  else if (i_end - i_start == 1)
+	    cout << " " << i_end;
+	  i_end = 0;
+        }
+    }
+}
+
 NARB_APIServer* narb_server = NULL;
 ZebraOspfSync * zebra_client = NULL;
 TerceApiTopoSync * terce_client = NULL;
@@ -602,11 +636,7 @@ int main(int argc, char* argv[])
             {
                 msg_narb_vtag_mask* vtagmask = (msg_narb_vtag_mask*) ((char*)tlv + TLV_HDR_SIZE + ntohs(tlv->length));
                 LOGF("ALL E2E VLAN TAGS:");
-                for (int vtag = 1; vtag < MAX_VLAN_NUM; vtag++)
-                {
-                    if (HAS_VLAN(vtagmask->bitmask, vtag))
-                        cout<<" " << vtag;
-                }
+                SHOW_VLANS(vtagmask);
                 cout<<endl;
                 offset += sizeof(msg_narb_vtag_mask);
             }
