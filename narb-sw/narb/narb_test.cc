@@ -327,7 +327,7 @@ msg_app2narb_request * new_app_request()
   app_req->bandwidth = bandwidth;
   app_req->encoding_type = encoding;
   app_req->switching_type = swtype;
-  app_req->gpid = htons(8);
+  app_req->gpid = htons(0); //0: Unknown (All)
 
   return app_req;
 }
