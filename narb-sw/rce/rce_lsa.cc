@@ -308,6 +308,7 @@ Resource* LSAHandler::Parse()
                                         assert (bitmask_len == sizeof(link_ifswcap_specific_vlan) - 4);
                                         memcpy(swcap->vlan_info.bitmask, zbuffer, bitmask_len);
                                         swcap->vlan_info.length = htons(bitmask_len + 4);
+										swcap->vlan_info.version &= ~(htons(IFSWCAP_SPECIFIC_VLAN_COMPRESS_Z));
                                     }
                                 }
                             }                        
