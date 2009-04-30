@@ -171,7 +171,7 @@ int main( int argc, char* argv[])
 
     if (NarbDomainInfo.ospfd_inter.addr[0] == 0 || NarbDomainInfo.ospfd_inter.port == 0)
     {
-        LOG("Running without connection to OSPFd......" <<endl);
+        LOG("Running without connection to inter-domain OSPF instance......" <<endl);
         LOG("No abstract topology generated......"<<endl);
     }
     else
