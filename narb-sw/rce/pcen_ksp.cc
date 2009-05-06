@@ -325,7 +325,9 @@ int PathT::GetERO(list<ero_subobj>& ero)
             subobj1.hop_type = subobj2.hop_type = ERO_TYPE_STRICT_HOP;
         else 
             subobj1.hop_type = subobj2.hop_type = ERO_TYPE_LOOSE_HOP;
- 
+
+        //$$$$ getting enc_type sw_type and layer-specific info such as vtag for L2SC and wavelength for WDM links
+
         ero.push_back(subobj1);
         ero.push_back(subobj2);
     }
