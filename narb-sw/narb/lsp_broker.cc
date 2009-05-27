@@ -81,6 +81,7 @@ void LSPQ::Init()
     req_vtag = 0;
     ero_state = ERO_NONE;
     req_retran_counter = MAX_REQ_RETRAN;
+    gettimeofday(&req_time, NULL);
     memset(&req_spec, 0, sizeof(req_spec));
     req_spec.type = htons(TLV_TYPE_NARB_REQUEST);
     req_spec.length = htons(sizeof(req_spec) - TLV_HDR_SIZE);

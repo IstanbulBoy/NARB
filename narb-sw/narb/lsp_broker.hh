@@ -180,6 +180,7 @@ private:
     u_int32_t req_ucid;
     u_int32_t app_seqnum; //app information; can be used to identify the LSPQ
     u_int32_t app_options;
+    struct timeval req_time; //timestamp in {sec, usec}, initiated when the LSPQ is created
     u_int32_t req_vtag;
     msg_app2narb_request req_spec;    // information extracted from the request message
     msg_app2narb_request mrn_spec;    // for multi-region networks
