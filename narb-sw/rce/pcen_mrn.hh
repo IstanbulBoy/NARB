@@ -73,7 +73,7 @@ public:
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
-    virtual bool PostBuildTopology();
+    virtual int PostBuildTopology();
     virtual int PerformComputation();
     virtual void Run();
 };

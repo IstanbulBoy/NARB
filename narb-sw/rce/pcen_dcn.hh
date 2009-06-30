@@ -59,7 +59,7 @@ public:
     virtual ~PCEN_DCN() { }
 
     virtual int PerformComputation();
-    virtual bool PostBuildTopology();
+    virtual int PostBuildTopology();
     virtual void Run();
 
     int VerifyPathWithERO();

@@ -528,4 +528,4 @@ public:
 #define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 
 #endif
- 
+

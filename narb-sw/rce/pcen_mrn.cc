@@ -53,7 +53,7 @@ PCEN_MRN::~PCEN_MRN()
 
 }
 
-bool PCEN_MRN::PostBuildTopology()
+int PCEN_MRN::PostBuildTopology()
 {
     int i, j, k;
     PCENLink *pcen_link, *pcen_link2;
@@ -117,8 +117,7 @@ bool PCEN_MRN::PostBuildTopology()
     if (!hop_back_attaching_to_source_verified)
     {
         LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that the hopback interface (0x%x) is attaching to the source router(0x%x)\n", hop_back, source.s_addr);
-        ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-        return false;
+        return ERR_PCEN_INVALID_REQ;
     }
 
     // obtaining and verifying lclid_link_src and lclid_link_dest
@@ -171,8 +170,7 @@ bool PCEN_MRN::PostBuildTopology()
         if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_src)
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source  (0x%x) local-id is attaching to the topology\n", src_lcl_id);
-            ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-            return false;
+            return ERR_PCEN_INVALID_REQ;
         }
         else if (lclid_link_src && lclid_link_src->link)
         {
@@ -193,8 +191,7 @@ bool PCEN_MRN::PostBuildTopology()
         if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_dest)
         {
             LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination  (0x%x) local-id is attaching to the topology\n", dest_lcl_id);
-            ReplyErrorCode(ERR_PCEN_INVALID_REQ);
-            return false;
+            return ERR_PCEN_INVALID_REQ;
         }
         else if (lclid_link_dest && lclid_link_dest->link)
         {
@@ -652,7 +649,7 @@ bool PCEN_MRN::PostBuildTopology()
         }
     }
 
-    return true;
+    return 0;
 }
     
 void PCEN_MRN::Run()
@@ -682,10 +679,10 @@ void PCEN_MRN::Run()
         return;
     }
 
-    if (!PostBuildTopology())
+    if ((ret = PostBuildTopology()) != 0)
     {
         LOGF("PCEN_MRN::PostBuildTopology() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);
-        ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+        ReplyErrorCode(ret);
         return;
     }
 

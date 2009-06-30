@@ -50,10 +50,11 @@ bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2)
     return true;
 }
 
-bool PCEN_DCN::PostBuildTopology()
+int PCEN_DCN::PostBuildTopology()
 {
-    if (!PCEN_MRN::PostBuildTopology())
-        return false;
+    int ret = 0;
+    if ((ret = PCEN_MRN::PostBuildTopology()) != 0)
+        return ret;
 
     //special topology manipulations for PCEN_DCN
     //relaxing Bandwidth and VLAN Tag constraints...
@@ -111,7 +112,7 @@ bool PCEN_DCN::PostBuildTopology()
             
     }
 
-    return true;
+    return 0;
 }
 
 int PCEN_DCN::PerformComputation()
@@ -420,8 +421,12 @@ void PCEN_DCN::Run()
     //  1. subnet handling in PCEN_MRN::PostBuildTopology
     //  2. relaxing constraints for DCN requests
     //  -->augmenting bandwidth and vtag set wherever needed
-    if (!PostBuildTopology())
+    if ((ret = PostBuildTopology()) != 0)
+    {
+        LOGF("PCEN_DCN::PostBuildTopology() failed for (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
+        ReplyErrorCode(ret);
         return;
+    }
 
     //$$$$ preserve user supplied subnet ero
     list<ero_subobj> user_subnet_ero;
@@ -431,7 +436,7 @@ void PCEN_DCN::Run()
     //  return error code if failed
     if ((ret = PerformComputation()) != 0)
     {
-        LOGF("PCEN_DCN::PerformComputation() failed (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
+        LOGF("PCEN_DCN::PerformComputation() failed for (source[%X]-destination[%X])\n", source.s_addr, destination.s_addr);
         ReplyErrorCode(ret);
         return;
     }
