@@ -270,6 +270,7 @@ struct link_ifswcap_specific_vlan {
 };
 
 #define IFSWCAP_SPECIFIC_SUBNET_UNI 0x4000
+#define IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS 0x1000
 #define MAX_TIMESLOTS_NUM 192 // 192 STS-1 = 10Gbps 
 struct link_ifswcap_specific_subnet_uni {
 	u_int16_t		length;

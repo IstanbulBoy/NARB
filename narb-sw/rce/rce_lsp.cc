@@ -569,12 +569,30 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
         {
             delta->flags |= DELTA_TIMESLOTS;
-            int ts_1st = (int)(if_id & 0xff);
-            int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
-            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
-            {
-                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
-            }
+			list<ISCD*>::iterator iter = link1->Iscds().begin();
+			for ( ; iter != link1->Iscds().end(); iter++ )
+			{
+				if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+				{
+					int ts_1st = (int)(if_id & 0xff);
+					int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
+					for (int ts = 0; ts < ts_num && ts_1st <= MAX_TIMESLOTS_NUM; ts_1st++)
+					{
+						if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, ts_1st))
+						{//Set timeslot allocation on Delta only if it is availalbe on corresponding Link ISCD
+							SET_TIMESLOT(delta->timeslots, ts_1st);
+							ts++;
+						}
+					}
+					break;
+				}
+			}
+			if (iter == link1->Iscds().end())
+			{
+				LOGF("LSPHandler::HandleLinkStateDelta failed on Link[0x%x--0x%x]: there is no TDM-SubnetUNI ISCD corresponding to the Delta (ucid=0x%x, seqnum=0x%x, create_time=%d.%d)\n", 
+	                link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec);
+				return;
+			}
         }
         else if (vtag_mask)
         {
@@ -616,12 +634,30 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
         {
             delta->flags |= DELTA_TIMESLOTS;
-            int ts_1st = (int)(if_id & 0xff);
-            int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
-            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
-            {
-                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
-            }
+			list<ISCD*>::iterator iter = link1->Iscds().begin();
+			for ( ; iter != link1->Iscds().end(); iter++ )
+			{
+				if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+				{
+					int ts_1st = (int)(if_id & 0xff);
+					int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
+					for (int ts = 0; ts < ts_num && ts_1st <= MAX_TIMESLOTS_NUM; ts_1st++)
+					{
+						if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, ts_1st))
+						{
+							SET_TIMESLOT(delta->timeslots, ts_1st);
+							ts++;
+						}
+					}
+					break;
+				}
+			}
+			if (iter == link1->Iscds().end())
+			{
+				LOGF("LSPHandler::HandleLinkStateDelta failed on Link[0x%x--0x%x]: there is no TDM-SubnetUNI ISCD corresponding to the Delta (ucid=0x%x, seqnum=0x%x, create_time=%d.%d)\n", 
+	                link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec);
+				return;
+			}
         }
         else if (vtag_mask)
         {
@@ -648,12 +684,30 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         if ((if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST || (if_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
         {
             delta->flags |= DELTA_TIMESLOTS;
-            int ts_1st = (int)(if_id & 0xff);
-            int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
-            for (int ts = 0; ts < ts_num && ts_1st+ts <= MAX_TIMESLOTS_NUM; ts++)
-            {
-                SET_TIMESLOT(delta->timeslots, ts_1st+ts);
-            }
+			list<ISCD*>::iterator iter = link1->Iscds().begin();
+			for ( ; iter != link1->Iscds().end(); iter++ )
+			{
+				if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
+				{
+					int ts_1st = (int)(if_id & 0xff);
+					int ts_num = (int)(SystemConfig::MapBandwidthToNumberOfTimeslots(delta->bandwidth));
+					for (int ts = 0; ts < ts_num && ts_1st <= MAX_TIMESLOTS_NUM; ts_1st++)
+					{
+						if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, ts_1st))
+						{
+							SET_TIMESLOT(delta->timeslots, ts_1st);
+							ts++;
+						}
+					}
+					break;
+				}
+			}
+			if (iter == link1->Iscds().end())
+			{
+				LOGF("LSPHandler::HandleLinkStateDelta failed on Link[0x%x--0x%x]: there is no TDM-SubnetUNI ISCD corresponding to the Delta (ucid=0x%x, seqnum=0x%x, create_time=%d.%d)\n", 
+	                link1->AdvRtId(), link1->Id(), delta->owner_ucid, delta->owner_seqnum, delta->create_time.tv_sec, delta->create_time.tv_usec);
+				return;
+			}
         }
         else if (vtag_mask)
         {

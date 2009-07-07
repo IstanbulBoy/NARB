@@ -812,8 +812,10 @@ int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
     {
         if (HAS_TIMESLOT(iscd->subnet_uni_info.timeslot_bitmask, ts))
             ts_num++;
-        else
-            ts_num = 0;
+		//timeslots handling in contiguous mode --> range starts over when gap is crossed
+        else if ((iscd->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
+			ts_num = 0;
+
         if (ts_num >= min_num_ts)
             return (ts - min_num_ts+1);
     }

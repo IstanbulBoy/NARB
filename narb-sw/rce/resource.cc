@@ -416,16 +416,6 @@ Link& Link::operator+= (LinkStateDelta& delta)
                     }
                 }
             }
-            /*Obsolete
-            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
-            {
-                if (delta.flags & DELTA_TIMESLOTS)
-                {
-                    for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
-                        (*iter)->subnet_uni_info.timeslot_bitmask[i] |= delta.timeslots[i];
-                }
-            }
-            */
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
@@ -492,16 +482,6 @@ Link& Link::operator-= (LinkStateDelta& delta)
                     }
                 }
             }
-            /*Obsolete
-            if (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)
-            {
-                if (delta.flags & DELTA_TIMESLOTS)
-                {
-                    for (i = 0; i < MAX_TIMESLOTS_NUM/8; i++)
-                        (*iter)->subnet_uni_info.timeslot_bitmask[i] &= (~delta.timeslots[i]);
-                }
-            }
-            */
         }
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI))
         {
