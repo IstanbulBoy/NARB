@@ -1534,9 +1534,9 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
                 if (HAS_TIMESLOT((*iter_iscd)->subnet_uni_info.timeslot_bitmask, ts))
                 {
                     ts_num++;
-					//default case: timeslots handling in non-contiguous mode --> get the first available timeslot
-					if (((*iter_iscd)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
-						break;
+                    //default case: timeslots handling in non-contiguous mode --> get the first available timeslot
+                    if (((*iter_iscd)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
+                        break;
                 }
                 else
                 {
