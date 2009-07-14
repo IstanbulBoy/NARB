@@ -593,6 +593,8 @@ void PCEN_KSP::Run()
     {
         if (is_e2e_tagged_vlan && vtag == ANY_VTAG)
             vtag = bestPath->vlan_tag;
+        if (has_wdm_layer)
+            wavelength = bestPath->wavelength;
         GetPathERO(bestPath->path);
         //$$ TOTO: Configure vtag-all (vtagmask) ?
         ReplyERO();

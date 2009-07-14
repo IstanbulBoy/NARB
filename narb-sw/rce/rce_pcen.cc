@@ -1598,6 +1598,32 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         }
     }
 
+    //LSC related
+    if (is_e2e_tagged_vlan && subobj1.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && pcen_link->link)
+    {
+        list<ISCD*>::iterator iter_iscd = pcen_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->link->iscds.end(); iter_iscd++)
+        {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+            {
+                subobj1.lsc_lambda = (u_int16_t)wavelength; //*(u_int16_t *)subobj1.pad
+                break;
+            }
+        }
+    } 
+    if (is_e2e_tagged_vlan && subobj2.sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && pcen_link->reverse_link && pcen_link->reverse_link->link)
+    {
+        list<ISCD*>::iterator iter_iscd = pcen_link->reverse_link->link->iscds.begin();
+        for (; iter_iscd != pcen_link->reverse_link->link->iscds.end(); iter_iscd++)
+        {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+            {
+                subobj2.lsc_lambda = (u_int16_t)wavelength; //*(u_int16_t *)subobj2.pad
+                break;
+            }
+        }
+    } 
+
     ero_track.push_back(subobj1);
     ero_track.push_back(subobj2);
 }

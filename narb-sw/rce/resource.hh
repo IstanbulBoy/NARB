@@ -421,6 +421,9 @@ public:
             prefix_word(index, 3) = rmtIfAddr;
             return index;
         }
+    void SetWavelength(u_int32_t lambda, bool deleting);
+    #define AddWavelength(L) SetWavelength(L, false)
+    #define RemoveWavelength(L) SetWavelength(L, true)
 
     // handling TE link with incomplete information
     bool IsIncomplete()

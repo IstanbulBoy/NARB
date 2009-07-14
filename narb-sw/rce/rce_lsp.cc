@@ -444,7 +444,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             {
                 if ((link1 = RDB.LookupLinkBySubnetLocalId(subobj->addr, lclid_src)) != NULL)
                 {
-                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), NULL, holding_time);
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj, NULL, holding_time);
                 }
             }
             continue;
@@ -456,7 +456,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             {
                 if ((link1 = RDB.LookupLinkBySubnetLocalId(subobj->addr, lclid_dest)) != NULL)
                 {
-                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), NULL, holding_time);
+                    HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj, NULL, holding_time);
                 }
             }
             continue;
@@ -480,7 +480,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 vtag = lsp_vtag;
             }
 
-            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask, holding_time);
+            HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj, vtag_mask, holding_time);
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
     }
@@ -529,12 +529,12 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
                 || (lclid_dest >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST)
                 && link1->Iscds().size() > 0 && iter_iscd != link1->Iscds().end())
             {
-                //$$$$ special case: update inter-domain links based on subnet-interface local-id constraints
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, 0, NULL, holding_time);
+                //$$$$ special case: update subnet edge links based on subnet-interface local-id constraints
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, NULL, NULL, holding_time);
             }
             else
             {
-                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, ntohl(subobj->if_id), vtag_mask, holding_time);
+                HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj, vtag_mask, holding_time);
             }
             link1 = RDB.LookupNextLinkByLclIf(link1);
         }
@@ -542,7 +542,7 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
 
 }
 
-void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, u_int32_t if_id, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t holding_time)
+void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link1, u_int32_t ucid, u_int32_t seqnum, u_int32_t vtag, ero_subobj* subobj, narb_lsp_vtagmask_tlv* vtag_mask, u_int32_t holding_time)
 {
     assert(link1);
     u_int8_t reqtype = req_data.type >> 8;
@@ -550,7 +550,9 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
     
     u_int8_t action = req_data.type & 0xff;
     LinkStateDelta* delta = NULL;
-    
+
+    u_int32_t if_id = subobj? subobj->if_id : 0;
+
     switch (action)
     {
     case ACT_QUERY:
@@ -585,6 +587,11 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         {
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
+        }
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        {
+            delta->flags |= DELTA_WAVELENGTH;
+            delta->wavelength = subobj->lsc_lambda;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
@@ -633,6 +640,11 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        {
+            delta->flags |= DELTA_WAVELENGTH;
+            delta->wavelength = subobj->lsc_lambda;
+        }
         link1->insertDelta(delta, holding_time, 0);
         break;
 
@@ -664,6 +676,11 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         {
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
+        }
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        {
+            delta->flags |= DELTA_WAVELENGTH;
+            delta->wavelength = subobj->lsc_lambda;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;

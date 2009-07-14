@@ -593,7 +593,8 @@ protected:
     u_int32_t ucid;
     u_int32_t seqnum;
     u_int32_t lspb_id;
-    u_int32_t vtag;    
+    u_int32_t vtag;
+    u_int32_t wavelength;
     bool is_bidirectional;
     bool is_e2e_tagged_vlan;
     bool has_wdm_layer;
@@ -622,6 +623,7 @@ public:
                 {
                     vtag_mask = NULL;
                 }
+                wavelength = 0;
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 // VIA_MOVAZ and INCOPORATE_SUBNET modes are mutually exclusive and the later overrides the former...
@@ -649,6 +651,7 @@ public:
                 {
                     vtag_mask = NULL;
                 }
+                wavelength = 0;
                 is_bidirectional = ((opts & LSP_OPT_BIDIRECTIONAL) == 0 ? false : true);
                 is_e2e_tagged_vlan = ((opts & LSP_OPT_E2E_VTAG) == 0 ? false : true);
                 has_wdm_layer = ((opts & LSP_OPT_VIA_MOVAZ) == 0 || SystemConfig::should_incorporate_ciena_subnet ? false : true);
