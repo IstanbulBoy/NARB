@@ -345,6 +345,7 @@ struct LinkStateDelta
 #define DELTA_QUERIED 0x1000
 #define DELTA_RESERVED 0x2000
 #define DELTA_UPDATED 0x4000
+#define DELTA_MASKOFF 0x8000
 // delta data type
 #define DELTA_VLANTAG 0x0001
 #define DELTA_VTAGMASK 0x0002
@@ -447,6 +448,7 @@ public:
     LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
     LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAddition=true);
     void deleteExpiredDeltas();
+    void cleanupMaskoffDeltas();
     virtual void hook_PreUpdate(Resource* oldResource);
 
     //debugging code

@@ -588,7 +588,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda;
@@ -640,7 +640,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda;
@@ -677,12 +677,32 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
+        break;
+
+    case ACT_MASKOFF: // turn a delta off
+    case ACT_MASKON: // turn a detla on
+        delta = link1->lookupDeltaByOwner(ucid, seqnum);
+        if (delta)
+        {
+            if (action == ACT_MASKON)
+            {
+                if ((delta->flags & DELTA_MASKOFF) != 0)
+                    *link1 += *delta;
+                delta->flags &= ~DELTA_MASKOFF;
+            }
+            else
+            {
+                if ((delta->flags & DELTA_MASKOFF) == 0)
+                    *link1 -= *delta;
+                delta->flags |= DELTA_MASKOFF;
+            }
+        }
         break;
 
     case ACT_DELETE:

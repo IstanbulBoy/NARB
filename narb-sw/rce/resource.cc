@@ -451,6 +451,9 @@ Link& Link::operator+= (LinkStateDelta& delta)
 {
     int i;
 
+    if (delta.flags & DELTA_MASKOFF)
+        return *this;
+
     if (delta.bandwidth > 0)
     {
         for (i = 0; i < 8; i++){
@@ -514,6 +517,9 @@ Link& Link::operator+= (LinkStateDelta& delta)
 Link& Link::operator-= (LinkStateDelta& delta)
 {
     int i;
+
+    if (delta.flags & DELTA_MASKOFF)
+        return *this;
 
     if (delta.bandwidth > 0)
     {
@@ -689,11 +695,15 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool 
     {
         LinkStateDelta* delta = *iter;
         assert(delta);
+
         if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
         {
             this->pDeltaList->erase(iter);
-            if (doAddition)
+            if (doAddition) 
+            {
+                delta->flags &= ~DELTA_MASKOFF;
                 (*this) += (*delta);
+            }
             return delta;
         }
     }
@@ -721,6 +731,7 @@ void Link::deleteExpiredDeltas()
             // 'reserved' resources won't be implicitly added back --> only by release message
             if (delta->expiration.tv_sec == SystemConfig::delta_expire_query || delta->expiration.tv_sec == SystemConfig::delta_expire_subnet_reserve)
             {
+                delta->flags &= ~DELTA_MASKOFF;
                 (*this) += (*delta);
             }
             delete delta; 
@@ -729,6 +740,26 @@ void Link::deleteExpiredDeltas()
         }
         else
             iter++;
+    }
+}
+
+void Link::cleanupMaskoffDeltas()
+{
+    if (!pDeltaList) return;
+
+    struct timeval timeNow;
+    gettimeofday(&timeNow, NULL);
+
+    list<LinkStateDelta*>::iterator iter =pDeltaList->begin();
+    while (iter != pDeltaList->end())
+    {
+        LinkStateDelta* delta = *iter;
+        assert(delta);
+        if ((delta->flags & DELTA_MASKOFF) != 0)
+        {
+            (*this) += (*delta);
+            delta->flags &= ~DELTA_MASKOFF;
+        }
     }
 }
 

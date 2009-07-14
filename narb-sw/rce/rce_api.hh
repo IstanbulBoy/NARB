@@ -65,6 +65,8 @@ enum api_action
     //extensions:
     ACT_INIT = 0x0A,
     ACT_ALIVE = 0x0B,
+    ACT_MASKON = 0x0C,
+    ACT_MASKOFF = 0x0D,
     //0xF0 -- 0xFE reserved for NARB-RCE
     ACT_QUERY_MRN = 0xF0
 };
