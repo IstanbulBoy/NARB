@@ -450,13 +450,16 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
 }
 
 PathT::PathT() {
-    this->cost=0;
-    this->DeviationNode=-1;
-    this->path.clear();
-    this->MaskedLinkList.clear();
-    this->pflg.flag=0;
-    this->vlan_tag = 0;
-    this->wavelength = 0;
+    source.s_addr = destination.s_addr = 0;
+    ucid = seqnum = 0;
+    cost=0;
+    DeviationNode=-1;
+    path.clear();
+    MaskedLinkList.clear();
+    pflg.flag=0;
+    bandwidth = 0;
+    vlan_tag = 0;
+    wavelength = 0;
 }
 
 void PathT::DisplayPath() {
@@ -595,7 +598,7 @@ void PCEN_KSP::Run()
             vtag = bestPath->vlan_tag;
         if (has_wdm_layer)
             wavelength = bestPath->wavelength;
-        GetPathERO(bestPath->path);
+        GetPathERO(bestPath->path, this->ero);
         //$$ TOTO: Configure vtag-all (vtagmask) ?
         ReplyERO();
     }

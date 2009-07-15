@@ -76,7 +76,7 @@ void PCEN_TEST::Run()
     if (bestPath != NULL)
     {
         LOGF("Found an IP-layer path...\n");
-        GetPathERO(bestPath->path);
+        GetPathERO(bestPath->path, this->ero);
         ReplyERO();
         return;
     }

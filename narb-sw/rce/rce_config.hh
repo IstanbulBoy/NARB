@@ -96,6 +96,7 @@ public:
 
     static PceAlgorithm pce_algorithm;
     static int pce_k;
+    static int pce_m;
 
     static bool radix_lock_on;
     static bool wdm_subnet_on;

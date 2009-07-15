@@ -1628,7 +1628,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
     ero_track.push_back(subobj2);
 }
 
-void PCEN::GetPathERO(list<PCENLink*>& path)
+void PCEN::GetPathERO(list<PCENLink*>& path, list<ero_subobj>& ero)
 {
     ero.clear();
     PCENLink * pcen_link;

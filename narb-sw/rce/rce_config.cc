@@ -41,6 +41,7 @@ string SystemConfig::schema_file;
 
 PceAlgorithm SystemConfig::pce_algorithm = PCE_NONE;
 int SystemConfig::pce_k = 100; //default k=100 for KSP (and related) algorithms
+int SystemConfig::pce_m = 5;
 bool SystemConfig::radix_lock_on = false;
 bool SystemConfig::wdm_subnet_on = false;
 

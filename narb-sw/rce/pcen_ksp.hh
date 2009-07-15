@@ -56,10 +56,15 @@ public:
 
 class PathT {
 public:
+    in_addr source;
+    in_addr destination;
+    u_int32_t ucid;
+    u_int32_t seqnum;
     list<PCENLink*> path;				// Remember the path from source node to this node
     list<PCENLink*> MaskedLinkList;		// Remember the links masked before searching this path
     int DeviationNode;					// Node ID of deviation node along this path
     double cost;						// cost of this path
+    float bandwidth;
     u_int32_t vlan_tag;
     u_int32_t wavelength;
 
@@ -76,6 +81,21 @@ public:
     void CalculatePathCost();
     void DisplayPath();
     bool operator< (const PathT& p) const { return cost<p.cost; }
+    PathT& operator=(const PathT& p) {
+        this->source.s_addr = p.source.s_addr;
+        this->destination.s_addr = p.destination.s_addr;
+        this->ucid = p.ucid;
+        this->seqnum = p.seqnum;
+        this->path.assign(p.path.begin(), p.path.end());
+        this->MaskedLinkList.assign(p.MaskedLinkList.begin(), p.MaskedLinkList.end());
+        this->DeviationNode = p.DeviationNode;
+        this->cost = p.cost;
+        this->bandwidth = p.bandwidth;
+        this->vlan_tag = p.vlan_tag;
+        this->wavelength = p.wavelength;
+        this->pflg = p.pflg;
+        return *this;
+    }
     int GetERO(list<ero_subobj>& ero);
 };
 
