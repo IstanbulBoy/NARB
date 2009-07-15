@@ -116,22 +116,45 @@ int PCEN_MCBase::PerformComputation()
     }
 
     //3. Sort MCPaths according to 'The Criteria' --> create sorted 'newPaths' list (identified by ucid+seqnum)
+    vector<PathT*> sortedPaths;
+    sortedPaths.assign(MCPaths.begin(), MCPaths.end());
+    SortMPaths(sortedPaths);
+
     vector<PathT> sortedMCPaths;
 
     //4. Run KSP for paths in newPaths
-    for (i = 0; i < sortedMCPaths.size(); i++)
+    for (i = 0; i < sortedPaths.size(); i++)
     {
+        sortedMCPaths[i] = *sortedPaths[i];
+
         PCENNode* srcNode2 = GetNodeByIp(routers, &MCPaths[i]->source);
         PCENNode* destNode2 = GetNodeByIp(routers, &MCPaths[i]->destination);
         SearchKSP(srcNode2->ref_num, destNode2->ref_num, SystemConfig::pce_k);
         PathT* bestPath = ConstrainKSPaths(KSP);
         if (!bestPath)
         {
-            //if any MCPaths[i] fails --> maskon all paths in MCPaths except for 'thePath'  (identified by ucid+seqnum)
-            
+            //if any MCPaths[j] fails --> maskon all paths in MCPaths except for 'thePath'
+            for (int j = 0; j < MCPaths.size() - 1; j++)
+            {
+                narb_lsp_request_tlv lsp_req;
+                lsp_req.type = ((MSG_LSP << 8) | ACT_MASKON);
+                lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+                lsp_req.src.s_addr = MCPaths[j]->source.s_addr;
+                lsp_req.dest.s_addr = MCPaths[j]->destination.s_addr;
+                lsp_req.bandwidth = MCPaths[j]->bandwidth;
+                lsp_req.switching_type = this->switching_type_ingress;
+                lsp_req.encoding_type = this->encoding_type_ingress;
+                lsp_req.gpid = 0;
+                list<ero_subobj> ero;
+                GetPathERO(MCPaths[j]->path, ero);
+                bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+                if (ero.size() > 0)
+                    LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
+            }
             thePath.path.clear();
             return false;
         }
+
         bestPath->source.s_addr = sortedMCPaths[i].source.s_addr;
         bestPath->destination.s_addr = sortedMCPaths[i].destination.s_addr;
         bestPath->ucid = sortedMCPaths[i].ucid;
@@ -264,5 +287,24 @@ int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &pat
     }
 
     return ret;
+}
+
+// swap if (path1 < path2) 
+void SortTwoPaths(PathT* &path1, PathT* &path2)
+{
+    PathT* P;
+    
+}
+
+void PCEN_MCBase::SortMPaths(vector<PathT*>& Paths)
+{
+    int numPaths = Paths.size();
+
+    for (int i = 0; i < numPaths; i++)
+        for (int j = 0; j < numPaths; j++)
+        {
+            if (j > i)
+                SortTwoPaths(Paths[i], Paths[j]);
+        }
 }
 
