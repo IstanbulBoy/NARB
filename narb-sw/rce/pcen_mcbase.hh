@@ -31,6 +31,7 @@ public:
     virtual int PickMCPCandidates(int M); //new
     virtual int PerformComputation();
     virtual void Run(); //recording path into AllPaths
+    int GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &path2);
 };
 
 #endif

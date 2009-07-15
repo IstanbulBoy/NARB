@@ -20,14 +20,6 @@ bool PCEN_MCBase::PostBuildTopology()
     return ret;
 }
 
-/*
-double ABS(double x) 
-{
-    if (x >= 0) return x;
-    return (-x);
-}
-*/
-
 #define ABS(X) ((X >= 0.0) ? (X) : -(X))
 
 int PCEN_MCBase::PickMCPCandidates(int M)
@@ -90,8 +82,6 @@ int PCEN_MCBase::PerformComputation()
     int i;
     for (i = 0; i < MCPaths.size(); i++)
     {
-        list<ero_subobj> ero;
-        GetPathERO(MCPaths[i]->path, ero);
         narb_lsp_request_tlv lsp_req;
         lsp_req.type = ((MSG_LSP << 8) | ACT_MASKOFF);
         lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
@@ -101,14 +91,70 @@ int PCEN_MCBase::PerformComputation()
         lsp_req.switching_type = this->switching_type_ingress;
         lsp_req.encoding_type = this->encoding_type_ingress;
         lsp_req.gpid = 0;
+        list<ero_subobj> ero;
+        GetPathERO(MCPaths[i]->path, ero);
         bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[i]->ucid, MCPaths[i]->seqnum, is_bidir);
     }
 
     //M-Concurrent path computation algorithm for MCP
-    
-    //get path for the new request or fail
+    //1. Run KSP for each path in MCPaths, including MCPaths.push_back(&thePath)
+    //2. Pick (up to 2xM) best and second-to-best paths and place them into MC_KSP1 and MC_KSP2
+    vector<PathT> MC_KSP1; MC_KSP1.reserve(MCPaths.size()+1);
+    vector<PathT> MC_KSP2; MC_KSP2.reserve(MCPaths.size()+1);
+    MCPaths.push_back(&thePath);
+    for (i = 0; i < MCPaths.size(); i++)
+    {
+        PCENNode* srcNode = GetNodeByIp(routers,&MCPaths[i].source);
+        PCENNode* destNode = GetNodeByIp(routers,&&MCPaths[i].destination);
+        SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
+        MC_KSP1[i] = *MCPaths[i];
+        MC_KSP2[i] = *MCPaths[i];
+        if (GetBestTwoKSPaths(KSP, MC_KSP1[i], MC_KSP2[i]) == 0) //mark no_path
+            return false;
+    }
+
+    //3. Sort MCPaths according to 'The Criteria' --> create sorted 'newPaths' list (identified by ucid+seqnum)
+    vector<PathT> sortedMCPaths;
+
+    //4. Run KSP for paths in newPaths
+    for (i = 0; i < sortedMCPaths.size(); i++)
+    {
+        PCENNode* srcNode = GetNodeByIp(routers,&MCPaths[i].source);
+        PCENNode* destNode = GetNodeByIp(routers,&&MCPaths[i].destination);
+        SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
+        PathT* bestPath = ConstrainKSPaths(KSP);
+        if (!bestPath)
+        {
+            //if any MCPaths[i] fails --> maskon all paths in MCPaths except for 'thePath'  (identified by ucid+seqnum)
+            
+            thePath.path.clear();
+            return false;
+        }
+        bestPath->source.s_addr = sortedMCPaths[i]->source.s_addr;
+        bestPath->destination.s_addr = sortedMCPaths[i]->destination.s_addr;
+        bestPath->ucid = sortedMCPaths[i]->ucid;
+        bestPath->seqnum = sortedMCPaths[i]->seqnum;
+        bestPath->cost = sortedMCPaths[i]->cost;
+        bestPath->bandwidth = sortedMCPaths[i]->bandwidth;
+        bestPath->vlan_tag = sortedMCPaths[i]->vlan_tag;
+        bestPath->wavelength = sortedMCPaths[i]->wavelength;
+        bestPath->pflg = sortedMCPaths[i]->pflg;
+        sortedMCPaths[i] = *bestPath;
+    }
+
+    //otherwise, assign paths of newPaths to MCPaths[i] (including 'thePath'), return success
+    for (i = 0; i < MCPaths.size(); i++)
+    {
+        for (int j = 0; j < sortedMCPaths.size(); j++)
+        {
+            if (MCPaths[i]->ucid == sortedMCPaths[j]->ucid && MCPaths[i]->seqnum == sortedMCPaths[j]->seqnum)
+                MCPaths[i]->path.assign(sortedMCPaths[j]->path.begin(), sortedMCPaths[j]->path.end());
+        }
+    }
+
+    return true;
 }
 
 void PCEN_MCBase::Run()
@@ -164,5 +210,59 @@ void PCEN_MCBase::Run()
     
     //replyERO (w/ holding logic)
     ReplyERO();
+}
+
+int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &path2)
+{
+    double minCost = PCEN_INFINITE_COST;
+    PathT* bestPath = NULL;
+    PathT* secondPath = NULL;
+    PathT* P;
+    vector<PathT*>::iterator iterP;
+
+    iterP = KSP.begin();
+    while (iterP != KSP.end())
+    {
+        P = (*iterP);
+        if (VerifyPathConstraints(P->path, P->vlan_tag, P->wavelength))
+        {
+            if (P->cost < minCost)
+            {
+                minCost = P->cost;
+                if (bestPath)
+                    secondPath = bestPath;
+                bestPath = P;
+            }
+            iterP++;
+        }
+        else
+        {
+            delete (*iterP); //$$ release PathT memory
+            iterP = KSP.erase(iterP);
+        }
+    }
+
+    int ret = 0;
+    if (bestPath)
+    {
+        path1 = *bestPath;
+        ret++;
+    }
+    else
+    {
+        path1.pflg.pfg.filteroff = 1;
+    }
+
+    if (secondPath)
+    {
+        path2 = *secondPath;
+        ret++;
+    }
+    else
+    {
+        path2.pflg.pfg.filteroff = 1;
+    }
+
+    return ret;
 }
 
