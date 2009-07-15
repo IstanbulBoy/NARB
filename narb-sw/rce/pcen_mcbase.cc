@@ -106,9 +106,9 @@ int PCEN_MCBase::PerformComputation()
     MCPaths.push_back(&thePath);
     for (i = 0; i < MCPaths.size(); i++)
     {
-        PCENNode* srcNode = GetNodeByIp(routers,&MCPaths[i].source);
-        PCENNode* destNode = GetNodeByIp(routers,&&MCPaths[i].destination);
-        SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
+        PCENNode* srcNode1 = GetNodeByIp(routers, &MCPaths[i]->source);
+        PCENNode* destNode1 = GetNodeByIp(routers, &MCPaths[i]->destination);
+        SearchKSP(srcNode1->ref_num, destNode1->ref_num, SystemConfig::pce_k);
         MC_KSP1[i] = *MCPaths[i];
         MC_KSP2[i] = *MCPaths[i];
         if (GetBestTwoKSPaths(KSP, MC_KSP1[i], MC_KSP2[i]) == 0) //mark no_path
@@ -121,9 +121,9 @@ int PCEN_MCBase::PerformComputation()
     //4. Run KSP for paths in newPaths
     for (i = 0; i < sortedMCPaths.size(); i++)
     {
-        PCENNode* srcNode = GetNodeByIp(routers,&MCPaths[i].source);
-        PCENNode* destNode = GetNodeByIp(routers,&&MCPaths[i].destination);
-        SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
+        PCENNode* srcNode2 = GetNodeByIp(routers, &MCPaths[i]->source);
+        PCENNode* destNode2 = GetNodeByIp(routers, &MCPaths[i]->destination);
+        SearchKSP(srcNode2->ref_num, destNode2->ref_num, SystemConfig::pce_k);
         PathT* bestPath = ConstrainKSPaths(KSP);
         if (!bestPath)
         {
@@ -132,15 +132,15 @@ int PCEN_MCBase::PerformComputation()
             thePath.path.clear();
             return false;
         }
-        bestPath->source.s_addr = sortedMCPaths[i]->source.s_addr;
-        bestPath->destination.s_addr = sortedMCPaths[i]->destination.s_addr;
-        bestPath->ucid = sortedMCPaths[i]->ucid;
-        bestPath->seqnum = sortedMCPaths[i]->seqnum;
-        bestPath->cost = sortedMCPaths[i]->cost;
-        bestPath->bandwidth = sortedMCPaths[i]->bandwidth;
-        bestPath->vlan_tag = sortedMCPaths[i]->vlan_tag;
-        bestPath->wavelength = sortedMCPaths[i]->wavelength;
-        bestPath->pflg = sortedMCPaths[i]->pflg;
+        bestPath->source.s_addr = sortedMCPaths[i].source.s_addr;
+        bestPath->destination.s_addr = sortedMCPaths[i].destination.s_addr;
+        bestPath->ucid = sortedMCPaths[i].ucid;
+        bestPath->seqnum = sortedMCPaths[i].seqnum;
+        bestPath->cost = sortedMCPaths[i].cost;
+        bestPath->bandwidth = sortedMCPaths[i].bandwidth;
+        bestPath->vlan_tag = sortedMCPaths[i].vlan_tag;
+        bestPath->wavelength = sortedMCPaths[i].wavelength;
+        bestPath->pflg = sortedMCPaths[i].pflg;
         sortedMCPaths[i] = *bestPath;
     }
 
@@ -149,8 +149,8 @@ int PCEN_MCBase::PerformComputation()
     {
         for (int j = 0; j < sortedMCPaths.size(); j++)
         {
-            if (MCPaths[i]->ucid == sortedMCPaths[j]->ucid && MCPaths[i]->seqnum == sortedMCPaths[j]->seqnum)
-                MCPaths[i]->path.assign(sortedMCPaths[j]->path.begin(), sortedMCPaths[j]->path.end());
+            if (MCPaths[i]->ucid == sortedMCPaths[j].ucid && MCPaths[i]->seqnum == sortedMCPaths[j].seqnum)
+                MCPaths[i]->path.assign(sortedMCPaths[j].path.begin(), sortedMCPaths[j].path.end());
         }
     }
 
