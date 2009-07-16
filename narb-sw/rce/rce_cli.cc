@@ -1442,9 +1442,10 @@ static Link* link_to_update = NULL;
         else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && SystemConfig::wdm_subnet_on) \
         { \
            CLI_OUT ("\t    -- LSC-WDM specific information--%s\t       --> Available wavelengths:", cli_cstr_newline); \
-	    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"))->p);\
-	    if (wavegrid != NULL)\
+           TLP* tlp = L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));\
+	    if (tlp && tlp->p)\
 	    {\
+               MovazWaveGrid* wavegrid = (MovazWaveGrid*)tlp->p;\
 	        u_int32_t base = ntohl(wavegrid->base);\
 	        u_int16_t interval = ntohs(wavegrid->interval);\
 	        u_int16_t size = ntohs(wavegrid->size);\
@@ -1464,7 +1465,7 @@ static Link* link_to_update = NULL;
 	    if (tlp && tlp->p)\
 	    {\
                u_int32_t lambda = htonl(*(u_int32_t*)tlp->p);\
-               CLI_OUT ("\t    -- PSC4 specific information--%s\t       --> PSC-->LSC Adaptation lambda:%d%s", cli_cstr_newline, lambda, cli_cstr_newline); \
+               CLI_OUT ("\t    -- PSC4 specific information--%s\t       --> PSC-LSC adaptation lambda: %d%s", cli_cstr_newline, lambda, cli_cstr_newline); \
 	    }\
         }\
     } \
