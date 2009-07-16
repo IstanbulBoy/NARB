@@ -385,64 +385,69 @@ void Link::SetWavelength(u_int32_t lambda, bool deleting)
     wavegrid.interval = htons(100);
     wavegrid.size = htons(40);
 
-    ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
-    int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
-    if (pe == NULL || a_index == 0)
-        return;
-
-    int l = (lambda-192000)/100; 
-    if (l < 0 || l >= 40)
+    if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
     {
-       LOGF("Link::AddWavelength cannot take wavelength frequency %d \n", lambda);
-       return;
-    }
+        ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
+        int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LAMBDA");
+        if (pe == NULL || a_index == 0)
+            return;
 
-    lambda_info.channel_id = htonl(lambda);
-    list<void*> *p_list;
-    if (attrTable.size() > a_index && (p_list = (list<void*>*)(attrTable[a_index].p)) != NULL)
-    {
-        list<void*>::iterator iter = p_list->begin();
-        MovazTeLambda tel;
-        for (; iter != p_list->end(); iter++)
+        int l = (lambda-192000)/100; 
+        if (l < 0 || l >= 40)
         {
-            tel = *(MovazTeLambda*)(*iter);
-            if (tel.channel_id == lambda_info.channel_id)
-            {
-                if (deleting)
-                {
-                    p_list->erase(iter);
-                }
-                break;
-            }
+           LOGF("Link::AddWavelength cannot take wavelength frequency %d \n", lambda);
+           return;
         }
-        if (!deleting && iter == p_list->end() && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
-            SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_lambda_info), (char*)&lambda_info, pe);
-    }
 
-    pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
-    a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
-    if (deleting)
-    {
-        wavegrid.in_channels[l/2] &= ~((0x70) >> ((l%2)*4));
-        wavegrid.out_channels[l/2] &= ~((0x70) >> ((l%2)*4));
-    }
-    else
-    {
-        wavegrid.in_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
-        wavegrid.out_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
-    }
-    if (attrTable.size() > a_index && attrTable[a_index].p 
-        && this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
-        SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_passthrough_wavegrid), (char*)&wavegrid, pe);
+        lambda_info.channel_id = htonl(lambda);
+        list<void*> *p_list;
+        if (attrTable.size() > a_index && (p_list = (list<void*>*)(attrTable[a_index].p)) != NULL)
+        {
+            list<void*>::iterator iter = p_list->begin();
+            MovazTeLambda tel;
+            for (; iter != p_list->end(); iter++)
+            {
+                tel = *(MovazTeLambda*)(*iter);
+                if (tel.channel_id == lambda_info.channel_id)
+                {
+                    if (deleting)
+                    {
+                        p_list->erase(iter);
+                    }
+                    break;
+                }
+            }
+            if (!deleting && iter == p_list->end())
+                SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_lambda_info), (char*)&lambda_info, pe);
+        }
 
-    pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
-    a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
-    if (attrTable.size() > a_index && attrTable[a_index].p)
-    {
+        pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
+        a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
         if (deleting)
-            attrTable[a_index].p = NULL;
-        else if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
-            SetAttribute(a_index, pe->dataType, 4, (char*)&lambda, pe);
+        {
+            wavegrid.in_channels[l/2] &= ~((0x70) >> ((l%2)*4));
+            wavegrid.out_channels[l/2] &= ~((0x70) >> ((l%2)*4));
+        }
+        else
+        {
+            wavegrid.in_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+            wavegrid.out_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+        }
+        if (attrTable.size() > a_index && attrTable[a_index].p)
+            SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_passthrough_wavegrid), (char*)&wavegrid, pe);
+    }
+    
+    if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+    {
+        ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
+        int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
+        if (attrTable.size() > a_index && attrTable[a_index].p)
+        {
+            if (deleting)
+                attrTable[a_index].p = NULL;
+            else if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
+                SetAttribute(a_index, pe->dataType, 4, (char*)&lambda, pe);
+        }
     }
 #endif
 }

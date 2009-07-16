@@ -652,7 +652,8 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->lsc_lambda != 0
+            && (subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4))
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda*100;
@@ -689,7 +690,8 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->lsc_lambda != 0
+            && (subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4))
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda*100;
