@@ -86,6 +86,7 @@ enum PceAlgorithm
     MRN_DEFAULT,
     MRN_CG,
     MRN_DCN,
+    MC_BASE,
 };
 
 class SystemConfig

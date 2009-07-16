@@ -1791,6 +1791,9 @@ COMMAND(cmd_show_pce_module_default, (char*)"show pce-module-default",
         case MRN_DCN:
             strcpy(pce_module, "MRN-DCN-MODULE");
             break;
+        case MC_BASE:
+            strcpy(pce_module, "MC-BASE-MODULE");
+            break;
         case TEST_BASE:
             strcpy(pce_module, "TEST-MODULE");
             break;
@@ -1824,6 +1827,9 @@ COMMAND(cmd_set_pce_module_default, (char*)"set pce-module-default NAME",
             break;
         case MRN_DCN:
             strcpy(pce_module, "MRN-DCN-MODULE");
+            break;
+        case MC_BASE:
+            strcpy(pce_module, "MC-BASE-MODULE");
             break;
         case TEST_BASE:
             strcpy(pce_module, "TEST-MODULE");

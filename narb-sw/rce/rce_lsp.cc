@@ -38,6 +38,7 @@
 #include "pcen_mrn.hh"
 #include "pcen_mrn_cg.hh"
 #include "pcen_dcn.hh"
+#include "pcen_mcbase.hh"
 #include "pcen_test.hh"
 #include "rce_lsp.hh"
 
@@ -232,6 +233,12 @@ void LSPHandler::Run()
              case MRN_DCN:
                 options |= LSP_OPT_MRN;
                 pcen_event = new PCEN_DCN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
+                break;
+            case MC_BASE:
+                options |= LSP_OPT_MRN;
+                pcen_event = new PCEN_MCBase(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
                     switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                     src_lcl_id, dest_lcl_id, vtag_mask);
                 break;

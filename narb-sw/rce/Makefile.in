@@ -117,8 +117,8 @@ am_rce_OBJECTS = rce_main.$(OBJEXT) event.$(OBJEXT) rce_version.$(OBJEXT) rce_lo
 	zebra_ospfclient.$(OBJEXT) rce_schema.$(OBJEXT) \
 	rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) cmdtree.$(OBJEXT) \
 	pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) pcen_mrn_cg.$(OBJEXT) \
-	pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) pcen_test.$(OBJEXT) rce_subnet.$(OBJEXT) \
-	terce_apiclient.$(OBJEXT)
+	pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) pcen_test.$(OBJEXT) \
+	rce_subnet.$(OBJEXT) terce_apiclient.$(OBJEXT)
 rce_OBJECTS = $(am_rce_OBJECTS)
 rce_DEPENDENCIES =
 rce_LDFLAGS =
@@ -129,8 +129,8 @@ am_rce_test_OBJECTS = rce_test.$(OBJEXT) event.$(OBJEXT) rce_version.$(OBJEXT) \
 	rce_filter.$(OBJEXT) zebra_ospfclient.$(OBJEXT) \
 	rce_schema.$(OBJEXT) rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) \
 	cmdtree.$(OBJEXT) pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) \
-	pcen_mrn_cg.$(OBJEXT) pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) pcen_test.$(OBJEXT)\
-	rce_subnet.$(OBJEXT) terce_apiclient.$(OBJEXT)
+	pcen_mrn_cg.$(OBJEXT) pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) \
+	pcen_test.$(OBJEXT) rce_subnet.$(OBJEXT) terce_apiclient.$(OBJEXT)
 rce_test_OBJECTS = $(am_rce_test_OBJECTS)
 rce_test_DEPENDENCIES =
 rce_test_LDFLAGS =
@@ -143,7 +143,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/cmdtree.Po ./$(DEPDIR)/event.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_ksp.Po ./$(DEPDIR)/pcen_mrn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_mrn_cg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pcen_dcn.Po ./$(DEPDIR)/pcen_mcbase.Po ./$(DEPDIR)/pcen_test.Po ./$(DEPDIR)/rce_api.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/pcen_dcn.Po ./$(DEPDIR)/pcen_mcbase.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/pcen_test.Po ./$(DEPDIR)/rce_api.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_apiserver.Po ./$(DEPDIR)/rce_cli.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_clicmd.Po ./$(DEPDIR)/rce_config.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_filter.Po ./$(DEPDIR)/rce_log.Po \
