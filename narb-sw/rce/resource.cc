@@ -442,8 +442,7 @@ void Link::SetWavelength(u_int32_t lambda, bool deleting)
         if (attrTable.size() > a_index && attrTable[a_index].p)
         {
             if (deleting)
-                attrTable.erase(attrTable.begin()+a_index);
-                //attrTable[a_index].p = NULL;
+                attrTable[a_index].p = NULL;
             else if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
                 SetAttribute(a_index, pe->dataType, 4, (char*)&lambda, pe);
         }

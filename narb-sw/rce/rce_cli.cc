@@ -1525,6 +1525,7 @@ COMMAND (cmd_show_link, (char*)"show link {interdomain|intradomain} local_if_add
 
     do
     {
+       link->deleteExpiredDeltas();
 	SHOW_LINK(link)
     } while ((link = RDB.LookupNextLinkByLclRmtIf(link)) != NULL);
 
