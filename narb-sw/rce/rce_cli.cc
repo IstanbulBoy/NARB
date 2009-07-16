@@ -36,6 +36,7 @@
 #include "rce_config.hh"
 #include "zebra_ospfclient.hh"
 #include "resource.hh"
+#include "rce_movaz_types.hh"
 #include <stdlib.h>
 #include <arpa/telnet.h>
 #include <stdarg.h>
@@ -1431,12 +1432,30 @@ static Link* link_to_update = NULL;
                 if (HAS_VLAN((*iter)->vlan_info.bitmask_alloc, i)) CLI_OUT (" %d", i); \
             CLI_OUT("%s", cli_cstr_newline); \
         } \
-        if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) \
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (ntohs((*iter)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_UNI)) \
         { \
             CLI_OUT ("\t    -- Subnet UNI specific information--%s\t       --> Available time slots:", cli_cstr_newline); \
             for (i = 1; i <= MAX_TIMESLOTS_NUM; i++) \
                 if (HAS_TIMESLOT((*iter)->subnet_uni_info.timeslot_bitmask, i)) CLI_OUT (" %d", i); \
             CLI_OUT("%s", cli_cstr_newline); \
+        } \
+        else if ((*iter)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && SystemConfig::wdm_subnet_on) \
+        { \
+            CLI_OUT ("\t    -- LSC-WDM specific information--%s\t       --> Available wavelengths:", cli_cstr_newline); \
+	    MovazWaveGrid* wavegrid = (MovazWaveGrid*)(L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"))->p);\
+	    if (wavegrid != NULL)\
+	    {\
+	        u_int32_t base = ntohl(wavegrid->base);\
+	        u_int16_t interval = ntohs(wavegrid->interval);\
+	        u_int16_t size = ntohs(wavegrid->size);\
+	        for (i = 0; i < (int)size/2; i++)\
+	        {\
+	            if ((wavegrid->out_channels[i] & 0xf0) == 0x70)\
+	                CLI_OUT (" %d", base+i*2*interval);\
+	            if ((wavegrid->out_channels[i] & 0x0f) == 0x07)\
+	                CLI_OUT (" %d", base+(i*2+1)*interval);\
+	        }\
+	    }\
         } \
     } \
     list<LinkStateDelta*>* pDeltaList = L->DeltaListPointer(); \

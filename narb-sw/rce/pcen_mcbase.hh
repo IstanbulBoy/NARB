@@ -14,6 +14,9 @@ class PCEN_MCBase: public PCEN_KSP
 protected:
     PathT thePath;
     vector<PathT*> MCPaths;
+    vector<PathT> MC_KSP1;
+    vector<PathT> MC_KSP2;
+    vector<PathT> sortedMCPaths;
 
 public:
     static vector<PathT*> allPaths;
@@ -31,7 +34,9 @@ public:
     virtual int PickMCPCandidates(int M); //new
     virtual int PerformComputation();
     virtual void Run(); //recording path into AllPaths
+    virtual inline void SortTwoPaths(PathT* &path1, PathT* &path2);
     int GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &path2);
+    void SortMPaths(vector<PathT*>& Paths);
 };
 
 #endif

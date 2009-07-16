@@ -61,12 +61,16 @@ int PCEN_MCBase::PickMCPCandidates(int M)
 int PCEN_MCBase::PerformComputation()
 {
     thePath.path.clear();
+    MCPaths.push_back(&thePath);
+    MC_KSP1.clear(); MC_KSP1.reserve(MCPaths.size());
+    MC_KSP2.clear(); MC_KSP2.reserve(MCPaths.size());
+    sortedMCPaths.clear(); sortedMCPaths.reserve(MCPaths.size());
 
     PCENNode* srcNode = GetNodeByIp(routers,&source);
     PCENNode* destNode = GetNodeByIp(routers,&destination);
 
     //run KSP for a single path if (allPaths.size() == 0), then return
-    if (allPaths.size() == 0 || MCPaths.size() == 0)
+    if (allPaths.size() == 0 || MCPaths.size() == 1)
     {
         SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
         if (KSP.size() == 0)
@@ -80,7 +84,7 @@ int PCEN_MCBase::PerformComputation()
 
     //maskoff deltas for every path in MCPaths --> release MCPaths resources
     int i;
-    for (i = 0; i < MCPaths.size(); i++)
+    for (i = 0; i < MCPaths.size()-1; i++)
     {
         narb_lsp_request_tlv lsp_req;
         lsp_req.type = ((MSG_LSP << 8) | ACT_MASKOFF);
@@ -101,9 +105,6 @@ int PCEN_MCBase::PerformComputation()
     //M-Concurrent path computation algorithm for MCP
     //1. Run KSP for each path in MCPaths, including MCPaths.push_back(&thePath)
     //2. Pick (up to 2xM) best and second-to-best paths and place them into MC_KSP1 and MC_KSP2
-    vector<PathT> MC_KSP1; MC_KSP1.reserve(MCPaths.size()+1);
-    vector<PathT> MC_KSP2; MC_KSP2.reserve(MCPaths.size()+1);
-    MCPaths.push_back(&thePath);
     for (i = 0; i < MCPaths.size(); i++)
     {
         PCENNode* srcNode1 = GetNodeByIp(routers, &MCPaths[i]->source);
@@ -119,8 +120,6 @@ int PCEN_MCBase::PerformComputation()
     vector<PathT*> sortedPaths;
     sortedPaths.assign(MCPaths.begin(), MCPaths.end());
     SortMPaths(sortedPaths);
-
-    vector<PathT> sortedMCPaths;
 
     //4. Run KSP for paths in newPaths
     for (i = 0; i < sortedPaths.size(); i++)
@@ -289,13 +288,68 @@ int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &pat
     return ret;
 }
 
-// swap if (path1 < path2) 
-void SortTwoPaths(PathT* &path1, PathT* &path2)
+inline void SwapPaths(PathT* &path1, PathT* &path2)
 {
-    PathT* P;
-    
+    PathT* p;
+    p= path1;
+    path1 = path2;
+    path2 = p;
 }
 
+inline double SumOfBandwidthWeightedCommonLinks(PathT* &P, vector<PathT>& Paths)
+{
+    if (P->path.size() == 0)
+        return 0;
+    int i, numPaths = Paths.size();
+
+    for (i = 0; i < numPaths; i++)
+    {
+        if (P->ucid == Paths[i].ucid && P->seqnum == Paths[i].seqnum)
+            break;
+    }
+    assert (i < numPaths);
+
+    PathT* path1 = &Paths[i];
+
+    if (path1->pflg.pfg.filteroff != 0)
+        return PCEN_INFINITE_COST;
+
+    double sum = 0;
+    list<PCENLink*>::iterator iter1, iter2;
+    for (iter1 = path1->path.begin(); iter1 != path1->path.end(); iter1++)
+    {
+        for (i = 0; i < numPaths; i++)
+        {
+            if (path1->ucid == Paths[i].ucid && path1->seqnum == Paths[i].seqnum)
+                continue;
+            for (iter2 = Paths[i].path.begin(); iter2 != Paths[i].path.end(); iter2++)
+            {
+                if ((*iter1) == (*iter2))
+                {
+                    sum += (path1->bandwidth < Paths[i].bandwidth ? path1->bandwidth : Paths[i].bandwidth);
+                }
+            }
+        }
+    }
+    return sum;
+}
+
+// swap if (path1 < path2) according to porivsioning priority criteria
+void PCEN_MCBase::SortTwoPaths(PathT* &path1, PathT* &path2)
+{
+
+    // criterion 1: bandwidth-weighted hop length (created-time?)
+    if (path1->bandwidth*path1->path.size() < path2->bandwidth*path2->path.size())
+        SwapPaths(path1, path2);
+    // criterion 2: sum of bandwidth-weighted common links for best-path
+    else if (SumOfBandwidthWeightedCommonLinks(path1, MC_KSP1) < SumOfBandwidthWeightedCommonLinks(path2, MC_KSP1))
+        SwapPaths(path1, path2);
+    // criterion 3: sum of bandwidth-weighted common links for second-path --> no_path first ...
+    else if (SumOfBandwidthWeightedCommonLinks(path1, MC_KSP2) < SumOfBandwidthWeightedCommonLinks(path2, MC_KSP2))
+        SwapPaths(path1, path2);
+}
+
+// decreasing order according to porivsioning priority criteria
 void PCEN_MCBase::SortMPaths(vector<PathT*>& Paths)
 {
     int numPaths = Paths.size();
