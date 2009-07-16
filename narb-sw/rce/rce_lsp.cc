@@ -482,6 +482,14 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             {
                 vtag = lsp_vtag;
             }
+            //special handling of PSC/LSC adaptation
+            if (subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
+            {
+                list<ero_subobj>::iterator it2 = it;
+                ++it2;
+                if (it2 != ero_reply.end() && (*it2).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+                    subobj->lsc_lambda = (*it2).lsc_lambda;
+            }
 
             HandleLinkStateDelta(req_data, link1, ucid, seqnum, vtag, subobj, vtag_mask, holding_time);
             link1 = RDB.LookupNextLinkByLclIf(link1);
@@ -592,7 +600,8 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             delta->flags |= DELTA_VLANTAG;
             delta->vlan_tag = vtag;
         }
-        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
+        else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0
+            || subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4 && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = subobj->lsc_lambda*100;
