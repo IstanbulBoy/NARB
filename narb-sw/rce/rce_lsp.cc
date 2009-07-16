@@ -421,12 +421,14 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
             lsp_vtag = (ntohl((*it).if_id) & 0xffff);
             break;
         }
-
-        vtag = (*it).l2sc_vlantag;
-        if (vtag !=0 && vtag != ANY_VTAG)
+        if ((*it).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
         {
-            lsp_vtag = vtag;
-            break;
+            vtag = (*it).l2sc_vlantag;
+            if (vtag !=0 && vtag != ANY_VTAG)
+            {
+                lsp_vtag = vtag;
+                break;
+            }
         }
     }
 
@@ -473,7 +475,8 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         link1 = RDB.LookupLinkByLclIf(RTYPE_LOC_PHY_LNK, subobj->addr);
         while (link1 != NULL) // updating all links with the same local interface address
         {
-            vtag = subobj->l2sc_vlantag;
+            if (subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+                vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG
                 && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
             {
@@ -511,7 +514,8 @@ void LSPHandler::UpdateLinkStatesByERO(narb_lsp_request_tlv& req_data, list<ero_
         link1 = RDB.LookupLinkByLclIf(RTYPE_GLO_ABS_LNK, subobj->addr);
         while (link1 != NULL) // updating all links with the same local interface address
         {
-            vtag = subobj->l2sc_vlantag;
+            if (subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+                vtag = subobj->l2sc_vlantag;
             if (vtag == 0 && lsp_vtag != 0 && lsp_vtag != ANY_VTAG
                 && ((ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_SRC 
                     || (ntohl(subobj->if_id) >> 16) == LOCAL_ID_TYPE_SUBNET_UNI_DEST))
