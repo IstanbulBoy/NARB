@@ -375,15 +375,10 @@ void Link::SetWavelength(u_int32_t lambda, bool deleting)
 {
 #ifdef HAVE_EXT_ATTR
     movaz_tlvdata_te_lambda_info lambda_info;
-    movaz_tlvdata_te_passthrough_wavegrid wavegrid;
     memset(&lambda_info, 0, sizeof(movaz_tlvdata_te_lambda_info));
     lambda_info.priority = 0x07;
     memcpy(lambda_info.sw_cap, "\000\020\000\00d", 4);
     lambda_info.data_rate= 0x4E9502F9;
-    memset(&wavegrid, 0, sizeof(movaz_tlvdata_te_passthrough_wavegrid));
-    wavegrid.base = htonl(192000);
-    wavegrid.interval = htons(100);
-    wavegrid.size = htons(40);
 
     if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
     {
@@ -423,21 +418,24 @@ void Link::SetWavelength(u_int32_t lambda, bool deleting)
 
         pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
         a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID");
-        if (deleting)
-        {
-            wavegrid.in_channels[l/2] &= ~((0x70) >> ((l%2)*4));
-            wavegrid.out_channels[l/2] &= ~((0x70) >> ((l%2)*4));
-        }
-        else
-        {
-            wavegrid.in_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
-            wavegrid.out_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
-        }
         if (attrTable.size() > a_index && attrTable[a_index].p)
-            SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_passthrough_wavegrid), (char*)&wavegrid, pe);
+        {
+            movaz_tlvdata_te_passthrough_wavegrid *wavegrid = (movaz_tlvdata_te_passthrough_wavegrid*)attrTable[a_index].p;
+            if (deleting)
+            {
+                wavegrid->in_channels[l/2] &= ~((0x70) >> ((l%2)*4));
+                wavegrid->out_channels[l/2] &= ~((0x70) >> ((l%2)*4));
+            }
+            else
+            {
+                wavegrid->in_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+                wavegrid->out_channels[l/2] |= ((0x70) >> ((l%2)*4)); // l even: 0xf0; l odd: ox0f;
+            }
+            //SetAttribute(a_index, pe->dataType, sizeof(movaz_tlvdata_te_passthrough_wavegrid), (char*)&wavegrid, pe);
+        }
     }
     
-    if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+    if (this->Iscds().size() > 0 && this->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4)
     {
         ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
         int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
