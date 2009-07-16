@@ -1456,6 +1456,7 @@ static Link* link_to_update = NULL;
 	                CLI_OUT (" %d", base+(i*2+1)*interval);\
 	        }\
 	    }\
+           CLI_OUT("%s", cli_cstr_newline); \
         } \
     } \
     list<LinkStateDelta*>* pDeltaList = L->DeltaListPointer(); \
