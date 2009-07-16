@@ -591,7 +591,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
-            delta->wavelength = subobj->lsc_lambda;
+            delta->wavelength = subobj->lsc_lambda*100;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;
@@ -643,7 +643,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
-            delta->wavelength = subobj->lsc_lambda;
+            delta->wavelength = subobj->lsc_lambda*100;
         }
         link1->insertDelta(delta, holding_time, 0);
         break;
@@ -680,7 +680,7 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
         else if (subobj && subobj->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && subobj->lsc_lambda != 0)
         {
             delta->flags |= DELTA_WAVELENGTH;
-            delta->wavelength = subobj->lsc_lambda;
+            delta->wavelength = subobj->lsc_lambda*100;
         }
         link1->insertDelta(delta, SystemConfig::delta_expire_query, 0);
         break;

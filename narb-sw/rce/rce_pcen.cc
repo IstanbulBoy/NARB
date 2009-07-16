@@ -1606,7 +1606,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         {
             if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
             {
-                subobj1.lsc_lambda = (u_int16_t)wavelength; //*(u_int16_t *)subobj1.pad
+                subobj1.lsc_lambda = wavelength/100;
                 break;
             }
         }
@@ -1618,7 +1618,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         {
             if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
             {
-                subobj2.lsc_lambda = (u_int16_t)wavelength; //*(u_int16_t *)subobj2.pad
+                subobj2.lsc_lambda = wavelength/100;
                 break;
             }
         }
