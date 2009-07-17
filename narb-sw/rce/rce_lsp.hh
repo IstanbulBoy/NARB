@@ -105,7 +105,8 @@ struct dtl_hop
 #define LOCAL_ID_TYPE_SUBNET_IF_ID (u_int16_t)0x5
 #define LOCAL_ID_TYPE_SUBNET_UNI_SRC (u_int16_t)0x10 	//Source (sender)
 #define LOCAL_ID_TYPE_SUBNET_UNI_DEST (u_int16_t)0x11	//Destination (Recv)
-    
+#define LOCAL_ID_TYPE_LAMBDA_GLOBAL 0x0020
+
 
 enum  narb_tlv_type
 {
