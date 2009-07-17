@@ -714,13 +714,13 @@ void LSPHandler::HandleLinkStateDelta(narb_lsp_request_tlv& req_data, Link* link
             if (action == ACT_MASKON)
             {
                 if ((delta->flags & DELTA_MASKOFF) != 0)
-                    *link1 += *delta;
+                    *link1 -= *delta;
                 delta->flags &= ~DELTA_MASKOFF;
             }
             else
             {
                 if ((delta->flags & DELTA_MASKOFF) == 0)
-                    *link1 -= *delta;
+                    *link1 += *delta;
                 delta->flags |= DELTA_MASKOFF;
             }
         }

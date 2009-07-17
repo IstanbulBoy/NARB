@@ -316,10 +316,6 @@ void PCEN_MCBase::Run()
         *newPath = thePath;
         allPaths.push_back(newPath);
     }
-    else
-    {
-        allPaths.clear();
-    }
 
     //getPathERO
     if (has_wdm_layer)
