@@ -102,12 +102,14 @@ int PCEN_MCBase::PickMCPCandidates(int M)
 int PCEN_MCBase::PerformComputation()
 {
     //initiating computation
-    memset(&thePath, 0, sizeof(PathT));
     thePath.source.s_addr = this->source.s_addr;
     thePath.destination.s_addr = this->destination.s_addr;
-    thePath.bandwidth = this->bandwidth_ingress;
     thePath.ucid = this->ucid;
     thePath.seqnum = this->seqnum;
+    thePath.cost = 0;
+    thePath.bandwidth = this->bandwidth_ingress;
+    thePath.vlan_tag = 0;
+    thePath.wavelength = 0;
     thePath.path.clear();
     MCPaths.push_back(&thePath);
     MC_KSP1.clear(); MC_KSP1.reserve(MCPaths.size());
@@ -125,6 +127,11 @@ int PCEN_MCBase::PerformComputation()
         PathT* bestPath = ConstrainKSPaths(KSP);
         if (bestPath == NULL)
             return ERR_PCEN_NO_ROUTE;
+        bestPath->source.s_addr = this->source.s_addr;
+        bestPath->destination.s_addr = this->destination.s_addr;
+        bestPath->ucid = this->ucid;
+        bestPath->seqnum = this->seqnum;
+        bestPath->bandwidth = this->bandwidth_ingress;
         thePath = *bestPath;
         return ERR_PCEN_NO_ERROR;
     }
