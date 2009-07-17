@@ -243,8 +243,21 @@ static int make_ero_tlv_from_list(te_tlv_header* tlv, list<ero_subobj*>& ero, in
     for (it = ero.begin(); it != ero.end(); it++)
     {
         ero_subobj * subobj_narb = *it;
-        if (subobj_narb->l2sc_vlantag == 0)
-        {
+        if (subobj->narb->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj_narb->l2sc_vlantag != 0)
+         {//Generating UNumIf Subobjects for E2E Tagged VLAN 
+            assert (subobj_narb->l2sc_vlantag != ANY_VTAG);
+            unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);
+            subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
+            subobj_unum->length = sizeof(unum_if_subobj);
+            subobj_unum->addr.s_addr = subobj_narb->addr.s_addr;
+            //#define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
+            //subobj_unum->ifid = htonl((0x4 << 16) |(*(u_int16_t*)subobj_narb->pad));
+            subobj_unum->ifid = htonl((0x4 << 16) |(subobj_narb->l2sc_vlantag));
+            subobj_unum->resvd[0] = subobj_unum->resvd[1] = 0;
+            subobj_size = sizeof(unum_if_subobj);
+       }
+       else
+       {
             if (subobj_narb->if_id != 0)
             {
                 unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);
@@ -265,21 +278,8 @@ static int make_ero_tlv_from_list(te_tlv_header* tlv, list<ero_subobj*>& ero, in
                 subobj_ipv4->resvd = 0;
                 subobj_size = sizeof(ipv4_prefix_subobj);
             }
-        }
-        else
-        {//Generating UNumIf Subobjects for E2E Tagged VLAN 
-            assert (subobj_narb->l2sc_vlantag != ANY_VTAG);
-            unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);
-            subobj_unum->l_and_type = L_AND_TYPE(subobj_narb->hop_type, 0x04);
-            subobj_unum->length = sizeof(unum_if_subobj);
-            subobj_unum->addr.s_addr = subobj_narb->addr.s_addr;
-            //#define LOCAL_ID_TYPE_TAGGED_GROUP_GLOBAL (u_int16_t)0x4
-            //subobj_unum->ifid = htonl((0x4 << 16) |(*(u_int16_t*)subobj_narb->pad));
-            subobj_unum->ifid = htonl((0x4 << 16) |(subobj_narb->l2sc_vlantag));
-            subobj_unum->resvd[0] = subobj_unum->resvd[1] = 0;
-            subobj_size = sizeof(unum_if_subobj);
-        }
-        tlv_offset += subobj_size;
+       }
+       tlv_offset += subobj_size;
     }
 
     tlv->length = htons(tlv_offset - TLV_HDR_SIZE);
