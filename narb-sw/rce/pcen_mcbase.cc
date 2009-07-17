@@ -112,9 +112,9 @@ int PCEN_MCBase::PerformComputation()
     thePath.wavelength = 0;
     thePath.path.clear();
     MCPaths.push_back(&thePath);
-    MC_KSP1.clear(); MC_KSP1.reserve(MCPaths.size());
-    MC_KSP2.clear(); MC_KSP2.reserve(MCPaths.size());
-    sortedMCPaths.clear(); sortedMCPaths.reserve(MCPaths.size());
+    MC_KSP1.resize(MCPaths.size());
+    MC_KSP2.resize(MCPaths.size());
+    sortedMCPaths.resize(MCPaths.size());
     PCENNode* srcNode = GetNodeByIp(routers,&source);
     PCENNode* destNode = GetNodeByIp(routers,&destination);
 
