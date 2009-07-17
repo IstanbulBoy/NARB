@@ -763,6 +763,7 @@ void Link::cleanupMaskoffDeltas()
             (*this) += (*delta);
             delta->flags &= ~DELTA_MASKOFF;
         }
+        iter++;
     }
 }
 

@@ -717,7 +717,8 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag,
                 if (has_wave && p_freq)
                     head_waveset.AddTag(ntohl(*p_freq)); //$$ freq = ANY_WAVE ?
                 if (head_waveset.IsEmpty())
-                    head_waveset.AddTag(ANY_WAVE);
+                    return false;
+                    //head_waveset.AddTag(ANY_WAVE);
             }
             else if (has_wdm_layer && (L->lcl_end->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC || L->lcl_end->tspec.SWtype == MOVAZ_LSC))
             {
