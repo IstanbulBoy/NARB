@@ -170,7 +170,7 @@ int PCEN_MCBase::PerformComputation()
     }
 
     //maskoff deltas for every path in MCPaths --> release MCPaths resources
-    int i;
+    int i, j;
     for (i = 0; i < MCPaths.size()-1; i++)
     {
         narb_lsp_request_tlv lsp_req;
@@ -223,7 +223,7 @@ int PCEN_MCBase::PerformComputation()
         if (!bestPath)
         {
             //if any MCPaths[j] fails --> maskon all paths in MCPaths except for 'thePath'
-            for (int j = 0; j < MCPaths.size() - 1; j++)
+            for (j = 0; j < MCPaths.size() - 1; j++)
             {
                 narb_lsp_request_tlv lsp_req;
                 lsp_req.type = ((MSG_LSP << 8) | ACT_MASKON);
@@ -240,6 +240,24 @@ int PCEN_MCBase::PerformComputation()
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
             }
+            //also remove temporarily held deltas
+            for (j = 0; j < i; j++)
+            {
+                narb_lsp_request_tlv lsp_req;
+                lsp_req.type = ((MSG_LSP << 8) | ACT_DELETE);
+                lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+                lsp_req.src.s_addr = sortedMCPaths[j].source.s_addr;
+                lsp_req.dest.s_addr = sortedMCPaths[j].destination.s_addr;
+                lsp_req.bandwidth = sortedMCPaths[j].bandwidth;
+                lsp_req.switching_type = this->switching_type_ingress;
+                lsp_req.encoding_type = this->encoding_type_ingress;
+                lsp_req.gpid = 0;
+                list<ero_subobj> ero;
+                GetPathERO(MCPaths[j]->path, ero);
+                bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+                if (ero.size() > 0)
+                    LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
+            }
             thePath.path.clear();
             return ERR_PCEN_NO_ROUTE;
         }
@@ -250,19 +268,35 @@ int PCEN_MCBase::PerformComputation()
         bestPath->seqnum = sortedMCPaths[i].seqnum;
         bestPath->cost = sortedMCPaths[i].cost;
         bestPath->bandwidth = sortedMCPaths[i].bandwidth;
-        bestPath->vlan_tag = sortedMCPaths[i].vlan_tag;
-        bestPath->wavelength = sortedMCPaths[i].wavelength;
         bestPath->pflg.flag = sortedMCPaths[i].pflg.flag;
         sortedMCPaths[i] = *bestPath;
+
+        //holding resources for sortedMCPaths[i]
+        narb_lsp_request_tlv lsp_req;
+        lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
+        lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+        lsp_req.src.s_addr = sortedMCPaths[i].source.s_addr;
+        lsp_req.dest.s_addr = sortedMCPaths[i].destination.s_addr;
+        lsp_req.bandwidth = sortedMCPaths[i].bandwidth;
+        lsp_req.switching_type = this->switching_type_ingress;
+        lsp_req.encoding_type = this->encoding_type_ingress;
+        lsp_req.gpid = 0;
+        list<ero_subobj> ero;
+        GetPathERO(sortedMCPaths[i].path, ero);
+        bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+        if (ero.size() > 0)
+            LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
     }
 
     //otherwise, assign paths of newPaths to MCPaths[i] (including 'thePath'), return success
     for (i = 0; i < MCPaths.size(); i++)
     {
-        for (int j = 0; j < sortedMCPaths.size(); j++)
+        for (j = 0; j < sortedMCPaths.size(); j++)
         {
             if (MCPaths[i]->ucid == sortedMCPaths[j].ucid && MCPaths[i]->seqnum == sortedMCPaths[j].seqnum)
-                MCPaths[i]->path.assign(sortedMCPaths[j].path.begin(), sortedMCPaths[j].path.end());
+            {
+                *MCPaths[i] = sortedMCPaths[j];
+            }
         }
     }
 
