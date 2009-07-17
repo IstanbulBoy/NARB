@@ -461,6 +461,7 @@ public:
     friend class PCENNode;
     friend class PCENLink;
     friend class PCEN_KSP;
+    friend class PCEN_MCBase;
     friend class PathT;
     friend class PCEN_MRN;
     friend class PCEN_MRN_CG;

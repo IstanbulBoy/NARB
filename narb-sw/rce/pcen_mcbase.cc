@@ -47,14 +47,47 @@ PathM& PathM::operator=(const PathT& p)
 
 bool PCEN_MCBase::PostBuildTopology()
 {
-    bool ret = PCEN_KSP::PostBuildTopology();
+    //initiating reverse links and Tspec
+    vector<PCENLink*>::iterator link_iter = links.begin();
+    PCENLink* pcen_link;
+    link_iter = links.begin();
+    while (link_iter != links.end())
+    {
+        pcen_link = (*link_iter);
+
+        PCENNode* pcen_node = pcen_link->rmt_end;
+        if (!pcen_node)
+            continue;
+        list<PCENLink *>::iterator it_link;
+        for (it_link = pcen_node->out_links.begin(); it_link != pcen_node->out_links.end(); it_link++)
+        {
+            if ((*it_link)->rmt_end == pcen_link->lcl_end && (*it_link)->link->rmtIfAddr == pcen_link->link->lclIfAddr
+			&& (*it_link)->link->rmtId == pcen_link->link->lclId && (*it_link)->link->type == pcen_link->link->type)
+            {
+                //reverse link
+                pcen_link->reverse_link = *it_link;
+                break;
+            }
+        }
+        //Tspec at head node
+        if ((*it_link)->lcl_end)
+            (*it_link)->lcl_end->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
+        link_iter++;
+    }
+
+    //assign router reference number
+    for (int i =0 ; i < routers.size(); i++)
+    {
+        routers[i]->ref_num = i; 
+    }
+
 
     //cleanup masked-off deltas
     for (int l = 0; l < links.size(); l++)
         if (links[l]->link)
             links[l]->link->cleanupMaskoffDeltas();
 
-    return ret;
+    return true;
 }
 
 #define ABS(X) ((X >= 0.0) ? (X) : -(X))
@@ -282,6 +315,10 @@ void PCEN_MCBase::Run()
         PathM *newPath = new PathM;
         *newPath = thePath;
         allPaths.push_back(newPath);
+    }
+    else
+    {
+        allPaths.clear();
     }
 
     //getPathERO
