@@ -165,10 +165,12 @@ int PCEN_MCBase::PerformComputation()
         PCENNode* destNode1 = GetNodeByIp(routers, &MCPaths[i]->destination);
         assert(srcNode1 && destNode1);
         SearchKSP(srcNode1->ref_num, destNode1->ref_num, SystemConfig::pce_k);
-        MC_KSP1[i] = *MCPaths[i];
-        MC_KSP2[i] = *MCPaths[i];
         if (GetBestTwoKSPaths(KSP, MC_KSP1[i], MC_KSP2[i]) == 0) //mark no_path
             return ERR_PCEN_NO_ROUTE;
+        MC_KSP1[i].ucid = MC_KSP2[i].ucid = MCPaths[i]->ucid;
+        MC_KSP1[i].seqnum = MC_KSP2[i].seqnum = MCPaths[i]->seqnum;
+        MC_KSP1[i].source.s_addr = MC_KSP2[i].source.s_addr = MCPaths[i]->source.s_addr;
+        MC_KSP1[i].destination.s_addr = MC_KSP2[i].destination.s_addr = MCPaths[i]->destination.s_addr;
     }
 
     //3. Sort MCPaths according to 'The Criteria' --> create sorted 'newPaths' list (identified by ucid+seqnum)
