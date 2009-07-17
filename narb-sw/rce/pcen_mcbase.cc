@@ -183,7 +183,10 @@ int PCEN_MCBase::PerformComputation()
         lsp_req.encoding_type = this->encoding_type_ingress;
         lsp_req.gpid = 0;
         list<ero_subobj> ero;
+        u_int32_t w1 = wavelength;
+        wavelength = MCPaths[i]->wavelength;
         GetPathERO(MCPaths[i]->path, ero);
+        wavelength = w1;
         bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[i]->ucid, MCPaths[i]->seqnum, is_bidir);
@@ -235,7 +238,10 @@ int PCEN_MCBase::PerformComputation()
                 lsp_req.encoding_type = this->encoding_type_ingress;
                 lsp_req.gpid = 0;
                 list<ero_subobj> ero;
+                u_int32_t w1 = wavelength;
+                wavelength = MCPaths[i]->wavelength;
                 GetPathERO(MCPaths[j]->path, ero);
+                wavelength = w1;
                 bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
@@ -253,7 +259,10 @@ int PCEN_MCBase::PerformComputation()
                 lsp_req.encoding_type = this->encoding_type_ingress;
                 lsp_req.gpid = 0;
                 list<ero_subobj> ero;
+                u_int32_t w1 = wavelength;
+                wavelength = MCPaths[i]->wavelength;
                 GetPathERO(MCPaths[j]->path, ero);
+                wavelength = w1;
                 bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
@@ -282,7 +291,10 @@ int PCEN_MCBase::PerformComputation()
         lsp_req.encoding_type = this->encoding_type_ingress;
         lsp_req.gpid = 0;
         list<ero_subobj> ero;
+        u_int32_t w1 = wavelength;
+        wavelength = MCPaths[i]->wavelength;
         GetPathERO(sortedMCPaths[i].path, ero);
+        wavelength = w1;
         bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
@@ -298,6 +310,24 @@ int PCEN_MCBase::PerformComputation()
                 *MCPaths[i] = sortedMCPaths[j];
             }
         }
+    }
+
+    for (j = 0; j < sortedMCPaths.size() - 1; j++)
+    {
+        narb_lsp_request_tlv lsp_req;
+        lsp_req.type = ((MSG_LSP << 8) | ACT_DELETE);
+        lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+        lsp_req.src.s_addr = sortedMCPaths[j].source.s_addr;
+        lsp_req.dest.s_addr = sortedMCPaths[j].destination.s_addr;
+        lsp_req.bandwidth = sortedMCPaths[j].bandwidth;
+        lsp_req.switching_type = this->switching_type_ingress;
+        lsp_req.encoding_type = this->encoding_type_ingress;
+        lsp_req.gpid = 0;
+        list<ero_subobj> ero;
+        GetPathERO(sortedMCPaths[j].path, ero);
+        bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+        if (ero.size() > 0)
+            LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
     }
 
     return ERR_PCEN_NO_ERROR;
