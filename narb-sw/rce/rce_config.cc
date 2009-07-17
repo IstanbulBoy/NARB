@@ -282,11 +282,18 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
                 LOG("ReadConfigParameter failed on pce-algorithm, set to 'mrn-default'"<<endl);
             }
-            if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG)
+            if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG || SystemConfig::pce_algorithm == MC_BASE)
             {
                 if (ReadConfigParameter(blk_body, (char*)"ksp-k", (char*)"%d", &SystemConfig::pce_k) == 0)
                 {
                     LOG("ReadConfigParameter set ksp-k to deault value: " <<SystemConfig::pce_k <<endl);
+                }
+            }
+            if (SystemConfig::pce_algorithm == MC_BASE)
+            {
+                if (ReadConfigParameter(blk_body, (char*)"ksp-m", (char*)"%d", &SystemConfig::pce_m) == 0)
+                {
+                    LOG("ReadConfigParameter set ksp-m to deault value: " <<SystemConfig::pce_m <<endl);
                 }
             }
           }
