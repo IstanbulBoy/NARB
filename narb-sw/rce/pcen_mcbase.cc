@@ -6,7 +6,44 @@
 
 #include "pcen_mcbase.hh"
 
-vector<PathT*> PCEN_MCBase::allPaths;
+vector<PathM*> PCEN_MCBase::allPaths;
+
+
+///////////////////  PathM /////////////////////////
+
+PathM& PathM::operator=(const PathM& p) {
+    this->source.s_addr = p.source.s_addr;
+    this->destination.s_addr = p.destination.s_addr;
+    this->ucid = p.ucid;
+    this->seqnum = p.seqnum;
+    this->path.assign(p.path.begin(), p.path.end());
+    this->cost = p.cost;
+    this->bandwidth = p.bandwidth;
+    this->vlan_tag = p.vlan_tag;
+    this->wavelength = p.wavelength;
+    this->pflg = p.pflg;
+    return *this;
+}
+
+PathM& PathM::operator=(const PathT& p)
+{
+        this->source.s_addr = p.source.s_addr;
+        this->destination.s_addr = p.destination.s_addr;
+        this->ucid = p.ucid;
+        this->seqnum = p.seqnum;
+        this->cost = p.cost;
+        this->bandwidth = p.bandwidth;
+        this->vlan_tag = p.vlan_tag;
+        this->wavelength = p.wavelength;
+        this->pflg.flag = p.pflg.flag;
+        this->path.clear();
+        list<PCENLink*>::const_iterator it = p.path.begin();
+        for (; it != p.path.end(); it++)
+            this->path.push_back((*it)->link);
+        return *this;
+}
+
+//////////////////  PCEN_MCBase  ///////////////////
 
 bool PCEN_MCBase::PostBuildTopology()
 {
@@ -31,7 +68,11 @@ int PCEN_MCBase::PickMCPCandidates(int M)
     Dijkstra(srcNode->ref_num, destNode->ref_num);
     if (destNode->path.size() == 0)
         return -1;
-    thePath.path.assign(destNode->path.begin(),destNode->path.end());
+
+    thePath.path.clear();
+    list<PCENLink*>::iterator it1;
+    for (it1 = destNode->path.begin(); it1 != destNode->path.end(); it1++)
+        thePath.path.push_back((*it1)->link);
     thePath.cost = thePath.path.size()*thePath.bandwidth;
     
     //go through allPaths to find up to (M-1) Paths that are closest to C_0 by sorting C_x (HopLenxBW) 
@@ -117,7 +158,7 @@ int PCEN_MCBase::PerformComputation()
     }
 
     //3. Sort MCPaths according to 'The Criteria' --> create sorted 'newPaths' list (identified by ucid+seqnum)
-    vector<PathT*> sortedPaths;
+    vector<PathM*> sortedPaths;
     sortedPaths.assign(MCPaths.begin(), MCPaths.end());
     SortMPaths(sortedPaths);
 
@@ -162,7 +203,7 @@ int PCEN_MCBase::PerformComputation()
         bestPath->bandwidth = sortedMCPaths[i].bandwidth;
         bestPath->vlan_tag = sortedMCPaths[i].vlan_tag;
         bestPath->wavelength = sortedMCPaths[i].wavelength;
-        bestPath->pflg = sortedMCPaths[i].pflg;
+        bestPath->pflg.flag = sortedMCPaths[i].pflg.flag;
         sortedMCPaths[i] = *bestPath;
     }
 
@@ -222,19 +263,21 @@ void PCEN_MCBase::Run()
     //record the newly held path to allPaths (set ucid+seqnum)
     if (options & LSP_OPT_QUERY_HOLD)
     {
-        PathT *newPath = new PathT;
+        PathM *newPath = new PathM;
         *newPath = thePath;
         allPaths.push_back(newPath);
     }
 
     //getPathERO
+    if (has_wdm_layer)
+        wavelength = thePath.wavelength;
     GetPathERO(thePath.path, this->ero);
     
     //replyERO (w/ holding logic)
     ReplyERO();
 }
 
-int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &path2)
+int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathM &path1, PathM &path2)
 {
     double minCost = PCEN_INFINITE_COST;
     PathT* bestPath = NULL;
@@ -288,15 +331,15 @@ int PCEN_MCBase::GetBestTwoKSPaths(vector<PathT*>& KSP, PathT &path1, PathT &pat
     return ret;
 }
 
-inline void SwapPaths(PathT* &path1, PathT* &path2)
+inline void SwapPaths(PathM* &path1, PathM* &path2)
 {
-    PathT* p;
+    PathM* p;
     p= path1;
     path1 = path2;
     path2 = p;
 }
 
-inline double SumOfBandwidthWeightedCommonLinks(PathT* &P, vector<PathT>& Paths)
+inline double SumOfBandwidthWeightedCommonLinks(PathM* &P, vector<PathM>& Paths)
 {
     if (P->path.size() == 0)
         return 0;
@@ -309,13 +352,13 @@ inline double SumOfBandwidthWeightedCommonLinks(PathT* &P, vector<PathT>& Paths)
     }
     assert (i < numPaths);
 
-    PathT* path1 = &Paths[i];
+    PathM* path1 = &Paths[i];
 
     if (path1->pflg.pfg.filteroff != 0)
         return PCEN_INFINITE_COST;
 
     double sum = 0;
-    list<PCENLink*>::iterator iter1, iter2;
+    list<Link*>::iterator iter1, iter2;
     for (iter1 = path1->path.begin(); iter1 != path1->path.end(); iter1++)
     {
         for (i = 0; i < numPaths; i++)
@@ -335,7 +378,7 @@ inline double SumOfBandwidthWeightedCommonLinks(PathT* &P, vector<PathT>& Paths)
 }
 
 // swap if (path1 < path2) according to porivsioning priority criteria
-void PCEN_MCBase::SortTwoPaths(PathT* &path1, PathT* &path2)
+void PCEN_MCBase::SortTwoPaths(PathM* &path1, PathM* &path2)
 {
 
     // criterion 1: bandwidth-weighted hop length (created-time?)
@@ -350,7 +393,7 @@ void PCEN_MCBase::SortTwoPaths(PathT* &path1, PathT* &path2)
 }
 
 // decreasing order according to porivsioning priority criteria
-void PCEN_MCBase::SortMPaths(vector<PathT*>& Paths)
+void PCEN_MCBase::SortMPaths(vector<PathM*>& Paths)
 {
     int numPaths = Paths.size();
 
@@ -360,5 +403,29 @@ void PCEN_MCBase::SortMPaths(vector<PathT*>& Paths)
             if (j > i)
                 SortTwoPaths(Paths[i], Paths[j]);
         }
+}
+
+int PCEN_MCBase::GetPathERO(list<Link*>& path, list<ero_subobj>& ero)
+{
+    ero.clear();
+    PCENLink* pcen_link;
+    list<Link*>::iterator it;
+    for (it = path.begin(); it != path.end(); it++)
+    {
+        pcen_link = GetPCENLinkByLink(*it);
+        if (pcen_link == NULL)
+            continue;
+        AddLinkToEROTrack(ero, pcen_link);
+    }
+}
+
+PCENLink* PCEN_MCBase::GetPCENLinkByLink(Link* link)
+{
+    for (int i = 0; i < links.size(); i++)
+    {
+        if (links[i]->link == link)
+            return links[i];
+    }
+    return NULL;
 }
 
