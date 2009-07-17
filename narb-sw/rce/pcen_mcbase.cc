@@ -74,12 +74,12 @@ int PCEN_MCBase::PerformComputation()
     {
         SearchKSP(srcNode->ref_num, destNode->ref_num, SystemConfig::pce_k);
         if (KSP.size() == 0)
-            return false;
+            return ERR_PCEN_NO_ROUTE;
         PathT* bestPath = ConstrainKSPaths(KSP);
         if (bestPath == NULL)
-            return false;
+            return ERR_PCEN_NO_ROUTE;
         thePath = *bestPath;
-        return true;
+        return ERR_PCEN_NO_ERROR;
     }
 
     //maskoff deltas for every path in MCPaths --> release MCPaths resources
@@ -113,7 +113,7 @@ int PCEN_MCBase::PerformComputation()
         MC_KSP1[i] = *MCPaths[i];
         MC_KSP2[i] = *MCPaths[i];
         if (GetBestTwoKSPaths(KSP, MC_KSP1[i], MC_KSP2[i]) == 0) //mark no_path
-            return false;
+            return ERR_PCEN_NO_ROUTE;
     }
 
     //3. Sort MCPaths according to 'The Criteria' --> create sorted 'newPaths' list (identified by ucid+seqnum)
@@ -151,7 +151,7 @@ int PCEN_MCBase::PerformComputation()
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
             }
             thePath.path.clear();
-            return false;
+            return ERR_PCEN_NO_ROUTE;
         }
 
         bestPath->source.s_addr = sortedMCPaths[i].source.s_addr;
@@ -176,7 +176,7 @@ int PCEN_MCBase::PerformComputation()
         }
     }
 
-    return true;
+    return ERR_PCEN_NO_ERROR;
 }
 
 void PCEN_MCBase::Run()
