@@ -101,12 +101,18 @@ int PCEN_MCBase::PickMCPCandidates(int M)
 
 int PCEN_MCBase::PerformComputation()
 {
+    //initiating computation
+    memset(&thePath, 0, sizeof(PathT));
+    thePath.source.s_addr = this->source.s_addr;
+    thePath.destination.s_addr = this->destination.s_addr;
+    thePath.bandwidth = this->bandwidth_ingress;
+    thePath.ucid = this->ucid;
+    thePath.seqnum = this->seqnum;
     thePath.path.clear();
     MCPaths.push_back(&thePath);
     MC_KSP1.clear(); MC_KSP1.reserve(MCPaths.size());
     MC_KSP2.clear(); MC_KSP2.reserve(MCPaths.size());
     sortedMCPaths.clear(); sortedMCPaths.reserve(MCPaths.size());
-
     PCENNode* srcNode = GetNodeByIp(routers,&source);
     PCENNode* destNode = GetNodeByIp(routers,&destination);
 
@@ -150,6 +156,7 @@ int PCEN_MCBase::PerformComputation()
     {
         PCENNode* srcNode1 = GetNodeByIp(routers, &MCPaths[i]->source);
         PCENNode* destNode1 = GetNodeByIp(routers, &MCPaths[i]->destination);
+        assert(srcNode1 && destNode1);
         SearchKSP(srcNode1->ref_num, destNode1->ref_num, SystemConfig::pce_k);
         MC_KSP1[i] = *MCPaths[i];
         MC_KSP2[i] = *MCPaths[i];
