@@ -281,23 +281,26 @@ int PCEN_MCBase::PerformComputation()
         sortedMCPaths[i] = *bestPath;
 
         //holding resources for sortedMCPaths[i]
-        narb_lsp_request_tlv lsp_req;
-        lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
-        lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-        lsp_req.src.s_addr = sortedMCPaths[i].source.s_addr;
-        lsp_req.dest.s_addr = sortedMCPaths[i].destination.s_addr;
-        lsp_req.bandwidth = sortedMCPaths[i].bandwidth;
-        lsp_req.switching_type = this->switching_type_ingress;
-        lsp_req.encoding_type = this->encoding_type_ingress;
-        lsp_req.gpid = 0;
-        list<ero_subobj> ero;
-        u_int32_t w1 = wavelength;
-        wavelength = MCPaths[i]->wavelength;
-        GetPathERO(sortedMCPaths[i].path, ero);
-        wavelength = w1;
-        bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-        if (ero.size() > 0)
-            LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
+        if (i < sortedPaths.size()-1)
+        {
+            narb_lsp_request_tlv lsp_req;
+            lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
+            lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+            lsp_req.src.s_addr = sortedMCPaths[i].source.s_addr;
+            lsp_req.dest.s_addr = sortedMCPaths[i].destination.s_addr;
+            lsp_req.bandwidth = sortedMCPaths[i].bandwidth;
+            lsp_req.switching_type = this->switching_type_ingress;
+            lsp_req.encoding_type = this->encoding_type_ingress;
+            lsp_req.gpid = 0;
+            list<ero_subobj> ero;
+            u_int32_t w1 = wavelength;
+            wavelength = MCPaths[i]->wavelength;
+            GetPathERO(sortedMCPaths[i].path, ero);
+            wavelength = w1;
+            bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+            if (ero.size() > 0)
+                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
+       }
     }
 
     //otherwise, assign paths of newPaths to MCPaths[i] (including 'thePath'), return success
