@@ -310,7 +310,7 @@ int PCEN_MCBase::PerformComputation()
         for (; itl != MCPaths[i]->path.end(); itl++)
         {
             (*itl)->cleanupMaskoffDeltas();
-            (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum);
+            (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
         }
     }
 
