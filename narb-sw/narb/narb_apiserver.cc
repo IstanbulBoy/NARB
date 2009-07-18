@@ -243,7 +243,7 @@ static int make_ero_tlv_from_list(te_tlv_header* tlv, list<ero_subobj*>& ero, in
     for (it = ero.begin(); it != ero.end(); it++)
     {
         ero_subobj * subobj_narb = *it;
-        if (subobj->narb->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj_narb->l2sc_vlantag != 0)
+        if (subobj_narb->sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && subobj_narb->l2sc_vlantag != 0)
          {//Generating UNumIf Subobjects for E2E Tagged VLAN 
             assert (subobj_narb->l2sc_vlantag != ANY_VTAG);
             unum_if_subobj * subobj_unum = (unum_if_subobj *)((char *)tlv + tlv_offset);

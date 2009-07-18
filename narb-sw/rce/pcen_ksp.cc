@@ -159,7 +159,7 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 
 		if(headnodeID == destination)
 		{
-			LOGF("Find the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
+			LOGF("Found the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
 			return;
 		}
 	} 
@@ -385,7 +385,7 @@ void PCEN_KSP::SearchKSP(int source, int destination, int K)
 
         // while we have not found d(pk), we just go ahead
         itLink=headpath->path.begin();
-        while ((*itLink)->lcl_end->ref_num != headpath->DeviationNode) 
+        while (itLink!=headpath->path.end() && (*itLink)->lcl_end->ref_num != headpath->DeviationNode) 
         {
             (*itLink)->lcl_end->MaskNode();
             itLink++;

@@ -276,7 +276,7 @@ void PCEN_MRN_CG::DijkstraMRN(int source, int destination)
 
 		if(headnodeID == destination)
 		{
-			LOGF("Find the shortest path from source to destination in DijkstraMRN....\n");
+			LOGF("Found the shortest path from source to destination in DijkstraMRN....\n");
 			return;
 		}
 	} 
