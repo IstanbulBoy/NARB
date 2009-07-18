@@ -112,11 +112,12 @@ int PCEN_MCBase::PickMCPCandidates(int M)
     MCPaths.clear();
     if (allPaths.size() > 0)
         MCPaths.push_back(allPaths.front());
-    for (int i = 0; i < allPaths.size(); i++)
+    for (int i = 1; i < allPaths.size(); i++)
     {
-      //assign C_x (HopLenxBW)
-       allPaths[i]->cost = allPaths[i]->path.size()*allPaths[i]->bandwidth;
-        for (int j = 0; j < MCPaths.size(); j++)
+        //assign C_x (HopLenxBW)
+        allPaths[i]->cost = allPaths[i]->path.size()*allPaths[i]->bandwidth;
+        int j;
+        for (j = 0; j < MCPaths.size(); j++)
         {
             if (ABS(allPaths[i]->cost - thePath.cost) < ABS(MCPaths[j]->cost - thePath.cost))
             {
@@ -124,6 +125,8 @@ int PCEN_MCBase::PickMCPCandidates(int M)
                 break;
             }
         }
+        if (j == MCPaths.size())
+            MCPaths.push_back(allPaths[i]);
     }
 
     if (MCPaths.size() > M-1)
