@@ -303,6 +303,18 @@ int PCEN_MCBase::PerformComputation()
        }
     }
 
+// TODO: direct operate on link->deltaList ?
+    for (i = 0; i < MCPaths.size() - 1; i++)
+    {
+        list<Link*>::iterator itl = MCPaths[i]->path.begin();
+        for (; itl != MCPaths[i]->path.end(); itl++)
+        {
+            (*itl)->cleanupMaskoffDeltas();
+            (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum);
+        }
+    }
+
+
     //otherwise, assign paths of newPaths to MCPaths[i] (including 'thePath'), return success
     for (i = 0; i < MCPaths.size(); i++)
     {
@@ -315,6 +327,7 @@ int PCEN_MCBase::PerformComputation()
         }
     }
 
+/* TODO: update ucid and seqnum of sortedMCPaths[i] to those of MCPaths[i] --> direct operate on link->deltaList
     for (j = 0; j < sortedMCPaths.size() - 1; j++)
     {
         narb_lsp_request_tlv lsp_req;
@@ -332,6 +345,7 @@ int PCEN_MCBase::PerformComputation()
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
     }
+*/
 
     return ERR_PCEN_NO_ERROR;
 }
