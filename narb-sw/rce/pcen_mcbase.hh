@@ -15,11 +15,12 @@ public:
     in_addr destination;
     u_int32_t ucid;
     u_int32_t seqnum;
-    list<Link*> path;
     double cost;
     float bandwidth;
     u_int32_t vlan_tag;
     u_int32_t wavelength;
+    list<Link*> path;
+    list<Link*> reverse_path;
     union PathFlag 
     {
         unsigned long flag;

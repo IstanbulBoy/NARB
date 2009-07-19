@@ -17,6 +17,7 @@ PathM& PathM::operator=(const PathM& p) {
     this->ucid = p.ucid;
     this->seqnum = p.seqnum;
     this->path.assign(p.path.begin(), p.path.end());
+    this->reverse_path.assign(p.reverse_path.begin(), p.reverse_path.end());
     this->cost = p.cost;
     this->bandwidth = p.bandwidth;
     this->vlan_tag = p.vlan_tag;
@@ -37,9 +38,14 @@ PathM& PathM::operator=(const PathT& p)
         this->wavelength = p.wavelength;
         this->pflg.flag = p.pflg.flag;
         this->path.clear();
+        this->reverse_path.clear();
         list<PCENLink*>::const_iterator it = p.path.begin();
         for (; it != p.path.end(); it++)
             this->path.push_back((*it)->link);
+        list<PCENLink*>::const_reverse_iterator rit = p.path.rbegin();
+        for (; rit != p.path.rend(); rit++)
+            if ((*rit)->reverse_link)
+                this->path.push_back((*rit)->reverse_link->link);
         return *this;
 }
 
@@ -64,6 +70,27 @@ void PathM::Release(bool doDelete)
             }
         }
     }
+    // Do reverse link!
+    itl = reverse_path.begin();
+    for (; itl != reverse_path.end(); itl++)
+    {   
+        if ((*itl)->pDeltaList == NULL)
+            continue;
+        list<LinkStateDelta*>::iterator itd = (*itl)->pDeltaList->begin();
+        for (; itd !=  (*itl)->pDeltaList->end(); itd++)
+        {   
+            if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
+            {
+                *(*itl) += *(*itd);
+                if (doDelete)
+                    (*itl)->pDeltaList->erase(itd);
+                else
+                    (*itd)->flags |= DELTA_MASKOFF;
+                break;
+            }
+        }
+    }
+ 
 }
 void PathM::Rehold() 
 {
@@ -83,6 +110,24 @@ void PathM::Rehold()
             }
         }
     }
+    // Do reverse link!
+    itl = reverse_path.begin();
+    for (; itl != reverse_path.end(); itl++)
+    {
+        if ((*itl)->pDeltaList == NULL)
+            continue;
+        list<LinkStateDelta*>::iterator itd = (*itl)->pDeltaList->begin();
+        for (; itd !=  (*itl)->pDeltaList->end(); itd++)
+        {
+            if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
+            {
+                *(*itl) -= *(*itd);
+                (*itd)->flags &= (~DELTA_MASKOFF);
+                break;
+            }
+        }
+    }
+ 
 }
 
 //////////////////  PCEN_MCBase  ///////////////////
@@ -264,26 +309,6 @@ int PCEN_MCBase::PerformComputation()
             for (j = 0; j < i; j++)
             {
                 sortedMCPaths[j].Release(true);
-                /*
-                narb_lsp_request_tlv lsp_req;
-                lsp_req.type = ((MSG_LSP << 8) | ACT_DELETE);
-                lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-                lsp_req.src.s_addr = sortedMCPaths[j].source.s_addr;
-                lsp_req.dest.s_addr = sortedMCPaths[j].destination.s_addr;
-                lsp_req.bandwidth = sortedMCPaths[j].bandwidth;
-                lsp_req.switching_type = this->switching_type_ingress;
-                lsp_req.encoding_type = this->encoding_type_ingress;
-                lsp_req.gpid = 0;
-                list<ero_subobj> ero;
-                u_int32_t w1 = wavelength;
-                wavelength = MCPaths[i]->wavelength;
-                GetPathERO(MCPaths[j]->path, ero);
-                wavelength = w1;
-                bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-                //remove all temporaily held new paths (below) --> Link::+= delta
-                if (ero.size() > 0)
-                    LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
-                */
             }
             thePath.path.clear();
             return ERR_PCEN_NO_ROUTE;
