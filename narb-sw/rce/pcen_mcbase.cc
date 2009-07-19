@@ -43,6 +43,48 @@ PathM& PathM::operator=(const PathT& p)
         return *this;
 }
 
+void PathM::Release(bool doDelete) 
+{
+    list<Link*>::iterator itl = path.begin();
+    for (; itl != path.end(); itl++)
+    {   
+        if ((*itl)->pDeltaList == NULL)
+            continue;
+        list<LinkStateDelta*>::iterator itd = (*itl)->pDeltaList->begin();
+        for (; itd !=  (*itl)->pDeltaList->end(); itd++)
+        {   
+            if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
+            {
+                *(*itl) += *(*itd);
+                if (doDelete)
+                    (*itl)->pDeltaList->erase(itd);
+                else
+                    (*itd)->flags |= DELTA_MASKOFF;
+                break;
+            }
+        }
+    }
+}
+void PathM::Rehold() 
+{
+    list<Link*>::iterator itl = path.begin();
+    for (; itl != path.end(); itl++)
+    {
+        if ((*itl)->pDeltaList == NULL)
+            continue;
+        list<LinkStateDelta*>::iterator itd = (*itl)->pDeltaList->begin();
+        for (; itd !=  (*itl)->pDeltaList->end(); itd++)
+        {
+            if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
+            {
+                *(*itl) -= *(*itd);
+                (*itd)->flags &= (~DELTA_MASKOFF);
+                break;
+            }
+        }
+    }
+}
+
 //////////////////  PCEN_MCBase  ///////////////////
 
 bool PCEN_MCBase::PostBuildTopology()
@@ -176,24 +218,7 @@ int PCEN_MCBase::PerformComputation()
     int i, j;
     for (i = 0; i < MCPaths.size()-1; i++)
     {
-        narb_lsp_request_tlv lsp_req;
-        lsp_req.type = ((MSG_LSP << 8) | ACT_MASKOFF);
-        lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-        lsp_req.src.s_addr = MCPaths[i]->source.s_addr;
-        lsp_req.dest.s_addr = MCPaths[i]->destination.s_addr;
-        lsp_req.bandwidth = MCPaths[i]->bandwidth;
-        lsp_req.switching_type = this->switching_type_ingress;
-        lsp_req.encoding_type = this->encoding_type_ingress;
-        lsp_req.gpid = 0;
-        list<ero_subobj> ero;
-        u_int32_t w1 = wavelength;
-        wavelength = MCPaths[i]->wavelength;
-        GetPathERO(MCPaths[i]->path, ero);
-        wavelength = w1;
-        bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-        //release concurrent paths by maskoff --> Link::+= delta
-        if (ero.size() > 0)
-            LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[i]->ucid, MCPaths[i]->seqnum, is_bidir);
+        MCPaths[i]->Release();
     }
 
     //M-Concurrent path computation algorithm for MCP
@@ -233,28 +258,13 @@ int PCEN_MCBase::PerformComputation()
             //if any MCPaths[j] fails --> maskon all paths in MCPaths except for 'thePath'
             for (j = 0; j < MCPaths.size() - 1; j++)
             {
-                narb_lsp_request_tlv lsp_req;
-                lsp_req.type = ((MSG_LSP << 8) | ACT_MASKON);
-                lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-                lsp_req.src.s_addr = MCPaths[j]->source.s_addr;
-                lsp_req.dest.s_addr = MCPaths[j]->destination.s_addr;
-                lsp_req.bandwidth = MCPaths[j]->bandwidth;
-                lsp_req.switching_type = this->switching_type_ingress;
-                lsp_req.encoding_type = this->encoding_type_ingress;
-                lsp_req.gpid = 0;
-                list<ero_subobj> ero;
-                u_int32_t w1 = wavelength;
-                wavelength = MCPaths[i]->wavelength;
-                GetPathERO(MCPaths[j]->path, ero);
-                wavelength = w1;
-                bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-                //re-hold/recover all concurrent paths by removing maskoff -> Link::-= delta
-                if (ero.size() > 0)
-                    LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
+                MCPaths[j]->Rehold();
             }
             //also remove temporarily held deltas
             for (j = 0; j < i; j++)
             {
+                sortedMCPaths[j].Release(true);
+                /*
                 narb_lsp_request_tlv lsp_req;
                 lsp_req.type = ((MSG_LSP << 8) | ACT_DELETE);
                 lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
@@ -273,6 +283,7 @@ int PCEN_MCBase::PerformComputation()
                 //remove all temporaily held new paths (below) --> Link::+= delta
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
+                */
             }
             thePath.path.clear();
             return ERR_PCEN_NO_ROUTE;
@@ -344,21 +355,7 @@ int PCEN_MCBase::PerformComputation()
     // new paths has been holding resources 
     for (j = 0; j < sortedMCPaths.size() - 1; j++)
     {
-        narb_lsp_request_tlv lsp_req;
-        lsp_req.type = ((MSG_LSP << 8) | ACT_DELETE);
-        lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-        lsp_req.src.s_addr = sortedMCPaths[j].source.s_addr;
-        lsp_req.dest.s_addr = sortedMCPaths[j].destination.s_addr;
-        lsp_req.bandwidth = sortedMCPaths[j].bandwidth;
-        lsp_req.switching_type = this->switching_type_ingress;
-        lsp_req.encoding_type = this->encoding_type_ingress;
-        lsp_req.gpid = 0;
-        list<ero_subobj> ero;
-        GetPathERO(sortedMCPaths[j].path, ero);
-        bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-        //remove Link::+= delta 
-        if (ero.size() > 0)
-            LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
+        sortedMCPaths[j].Release(true);
     }
     */
 

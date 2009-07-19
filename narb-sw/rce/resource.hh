@@ -463,6 +463,7 @@ public:
     friend class PCEN_KSP;
     friend class PCEN_MCBase;
     friend class PathT;
+    friend class PathM;
     friend class PCEN_MRN;
     friend class PCEN_MRN_CG;
     friend class router_info;

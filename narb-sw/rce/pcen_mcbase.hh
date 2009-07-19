@@ -43,6 +43,8 @@ public:
 
     inline PathM& operator=(const PathM& p);
     inline PathM& operator=(const PathT& p);
+    void Release(bool doDelete=false);
+    void Rehold();
 };
 
 
