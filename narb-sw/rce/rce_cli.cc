@@ -1464,7 +1464,7 @@ static Link* link_to_update = NULL;
 	    TLP* tlp = L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));\
 	    if (tlp && tlp->p)\
 	    {\
-               u_int32_t lambda = htonl(*(u_int32_t*)tlp->p);\
+               u_int32_t lambda = ntohl(*(u_int32_t*)tlp->p);\
                CLI_OUT ("\t    -- PSC4 specific information--%s\t       --> PSC-LSC adaptation lambda: %d%s", cli_cstr_newline, lambda, cli_cstr_newline); \
 	    }\
         }\
