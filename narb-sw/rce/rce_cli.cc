@@ -1475,10 +1475,11 @@ static Link* link_to_update = NULL;
         LinkStateDelta* delta; \
         for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++) { \
             delta = *it; \
-            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s @ %d.%d<<<%s", cli_cstr_newline, k, \
+            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s%s @ %d.%d<<<%s", cli_cstr_newline, k, \
                 (delta->flags & DELTA_QUERIED) != 0 || (delta->expiration.tv_sec <= SystemConfig::delta_expire_query)  ? "Queried" : "", \
                 (delta->flags & DELTA_RESERVED) != 0 ? "-Reserved" : "", \
                 (delta->flags & DELTA_UPDATED) != 0 ? "-Updated" : "", \
+                (delta->flags & DELTA_MASKOFF) != 0 ? " (Maskoff)" : "", \
                 delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline); \
             CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline); \
             if (delta->flags & DELTA_VLANTAG) \

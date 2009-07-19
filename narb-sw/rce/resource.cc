@@ -439,7 +439,7 @@ void Link::SetWavelength(u_int32_t lambda, bool deleting)
     {
         ResourceIndexingElement *pe = GET_ATTR_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
         int a_index = ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA");
-        if (attrTable.size() > a_index && attrTable[a_index].p)
+        if (attrTable.size() > a_index)
         {
             if (deleting)
                 attrTable[a_index].p = NULL;
@@ -454,8 +454,8 @@ Link& Link::operator+= (LinkStateDelta& delta)
 {
     int i;
 
-    if (delta.flags & DELTA_MASKOFF)
-        return *this;
+    //if (delta.flags & DELTA_MASKOFF)
+    //    return *this;
 
     if (delta.bandwidth > 0)
     {
@@ -521,8 +521,8 @@ Link& Link::operator-= (LinkStateDelta& delta)
 {
     int i;
 
-    if (delta.flags & DELTA_MASKOFF)
-        return *this;
+    //if (delta.flags & DELTA_MASKOFF)
+    //    return *this;
 
     if (delta.bandwidth > 0)
     {

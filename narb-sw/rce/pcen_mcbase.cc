@@ -191,6 +191,7 @@ int PCEN_MCBase::PerformComputation()
         GetPathERO(MCPaths[i]->path, ero);
         wavelength = w1;
         bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+        //release concurrent paths by maskoff --> Link::+= delta
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[i]->ucid, MCPaths[i]->seqnum, is_bidir);
     }
@@ -205,7 +206,8 @@ int PCEN_MCBase::PerformComputation()
         assert(srcNode1 && destNode1);
         SearchKSP(srcNode1->ref_num, destNode1->ref_num, SystemConfig::pce_k);
         if (GetBestTwoKSPaths(KSP, MC_KSP1[i], MC_KSP2[i]) == 0) //mark no_path
-            return ERR_PCEN_NO_ROUTE;
+            //return ERR_PCEN_NO_ROUTE;
+            continue;
         MC_KSP1[i].ucid = MC_KSP2[i].ucid = MCPaths[i]->ucid;
         MC_KSP1[i].seqnum = MC_KSP2[i].seqnum = MCPaths[i]->seqnum;
         MC_KSP1[i].source.s_addr = MC_KSP2[i].source.s_addr = MCPaths[i]->source.s_addr;
@@ -246,6 +248,7 @@ int PCEN_MCBase::PerformComputation()
                 GetPathERO(MCPaths[j]->path, ero);
                 wavelength = w1;
                 bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+                //re-hold/recover all concurrent paths by removing maskoff -> Link::-= delta
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, MCPaths[j]->ucid, MCPaths[j]->seqnum, is_bidir);
             }
@@ -267,6 +270,7 @@ int PCEN_MCBase::PerformComputation()
                 GetPathERO(MCPaths[j]->path, ero);
                 wavelength = w1;
                 bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+                //remove all temporaily held new paths (below) --> Link::+= delta
                 if (ero.size() > 0)
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
             }
@@ -301,24 +305,30 @@ int PCEN_MCBase::PerformComputation()
             GetPathERO(sortedMCPaths[i].path, ero);
             wavelength = w1;
             bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+            //temporarily hold the new path --> Link::-= delta
             if (ero.size() > 0)
                 LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
        }
     }
 
-// TODO: direct operate on link->deltaList ?
+
+    //success!
+
+    //remove old concurrent paths deltas no matter mask off or not
     for (i = 0; i < MCPaths.size() - 1; i++)
     {
         list<Link*>::iterator itl = MCPaths[i]->path.begin();
         for (; itl != MCPaths[i]->path.end(); itl++)
         {
-            (*itl)->cleanupMaskoffDeltas();
+            //Link::-= delta if maskoff
+            //(*itl)->cleanupMaskoffDeltas();
+            //just remove delta (w/o Link::-= delta as old paths has been 'released' by maskoff)
             (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
         }
     }
 
 
-    //otherwise, assign paths of newPaths to MCPaths[i] (including 'thePath'), return success
+    //assign paths of newPaths to MCPaths[i] (including 'thePath')
     for (i = 0; i < MCPaths.size(); i++)
     {
         for (j = 0; j < sortedMCPaths.size(); j++)
@@ -330,7 +340,8 @@ int PCEN_MCBase::PerformComputation()
         }
     }
 
-/* TODO: update ucid and seqnum of sortedMCPaths[i] to those of MCPaths[i] --> direct operate on link->deltaList
+    /* TODO: update ucid and seqnum of sortedMCPaths[i] to those of MCPaths[i] --> direct operate on link->deltaList
+    // new paths has been holding resources 
     for (j = 0; j < sortedMCPaths.size() - 1; j++)
     {
         narb_lsp_request_tlv lsp_req;
@@ -345,10 +356,11 @@ int PCEN_MCBase::PerformComputation()
         list<ero_subobj> ero;
         GetPathERO(sortedMCPaths[j].path, ero);
         bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+        //remove Link::+= delta 
         if (ero.size() > 0)
             LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, j, is_bidir);
     }
-*/
+    */
 
     return ERR_PCEN_NO_ERROR;
 }
@@ -483,7 +495,8 @@ inline double SumOfBandwidthWeightedCommonLinks(PathM* &P, vector<PathM>& Paths)
         if (P->ucid == Paths[i].ucid && P->seqnum == Paths[i].seqnum)
             break;
     }
-    assert (i < numPaths);
+    //assert (i < numPaths);
+    if (i == numPaths) return 0;
 
     PathM* path1 = &Paths[i];
 
