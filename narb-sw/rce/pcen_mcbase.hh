@@ -15,6 +15,8 @@ public:
     in_addr destination;
     u_int32_t ucid;
     u_int32_t seqnum;
+    struct timeval start_time;
+    struct timeval end_time; 
     double cost;
     float bandwidth;
     u_int32_t vlan_tag;
@@ -34,6 +36,8 @@ public:
     PathM() {
         source.s_addr = destination.s_addr = 0;
         ucid = seqnum = 0;
+        start_time.tv_sec = end_time.tv_sec = 0;
+        start_time.tv_usec = end_time.tv_usec = 0;
         cost=0;
         path.clear();
         pflg.flag=0;
@@ -75,13 +79,15 @@ public:
     virtual int PickMCPCandidates(int M); //new
     virtual int PerformComputation();
     virtual void Run(); //recording path into AllPaths
+    virtual int GetBestTwoKSPaths(vector<PathT*>& KSP, PathM &path1, PathM &path2);
     virtual inline void SortTwoPaths(PathM* &path1, PathM* &path2);
 
-    int GetBestTwoKSPaths(vector<PathT*>& KSP, PathM &path1, PathM &path2);
     void SortMPaths(vector<PathM*>& Paths);
     int GetPathERO(list<Link*>& path, list<ero_subobj>& ero);
     PCENLink* GetPCENLinkByLink(Link* link);
 };
+
+inline void SwapPaths(PathM* &path1, PathM* &path2);
 
 #endif
 

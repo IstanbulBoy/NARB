@@ -340,6 +340,8 @@ struct LinkStateDelta
       u_int32_t vlan_tag;
       u_int32_t wavelength;
     };
+    struct timeval start_time;
+    struct timeval end_time; 
 };
 // delta status
 #define DELTA_QUERIED 0x1000
@@ -351,6 +353,8 @@ struct LinkStateDelta
 #define DELTA_VTAGMASK 0x0002
 #define DELTA_TIMESLOTS 0x0004
 #define DELTA_WAVELENGTH 0x0008
+// scheduling
+#define DELTA_SCHEDULING 0x10000
 
 class Link: public Resource
 {

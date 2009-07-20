@@ -18,6 +18,8 @@ PathM& PathM::operator=(const PathM& p) {
     this->destination.s_addr = p.destination.s_addr;
     this->ucid = p.ucid;
     this->seqnum = p.seqnum;
+    this->start_time = p.start_time;
+    this->end_time = p.end_time;
     this->path.assign(p.path.begin(), p.path.end());
     this->reverse_path.assign(p.reverse_path.begin(), p.reverse_path.end());
     this->cost = p.cost;
@@ -68,6 +70,12 @@ void PathM::QueryHold()
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = wavelength;
         }
+        if (start_time.tv_sec != 0)
+        {
+            delta->flags |= DELTA_SCHEDULING;
+            delta->start_time = start_time;
+            delta->end_time = start_time;
+        }
         //insert delta
         (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0);
     }
@@ -86,6 +94,12 @@ void PathM::QueryHold()
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = wavelength;
         }
+        if (start_time.tv_sec != 0)
+        {
+            delta->flags |= DELTA_SCHEDULING;
+            delta->start_time = start_time;
+            delta->end_time = start_time;
+        }
         //insert delta
         (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0);
     }
@@ -103,7 +117,8 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                *(*itl) += *(*itd);
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
+                    *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
                 if (doDelete)
                     (*itl)->pDeltaList->erase(itd);
                 else
@@ -123,7 +138,8 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                *(*itl) += *(*itd);
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
+                    *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
                 if (doDelete)
                     (*itl)->pDeltaList->erase(itd);
                 else
@@ -146,7 +162,8 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                *(*itl) -= *(*itd);
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
+                    *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
                 (*itd)->flags &= (~DELTA_MASKOFF);
                 break;
             }
@@ -163,7 +180,8 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                *(*itl) -= *(*itd);
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
+                    *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
                 (*itd)->flags &= (~DELTA_MASKOFF);
                 break;
             }
@@ -235,6 +253,8 @@ void PathM::Display()
                 printf ("\t    ---> Used Bandwidth: %g (Mbps)\n", delta->bandwidth); 
                 if (delta->flags & DELTA_WAVELENGTH) 
                     printf ("\t    ---> Used wavelength: %d\n", delta->wavelength); 
+                if ((delta->flags & DELTA_SCHEDULING) != 0)
+                    printf ("\t    ---> Scheduled time: %d--%d\n", delta->start_time.tv_sec, delta->end_time.tv_sec); 
             } 
         } 
         printf("\n");
