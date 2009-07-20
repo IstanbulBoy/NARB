@@ -69,6 +69,7 @@ u_int8_t encoding = 2;
 float bandwidth = 500; //Mbps
 u_int32_t vtag = 0x0000ffff;
 u_int32_t lclid_src = 0, lclid_dest = 0;
+u_int32_t start_time = 0, end_time = 0;
 u_int32_t opt_bidirectional = LSP_OPT_BIDIRECTIONAL;
 u_int32_t opt_strict = LSP_OPT_STRICT;
 u_int32_t opt_preferred = LSP_OPT_PREFERRED;
@@ -366,6 +367,16 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
     bodylen += sizeof (msg_narb_local_id);
   }
 
+  if (start_time != 0 && end_time != 0)
+  {
+    msg_narb_scheduling* scheduling_tlv = (msg_narb_scheduling*)(msgbody+bodylen);
+    scheduling_tlv->type = htons(TLV_TYPE_NARB_SCHEDULING);
+    scheduling_tlv->length = htons(sizeof(msg_narb_scheduling) - TLV_HDR_SIZE);
+    scheduling_tlv->start_time= htonl(start_time);
+    scheduling_tlv->end_time= htonl(end_time);
+    bodylen += sizeof (msg_narb_scheduling);
+  }
+
   narb_msg = api_msg_new(MSG_APP_REQUEST, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
@@ -480,6 +491,20 @@ int main(int argc, char* argv[])
             break;
         case 'x':
             sscanf(optarg, "%d", &swtype);
+            break;
+        case 'R':
+            {
+                if (sscanf(optarg, "%d:%d", &start_time, &end_time) != 2 || start_time == 0 || end_time <= start_time)
+                {
+                    printf("Wrong scheduling time format: start-time:end-time in seconds from now\n");
+                    exit(-1);
+                }
+                struct timeval timenow;
+                gettimeofday(&timenow, NULL);
+                start_time += timenow.tv_sec;
+                end_time += timenow.tv_sec;
+                opt_query_hold = LSP_OPT_QUERY_HOLD;
+            }
             break;
         case 'S':
             inet_aton(optarg, &source);

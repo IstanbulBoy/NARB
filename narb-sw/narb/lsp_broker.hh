@@ -73,6 +73,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_APP_REMOVE = 0x032,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
     TLV_TYPE_NARB_PCE_SPEC = 0x42,
+    TLV_TYPE_NARB_SCHEDULING = 0x43,
 };
 
 // data structure of APP->NARB request message
@@ -152,6 +153,14 @@ struct msg_narb_holding_time
     u_int32_t seconds;
 };
 
+struct msg_narb_scheduling
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t start_time;
+    u_int32_t end_time;
+};
+
 
 // $$$$ DCN-Subnet special handling
 // Structure of DTL hop
@@ -190,6 +199,8 @@ private:
     u_int32_t returned_lspb_id;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    u_int32_t schedule_start;
+    u_int32_t schedule_end;
     u_int32_t hop_back;
     list<ero_subobj*> user_ero; // Optional user spplied ERO for TLV_TYPE_NARB_USER_SUPPLIED_ERO
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO

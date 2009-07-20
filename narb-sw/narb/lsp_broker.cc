@@ -90,6 +90,7 @@ void LSPQ::Init()
     suggested_vtag = NULL;
     previous_lspb_id = 0;
     src_lcl_id = dest_lcl_id = 0;
+    schedule_start = schedule_end = 0;
     hop_back = 0;
     is_recursive_req = false;
     is_qconf_mode = false;
@@ -601,7 +602,7 @@ int LSPQ::HandleLSPQRequest()
         app_options |= LSP_OPT_REQ_ALL_VTAGS;
     rce_client->QueryLsp(cspf_req, req_ucid, app_options | LSP_TLV_NARB_CSPF_REQ | (app_options & LSP_OPT_STRICT ? LSP_OPT_PREFERRED : 0)
         | (app_options & LSP_OPT_QUERY_HOLD) , req_vtag, hop_back, src_lcl_id, dest_lcl_id, pce_spec, vtag_mask, subnet_ero.size() > 0 ? &subnet_ero : NULL,
-        user_ero.size() > 0 ? &user_ero: NULL);
+        user_ero.size() > 0 ? &user_ero: NULL, schedule_start, schedule_end);
     return 0;
 }
 
@@ -1970,6 +1971,11 @@ void LSPQ::HandleOptionalRequestTLVs(api_msg* msg)
             tlv_len = sizeof(msg_narb_local_id);
             src_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((msg_narb_local_id*)tlv)->lclid_dest);
+            break;
+        case TLV_TYPE_NARB_SCHEDULING:
+            tlv_len = sizeof(msg_narb_scheduling);
+            schedule_start = ntohl(((msg_narb_scheduling*)tlv)->start_time);
+            schedule_end = ntohl(((msg_narb_scheduling*)tlv)->end_time);
             break;
         case TLV_TYPE_NARB_USER_SUPPLIED_ERO:
             GetERO_RFCStandard(tlv, user_ero);

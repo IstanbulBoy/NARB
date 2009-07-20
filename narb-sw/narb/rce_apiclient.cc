@@ -94,7 +94,8 @@ bool RCE_APIClient::IsMatched(char* host, int port)
 
 
 void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u_int32_t options, u_int32_t vtag, u_int32_t hop_back, u_int32_t src_lcl_id, u_int32_t dest_lcl_id, 
-    msg_narb_pce_spec* pce_spec, msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero, list<ero_subobj*>* p_user_ero)
+    msg_narb_pce_spec* pce_spec, msg_narb_vtag_mask* vtag_bitmask, list<ero_subobj*>* p_subnet_ero, list<ero_subobj*>* p_user_ero, 
+    u_int32_t schedule_start,  u_int32_t schedule_end)
 {
     api_msg *rce_msg;
     char buf[1024];
@@ -131,6 +132,15 @@ void RCE_APIClient::QueryLsp (msg_narb_cspf_request &cspf_req, u_int32_t ucid, u
         lcl_id_tlv->lclid_src = htonl(src_lcl_id);
         lcl_id_tlv->lclid_dest = htonl(dest_lcl_id);
         mlen += sizeof(msg_narb_local_id);
+    }
+    if (schedule_start != 0 && schedule_end != 0)
+    {
+        msg_narb_scheduling* schedule_tlv = (msg_narb_scheduling*)(buf+mlen);
+        schedule_tlv->type = htons(TLV_TYPE_NARB_SCHEDULING);
+        schedule_tlv->length = htons(sizeof(msg_narb_scheduling) - TLV_HDR_SIZE);
+        schedule_tlv->start_time= htonl(schedule_start);
+        schedule_tlv->end_time= htonl(schedule_end);
+        mlen += sizeof(msg_narb_scheduling);
     }
     if (p_subnet_ero != NULL && p_subnet_ero->size() > 0)
     {
