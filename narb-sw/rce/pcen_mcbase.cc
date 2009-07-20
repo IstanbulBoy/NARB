@@ -9,7 +9,7 @@
 
 vector<PathM*> PCEN_MCBase::allPaths;
 
-#define SHOW_MCPATH 1
+//#define SHOW_MCPATH 1
 
 ///////////////////  PathM /////////////////////////
 
