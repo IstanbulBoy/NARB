@@ -66,7 +66,7 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 	vector<PCENNode*>::iterator end;
 	if (ReachableNodes.size()==0) 
 	{
-		cout<<"No reachable Nodes has been found"<<endl;
+//		cout<<"No reachable Nodes has been found"<<endl;
 		return;
 	}
 	
@@ -90,7 +90,6 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 	{
 		if (headnode==NULL) 
 		{
-			cout<<"break 1"<<endl;
 			break;
 		}
 
@@ -159,12 +158,12 @@ void PCEN_KSP::Dijkstra(int source, int destination)
 
 		if(headnodeID == destination)
 		{
-			LOGF("Found the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
+			//LOGF("Found the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
 			return;
 		}
 	} 
 
-	LOGF("Can't find the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
+	//LOGF("Can't find the shortest path from source to destination in PCEN_KSP::Dijkstra....\n");
 }
 
 void PCEN_KSP::AddNode(int nodeid) {

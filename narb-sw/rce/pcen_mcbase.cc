@@ -5,6 +5,7 @@
  */
 
 #include "pcen_mcbase.hh"
+#include "rce_movaz_types.hh"
 
 vector<PathM*> PCEN_MCBase::allPaths;
 
@@ -45,7 +46,7 @@ PathM& PathM::operator=(const PathT& p)
         list<PCENLink*>::const_reverse_iterator rit = p.path.rbegin();
         for (; rit != p.path.rend(); rit++)
             if ((*rit)->reverse_link)
-                this->path.push_back((*rit)->reverse_link->link);
+                this->reverse_path.push_back((*rit)->reverse_link->link);
         return *this;
 }
 
@@ -70,7 +71,7 @@ void PathM::Release(bool doDelete)
             }
         }
     }
-    // Do reverse link!
+    // Do reverse links
     itl = reverse_path.begin();
     for (; itl != reverse_path.end(); itl++)
     {   
@@ -90,8 +91,8 @@ void PathM::Release(bool doDelete)
             }
         }
     }
- 
 }
+
 void PathM::Rehold() 
 {
     list<Link*>::iterator itl = path.begin();
@@ -110,7 +111,7 @@ void PathM::Rehold()
             }
         }
     }
-    // Do reverse link!
+    // Do reverse links
     itl = reverse_path.begin();
     for (; itl != reverse_path.end(); itl++)
     {
@@ -127,7 +128,77 @@ void PathM::Rehold()
             }
         }
     }
- 
+}
+
+void PathM::Display() 
+{
+    char addr1[20], addr2[20];
+    in_addr a1, a2;
+    strcpy (addr1, inet_ntoa(source)); 
+    strcpy (addr2, inet_ntoa(destination)); 
+    printf("Path (src=%s,dst=%s,ucid=%d,seqnum=%d):\n", addr1, addr2, ucid, seqnum);
+    list<Link*>::iterator itl = path.begin();
+    for (; itl != path.end(); itl++)
+    {
+        Link* L = *itl;
+        a1.s_addr = L->lclIfAddr;
+        a2.s_addr = L->rmtIfAddr;
+        strcpy (addr1, inet_ntoa(a1)); 
+        strcpy (addr2, inet_ntoa(a2)); 
+        printf("\tLink:%s--%s:", addr1, addr2);
+        ISCD *iscd = L->Iscds().front();
+        printf(" bandwidth=%g, ", iscd->max_lsp_bw[7]);
+        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && SystemConfig::wdm_subnet_on)
+        { 
+           printf ("\t    -- LSC-WDM specific information--\n\t       --> Available wavelengths:"); 
+           TLP* tlp = L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/MOVAZ_TE_LGRID"));
+	    if (tlp && tlp->p)
+	    {
+               MovazWaveGrid* wavegrid = (MovazWaveGrid*)tlp->p;
+	        u_int32_t base = ntohl(wavegrid->base);
+	        u_int16_t interval = ntohs(wavegrid->interval);
+	        u_int16_t size = ntohs(wavegrid->size);
+	        for (int i = 0; i < (int)size/2; i++)
+	        {
+	            if ((wavegrid->out_channels[i] & 0xf0) == 0x70)
+	                printf (" %d", base+i*2*interval);
+	            if ((wavegrid->out_channels[i] & 0x0f) == 0x07)
+	                printf (" %d", base+(i*2+1)*interval);
+	        }
+	    }
+            printf("\n");
+        } 
+        else if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_PSC4 && SystemConfig::wdm_subnet_on) 
+        { 
+	    TLP* tlp = L->GetAttribute(ATTR_INDEX_BY_TAG("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
+	    if (tlp && tlp->p)
+	    {
+               u_int32_t lambda = ntohl(*(u_int32_t*)tlp->p);
+               printf ("\t    -- PSC4 specific information--\n\t       --> PSC-LSC adaptation lambda: %d\n", lambda); 
+	    }
+        }
+
+        list<LinkStateDelta*>* pDeltaList = L->DeltaListPointer(); 
+        if (pDeltaList) { 
+            int k;
+            list<LinkStateDelta*>::iterator it; 
+            LinkStateDelta* delta; 
+            for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++) { 
+                delta = *it; 
+                printf ("\n\t >>> Link State Delta [%d] - Status: %s%s%s%s (ucid=%d,seqnum=%d)\n", k, 
+                    (delta->flags & DELTA_QUERIED) != 0 || (delta->expiration.tv_sec <= SystemConfig::delta_expire_query)  ? "Queried" : "", 
+                    (delta->flags & DELTA_RESERVED) != 0 ? "-Reserved" : "", 
+                    (delta->flags & DELTA_UPDATED) != 0 ? "-Updated" : "", 
+                    (delta->flags & DELTA_MASKOFF) != 0 ? " (Maskoff)" : "", 
+                    delta->owner_ucid, delta->owner_seqnum);
+                printf ("\t    ---> Used Bandwidth: %g (Mbps)\n", delta->bandwidth); 
+                if (delta->flags & DELTA_WAVELENGTH) 
+                    printf ("\t    ---> Used wavelength: %d\n", delta->wavelength); 
+            } 
+        } 
+        printf("\n");
+    }
+
 }
 
 //////////////////  PCEN_MCBase  ///////////////////
@@ -266,6 +337,13 @@ int PCEN_MCBase::PerformComputation()
         MCPaths[i]->Release();
     }
 
+    printf("**** maskoff deltas for every path in MCPaths ****\n");
+    for (i = 0; i < MCPaths.size()-1; i++)
+    {
+        MCPaths[i]->Display(); 
+    }
+
+
     //M-Concurrent path computation algorithm for MCP
     //1. Run KSP for each path in MCPaths, including MCPaths.push_back(&thePath)
     //2. Pick (up to 2xM) best and second-to-best paths and place them into MC_KSP1 and MC_KSP2
@@ -289,6 +367,17 @@ int PCEN_MCBase::PerformComputation()
     sortedPaths.assign(MCPaths.begin(), MCPaths.end());
     SortMPaths(sortedPaths);
 
+    printf("**** SortMPaths before recompute/rehold MCPaths:****\n");
+    for (i = 0; i < MCPaths.size(); i++)
+    {
+        MCPaths[i]->Display(); 
+    }
+    printf("**** sortedMCPaths:****\n");
+    for (i = 0; i < sortedMCPaths.size(); i++)
+    {
+        sortedMCPaths[i].Display(); 
+    }
+ 
     //4. Run KSP for paths in newPaths
     for (i = 0; i < sortedPaths.size(); i++)
     {
@@ -343,11 +432,21 @@ int PCEN_MCBase::PerformComputation()
             bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
             //temporarily hold the new path --> Link::-= delta
             if (ero.size() > 0)
-                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, 0, i, is_bidir);
+                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
        }
     }
 
 
+    printf("**** Recompute and rehold resources MCPaths:****\n");
+    for (i = 0; i < MCPaths.size(); i++)
+    {
+        MCPaths[i]->Display(); 
+    }
+    printf("**** Recompute and rehold resources sortedMCPaths:****\n");
+    for (i = 0; i < sortedMCPaths.size(); i++)
+    {
+        sortedMCPaths[i].Display(); 
+    }
     //success!
 
     //remove old concurrent paths deltas no matter mask off or not
@@ -356,13 +455,28 @@ int PCEN_MCBase::PerformComputation()
         list<Link*>::iterator itl = MCPaths[i]->path.begin();
         for (; itl != MCPaths[i]->path.end(); itl++)
         {
-            //Link::-= delta if maskoff
-            //(*itl)->cleanupMaskoffDeltas();
+            //just remove delta (w/o Link::-= delta as old paths has been 'released' by maskoff)
+            (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
+        }
+        //Do reverse links
+        for (itl = MCPaths[i]->reverse_path.begin(); itl != MCPaths[i]->reverse_path.end(); itl++)
+        {
             //just remove delta (w/o Link::-= delta as old paths has been 'released' by maskoff)
             (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
         }
     }
 
+
+    printf("**** remove old concurrent paths deltas no matter mask off or not -- MCPaths:****\n");
+    for (i = 0; i < MCPaths.size(); i++)
+    {
+        MCPaths[i]->Display(); 
+    }
+    printf("**** sortedMCPaths:****\n");
+    for (i = 0; i < sortedMCPaths.size(); i++)
+    {
+        sortedMCPaths[i].Display(); 
+    }
 
     //assign paths of newPaths to MCPaths[i] (including 'thePath')
     for (i = 0; i < MCPaths.size(); i++)
@@ -372,17 +486,36 @@ int PCEN_MCBase::PerformComputation()
             if (MCPaths[i]->ucid == sortedMCPaths[j].ucid && MCPaths[i]->seqnum == sortedMCPaths[j].seqnum)
             {
                 *MCPaths[i] = sortedMCPaths[j];
+                list<Link*>::iterator itl = MCPaths[i]->path.begin();
+                for (; itl !=  MCPaths[i]->path.end(); itl++)
+                {
+                    list<LinkStateDelta*>* pDeltaList = (*itl)->DeltaListPointer(); 
+                    if (pDeltaList)
+                    {
+                        list<LinkStateDelta*>::iterator itd; 
+                        for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
+                        {
+                            (*itd)->owner_ucid -= 1000;
+                            (*itd)->owner_seqnum -= 1000;
+                        } 
+                    }
+                }
+                /* TODO: update holding times */
+                 
             }
         }
     }
 
-    /* TODO: update ucid and seqnum of sortedMCPaths[i] to those of MCPaths[i] --> direct operate on link->deltaList
-    // new paths has been holding resources 
-    for (j = 0; j < sortedMCPaths.size() - 1; j++)
+    printf("**** assign paths of newPaths to MCPaths[i] (including 'thePath') -- MCPaths:****\n");
+    for (i = 0; i < MCPaths.size(); i++)
     {
-        sortedMCPaths[j].Release(true);
+        MCPaths[i]->Display(); 
     }
-    */
+    printf("**** sortedMCPaths:****\n");
+    for (i = 0; i < sortedMCPaths.size(); i++)
+    {
+        sortedMCPaths[i].Display(); 
+    }
 
     return ERR_PCEN_NO_ERROR;
 }
