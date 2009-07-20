@@ -9,6 +9,7 @@
 
 vector<PathM*> PCEN_MCBase::allPaths;
 
+#define SHOW_MCPATH 1
 
 ///////////////////  PathM /////////////////////////
 
@@ -198,7 +199,6 @@ void PathM::Display()
         } 
         printf("\n");
     }
-
 }
 
 //////////////////  PCEN_MCBase  ///////////////////
@@ -337,12 +337,13 @@ int PCEN_MCBase::PerformComputation()
         MCPaths[i]->Release();
     }
 
+#ifdef SHOW_MCPATH
     printf("**** maskoff deltas for every path in MCPaths ****\n");
     for (i = 0; i < MCPaths.size()-1; i++)
     {
         MCPaths[i]->Display(); 
     }
-
+#endif
 
     //M-Concurrent path computation algorithm for MCP
     //1. Run KSP for each path in MCPaths, including MCPaths.push_back(&thePath)
@@ -367,6 +368,7 @@ int PCEN_MCBase::PerformComputation()
     sortedPaths.assign(MCPaths.begin(), MCPaths.end());
     SortMPaths(sortedPaths);
 
+#ifdef SHOW_MCPATH
     printf("**** SortMPaths before recompute/rehold MCPaths:****\n");
     for (i = 0; i < MCPaths.size(); i++)
     {
@@ -377,14 +379,14 @@ int PCEN_MCBase::PerformComputation()
     {
         sortedMCPaths[i].Display(); 
     }
- 
+#endif 
     //4. Run KSP for paths in newPaths
     for (i = 0; i < sortedPaths.size(); i++)
     {
         sortedMCPaths[i] = *sortedPaths[i];
 
-        PCENNode* srcNode2 = GetNodeByIp(routers, &MCPaths[i]->source);
-        PCENNode* destNode2 = GetNodeByIp(routers, &MCPaths[i]->destination);
+        PCENNode* srcNode2 = GetNodeByIp(routers, &sortedMCPaths[i].source);
+        PCENNode* destNode2 = GetNodeByIp(routers, &sortedMCPaths[i].destination);
         SearchKSP(srcNode2->ref_num, destNode2->ref_num, SystemConfig::pce_k);
         PathT* bestPath = ConstrainKSPaths(KSP);
         if (!bestPath)
@@ -426,28 +428,22 @@ int PCEN_MCBase::PerformComputation()
             lsp_req.gpid = 0;
             list<ero_subobj> ero;
             u_int32_t w1 = wavelength;
-            wavelength = MCPaths[i]->wavelength;
+            wavelength = sortedMCPaths[i].wavelength;
             GetPathERO(sortedMCPaths[i].path, ero);
             wavelength = w1;
             bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
             //temporarily hold the new path --> Link::-= delta
             if (ero.size() > 0)
-                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
-       }
+                //LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
+                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid, sortedMCPaths[i].seqnum, is_bidir);
+#ifdef SHOW_MCPATH
+            printf("**** Recompute and rehold sortedMCPaths[%d]****\n", i);
+            sortedMCPaths[i].Display(); 
+#endif
+        }
     }
 
-
-    printf("**** Recompute and rehold resources MCPaths:****\n");
-    for (i = 0; i < MCPaths.size(); i++)
-    {
-        MCPaths[i]->Display(); 
-    }
-    printf("**** Recompute and rehold resources sortedMCPaths:****\n");
-    for (i = 0; i < sortedMCPaths.size(); i++)
-    {
-        sortedMCPaths[i].Display(); 
-    }
-    //success!
+   //success!
 
     //remove old concurrent paths deltas no matter mask off or not
     for (i = 0; i < MCPaths.size() - 1; i++)
@@ -456,17 +452,20 @@ int PCEN_MCBase::PerformComputation()
         for (; itl != MCPaths[i]->path.end(); itl++)
         {
             //just remove delta (w/o Link::-= delta as old paths has been 'released' by maskoff)
+            //if both maskoff and queried deltas exist, only maskoff delta gets removed (ealier in list)
             (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
         }
         //Do reverse links
         for (itl = MCPaths[i]->reverse_path.begin(); itl != MCPaths[i]->reverse_path.end(); itl++)
         {
             //just remove delta (w/o Link::-= delta as old paths has been 'released' by maskoff)
+            //if both maskoff and queried deltas exist, only maskoff delta gets removed
             (*itl)->removeDeltaByOwner(MCPaths[i]->ucid, MCPaths[i]->seqnum, false);
         }
     }
 
 
+#ifdef SHOW_MCPATH
     printf("**** remove old concurrent paths deltas no matter mask off or not -- MCPaths:****\n");
     for (i = 0; i < MCPaths.size(); i++)
     {
@@ -477,6 +476,7 @@ int PCEN_MCBase::PerformComputation()
     {
         sortedMCPaths[i].Display(); 
     }
+#endif
 
     //assign paths of newPaths to MCPaths[i] (including 'thePath')
     for (i = 0; i < MCPaths.size(); i++)
@@ -486,6 +486,7 @@ int PCEN_MCBase::PerformComputation()
             if (MCPaths[i]->ucid == sortedMCPaths[j].ucid && MCPaths[i]->seqnum == sortedMCPaths[j].seqnum)
             {
                 *MCPaths[i] = sortedMCPaths[j];
+/*
                 list<Link*>::iterator itl = MCPaths[i]->path.begin();
                 for (; itl !=  MCPaths[i]->path.end(); itl++)
                 {
@@ -495,18 +496,39 @@ int PCEN_MCBase::PerformComputation()
                         list<LinkStateDelta*>::iterator itd; 
                         for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
                         {
-                            (*itd)->owner_ucid -= 1000;
-                            (*itd)->owner_seqnum -= 1000;
+                            if ((*itd)->owner_ucid == MCPaths[i]->ucid+1000 && (*itd)->owner_seqnum == MCPaths[i]->seqnum+1000)
+                            {
+                                (*itd)->owner_ucid -= 1000;
+                                (*itd)->owner_seqnum -= 1000;
+                            }
                         } 
                     }
                 }
+                for (itl = MCPaths[i]->reverse_path.begin(); itl !=  MCPaths[i]->reverse_path.end(); itl++)
+                {
+                    list<LinkStateDelta*>* pDeltaList = (*itl)->DeltaListPointer(); 
+                    if (pDeltaList)
+                    {
+                        list<LinkStateDelta*>::iterator itd; 
+                        for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
+                        {
+                            if ((*itd)->owner_ucid == MCPaths[i]->ucid+1000 && (*itd)->owner_seqnum == MCPaths[i]->seqnum+1000)
+                            {
+                                (*itd)->owner_ucid -= 1000;
+                                (*itd)->owner_seqnum -= 1000;
+                            }
+                        } 
+                    }
+                }
+*/
                 /* TODO: update holding times */
                  
             }
         }
     }
 
-    printf("**** assign paths of newPaths to MCPaths[i] (including 'thePath') -- MCPaths:****\n");
+#ifdef SHOW_MCPATH
+    printf("**** Final: assign paths of newPaths to MCPaths[i] (including 'thePath') -- MCPaths:****\n");
     for (i = 0; i < MCPaths.size(); i++)
     {
         MCPaths[i]->Display(); 
@@ -516,7 +538,7 @@ int PCEN_MCBase::PerformComputation()
     {
         sortedMCPaths[i].Display(); 
     }
-
+#endif
     return ERR_PCEN_NO_ERROR;
 }
 
