@@ -51,6 +51,46 @@ PathM& PathM::operator=(const PathT& p)
         return *this;
 }
 
+void PathM::QueryHold()
+{
+    //Make delta for each link
+    list<Link*>::iterator itl = path.begin();
+    for (; itl != path.end(); itl++)
+    {   
+        LinkStateDelta* delta = new LinkStateDelta;
+        memset(delta, 0, sizeof(LinkStateDelta));
+        delta->owner_ucid = ucid;
+        delta->owner_seqnum = seqnum;
+        delta->bandwidth = bandwidth;
+        delta->flags |= DELTA_QUERIED;
+        if (wavelength != 0)
+        {
+            delta->flags |= DELTA_WAVELENGTH;
+            delta->wavelength = wavelength;
+        }
+        //insert delta
+        (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0);
+    }
+    //do reverse links
+    itl = reverse_path.begin();
+    for (; itl != reverse_path.end(); itl++)
+    {   
+        LinkStateDelta* delta = new LinkStateDelta;
+        memset(delta, 0, sizeof(LinkStateDelta));
+        delta->owner_ucid = ucid;
+        delta->owner_seqnum = seqnum;
+        delta->bandwidth = bandwidth;
+        delta->flags |= DELTA_QUERIED;
+        if (wavelength != 0)
+        {
+            delta->flags |= DELTA_WAVELENGTH;
+            delta->wavelength = wavelength;
+        }
+        //insert delta
+        (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0);
+    }
+}
+
 void PathM::Release(bool doDelete) 
 {
     list<Link*>::iterator itl = path.begin();
@@ -417,6 +457,7 @@ int PCEN_MCBase::PerformComputation()
         //holding resources for sortedMCPaths[i]
         if (i < sortedPaths.size()-1)
         {
+            /*
             narb_lsp_request_tlv lsp_req;
             lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
             lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
@@ -436,6 +477,8 @@ int PCEN_MCBase::PerformComputation()
             if (ero.size() > 0)
                 //LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
                 LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid, sortedMCPaths[i].seqnum, is_bidir);
+            */
+            sortedMCPaths[i].QueryHold();
 #ifdef SHOW_MCPATH
             printf("**** Recompute and rehold sortedMCPaths[%d]****\n", i);
             sortedMCPaths[i].Display(); 

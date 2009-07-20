@@ -44,6 +44,7 @@ public:
 
     inline PathM& operator=(const PathM& p);
     inline PathM& operator=(const PathT& p);
+    void QueryHold();
     void Release(bool doDelete=false);
     void Rehold();
     void Display();

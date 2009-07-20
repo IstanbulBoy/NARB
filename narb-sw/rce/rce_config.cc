@@ -291,9 +291,9 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
             }
             if (SystemConfig::pce_algorithm == MC_BASE)
             {
-                if (ReadConfigParameter(blk_body, (char*)"ksp-m", (char*)"%d", &SystemConfig::pce_m) == 0)
+                if (ReadConfigParameter(blk_body, (char*)"mc-m", (char*)"%d", &SystemConfig::pce_m) == 0)
                 {
-                    LOG("ReadConfigParameter set ksp-m to deault value: " <<SystemConfig::pce_m <<endl);
+                    LOG("ReadConfigParameter set mc-m to deault value: " <<SystemConfig::pce_m <<endl);
                 }
             }
           }
