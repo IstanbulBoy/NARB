@@ -121,6 +121,7 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
+                //@@@@ logic to update depending/dependent links
                 if (((*itd)->flags & DELTA_SCHEDULING) == 0)
                     *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
                 if (doDelete)
@@ -142,6 +143,7 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
+                //@@@@ logic to update depending/dependent links
                 if (((*itd)->flags & DELTA_SCHEDULING) == 0)
                     *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
                 if (doDelete)
@@ -166,6 +168,7 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
+                //@@@@ logic to update depending/dependent links
                 if (((*itd)->flags & DELTA_SCHEDULING) == 0)
                     *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
                 (*itd)->flags &= (~DELTA_MASKOFF);
@@ -184,6 +187,7 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
+                //@@@@ logic to update depending/dependent links
                 if (((*itd)->flags & DELTA_SCHEDULING) == 0)
                     *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
                 (*itd)->flags &= (~DELTA_MASKOFF);
@@ -479,28 +483,30 @@ int PCEN_MCBase::PerformComputation()
         //holding resources for sortedMCPaths[i]
         if (i < sortedPaths.size()-1)
         {
-            /*
-            narb_lsp_request_tlv lsp_req;
-            lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
-            lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
-            lsp_req.src.s_addr = sortedMCPaths[i].source.s_addr;
-            lsp_req.dest.s_addr = sortedMCPaths[i].destination.s_addr;
-            lsp_req.bandwidth = sortedMCPaths[i].bandwidth;
-            lsp_req.switching_type = this->switching_type_ingress;
-            lsp_req.encoding_type = this->encoding_type_ingress;
-            lsp_req.gpid = 0;
-            list<ero_subobj> ero;
-            u_int32_t w1 = wavelength;
-            wavelength = sortedMCPaths[i].wavelength;
-            GetPathERO(sortedMCPaths[i].path, ero);
-            wavelength = w1;
-            bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
-            //temporarily hold the new path --> Link::-= delta
-            if (ero.size() > 0)
-                //LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
-                LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid, sortedMCPaths[i].seqnum, is_bidir);
-            */
+           /*
+                    narb_lsp_request_tlv lsp_req;
+                    lsp_req.type = ((MSG_LSP << 8) | ACT_QUERY);
+                    lsp_req.length = sizeof(narb_lsp_request_tlv) - TLV_HDR_SIZE;
+                    lsp_req.src.s_addr = sortedMCPaths[i].source.s_addr;
+                    lsp_req.dest.s_addr = sortedMCPaths[i].destination.s_addr;
+                    lsp_req.bandwidth = sortedMCPaths[i].bandwidth;
+                    lsp_req.switching_type = this->switching_type_ingress;
+                    lsp_req.encoding_type = this->encoding_type_ingress;
+                    lsp_req.gpid = 0;
+                    list<ero_subobj> ero;
+                    u_int32_t w1 = wavelength;
+                    wavelength = sortedMCPaths[i].wavelength;
+                    GetPathERO(sortedMCPaths[i].path, ero);
+                    wavelength = w1;
+                    bool is_bidir = ((this->options & LSP_OPT_BIDIRECTIONAL) != 0);
+                    //temporarily hold the new path --> Link::-= delta
+                    if (ero.size() > 0)
+                    //LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid+1000, sortedMCPaths[i].seqnum+1000, is_bidir);
+                    LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid, sortedMCPaths[i].seqnum, is_bidir);
+                    */
             sortedMCPaths[i].QueryHold();
+            if (sortedMCPaths[i].wavelength != 0)
+                CreatePSCLinksFromLambdaPath(sortedMCPaths[i]);
 #ifdef SHOW_MCPATH
             printf("**** Recompute and rehold sortedMCPaths[%d]****\n", i);
             sortedMCPaths[i].Display(); 
@@ -551,43 +557,7 @@ int PCEN_MCBase::PerformComputation()
             if (MCPaths[i]->ucid == sortedMCPaths[j].ucid && MCPaths[i]->seqnum == sortedMCPaths[j].seqnum)
             {
                 *MCPaths[i] = sortedMCPaths[j];
-/*
-                list<Link*>::iterator itl = MCPaths[i]->path.begin();
-                for (; itl !=  MCPaths[i]->path.end(); itl++)
-                {
-                    list<LinkStateDelta*>* pDeltaList = (*itl)->DeltaListPointer(); 
-                    if (pDeltaList)
-                    {
-                        list<LinkStateDelta*>::iterator itd; 
-                        for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
-                        {
-                            if ((*itd)->owner_ucid == MCPaths[i]->ucid+1000 && (*itd)->owner_seqnum == MCPaths[i]->seqnum+1000)
-                            {
-                                (*itd)->owner_ucid -= 1000;
-                                (*itd)->owner_seqnum -= 1000;
-                            }
-                        } 
-                    }
-                }
-                for (itl = MCPaths[i]->reverse_path.begin(); itl !=  MCPaths[i]->reverse_path.end(); itl++)
-                {
-                    list<LinkStateDelta*>* pDeltaList = (*itl)->DeltaListPointer(); 
-                    if (pDeltaList)
-                    {
-                        list<LinkStateDelta*>::iterator itd; 
-                        for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
-                        {
-                            if ((*itd)->owner_ucid == MCPaths[i]->ucid+1000 && (*itd)->owner_seqnum == MCPaths[i]->seqnum+1000)
-                            {
-                                (*itd)->owner_ucid -= 1000;
-                                (*itd)->owner_seqnum -= 1000;
-                            }
-                        } 
-                    }
-                }
-*/
-                /* TODO: update holding times */
-                 
+                /* TODO: update holding times ?*/
             }
         }
     }
@@ -815,5 +785,99 @@ PCENLink* PCEN_MCBase::GetPCENLinkByLink(Link* link)
             return links[i];
     }
     return NULL;
+}
+
+bool PCEN_MCBase::CreatePSCLinksFromLambdaPath(PathM &pm)
+{
+    list<Link*>::iterator itl = pm.path.begin();
+    list<Link*>::iterator itx = pm.path.end();
+    list<Link*>::iterator ity = pm.path.end();
+    for (; itl != pm.path.end(); itl++)
+    {
+        if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+        {
+            ity = itl;
+            if (itx == pm.path.end())
+                itx = itl;
+        }
+    }
+    itx--;
+    if (itx == pm.path.begin() || itx == pm.path.end())
+        return false;
+    if (ity == pm.path.end())
+        return false;
+    PCENLink* pcen_link_a = PCEN_MCBase::GetPCENLinkByLink(*itx);
+    PCENLink* pcen_link_z = PCEN_MCBase::GetPCENLinkByLink(*ity);
+    assert(pcen_link_a && pcen_link_z);
+
+    PCENLink* pcen_link_psc1 = new PCENLink;
+    pcen_link_psc1->linkID = links.back()->linkID+1;
+    pcen_link_psc1->lcl_end = pcen_link_a->lcl_end;
+    pcen_link_psc1->rmt_end = pcen_link_z->rmt_end;
+    pcen_link_a->lcl_end->out_links.push_back(pcen_link_psc1);
+    pcen_link_z->rmt_end->in_links.push_back(pcen_link_psc1);
+
+    PCENLink* pcen_link_psc2 = new PCENLink;
+    pcen_link_psc2->linkID = links.back()->linkID+2;
+    pcen_link_psc2->lcl_end = pcen_link_z->rmt_end;
+    pcen_link_psc2->rmt_end = pcen_link_a->lcl_end;
+    pcen_link_z->rmt_end->out_links.push_back(pcen_link_psc2);
+    pcen_link_a->lcl_end->in_links.push_back(pcen_link_psc2);
+
+    pcen_link_psc1->reverse_link = pcen_link_psc2;
+    pcen_link_psc2->reverse_link = pcen_link_psc1;
+
+    Link* link1 = new Link(pcen_link_a->link->AdvRtId(), pcen_link_z->link->Id(), pcen_link_a->link->LclIfAddr(), pcen_link_z->link->RmtIfAddr());
+    Link* link2 = new Link(pcen_link_z->link->AdvRtId(), pcen_link_a->link->Id(), pcen_link_z->link->RmtIfAddr(), pcen_link_a->link->LclIfAddr());
+    link1->metric = link2->metric = pcen_link_a->link->metric;
+    link1->maxBandwidth = link2->maxBandwidth = pcen_link_a->link->maxBandwidth;
+    link1->maxReservableBandwidth = link2->maxReservableBandwidth = pcen_link_a->link->maxBandwidth - pm.bandwidth;
+    for (int i = 0; i < 8; i++)
+    {
+        link1->unreservedBandwidth[i]= link2->unreservedBandwidth[i] = pcen_link_a->link->maxBandwidth - pm.bandwidth;
+        link1->unreservedBandwidth[i]= pcen_link_a->link->maxBandwidth - pm.bandwidth;
+    }
+    ISCD* iscd1 = new ISCD;
+    memset(iscd1, 0, sizeof(ISCD));
+    memcpy(iscd1->max_lsp_bw, link1->unreservedBandwidth, 8*sizeof(float));   
+    iscd1->encoding = (u_char)LINK_IFSWCAP_SUBTLV_ENC_PKT;
+    iscd1->swtype = (u_char)LINK_IFSWCAP_SUBTLV_SWCAP_PSC4;
+    link1->Iscds().push_back(iscd1);
+    ISCD* iscd2 = new ISCD;
+    *iscd2 = *iscd1;
+    link2->Iscds().push_back(iscd2);
+
+    for (itl = itx; itl != ity; itl++)
+    {
+        (*itl)->link->dependents.push_back(link1);
+        link1->dependings.push_back(*itl);
+    }
+    itx == pm.reverse_path.end();
+    for (itl = pm.reverse_path.begin(); itl != pm.reverse_path.end(); itl++)
+    {
+        if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+        {
+            if (itx == pm.reverse_path.end())
+                itx = itl;
+            (*itl)->link->dependents.push_back(link2);
+            link2->dependings.push_back(*itl);
+        }
+    }
+    itx--;
+    if (itx != pm.path.begin() && itx != pm.path.end())
+    {
+        (*itx)->link->dependents.push_back(link2);
+        link2->dependings.push_back(*itx);
+    }
+    
+    pcen_link_psc1->link = link1;
+    pcen_link_psc1->link_self_allocated = true;
+    pcen_link_psc2->link = link2;
+    pcen_link_psc2->link_self_allocated = true;
+    
+    links.push_back(pcen_link_psc1);
+    links.push_back(pcen_link_psc2);
+
+    return true;
 }
 

@@ -85,6 +85,7 @@ public:
     void SortMPaths(vector<PathM*>& Paths);
     int GetPathERO(list<Link*>& path, list<ero_subobj>& ero);
     PCENLink* GetPCENLinkByLink(Link* link);
+    bool CreatePSCLinksFromLambdaPath(PathM &pm);
 };
 
 #define ABS(X) ((X >= 0.0) ? (X) : -(X))
