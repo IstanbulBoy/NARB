@@ -31,10 +31,13 @@ public:
     virtual bool VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag, u_int32_t& pathWave);
     virtual inline void SortTwoPaths(PathM* &path1, PathM* &path2);
 
+    void AdjustLinkResourceBySchedule(PCENLink L, bool doAddOrDelete);
 };
 
 #define MAX_SCHEDULE_DURATION 3600
 #define BANDWIDTH_TIME_FACTOR 0.5
+inline u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2);
+inline u_int32_t GetPathOverLappingTime(PathM* path1, PathM* path2);
 
 #endif
 

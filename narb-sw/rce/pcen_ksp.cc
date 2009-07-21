@@ -711,7 +711,7 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag,
                             has_wave = true;
                     }
                 }
-                //$$$$ --->VLSR-->Movaz_RE link speical handling
+                //$$$$ PSC/L2SC-->LSC link DRAGON speical handling
                 p_freq = (u_int32_t*)(L->AttributeByTag("LSA/OPAQUE/TE/LINK/DRAGON_LAMBDA"));
                 if (has_wave && p_freq)
                     head_waveset.AddTag(ntohl(*p_freq)); //$$ freq = ANY_WAVE ?

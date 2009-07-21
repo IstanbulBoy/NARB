@@ -448,9 +448,9 @@ public:
     //LinkStateDelta operations
     Link& operator+= (LinkStateDelta& delta);
     Link& operator-= (LinkStateDelta& delta);
-    void insertDelta(LinkStateDelta* delta, int expire_sec=SystemConfig::delta_expire_reserve, int expire_usec=0);
+    void insertDelta(LinkStateDelta* delta, int expire_sec=SystemConfig::delta_expire_reserve, int expire_usec=0, bool doDelete = true);
     LinkStateDelta* lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum);
-    LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAddition=true);
+    LinkStateDelta* removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAdd=true);
     void deleteExpiredDeltas();
     void cleanupMaskoffDeltas();
     virtual void hook_PreUpdate(Resource* oldResource);

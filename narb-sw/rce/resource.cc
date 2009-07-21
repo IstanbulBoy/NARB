@@ -642,7 +642,7 @@ void Link::hook_PreUpdate(Resource * oldResource)
     modifiedTime = timeNow;
 }
 
-void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
+void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec, bool doDelete)
 {
     assert(delta);
     if (!pDeltaList)
@@ -671,7 +671,8 @@ void Link::insertDelta(LinkStateDelta* delta, int expire_sec, int expire_usec)
         }
     }
     //reducing link resource by the delta
-    (*this) -= (*delta);
+    if (doDelete)
+	    (*this) -= (*delta);
 }
 
 LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
@@ -691,7 +692,7 @@ LinkStateDelta* Link::lookupDeltaByOwner(u_int32_t ucid, u_int32_t seqnum)
     return NULL;
 }
 
-LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAddition)
+LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool doAdd)
 {
     if (!pDeltaList)
         return NULL;
@@ -705,7 +706,7 @@ LinkStateDelta* Link::removeDeltaByOwner(u_int32_t ucid, u_int32_t seqnum, bool 
         if (delta->owner_ucid == ucid && delta->owner_seqnum == seqnum)
         {
             this->pDeltaList->erase(iter);
-            if (doAddition) 
+            if (doAdd) 
             {
                 delta->flags &= ~DELTA_MASKOFF;
                 (*this) += (*delta);
