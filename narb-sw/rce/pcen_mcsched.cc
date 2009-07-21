@@ -7,6 +7,39 @@
 #include "pcen_mcsched.hh"
 #include "rce_movaz_types.hh"
 
+SchedulePacer* PCEN_MCSched::schedulePacer = NULL;
+
+void SchedulePacer::Run()
+{
+    struct timeval timenow;
+    gettimeofday(&timenow, NULL);
+    list<Link*>::iterator itl;
+    list<LinkStateDelta*>::iterator itd;
+    list<LinkStateDelta*>* pDeltaList;
+    LinkStateDelta* delta;
+    for (int i = 0; i < PCEN_MCBase::allPaths.size(); i++)
+    {
+        
+        for (itl = PCEN_MCBase::allPaths[i]->path.begin(); itl != PCEN_MCBase::allPaths[i]->path.end(); itl++)
+        {
+            pDeltaList = (*itl)->DeltaListPointer();
+            for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
+            {
+                delta = (*itd);
+                if ((delta->flags & DELTA_SCHEDULING) != 0)
+                {
+                    if (delta->start_time.tv_sec < timenow.tv_sec)
+                        delta->start_time.tv_sec = timenow.tv_sec;
+                    if (delta->end_time.tv_sec < timenow.tv_sec)
+                        itd = (*itl)->erase(itd);
+                }
+            }
+        }
+    }
+}
+
+
+
 bool PCEN_MCSched::PostBuildTopology()
 {
     return PCEN_MCBase::PostBuildTopology();
@@ -66,6 +99,14 @@ int  PCEN_MCSched::PerformComputation()
 void  PCEN_MCSched::Run()
 {
     int ret;
+
+    if (schedulePacer == NULL)
+    {
+        schedulePacer = new SchedulePacer(this, SCHEDULE_PACE);
+        schedulePacer->SetRepeats(FOREVER);
+        eventMaster.Schedule(schedulePacer);
+    }
+
     if ((ret = VerifyRequest()) != 0)
     {
         LOGF("PCEN_MCSched::VerifyRequest() failed for source[%X]-destination[%X]\n", source.s_addr, destination.s_addr);

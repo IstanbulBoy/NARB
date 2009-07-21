@@ -9,8 +9,24 @@
 
 #include "pcen_mcbase.hh"
 
+class PCEN_MCSched;
+class SchedulePacer: public Timer
+{
+private:
+    PCEN_MCSched * pcen;
+    SchedulePacer() {}
+
+public:
+    SchedulePacer(PCEN_MCSched* p, int pace): pcen(p), Timer(pace, 0) { }
+    virtual ~SchedulePacer() {}
+    void Run();
+};
+
 class PCEN_MCSched: public PCEN_MCBase
 {
+public:
+    static SchedulePacer* schedulePacer;
+
 public:
     PCEN_MCSched(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t encoding_ingress, float bw_ingress, u_int8_t sw_type_egress, u_int8_t encoding_egress, 
                 float bw_egress, u_int32_t opts, u_int32_t ucid, u_int32_t msg_seqnum, u_int32_t lspb_id = 0, u_int32_t tag = 0, u_int32_t hopback = 0, 
@@ -34,8 +50,10 @@ public:
     void AdjustLinkResourceBySchedule(PCENLink *L, bool doAddOrDelete);
 };
 
-#define MAX_SCHEDULE_DURATION 3600
+#define MAX_SCHEDULE_DURATION 3600 // in seconds
 #define BANDWIDTH_TIME_FACTOR 0.5
+#define SCHEDULE_PACE 10 // in seconds
+
 inline u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2);
 inline u_int32_t GetPathOverLappingTime(PathM* path1, PathM* path2);
 
