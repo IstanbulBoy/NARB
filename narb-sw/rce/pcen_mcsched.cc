@@ -35,6 +35,21 @@ void SchedulePacer::Run()
                 }
             }
         }
+        for (itl = PCEN_MCBase::allPaths[i]->reverse_path.begin(); itl != PCEN_MCBase::allPaths[i]->reverse_path.end(); itl++)
+        {
+            pDeltaList = (*itl)->DeltaListPointer();
+            for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
+            {
+                delta = (*itd);
+                if ((delta->flags & DELTA_SCHEDULING) != 0)
+                {
+                    if (delta->start_time.tv_sec < timenow.tv_sec)
+                        delta->start_time.tv_sec = timenow.tv_sec;
+                    if (delta->end_time.tv_sec < timenow.tv_sec)
+                        itd = pDeltaList->erase(itd);
+                }
+            }
+        }
     }
 }
 
