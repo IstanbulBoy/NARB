@@ -31,7 +31,7 @@ public:
     virtual bool VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag, u_int32_t& pathWave);
     virtual inline void SortTwoPaths(PathM* &path1, PathM* &path2);
 
-    void AdjustLinkResourceBySchedule(PCENLink L, bool doAddOrDelete);
+    void AdjustLinkResourceBySchedule(PCENLink *L, bool doAddOrDelete);
 };
 
 #define MAX_SCHEDULE_DURATION 3600

@@ -87,6 +87,8 @@ public:
     PCENLink* GetPCENLinkByLink(Link* link);
 };
 
+#define ABS(X) ((X >= 0.0) ? (X) : -(X))
+
 inline void SwapPaths(PathM* &path1, PathM* &path2);
 
 #endif

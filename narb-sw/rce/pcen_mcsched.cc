@@ -5,6 +5,7 @@
  */
 
 #include "pcen_mcsched.hh"
+#include "rce_movaz_types.hh"
 
 bool PCEN_MCSched::PostBuildTopology()
 {
@@ -121,11 +122,11 @@ void  PCEN_MCSched::Run()
     ReplyERO();
 	options = options_orig;
 
-	//add sheduling deltas w/o holding link resource
-	thePath.QueryHold(false);
+    //add sheduling deltas w/o holding link resource
+    thePath.QueryHold();
 }
 
-void PCEN_MCSched::AdjustLinkResourceBySchedule(PCENLink L, bool doAddOrDelete)
+void PCEN_MCSched::AdjustLinkResourceBySchedule(PCENLink *L, bool doAddOrDelete)
 {
     list<LinkStateDelta*>* pDeltaList;
     if (L != NULL && L->link != NULL && (pDeltaList = L->link->DeltaListPointer()) != NULL)

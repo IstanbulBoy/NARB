@@ -312,8 +312,6 @@ bool PCEN_MCBase::PostBuildTopology()
     return true;
 }
 
-#define ABS(X) ((X >= 0.0) ? (X) : -(X))
-
 int PCEN_MCBase::PickMCPCandidates(int M)
 {
     //get simple hop length of requested path. C_0 = HopLenXBW.
