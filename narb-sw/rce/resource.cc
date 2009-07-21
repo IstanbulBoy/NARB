@@ -105,7 +105,8 @@ TLP* Resource::GetAttribute(int attrIndex)
 {
     if (attrIndex < 0)
         return NULL;
-    assert(attrTable.size() > attrIndex);
+    if (attrTable.size() <= attrIndex)
+        return NULL;
     return &attrTable[attrIndex];
 }
 #endif
