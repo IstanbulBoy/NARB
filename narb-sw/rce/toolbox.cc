@@ -369,3 +369,11 @@ const char * value_to_string(struct string_value_conversion *db, u_int32_t value
 	return def_string;
 }
 
+char * time_to_string(time_t &rawtime)
+{
+    static char stime[16];
+    struct tm * ptm = gmtime(&rawtime);
+    sprintf(stime, "%02d:%02d:%02d", ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    return stime;
+}
+

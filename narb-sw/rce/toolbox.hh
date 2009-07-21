@@ -71,5 +71,7 @@ bool is_slash30_ipv4 (u_int32_t ip);
 
 u_int32_t get_slash30_peer(u_int32_t ip);
 
+char * time_to_string(time_t &rawtime); 
+
 #endif
 

@@ -1475,12 +1475,12 @@ static Link* link_to_update = NULL;
         LinkStateDelta* delta; \
         for (k = 1, it = pDeltaList->begin(); it != pDeltaList->end(); k++, it++) { \
             delta = *it; \
-            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s%s @ %d.%d<<<%s", cli_cstr_newline, k, \
+            CLI_OUT ("%s\t >>> Link State Delta [%d] - Status: %s%s%s%s @ %s.%d<<<%s", cli_cstr_newline, k, \
                 (delta->flags & DELTA_QUERIED) != 0 || (delta->expiration.tv_sec <= SystemConfig::delta_expire_query)  ? "Queried" : "", \
                 (delta->flags & DELTA_RESERVED) != 0 ? "-Reserved" : "", \
                 (delta->flags & DELTA_UPDATED) != 0 ? "-Updated" : "", \
                 (delta->flags & DELTA_MASKOFF) != 0 ? " (Maskoff)" : "", \
-                delta->create_time.tv_sec, delta->create_time.tv_usec, cli_cstr_newline); \
+                time_to_string(delta->create_time.tv_sec), delta->create_time.tv_usec, cli_cstr_newline); \
             CLI_OUT ("\t    ---> Used Bandwidth: %g (Mbps)%s", delta->bandwidth, cli_cstr_newline); \
             if (delta->flags & DELTA_VLANTAG) \
                 CLI_OUT ("\t    ---> Used VLAN tag: %d%s", delta->vlan_tag, cli_cstr_newline); \
@@ -1503,7 +1503,12 @@ static Link* link_to_update = NULL;
                 CLI_OUT("%s", cli_cstr_newline); \
             } \
             if ((delta->flags & DELTA_SCHEDULING) != 0)\
-                printf ("\t    ---> Scheduled time: %d--%d\n", delta->start_time.tv_sec, delta->end_time.tv_sec);\
+            {\
+                char t1[10], t2[10];\
+                strcpy(t1, time_to_string(delta->start_time.tv_sec));\
+                strcpy(t2, time_to_string(delta->end_time.tv_sec));\
+                CLI_OUT ("\t    ---> Scheduled time: %s--%s%s", t1, t2, cli_cstr_newline);\
+            }\
         } \
     } \
 

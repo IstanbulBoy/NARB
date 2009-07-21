@@ -70,13 +70,13 @@ void PathM::QueryHold()
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = wavelength;
         }
-		bool doHoldOnLink = true;
+        bool doHoldOnLink = true;
         if (start_time.tv_sec != 0)
         {
             delta->flags |= DELTA_SCHEDULING;
             delta->start_time = start_time;
-            delta->end_time = start_time;
-			doHoldOnLink = false;
+            delta->end_time = end_time;
+            doHoldOnLink = false;
         }
         //insert delta
         (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0, doHoldOnLink);
@@ -96,13 +96,13 @@ void PathM::QueryHold()
             delta->flags |= DELTA_WAVELENGTH;
             delta->wavelength = wavelength;
         }
-		bool doHoldOnLink = true;
+        bool doHoldOnLink = true;
         if (start_time.tv_sec != 0)
         {
             delta->flags |= DELTA_SCHEDULING;
             delta->start_time = start_time;
-            delta->end_time = start_time;
-			doHoldOnLink = false;
+            delta->end_time = end_time;
+            doHoldOnLink = false;
         }
         //insert delta
         (*itl)->insertDelta(delta, SystemConfig::delta_expire_query, 0, doHoldOnLink);
