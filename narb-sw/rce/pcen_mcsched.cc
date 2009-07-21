@@ -31,7 +31,7 @@ void SchedulePacer::Run()
                     if (delta->start_time.tv_sec < timenow.tv_sec)
                         delta->start_time.tv_sec = timenow.tv_sec;
                     if (delta->end_time.tv_sec < timenow.tv_sec)
-                        itd = (*itl)->erase(itd);
+                        itd = pDeltaList->erase(itd);
                 }
             }
         }

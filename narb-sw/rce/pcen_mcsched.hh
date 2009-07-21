@@ -14,7 +14,7 @@ class SchedulePacer: public Timer
 {
 private:
     PCEN_MCSched * pcen;
-    SchedulePacer() {}
+    SchedulePacer(): pcen(NULL), Timer(0,0) {}
 
 public:
     SchedulePacer(PCEN_MCSched* p, int pace): pcen(p), Timer(pace, 0) { }
