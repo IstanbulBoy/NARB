@@ -177,7 +177,7 @@ void PCEN_MCSched::AdjustLinkResourceBySchedule(PCENLink *L, bool doAddOrDelete)
         for (; itd != pDeltaList->end(); itd++)
         {
             delta = (*itd);
-            if (delta->flags & DELTA_SCHEDULING && OverLappingTime(thePath.start_time, thePath.end_time, delta->start_time, delta->end_time)> 0)
+            if ((delta->flags & DELTA_SCHEDULING) != 0 && OverLappingTime(thePath.start_time, thePath.end_time, delta->start_time, delta->end_time)> 0)
                 if (doAddOrDelete)
                     *L->link += *delta;
                 else
@@ -276,6 +276,8 @@ bool PCEN_MCSched::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathV
         {
             L->rmt_end->tspec = L->lcl_end->tspec;
         }
+
+        AdjustLinkResourceBySchedule(L, true); //add/release scheduled resources
     }
 
     pathVtag = next_vtagset.LowestTag();
@@ -285,7 +287,7 @@ bool PCEN_MCSched::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathV
 
 _restore_and_quit:
     AdjustLinkResourceBySchedule(L, true); //add/release scheduled resources
-
+    return false;
 }
 
 u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2)
