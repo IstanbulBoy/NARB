@@ -849,7 +849,7 @@ bool PCEN_MCBase::CreatePSCLinksFromLambdaPath(PathM &pm)
 
     for (itl = itx; itl != ity; itl++)
     {
-        (*itl)->link->dependents.push_back(link1);
+        (*itl)->dependents.push_back(link1);
         link1->dependings.push_back(*itl);
     }
     itx == pm.reverse_path.end();
@@ -859,14 +859,14 @@ bool PCEN_MCBase::CreatePSCLinksFromLambdaPath(PathM &pm)
         {
             if (itx == pm.reverse_path.end())
                 itx = itl;
-            (*itl)->link->dependents.push_back(link2);
+            (*itl)->dependents.push_back(link2);
             link2->dependings.push_back(*itl);
         }
     }
     itx--;
     if (itx != pm.path.begin() && itx != pm.path.end())
     {
-        (*itx)->link->dependents.push_back(link2);
+        (*itx)->dependents.push_back(link2);
         link2->dependings.push_back(*itx);
     }
     
