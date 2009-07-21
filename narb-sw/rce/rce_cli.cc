@@ -1502,6 +1502,8 @@ static Link* link_to_update = NULL;
                 } \
                 CLI_OUT("%s", cli_cstr_newline); \
             } \
+            if ((delta->flags & DELTA_SCHEDULING) != 0)\
+                printf ("\t    ---> Scheduled time: %d--%d\n", delta->start_time.tv_sec, delta->end_time.tv_sec);\
         } \
     } \
 

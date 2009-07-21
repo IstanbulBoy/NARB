@@ -494,9 +494,13 @@ int main(int argc, char* argv[])
             break;
         case 'R':
             {
-                if (sscanf(optarg, "%d:%d", &start_time, &end_time) != 2 || start_time == 0 || end_time <= start_time)
+                if (sscanf(optarg, "%d:%d", &start_time, &end_time) == 2)
+					end_time += start_time;
+                else 
+					sscanf(optarg, "%d-%d", &start_time, &end_time);
+				if(start_time == 0 || end_time <= start_time)
                 {
-                    printf("Wrong scheduling time format: start-time:end-time in seconds from now\n");
+                    printf("Wrong scheduling time format: start_time-end_time in seconds from now or start_time:duration \n");
                     exit(-1);
                 }
                 struct timeval timenow;
