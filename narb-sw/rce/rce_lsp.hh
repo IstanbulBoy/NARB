@@ -125,6 +125,7 @@ enum  narb_tlv_type
     TLV_TYPE_NARB_USER_SUPPLIED_ERO = 0x13,
     TLV_TYPE_NARB_PEER_REQUEST = 0x41,
     TLV_TYPE_NARB_PCE_SPEC = 0x42,
+    TLV_TYPE_NARB_SCHEDULING = 0x43,
 };
 
 struct narb_lsp_request_tlv
@@ -200,6 +201,14 @@ struct narb_lsp_holding_time_tlv
     u_int32_t seconds;
 };
 
+struct narb_lsp_scheduling_tlv
+{
+    u_int16_t type;
+    u_int16_t length;
+    u_int32_t start_time;
+    u_int32_t end_time;
+};
+
 // data structure of an IPv4 prefix type ERO sub-object
 struct ipv4_prefix_subobj
 {
@@ -245,6 +254,8 @@ private:
     u_int32_t hop_back;
     u_int32_t src_lcl_id;
     u_int32_t dest_lcl_id;
+    u_int32_t schedule_start;
+    u_int32_t schedule_end;
     list<ero_subobj> user_ero;
     list<ero_subobj> subnet_ero;
     bool is_subnet_ero2dtl_enabled;
@@ -258,7 +269,7 @@ private:
             switching_type_ingress = switching_type_egress = 0; bandwidth_ingress = bandwidth_egress =0;
             options = 0; tag = 0; ucid = seqnum = 0xffffffff; lspb_id = 0; uptime = 0; duration = 0xffffffff;
             api_writer = NULL;  pce_spec = NULL; vtag_mask = NULL; hop_back = 0; src_lcl_id = dest_lcl_id = 0; 
-            is_subnet_ero2dtl_enabled = false;
+            schedule_start = schedule_end = 0; is_subnet_ero2dtl_enabled = false;
         }
 public:
     LSPHandler(int fd): caller_fd(fd) { Init();}

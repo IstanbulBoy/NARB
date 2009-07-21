@@ -87,6 +87,7 @@ enum PceAlgorithm
     MRN_CG,
     MRN_DCN,
     MC_BASE,
+    MC_SCHEDULE,
 };
 
 class SystemConfig

@@ -39,6 +39,7 @@
 #include "pcen_mrn_cg.hh"
 #include "pcen_dcn.hh"
 #include "pcen_mcbase.hh"
+#include "pcen_mcsched.hh"
 #include "pcen_test.hh"
 #include "rce_lsp.hh"
 
@@ -131,6 +132,11 @@ void LSPHandler::SetOptionalConstraints(api_msg* msg)
             tlv_len = sizeof(narb_lsp_local_id_tlv);
             src_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_src);
             dest_lcl_id = ntohl(((narb_lsp_local_id_tlv*)tlv)->lclid_dest);
+            break;
+        case TLV_TYPE_NARB_SCHEDULING:
+            tlv_len = sizeof(narb_lsp_scheduling_tlv);
+            schedule_start = ntohl(((narb_lsp_scheduling_tlv*)tlv)->start_time);
+            schedule_end = ntohl(((narb_lsp_scheduling_tlv*)tlv)->end_time);
             break;
         case TLV_TYPE_NARB_USER_SUPPLIED_ERO:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
@@ -241,6 +247,13 @@ void LSPHandler::Run()
                 pcen_event = new PCEN_MCBase(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
                     switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
                     src_lcl_id, dest_lcl_id, vtag_mask);
+                break;
+            case MC_SCHEDULE:
+                options |= LSP_OPT_MRN;
+                pcen_event = new PCEN_MCSched(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
+                    switching_type_egress, encoding_type_egress, bandwidth_egress, options, ucid, seqnum, lspb_id, tag, hop_back,
+                    src_lcl_id, dest_lcl_id, vtag_mask);
+                ((PCEN_MCSched*)pcen_event)->SetSchedulingTime(schedule_start, schedule_end);
                 break;
             case MRN_DEFAULT:
             default:
