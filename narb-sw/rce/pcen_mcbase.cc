@@ -9,6 +9,8 @@
 
 vector<PathM*> PCEN_MCBase::allPaths;
 
+#define CROSS_LAYER_GROOMING 1
+
 //#define SHOW_MCPATH 1
 
 ///////////////////  PathM /////////////////////////
@@ -121,9 +123,28 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                //@@@@ logic to update depending/dependent links
-                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
-                    *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0) //$$$$ Link += Delta only for IR (immediate request)
+                {
+#ifdef CROSS_LAYER_GROOMING
+                    //$$$$logic to update residual/dependent link
+                    if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && (*itl)->dependents.size() > 0)
+                    {
+                        //adding bandwidth to residual link (only once)
+                        if ((*itl)->dependents.front()->dependings.size() > 0 && (*itl)->dependents.front()->dependings.front() == (*itl))
+                        {
+                            for (int i = 0; i < 8; i++) 
+                            {
+                                (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] += (*itd)->bandwidth;
+                                if ((*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] > (*itl)->dependents.front()->maxReservableBandwidth)
+                                    (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] = (*itl)->dependents.front()->maxReservableBandwidth;
+                            }
+                        }
+                    }
+                    else
+#endif
+                        *(*itl) += *(*itd); 
+                }
+
                 if (doDelete)
                     (*itl)->pDeltaList->erase(itd);
                 else
@@ -143,9 +164,28 @@ void PathM::Release(bool doDelete)
         {   
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                //@@@@ logic to update depending/dependent links
                 if (((*itd)->flags & DELTA_SCHEDULING) == 0)
-                    *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
+                {
+#ifdef CROSS_LAYER_GROOMING
+                    //$$$$logic to update residual/dependent links
+                    if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && (*itl)->dependents.size() > 0)
+                    {
+                        //adding bandwidth to residual link (only once)
+                        if ((*itl)->dependents.front()->dependings.size() > 0 && (*itl)->dependents.front()->dependings.front() == (*itl))
+                        {
+                            for (int i = 0; i < 8; i++) 
+                            {
+                                (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] += (*itd)->bandwidth;
+                                if ((*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] > (*itl)->dependents.front()->maxReservableBandwidth)
+                                    (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] = (*itl)->dependents.front()->maxReservableBandwidth;
+                            }
+                        }
+                    }
+                    else
+#endif
+                        *(*itl) += *(*itd); //$$$$ Link += Delta only for IR (immediate request)
+                }
+
                 if (doDelete)
                     (*itl)->pDeltaList->erase(itd);
                 else
@@ -168,9 +208,29 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                //@@@@ logic to update depending/dependent links
-                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
-                    *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0) //$$$$ Link -= Delta only for IR (immediate request)
+                {
+#ifdef CROSS_LAYER_GROOMING
+                    //$$$$logic to update residual/dependent links
+                    if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && (*itl)->dependents.size() > 0)
+                    {
+                        //substracting bandwidth from residual link (only once)
+                        if ((*itl)->dependents.front()->dependings.size() > 0 && (*itl)->dependents.front()->dependings.front() == (*itl))
+                        {
+                            for (int i = 0; i < 8; i++) 
+                            {
+                                (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] -= (*itd)->bandwidth;
+                                if ((*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] < 0)
+                                    (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] = 0;
+                            }
+                        }
+                    }
+                    else
+#endif
+                        *(*itl) -= *(*itd); 
+
+                }
+
                 (*itd)->flags &= (~DELTA_MASKOFF);
                 break;
             }
@@ -187,9 +247,28 @@ void PathM::Rehold()
         {
             if ((*itd)->owner_ucid == this->ucid && (*itd)->owner_seqnum == this->seqnum)
             {
-                //@@@@ logic to update depending/dependent links
-                if (((*itd)->flags & DELTA_SCHEDULING) == 0)
-                    *(*itl) -= *(*itd); //$$$$ Link -= Delta only for IR (immediate request)
+                if (((*itd)->flags & DELTA_SCHEDULING) == 0) //$$$$ Link -= Delta only for IR (immediate request)
+                {
+#ifdef CROSS_LAYER_GROOMING
+                    //$$$$logic to update residual/dependent links
+                    if ((*itl)->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && (*itl)->dependents.size() > 0)
+                    {
+                        //substracting bandwidth from residual link (only once)
+                        if ((*itl)->dependents.front()->dependings.size() > 0 && (*itl)->dependents.front()->dependings.front() == (*itl))
+                        {
+                            for (int i = 0; i < 8; i++) 
+                            {
+                                (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] -= (*itd)->bandwidth;
+                                if ((*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] < 0)
+                                    (*itl)->dependents.front()->Iscds().front()->max_lsp_bw[i] = 0;
+                            }
+                        }
+                    }
+                    else
+#endif
+                        *(*itl) -= *(*itd); 
+                }
+
                 (*itd)->flags &= (~DELTA_MASKOFF);
                 break;
             }
@@ -505,8 +584,11 @@ int PCEN_MCBase::PerformComputation()
                     LSPHandler::UpdateLinkStatesByERO(lsp_req, ero, sortedMCPaths[i].ucid, sortedMCPaths[i].seqnum, is_bidir);
                     */
             sortedMCPaths[i].QueryHold();
+#ifdef CROSS_LAYER_GROOMING
             if (sortedMCPaths[i].wavelength != 0)
                 CreatePSCLinksFromLambdaPath(sortedMCPaths[i]);
+#endif
+
 #ifdef SHOW_MCPATH
             printf("**** Recompute and rehold sortedMCPaths[%d]****\n", i);
             sortedMCPaths[i].Display(); 
@@ -869,11 +951,12 @@ bool PCEN_MCBase::CreatePSCLinksFromLambdaPath(PathM &pm)
         (*itx)->dependents.push_back(link2);
         link2->dependings.push_back(*itx);
     }
-    
+
+    //$$$$ keep the new links even after PCEN topology destruction
     pcen_link_psc1->link = link1;
-    pcen_link_psc1->link_self_allocated = true;
+    //pcen_link_psc1->link_self_allocated = true;
     pcen_link_psc2->link = link2;
-    pcen_link_psc2->link_self_allocated = true;
+    //pcen_link_psc2->link_self_allocated = true;
     
     links.push_back(pcen_link_psc1);
     links.push_back(pcen_link_psc2);
