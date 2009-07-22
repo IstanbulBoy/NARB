@@ -350,6 +350,25 @@ void PathM::Display()
 
 //////////////////  PCEN_MCBase  ///////////////////
 
+int PCEN_MCBase::VerifyRequest()
+{
+    if ((options & LSP_OPT_FORCE_DELETE) != 0)
+    {
+        vector<PathM*>::iterator it = allPaths.begin();
+        for (; it != allPaths.end(); it++)
+        {
+            if ((*it)->ucid == ucid && (*it)->seqnum == seqnum)
+            {
+                (*it)->Release(true);
+                allPaths.erase(it);
+                return ERR_PCEN_UNKNOWN;
+            }
+        }
+    }
+
+    return PCEN::VerifyRequest();
+}
+
 bool PCEN_MCBase::PostBuildTopology()
 {
     //initiating reverse links and Tspec

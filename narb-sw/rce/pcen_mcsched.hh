@@ -51,8 +51,8 @@ public:
 };
 
 #define MAX_SCHEDULE_DURATION 3600 // in seconds
-#define BANDWIDTH_TIME_FACTOR 0.5
-#define SCHEDULE_PACE 10 // in seconds
+#define BANDWIDTH_TIME_FACTOR 0.9
+#define SCHEDULE_PACE 5 // in seconds
 
 inline u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2);
 inline u_int32_t GetPathOverLappingTime(PathM* path1, PathM* path2);

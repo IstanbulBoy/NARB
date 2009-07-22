@@ -77,11 +77,20 @@ int PCEN_MCSched::PickMCPCandidates(int M)
     thePath.cost = thePath.path.size()*thePath.bandwidth;
 
     //go through allPaths to find up to (M-1) Paths that are closest to CT_0 by sorting CT_x (HopLenxBWxOverlapTime) 
+    struct timeval timenow;
+    gettimeofday(&timenow, NULL);
     MCPaths.clear();
-    if (allPaths.size() > 0)
-        MCPaths.push_back(allPaths.front());
     for (int i = 1; i < allPaths.size(); i++)
     {
+        if (allPaths[i]->start_time.tv_sec <= timenow.tv_sec)
+            continue;
+
+        if (MCPaths.size() == 0)
+        {
+            MCPaths.push_back(allPaths.front());
+            continue;
+        }
+
         //assign CT_x
         double overlap = GetPathOverLappingTime(&thePath, allPaths[i]);
         allPaths[i]->cost = allPaths[i]->path.size()*allPaths[i]->bandwidth
@@ -89,7 +98,7 @@ int PCEN_MCSched::PickMCPCandidates(int M)
         int j;
         for (j = 0; j < MCPaths.size(); j++)
         {
-            if (ABS(allPaths[i]->cost - thePath.cost) < ABS(MCPaths[j]->cost - thePath.cost))
+            if (allPaths[i]->cost > MCPaths[j]->cost)
             {
                 MCPaths.insert(MCPaths.begin()+j, allPaths[i]);
                 break;

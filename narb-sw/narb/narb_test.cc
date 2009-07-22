@@ -83,6 +83,7 @@ u_int32_t opt_query_hold = 0;
 u_int32_t opt_query_with_confirmation = 0;
 u_int32_t opt_alt_paths = 0;
 u_int32_t opt_query_subnet_ero = 0;
+u_int32_t opt_force_delete = 0;
 in_addr hop_back;
 
 struct msg_narb_vtag_mask vtag_mask;
@@ -380,7 +381,7 @@ api_msg* narbapi_query_lsp (u_int32_t options, u_int32_t ucid, u_int32_t seqnum,
   narb_msg = api_msg_new(MSG_APP_REQUEST, bodylen, (void*)msgbody, ucid, seqnum, vtag);
   narb_msg->header.msgtag[0] = htonl(options | opt_bidirectional | opt_strict | opt_preferred |opt_mrn |
         opt_e2e_vlan | opt_via_movaz | opt_excluded_layers | opt_req_all_vtags | opt_vtag_mask |
-        opt_query_hold | opt_query_with_confirmation | opt_query_subnet_ero | opt_alt_paths);
+        opt_query_hold | opt_query_with_confirmation | opt_query_subnet_ero | opt_alt_paths | opt_force_delete);
 
   if (narbapi_send(sock, narb_msg) < 0)
   {
@@ -440,6 +441,9 @@ int main(int argc, char* argv[])
     char* xml_file = NULL;
     Log::Init(LOG_ALL, "./test_narb.log");
     Log::SetDebug(true);
+    srandom(getpid() + getppid() + time(NULL));
+    u_int32_t ucid = random();
+    u_int32_t seqnum = random();
 
     strcpy(host, "localhost");
     source.s_addr = destination.s_addr = hop_back.s_addr = 0;
@@ -448,7 +452,7 @@ int main(int argc, char* argv[])
     {
         int opt;
 
-        opt = getopt_long (argc, argv, "E:H:P:R:S:D:X:b:e:l:k:t:v:x:CLMOQUVZmas", longopts, 0);
+        opt = getopt_long (argc, argv, "E:H:P:R:S:D:X:b:e:g:l:k:t:v:x:CLMOQUVZmads", longopts, 0);
         if (opt == EOF)
             break;
 
@@ -463,8 +467,20 @@ int main(int argc, char* argv[])
         case 'b':
             sscanf(optarg, "%f", &bandwidth);
             break;            
+        case 'd':
+            opt_force_delete = LSP_OPT_FORCE_DELETE;
+            break;            
         case 'e':
             sscanf(optarg, "%d", &encoding);
+            break;
+        case 'g':
+            {
+                if (sscanf(optarg, "%lu:%lu", &ucid, &seqnum) != 2)
+                {
+                    printf("Wrong user-specified GRI format. The correct format is -l X:Y (ucid:seqnum)\n");
+                    exit(-1);
+                }
+            }
             break;
         case 'l':
             {
@@ -495,10 +511,10 @@ int main(int argc, char* argv[])
         case 'R':
             {
                 if (sscanf(optarg, "%d:%d", &start_time, &end_time) == 2)
-					end_time += start_time;
+                    end_time += start_time;
                 else 
-					sscanf(optarg, "%d-%d", &start_time, &end_time);
-				if(start_time == 0 || end_time <= start_time)
+                    sscanf(optarg, "%d-%d", &start_time, &end_time);
+                if(start_time == 0 ||  end_time <= start_time)
                 {
                     printf("Wrong scheduling time format: start_time-end_time in seconds from now or start_time:duration \n");
                     exit(-1);
@@ -615,9 +631,6 @@ int main(int argc, char* argv[])
     }
 
     msg_app2narb_request * app_req = new_app_request();
-    srandom(getpid() + getppid() + time(NULL));
-    u_int32_t ucid = random();
-    u_int32_t seqnum = random();
 
     api_msg * narb_reply =  narbapi_query_lsp(0, ucid, seqnum, app_req);
 

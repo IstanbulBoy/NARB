@@ -75,6 +75,7 @@ public:
         { thePath.source.s_addr = source.s_addr; thePath.destination.s_addr = destination.s_addr; thePath.ucid = ucid; thePath.seqnum = seqnum;  thePath.bandwidth= bandwidth_ingress; }
 
     virtual ~PCEN_MCBase() {}
+    virtual int VerifyRequest();
     virtual bool PostBuildTopology();
     virtual int PickMCPCandidates(int M); //new
     virtual int PerformComputation();

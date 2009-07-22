@@ -90,6 +90,8 @@ enum narb_working_mode {
 #define LSP_OPT_SUBNET_ERO  ((u_int32_t)(0x0400 << 16)) //returning subnet ERO TLV if any
 #define LSP_OPT_SUBNET_DTL  ((u_int32_t)(0x0800 << 16)) //returning subnet DTL TLV if any
 #define LSP_OPT_ALT_PATHS  ((u_int32_t)(0x1000 << 16)) //returning alternate paths (ERO + subnetERO)
+// For Simulation
+#define LSP_OPT_FORCE_DELETE  ((u_int32_t)(0x4000 << 16))
 
 struct indexed_ero
 {
