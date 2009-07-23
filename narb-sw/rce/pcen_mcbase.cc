@@ -364,6 +364,7 @@ int PCEN_MCBase::VerifyRequest()
                 return ERR_PCEN_UNKNOWN;
             }
         }
+        return ERR_PCEN_UNKNOWN;
     }
 
     return PCEN::VerifyRequest();
