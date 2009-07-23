@@ -18,7 +18,7 @@ void SchedulePacer::Run()
     list<LinkStateDelta*>* pDeltaList;
     LinkStateDelta* delta;
     vector<PathM*>::iterator itp = PCEN_MCBase::allPaths.begin();
-    for (; itp != PCEN_MCBase::allPaths.end(); itp++)
+    for (; PCEN_MCBase::allPaths.size() > 0 && itp != PCEN_MCBase::allPaths.end(); itp++)
     {
         bool expired = false;
         for (itl = (*itp)->path.begin(); itl != (*itp)->path.end(); itl++)
