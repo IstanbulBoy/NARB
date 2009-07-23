@@ -9,7 +9,7 @@
 
 vector<PathM*> PCEN_MCBase::allPaths;
 
-#define CROSS_LAYER_GROOMING 1
+//#define CROSS_LAYER_GROOMING 1
 
 //#define SHOW_MCPATH 1
 
