@@ -493,6 +493,34 @@ void PCEN_KSP::MaskParentPath(PathT *ParentPath){
     }
 }
 
+
+int PCEN_KSP::VerifyRequest()
+{
+    if ((options & LSP_OPT_FORCE_DELETE) != 0)
+    {
+        vector<PCENLink*>::iterator it = links.begin();
+        for (; it != links.end(); it++)
+        {
+            list<LinkStateDelta*>* pDeltaList;
+            if ((*it)->link == NULL || (pDeltaList = (*it)->link->DeltaListPointer()) == NULL)
+                continue;
+            list<LinkStateDelta*>::iterator itd;
+            for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
+            {
+                if ((*itd)->owner_ucid == ucid && (*itd)->owner_seqnum == seqnum)
+                 {
+                     *(*it)->link += *(*itd);
+                     pDeltaList->erase(itd);
+                     return ERR_PCEN_UNKNOWN;
+                 }
+            }
+        }
+        return ERR_PCEN_UNKNOWN;
+    }
+
+    return PCEN::VerifyRequest();
+}
+
 bool PCEN_KSP::PostBuildTopology()
 {
     //pruning/trimming links that have insufficient bandwidth
