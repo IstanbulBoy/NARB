@@ -17,10 +17,11 @@ void SchedulePacer::Run()
     list<LinkStateDelta*>::iterator itd;
     list<LinkStateDelta*>* pDeltaList;
     LinkStateDelta* delta;
-    for (int i = 0; i < PCEN_MCBase::allPaths.size(); i++)
+    vector<PathM*>::iterator itp = PCEN_MCBase::allPaths.begin();
+    for (; itp != PCEN_MCBase::allPaths.end(); itp++)
     {
-        
-        for (itl = PCEN_MCBase::allPaths[i]->path.begin(); itl != PCEN_MCBase::allPaths[i]->path.end(); itl++)
+        bool expired = false;
+        for (itl = (*itp)->path.begin(); itl != (*itp)->path.end(); itl++)
         {
             pDeltaList = (*itl)->DeltaListPointer();
             for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
@@ -31,11 +32,14 @@ void SchedulePacer::Run()
                     if (delta->start_time.tv_sec < timenow.tv_sec)
                         delta->start_time.tv_sec = timenow.tv_sec;
                     if (delta->end_time.tv_sec < timenow.tv_sec)
+                    {
                         itd = pDeltaList->erase(itd);
+                        expired = true;
+                    }
                 }
             }
         }
-        for (itl = PCEN_MCBase::allPaths[i]->reverse_path.begin(); itl != PCEN_MCBase::allPaths[i]->reverse_path.end(); itl++)
+        for (itl = (*itp)->reverse_path.begin(); itl != (*itp)->reverse_path.end(); itl++)
         {
             pDeltaList = (*itl)->DeltaListPointer();
             for (itd = pDeltaList->begin(); itd != pDeltaList->end(); itd++)
@@ -46,10 +50,15 @@ void SchedulePacer::Run()
                     if (delta->start_time.tv_sec < timenow.tv_sec)
                         delta->start_time.tv_sec = timenow.tv_sec;
                     if (delta->end_time.tv_sec < timenow.tv_sec)
+                    {
                         itd = pDeltaList->erase(itd);
+                        expired = true;
+                    }
                 }
             }
         }
+        if (expired)
+            itp = PCEN_MCBase::allPaths.erase(itp);
     }
 }
 
