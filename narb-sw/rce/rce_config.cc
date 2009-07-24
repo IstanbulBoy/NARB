@@ -275,6 +275,8 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 SystemConfig::pce_algorithm = MC_BASE;
             else if (strstr(blk_body, "mc-sched") != NULL)
                 SystemConfig::pce_algorithm = MC_SCHEDULE;
+            else if (strstr(blk_body, "mc-dora") != NULL)
+                SystemConfig::pce_algorithm = MC_DORA;
             else if (strstr(blk_body, "spf") != NULL)
                 SystemConfig::pce_algorithm = SPF;
             else if (strstr(blk_body, "test") != NULL)
@@ -284,14 +286,14 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 SystemConfig::pce_algorithm = MRN_DEFAULT;
                 LOG("ReadConfigParameter failed on pce-algorithm, set to 'mrn-default'"<<endl);
             }
-            if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG || SystemConfig::pce_algorithm == MC_BASE)
+            if (SystemConfig::pce_algorithm == MRN_KSP || SystemConfig::pce_algorithm == MRN_CG || SystemConfig::pce_algorithm == MC_BASE || SystemConfig::pce_algorithm == MC_SCHEDULE || SystemConfig::pce_algorithm == MC_DORA)
             {
                 if (ReadConfigParameter(blk_body, (char*)"ksp-k", (char*)"%d", &SystemConfig::pce_k) == 0)
                 {
                     LOG("ReadConfigParameter set ksp-k to deault value: " <<SystemConfig::pce_k <<endl);
                 }
             }
-            if (SystemConfig::pce_algorithm == MC_BASE || SystemConfig::pce_algorithm == MC_SCHEDULE)
+            if (SystemConfig::pce_algorithm == MC_BASE || SystemConfig::pce_algorithm == MC_SCHEDULE || SystemConfig::pce_algorithm == MC_DORA)
             {
                 if (ReadConfigParameter(blk_body, (char*)"mc-m", (char*)"%d", &SystemConfig::pce_m) == 0)
                 {
