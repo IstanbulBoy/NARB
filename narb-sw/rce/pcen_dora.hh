@@ -10,7 +10,7 @@
 #include "pcen_mcsched.hh"
 
 
-#define PCEN_DORA_MAX_NODE_NUM 30
+#define PCEN_DORA_MAX_NODE_NUM 50
 #define PCEN_DORA_MAX_LINK_NUM 200
 #define BWP 0.7 
 
