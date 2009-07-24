@@ -38,8 +38,6 @@
 #include <list>
 #include <vector>
 
-#define PCEN_VERYBIG_COST 1000000 // cost to assign on reverse links in searching for max-diverse path
-
 inline bool operator==(list<ero_subobj>& path1, list<ero_subobj>& path2);
 
 class PCEN_DCN: public PCEN_MRN

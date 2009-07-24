@@ -93,11 +93,11 @@ sysconf_DATA = schema_combo.rsd.sample
 sbin_PROGRAMS = rce rce_test
 
 rce_SOURCES = \
-	rce_main.cc event.cc rce_version.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_mcbase.cc pcen_mcsched.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
+	rce_main.cc event.cc rce_version.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_mcbase.cc pcen_mcsched.cc pcen_dora.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
 
 
 rce_test_SOURCES = \
-	rce_test.cc event.cc rce_version.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_mcbase.cc pcen_mcsched.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
+	rce_test.cc event.cc rce_version.cc rce_log.cc resource.cc rce_api.cc rce_apiserver.cc rce_lsa.cc rce_config.cc toolbox.cc rce_pcen.cc rce_lsp.cc rce_filter.cc zebra_ospfclient.cc rce_schema.cc rce_cli.cc rce_clicmd.cc cmdtree.cc pcen_ksp.cc pcen_mrn.cc pcen_mrn_cg.cc pcen_dcn.cc pcen_mcbase.cc pcen_mcsched.cc pcen_dora.cc pcen_test.cc rce_subnet.cc terce_apiclient.cc
 
 
 rce_LDADD = -lc -lstdc++ -lz -L/usr/lib -L/usr/local/lib
@@ -117,7 +117,8 @@ am_rce_OBJECTS = rce_main.$(OBJEXT) event.$(OBJEXT) rce_version.$(OBJEXT) rce_lo
 	zebra_ospfclient.$(OBJEXT) rce_schema.$(OBJEXT) \
 	rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) cmdtree.$(OBJEXT) \
 	pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) pcen_mrn_cg.$(OBJEXT) \
-	pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) pcen_mcsched.$(OBJEXT) pcen_test.$(OBJEXT) \
+	pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) pcen_mcsched.$(OBJEXT) \
+	pcen_dora.$(OBJEXT) pcen_test.$(OBJEXT) \
 	rce_subnet.$(OBJEXT) terce_apiclient.$(OBJEXT)
 rce_OBJECTS = $(am_rce_OBJECTS)
 rce_DEPENDENCIES =
@@ -130,7 +131,7 @@ am_rce_test_OBJECTS = rce_test.$(OBJEXT) event.$(OBJEXT) rce_version.$(OBJEXT) \
 	rce_schema.$(OBJEXT) rce_cli.$(OBJEXT) rce_clicmd.$(OBJEXT) \
 	cmdtree.$(OBJEXT) pcen_ksp.$(OBJEXT) pcen_mrn.$(OBJEXT) \
 	pcen_mrn_cg.$(OBJEXT) pcen_dcn.$(OBJEXT) pcen_mcbase.$(OBJEXT) \
-	pcen_mcsched.$(OBJEXT) \
+	pcen_mcsched.$(OBJEXT) pcen_dora.$(OBJEXT)\
 	pcen_test.$(OBJEXT) rce_subnet.$(OBJEXT) terce_apiclient.$(OBJEXT)
 rce_test_OBJECTS = $(am_rce_test_OBJECTS)
 rce_test_DEPENDENCIES =
@@ -145,7 +146,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_ksp.Po ./$(DEPDIR)/pcen_mrn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_mrn_cg.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_dcn.Po ./$(DEPDIR)/pcen_mcbase.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pcen_mcsched.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/pcen_mcsched.Po ./$(DEPDIR)/pcen_dora.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pcen_test.Po ./$(DEPDIR)/rce_api.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_apiserver.Po ./$(DEPDIR)/rce_cli.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rce_clicmd.Po ./$(DEPDIR)/rce_config.Po \
@@ -255,6 +256,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcen_dcn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcen_mcbase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcen_mcsched.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcen_dora.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcen_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rce_apiserver.Po@am__quote@
