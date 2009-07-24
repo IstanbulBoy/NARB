@@ -53,6 +53,7 @@ public:
     virtual int VerifyRequest();
     virtual bool PostBuildTopology();
     virtual void Run();
+    bool CreatePSCLinksFromLambdaPath(PathT &pt);
 };
 
 class PathT {

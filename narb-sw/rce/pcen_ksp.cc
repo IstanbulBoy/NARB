@@ -498,6 +498,7 @@ int PCEN_KSP::VerifyRequest()
 {
     if ((options & LSP_OPT_FORCE_DELETE) != 0)
     {
+        Link* psc_link = NULL;
         vector<PCENLink*>::iterator it = links.begin();
         for (; it != links.end(); it++)
         {
@@ -511,9 +512,21 @@ int PCEN_KSP::VerifyRequest()
                  {
                      *(*it)->link += *(*itd);
                      pDeltaList->erase(itd);
+                     if ((*it)->link->dependents.size() > 0 && psc_link == NULL)
+                        psc_link = (*it)->link->dependents.front();
                      return ERR_PCEN_UNKNOWN;
                  }
             }
+        }
+
+        if (psc_link != NULL)
+        {
+            for (it = links.begin(); it != links.end(); it++)
+                if ((*it)->link && psc_link == (*it)->link)
+                {
+                    links.erase(it);
+                    break;
+                }
         }
         return ERR_PCEN_UNKNOWN;
     }
@@ -624,7 +637,12 @@ void PCEN_KSP::Run()
         if (is_e2e_tagged_vlan && vtag == ANY_VTAG)
             vtag = bestPath->vlan_tag;
         if (has_wdm_layer)
+        {
             wavelength = bestPath->wavelength;
+            //$$$$ simulation only
+            if (wavelength != 0)
+                CreatePSCLinksFromLambdaPath(*bestPath);
+        }
         GetPathERO(bestPath->path, this->ero);
         //$$ TOTO: Configure vtag-all (vtagmask) ?
         ReplyERO();
@@ -760,6 +778,89 @@ bool PCEN_KSP::VerifyPathConstraints(list<PCENLink*>& path, u_int32_t& pathVtag,
 
     pathVtag = next_vtagset.LowestTag();
     pathWave = next_waveset.LowestTag();
+
+    return true;
+}
+
+
+bool PCEN_KSP::CreatePSCLinksFromLambdaPath(PathT &pt)
+{
+    list<PCENLink*>::iterator itl = pt.path.begin();
+    list<PCENLink*>::iterator itx = pt.path.end();
+    list<PCENLink*>::iterator ity = pt.path.end();
+    for (; itl != pt.path.end(); itl++)
+    {
+        if ((*itl)->link->Iscds().front()->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_LSC)
+        {
+            ity = itl;
+            if (itx == pt.path.end())
+                itx = itl;
+        }
+    }
+    itx--;
+    if (itx == pt.path.begin() || itx == pt.path.end())
+        return false;
+    if (ity == pt.path.end())
+        return false;
+    PCENLink* pcen_link_a = *itx;
+    PCENLink* pcen_link_z = *ity;
+
+    PCENLink* pcen_link_psc1 = new PCENLink;
+    pcen_link_psc1->linkID = links.back()->linkID+1;
+    pcen_link_psc1->lcl_end = pcen_link_a->lcl_end;
+    pcen_link_psc1->rmt_end = pcen_link_z->rmt_end;
+    pcen_link_a->lcl_end->out_links.push_back(pcen_link_psc1);
+    pcen_link_z->rmt_end->in_links.push_back(pcen_link_psc1);
+
+    PCENLink* pcen_link_psc2 = new PCENLink;
+    pcen_link_psc2->linkID = links.back()->linkID+2;
+    pcen_link_psc2->lcl_end = pcen_link_z->rmt_end;
+    pcen_link_psc2->rmt_end = pcen_link_a->lcl_end;
+    pcen_link_z->rmt_end->out_links.push_back(pcen_link_psc2);
+    pcen_link_a->lcl_end->in_links.push_back(pcen_link_psc2);
+
+    pcen_link_psc1->reverse_link = pcen_link_psc2;
+    pcen_link_psc2->reverse_link = pcen_link_psc1;
+
+    Link* link1 = new Link(pcen_link_a->link->AdvRtId(), pcen_link_z->link->Id(), pcen_link_a->link->LclIfAddr(), pcen_link_z->link->RmtIfAddr());
+    Link* link2 = new Link(pcen_link_z->link->AdvRtId(), pcen_link_a->link->Id(), pcen_link_z->link->RmtIfAddr(), pcen_link_a->link->LclIfAddr());
+    link1->metric = link2->metric = pcen_link_a->link->metric;
+    link1->maxBandwidth = link2->maxBandwidth = pcen_link_a->link->maxBandwidth;
+    link1->maxReservableBandwidth = link2->maxReservableBandwidth = pcen_link_a->link->maxBandwidth - this->bandwidth_ingress;
+    for (int i = 0; i < 8; i++)
+    {
+        link1->unreservedBandwidth[i]= link2->unreservedBandwidth[i] = pcen_link_a->link->maxBandwidth - this->bandwidth_ingress;
+        link1->unreservedBandwidth[i]= pcen_link_a->link->maxBandwidth - this->bandwidth_ingress;
+    }
+    ISCD* iscd1 = new ISCD;
+    memset(iscd1, 0, sizeof(ISCD));
+    memcpy(iscd1->max_lsp_bw, link1->unreservedBandwidth, 8*sizeof(float));   
+    iscd1->encoding = (u_char)LINK_IFSWCAP_SUBTLV_ENC_PKT;
+    iscd1->swtype = (u_char)LINK_IFSWCAP_SUBTLV_SWCAP_PSC4;
+    link1->Iscds().push_back(iscd1);
+    ISCD* iscd2 = new ISCD;
+    *iscd2 = *iscd1;
+    link2->Iscds().push_back(iscd2);
+
+    for (itl = itx; itl != ity; itl++)
+    {
+        (*itl)->link->dependents.push_back(link1);
+        link1->dependings.push_back((*itl)->link);
+        if ((*itl)->reverse_link)
+        {
+            (*itl)->reverse_link->link->dependents.push_back(link2);
+            link2->dependings.push_back((*itl)->reverse_link->link);
+        }
+    }
+
+    //$$$$ keep the new links even after PCEN topology destruction
+    pcen_link_psc1->link = link1;
+    //pcen_link_psc1->link_self_allocated = true;
+    pcen_link_psc2->link = link2;
+    //pcen_link_psc2->link_self_allocated = true;
+    
+    links.push_back(pcen_link_psc1);
+    links.push_back(pcen_link_psc2);
 
     return true;
 }
