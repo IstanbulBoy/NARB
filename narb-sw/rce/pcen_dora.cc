@@ -74,9 +74,9 @@ int PCEN_DORA::PerformComputation()
     double bw_metric, biggest_metric = 0;
     for (l = 0; l < link_num; l++)
     {
-        if (links[i]->link == NULL || links[i]->link->Iscds().size() == 0)
+        if (links[l]->link == NULL || links[l]->link->Iscds().size() == 0)
             continue;
-        bw_metric = links[i]->link->Iscds().front()->max_lsp_bw[7]/links[i]->link->MaxReservableBandwidth()*links[i]->PCENmetric();
+        bw_metric = links[l]->link->Iscds().front()->max_lsp_bw[7]/links[l]->link->MaxReservableBandwidth()*links[l]->PCENmetric();
         links[l]->SetPCENmetric(bw_metric);
         if (bw_metric > biggest_metric)
             biggest_metric = bw_metric;
@@ -85,10 +85,10 @@ int PCEN_DORA::PerformComputation()
     
     for (l = 0; l < link_num; l++)
     {
-        if (links[i]->link == NULL || links[i]->link->Iscds().size() == 0)
+        if (links[l]->link == NULL || links[l]->link->Iscds().size() == 0)
             continue;
-        bw_metric = links[i]->PCENmetric()/biggest_metric*100.0;
-        links[l]->SetPCENmetric(PPV_ARRAY(srcNode->ref_num, destNode->ref_num, links[i]->linkID)*(1-BWP) + bw_metric*BWP);
+        bw_metric = links[l]->PCENmetric()/biggest_metric*100.0;
+        links[l]->SetPCENmetric(PPV_ARRAY(srcNode->ref_num, destNode->ref_num, links[l]->linkID)*(1-BWP) + bw_metric*BWP);
     }
 
     //now run KSP
