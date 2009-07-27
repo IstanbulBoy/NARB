@@ -57,18 +57,18 @@ my @STARTTIME = (
 		  );
 
 #Scheduling: STARTTIME = $INVTERVALS[rand($#INTERVAL)]
-#Scheduling: DURATION = $INVTERVALS[rand($#INTERVAL)]*${opts{'arrivalrate'}}
+#Scheduling: DURATION = $INVTERVALS[rand($#INTERVAL)]*${opts{'gammma'}}
 
 my %opts = ('pce'   => 'mcbase',
 	    'mode'   => 'iterative',
-	    'arrivalrate'   => '1',
+	    'gamma'   => '1.0',
 	    'alpha'   => '1.0',
 	    'maxlsps'   => '100', 
             );
 
 GetOptions (\%opts, "pce=s", # mcbase or mcsched
 	    "mode=s",    # mode = random or iterative
-            "arrivalrate=s",
+            "gamma=s",
             "alpha=s",
             "maxlsps=s",
             "noreverse",
@@ -139,7 +139,7 @@ sub prepare_lsp {
             $LSPs{$gri}{'start_time'} = $STARTTIME[int(rand($#STARTTIME))];
         }
     }
-    $LSPs{$gri}{'duration'} = $INTERVAL[int(rand($#INTERVAL))]*$opts{'arrivalrate'};
+    $LSPs{$gri}{'duration'} = $INTERVAL[int(rand($#INTERVAL))]*$opts{'gamma'};
     return $LSPs{$gri};
 }
 
