@@ -63,7 +63,7 @@ my %opts = ('pce'   => 'mcbase',
 	    'mode'   => 'shuffle',
 	    'gamma'   => '1.0',
 	    'alpha'   => '1.0',
-	    'maxlsps'   => '100', 
+	    'maxlsps'   => '400', 
             );
 
 GetOptions (\%opts, "pce=s", # mcbase or mcsched
@@ -253,12 +253,18 @@ sub setup_lsp_mcsched {
     }
 }
 
+
 if ($opts{'pce'} eq 'mcbase') {
     setup_lsp_mcbase();
 }
 elsif ($opts{'pce'} eq 'mcsched') {
     setup_lsp_mcsched();
 }
+elsif ($opts{'pce'} eq 'dora') {
+    `/usr/local/dragon/sbin/narb_test -S 164.57.24.64 -D 164.57.26.13 -x4 -e1 -m -b 0`;
+    setup_lsp_mcbase();
+}
+
 
 &printstats;
 
