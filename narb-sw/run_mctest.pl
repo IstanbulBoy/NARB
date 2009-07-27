@@ -60,7 +60,7 @@ my @STARTTIME = (
 #Scheduling: DURATION = $INVTERVALS[rand($#INTERVAL)]*${opts{'gammma'}}
 
 my %opts = ('pce'   => 'mcbase',
-	    'mode'   => 'iterative',
+	    'mode'   => 'shuffle',
 	    'gamma'   => '1.0',
 	    'alpha'   => '1.0',
 	    'maxlsps'   => '100', 
@@ -100,6 +100,9 @@ sub get_gri {
 my $lsp_src = 0;
 my $lsp_dst = 0;
 
+my @SRCDST;
+my $SDP_init = 0;
+
 sub get_srcdst_pair {
     if ($opts{'mode'} =~ /^random$/i) {
          $lsp_src = int(rand($#END_SYSTEMS));
@@ -107,7 +110,23 @@ sub get_srcdst_pair {
              $lsp_dst = int(rand($#END_SYSTEMS));
              last if ($lsp_dst != $lsp_src);
          }
-    } elsif ($opts{'mode'} =~ /^iterative$/i) {
+    } elsif ($opts{'mode'} =~ /^shuffle$/i) {
+         if ($SDP_init == 0)
+         {
+             for ($lsp_src = 0; $lsp_src <= $#END_SYSTEMS; $lsp_src++) {
+                 for ($lsp_dst = $lsp_src + 1; $lsp_dst <= $#END_SYSTEMS; $lsp_dst++) {
+                     push @SRCDST, $lsp_src;
+                     push @SRCDST, $lsp_dst;
+                 }
+             }
+             $SDP_init = 1;
+         }
+         return (undef, undef) unless (@SRCDST);
+         my $index = int(rand($#SRCDST)/2)*2;
+         $lsp_src = $SRCDST[$index];
+         $lsp_dst = $SRCDST[$index+1];
+         splice(@SRCDST, $index, 2);
+     } elsif ($opts{'mode'} =~ /^iterative$/i) {
         $lsp_dst++; 
         if ($lsp_dst == $#END_SYSTEMS) {
             $lsp_src++;
@@ -240,7 +259,6 @@ if ($opts{'pce'} eq 'mcbase') {
 elsif ($opts{'pce'} eq 'mcsched') {
     setup_lsp_mcsched();
 }
-
 
 &printstats;
 
