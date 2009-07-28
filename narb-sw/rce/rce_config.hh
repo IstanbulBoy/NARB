@@ -91,6 +91,12 @@ enum PceAlgorithm
     MC_DORA,
 };
 
+enum PceObjective
+{
+    PCE_OBJECTIVE_MCM = 0,
+    PCE_OBJECTIVE_MML = 1,
+};
+
 class SystemConfig
 {
 public:
@@ -98,6 +104,7 @@ public:
     static string schema_file;
 
     static PceAlgorithm pce_algorithm;
+    static PceObjective pce_objective;
     static int pce_k;
     static int pce_m;
 

@@ -668,9 +668,21 @@ PathT* PCEN_KSP::ConstrainKSPaths(vector<PathT*>& KSP)
         P = (*iterP);
         if (VerifyPathConstraints(P->path, P->vlan_tag, P->wavelength))
         {
-            if (P->cost < minCost)
+            double pathCost = P->cost; //PCE_OBJECTIVE_MCM
+            if (SystemConfig::pce_objective == PCE_OBJECTIVE_MML)
             {
-                minCost = P->cost;
+                //get the maximum link cost
+                pathCost = -1.0;
+                list<PCENLink*>::iterator itl = P->path.begin();
+                for (; itl != P->path.end(); itl++)
+                {
+                    if ((*itl)->PCENmetric() > pathCost)
+                        pathCost = (*itl)->PCENmetric();
+                }
+            }
+            if (pathCost >= 0.0 && pathCost < minCost)
+            {
+                minCost = pathCost;
                 bestPath = P;
             }
             iterP++;

@@ -40,6 +40,7 @@ string SystemConfig::config_file;
 string SystemConfig::schema_file;
 
 PceAlgorithm SystemConfig::pce_algorithm = PCE_NONE;
+PceObjective SystemConfig::pce_objective = PCE_OBJECTIVE_MCM;
 int SystemConfig::pce_k = 100; //default k=100 for KSP (and related) algorithms
 int SystemConfig::pce_m = 5;
 bool SystemConfig::radix_lock_on = false;
@@ -298,6 +299,18 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                 if (ReadConfigParameter(blk_body, (char*)"mc-m", (char*)"%d", &SystemConfig::pce_m) == 0)
                 {
                     LOG("ReadConfigParameter set mc-m to deault value: " <<SystemConfig::pce_m <<endl);
+                }
+                char objective[8];
+                if (ReadConfigParameter(blk_body, (char*)"objective", (char*)"%d", objective) == 0)
+                {
+                    LOG("ReadConfigParameter set 'objective' to deault value: " <<SystemConfig::pce_objective<<endl);
+                }
+                else
+                {
+                    if (strcasecmp(objective, "mml") ==0)
+                        SystemConfig::pce_objective = PCE_OBJECTIVE_MML;
+                    else
+                        SystemConfig::pce_objective = PCE_OBJECTIVE_MCM;
                 }
             }
           }
