@@ -301,7 +301,7 @@ void SystemConfig::ConfigFromFile(ifstream& inFile)
                     LOG("ReadConfigParameter set mc-m to deault value: " <<SystemConfig::pce_m <<endl);
                 }
                 char objective[8];
-                if (ReadConfigParameter(blk_body, (char*)"objective", (char*)"%d", objective) == 0)
+                if (ReadConfigParameter(blk_body, (char*)"objective", (char*)"%s", objective) == 0)
                 {
                     LOG("ReadConfigParameter set 'objective' to deault value: " <<SystemConfig::pce_objective<<endl);
                 }

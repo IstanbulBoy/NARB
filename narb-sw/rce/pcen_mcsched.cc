@@ -124,6 +124,8 @@ int PCEN_MCSched::PickMCPCandidates(int M)
     if (MCPaths.size() > M-1)
         MCPaths.erase(MCPaths.begin()+M-1, MCPaths.end());
 
+    LOGF("PCEN_MCSched::PickMCPCandidates() found %d candidate paths", MCPaths.size());
+
     return MCPaths.size();
 }
 
