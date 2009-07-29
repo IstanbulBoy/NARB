@@ -29,12 +29,12 @@ void SchedulePacer::Run()
                 delta = (*itd);
                 if ((delta->flags & DELTA_SCHEDULING) != 0)
                 {
-                    if (delta->start_time.tv_sec < timenow.tv_sec)
-                        delta->start_time.tv_sec = timenow.tv_sec;
-                    if (delta->end_time.tv_sec < timenow.tv_sec)
+                    if (delta->owner_ucid == (*itp)->ucid && delta->owner_seqnum == (*itp)->seqnum && delta->end_time.tv_sec < timenow.tv_sec)
                     {
                         itd = pDeltaList->erase(itd);
                         expired = true;
+                        if (itd == pDeltaList->end())
+                            break;
                     }
                 }
             }
@@ -47,12 +47,12 @@ void SchedulePacer::Run()
                 delta = (*itd);
                 if ((delta->flags & DELTA_SCHEDULING) != 0)
                 {
-                    if (delta->start_time.tv_sec < timenow.tv_sec)
-                        delta->start_time.tv_sec = timenow.tv_sec;
-                    if (delta->end_time.tv_sec < timenow.tv_sec)
+                    if (delta->owner_ucid == (*itp)->ucid && delta->owner_seqnum == (*itp)->seqnum && delta->end_time.tv_sec < timenow.tv_sec)
                     {
                         itd = pDeltaList->erase(itd);
                         expired = true;
+                        if (itd == pDeltaList->end())
+                            break;
                     }
                 }
             }
