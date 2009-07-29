@@ -339,20 +339,20 @@ u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timev
         return (et2.tv_sec - st2.tv_sec) > MAX_SCHEDULE_DURATION ? MAX_SCHEDULE_DURATION : et2.tv_sec - st2.tv_sec;
     //else
     u_int32_t duration = 0;
-     if (st1.tv_sec < st2.tv_sec && et1.tv_sec < et2.tv_sec)
-         duration = st2.tv_sec - et1.tv_sec;
-     else if (st1.tv_sec > st2.tv_sec && et1.tv_sec < et2.tv_sec)
-        duration = et1.tv_sec - st1.tv_sec;
-     else if (st1.tv_sec < st2.tv_sec && et1.tv_sec > et2.tv_sec)
-        duration = et2.tv_sec - st2.tv_sec;
-     else 
-        duration = st1.tv_sec - et2.tv_sec;
+    if (st1.tv_sec <= st2.tv_sec && et1.tv_sec <= et2.tv_sec)
+        duration = et1.tv_sec - st2.tv_sec;
+    else if (st1.tv_sec >= st2.tv_sec && et1.tv_sec <= et2.tv_sec)
+       duration = et1.tv_sec - st1.tv_sec;
+    else if (st1.tv_sec <= st2.tv_sec && et1.tv_sec >= et2.tv_sec)
+       duration = et2.tv_sec - st2.tv_sec;
+    else 
+       duration = et2.tv_sec - st1.tv_sec;
     //return
-     if (duration <= 0)
-        return 0;
-     if (duration > MAX_SCHEDULE_DURATION)
-        return MAX_SCHEDULE_DURATION;
-     return duration;
+    if (duration <= 0)
+       return 0;
+    if (duration > MAX_SCHEDULE_DURATION)
+       return MAX_SCHEDULE_DURATION;
+    return duration;
 }
 
 
