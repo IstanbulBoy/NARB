@@ -54,8 +54,8 @@ public:
 #define BANDWIDTH_TIME_FACTOR 1.0
 #define SCHEDULE_PACE 5 // in seconds
 
-inline u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2);
-inline u_int32_t GetPathOverLappingTime(PathM* path1, PathM* path2);
+inline double OverlappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2);
+inline double GetPathOverlappingTime(PathM* path1, PathM* path2);
 
 #endif
 

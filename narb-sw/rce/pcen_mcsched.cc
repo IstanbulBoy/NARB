@@ -330,7 +330,7 @@ _restore_and_quit:
     return false;
 }
 
-u_int32_t OverlappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2)
+double OverlappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2)
 {
     if (st1.tv_sec == 0 && st2.tv_sec == 0)
         return MAX_SCHEDULE_DURATION;
@@ -339,7 +339,7 @@ u_int32_t OverlappingTime(struct timeval &st1, struct timeval &et1, struct timev
     else if (st1.tv_sec == 0 && st2.tv_sec != 0)
         return (et2.tv_sec - st2.tv_sec) > MAX_SCHEDULE_DURATION ? MAX_SCHEDULE_DURATION : et2.tv_sec - st2.tv_sec;
     //else
-    u_int32_t duration = 0;
+    double duration = 0;
     if (st1.tv_sec <= st2.tv_sec && et1.tv_sec <= et2.tv_sec)
         duration = et1.tv_sec - st2.tv_sec;
     else if (st1.tv_sec >= st2.tv_sec && et1.tv_sec <= et2.tv_sec)
@@ -357,7 +357,7 @@ u_int32_t OverlappingTime(struct timeval &st1, struct timeval &et1, struct timev
 }
 
 
-u_int32_t GetPathOverlappingTime(PathM* path1, PathM* path2)
+double GetPathOverlappingTime(PathM* path1, PathM* path2)
 {
      return OverlappingTime(path1->start_time, path1->end_time, path2->start_time, path2->end_time);
 }
@@ -390,7 +390,7 @@ inline double SumOfBandwidthTimeWeightedCommonLinks(PathM* &P, vector<PathM>& Pa
         {
             if (path1->ucid == Paths[i].ucid && path1->seqnum == Paths[i].seqnum)
                 continue;
-            u_int32_t overlap = GetPathOverlappingTime(path1, &Paths[i]);
+            double overlap = GetPathOverlappingTime(path1, &Paths[i]);
             for (iter2 = Paths[i].path.begin(); iter2 != Paths[i].path.end(); iter2++)
             {
                 if ((*iter1) == (*iter2))
