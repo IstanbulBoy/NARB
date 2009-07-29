@@ -36,8 +36,8 @@ my @BANDWIDTHS = (
 		  '1000',
 		  '2000',
 		  '3000',
-		  '4000',
-		  '5000',
+#		  '4000',
+#		  '5000',
 		  );
 
 my @INTERVAL = (
@@ -49,11 +49,17 @@ my @INTERVAL = (
 		  );
 
 my @STARTTIME = (
-		  '5',
-		  '10',
-		  '15',
-		  '20',
-		  '25',
+#		  '25',
+#		  '40',
+#		  '80',
+#		  '160',
+#		  '320',
+		  '250',
+		  '300',
+		  '350',
+		  '400',
+		  '450',
+		  '500',
 		  );
 
 #Scheduling: STARTTIME = $INVTERVALS[rand($#INTERVAL)]
@@ -226,8 +232,8 @@ sub setup_lsp_mcsched {
         my $interval = $INTERVAL[int(rand($#INTERVAL))];
         print "\nCreating LSP: $lsp->{'gri'} (starting in $lsp->{'start_time'} seconds; last for $lsp->{'duration'} seconds; next LSP: $interval seconds) \n  A: $lsp->{'src'} \n  Z: $lsp->{'dst'} \n\n";
         $total_narb_requests++;
-        print "** /usr/local/dragon/sbin/narb_test -R $lsp->{'start_time'}:$lsp->{'duration'} -S $lsp->{'src'} -D $lsp->{'dst'} -x4 -e1 -m -b $lsp->{'bw'} -g $lsp->{'gri'}\n";
-        open I, "time -p /usr/local/dragon/sbin/narb_test -R $lsp->{'start_time'}:$lsp->{'duration'} -S $lsp->{'src'} -D $lsp->{'dst'} -x4 -e1 -m -b $lsp->{'bw'} -g $lsp->{'gri'}|";
+        print "** /usr/local/dragon/sbin/narb_test -R $lsp->{'start_time'}:$lsp->{'duration'} -S $lsp->{'src'} -D $lsp->{'dst'} -x4 -e1 -b $lsp->{'bw'}\n";
+        open I, "time -p /usr/local/dragon/sbin/narb_test -R $lsp->{'start_time'}:$lsp->{'duration'} -S $lsp->{'src'} -D $lsp->{'dst'} -x4 -e1 -b $lsp->{'bw'}|";
         my $narb_fail = 1;
         while(<I>) {
             print;
@@ -245,11 +251,9 @@ sub setup_lsp_mcsched {
         else {
             $successful_narb_requests++;
         }
-        while ($interval > 0) {
-            $interval -= $PACE;
-            sleep($PACE);
-            #scheduled lsps will be automatically removed by PCE. no need to call check_lsps_for_deletion  
-        } 
+
+        sleep($interval);
+        #scheduled lsps will be automatically removed by PCE. no need to call check_lsps_for_deletion  
     }
 }
 
