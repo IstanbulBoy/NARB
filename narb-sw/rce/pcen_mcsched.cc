@@ -75,6 +75,7 @@ bool PCEN_MCSched::PostBuildTopology()
 
 int PCEN_MCSched::PickMCPCandidates(int M)
 {
+/*
     //get simple hop length of requested path. CT_0 = HopLen X BW X 1.0.
     PCENNode* srcNode = GetNodeByIp(routers,&source);
     PCENNode* destNode = GetNodeByIp(routers,&destination);
@@ -88,12 +89,12 @@ int PCEN_MCSched::PickMCPCandidates(int M)
     for (it1 = destNode->path.begin(); it1 != destNode->path.end(); it1++)
         thePath.path.push_back((*it1)->link);
     thePath.cost = thePath.path.size()*thePath.bandwidth;
-
+*/
     //go through allPaths to find up to (M-1) Paths that are closest to CT_0 by sorting CT_x (HopLenxBWxOverlapTime) 
     struct timeval timenow;
     gettimeofday(&timenow, NULL);
     MCPaths.clear();
-    for (int i = 1; i < allPaths.size(); i++)
+    for (int i = 0; i < allPaths.size(); i++)
     {
         if (allPaths[i]->start_time.tv_sec <= timenow.tv_sec)
             continue;
@@ -105,7 +106,7 @@ int PCEN_MCSched::PickMCPCandidates(int M)
         }
 
         //assign CT_x
-        double overlap = GetPathOverLappingTime(&thePath, allPaths[i]);
+        double overlap = GetPathOverlappingTime(&thePath, allPaths[i]);
         allPaths[i]->cost = allPaths[i]->path.size()*allPaths[i]->bandwidth
         	*(1.0-BANDWIDTH_TIME_FACTOR+BANDWIDTH_TIME_FACTOR*(double)overlap/(double)MAX_SCHEDULE_DURATION);
         int j;
@@ -216,7 +217,7 @@ void PCEN_MCSched::AdjustLinkResourceBySchedule(PCENLink *L, bool doAddOrDelete)
         for (; itd != pDeltaList->end(); itd++)
         {
             delta = (*itd);
-            if ((delta->flags & DELTA_SCHEDULING) != 0 && OverLappingTime(thePath.start_time, thePath.end_time, delta->start_time, delta->end_time)> 0)
+            if ((delta->flags & DELTA_SCHEDULING) != 0 && OverlappingTime(thePath.start_time, thePath.end_time, delta->start_time, delta->end_time)> 0)
                 if (doAddOrDelete)
                     *L->link += *delta;
                 else
@@ -329,7 +330,7 @@ _restore_and_quit:
     return false;
 }
 
-u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2)
+u_int32_t OverlappingTime(struct timeval &st1, struct timeval &et1, struct timeval &st2, struct timeval &et2)
 {
     if (st1.tv_sec == 0 && st2.tv_sec == 0)
         return MAX_SCHEDULE_DURATION;
@@ -356,9 +357,9 @@ u_int32_t OverLappingTime(struct timeval &st1, struct timeval &et1, struct timev
 }
 
 
-u_int32_t GetPathOverLappingTime(PathM* path1, PathM* path2)
+u_int32_t GetPathOverlappingTime(PathM* path1, PathM* path2)
 {
-     return OverLappingTime(path1->start_time, path1->end_time, path2->start_time, path2->end_time);
+     return OverlappingTime(path1->start_time, path1->end_time, path2->start_time, path2->end_time);
 }
 
 
@@ -389,7 +390,7 @@ inline double SumOfBandwidthTimeWeightedCommonLinks(PathM* &P, vector<PathM>& Pa
         {
             if (path1->ucid == Paths[i].ucid && path1->seqnum == Paths[i].seqnum)
                 continue;
-            u_int32_t overlap = GetPathOverLappingTime(path1, &Paths[i]);
+            u_int32_t overlap = GetPathOverlappingTime(path1, &Paths[i]);
             for (iter2 = Paths[i].path.begin(); iter2 != Paths[i].path.end(); iter2++)
             {
                 if ((*iter1) == (*iter2))
