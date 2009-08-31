@@ -660,8 +660,15 @@ void TerceApiTopoReader::HandleMessage (api_msg *msg)
         break;
 
     default:
-        LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->header.type_8)
-            << ", action=" << (int)msg->header.action << ")." << endl);
+        if (msg->header.action == ACT_ACK || msg->header.action == ACT_ACKDATA)
+        {
+            LOG("Terce ACK messsage for type " << (int)(msg->header.type_8) << endl);
+        }
+        else
+        {
+            LOG("Unkonwn/Unprocessed terce messsage (type=" << (int)(msg->header.type_8)
+                << ", action=" << (int)msg->header.action << ")." << endl);
+        }
         api_msg_delete(msg);
     }    
 }

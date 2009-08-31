@@ -1394,7 +1394,7 @@ COMMAND (cmd_set_ospfd, (char*)"set ospfd {interdomain|intradomain} HOST  LCL_PO
 
 static Link* link_to_update = NULL;
 #define SHOW_LINK(L)   in_addr ip; int i, k; \
-    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[3]; \
+    char addr_buf1[20], addr_buf2[20], addr_buf3[20], addr_buf4[20]; \
     list<ISCD*>::iterator iter; \
     ip.s_addr = L->Id(); \
     strcpy (addr_buf1, inet_ntoa (ip)); \

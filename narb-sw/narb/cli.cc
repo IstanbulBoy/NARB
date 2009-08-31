@@ -1836,16 +1836,22 @@ COMMAND(cmd_set_topology_refresh_interval, (char*)"set refresh-interval SECONDS"
     }
     SystemConfig::topology_refresh_interval = interval;
   
-    if (zebra_client&&zebra_client->GetWriter())
+    if (zebra_client && zebra_client->GetWriter())
     {
         // cancel the old refresh thread and refresh now
         NarbDomainInfo.DeleteTopology(zebra_client->GetWriter());
         NarbDomainInfo.OriginateTopology(zebra_client->GetWriter());
-        if(dts_originator)
-        {
-            dts_originator->SetInterval(interval, 0);
-        }      
     }
+
+    if ((zebra_client || terce_client) && dts_originator)
+    {
+        dts_originator->SetInterval(interval, 0);
+        eventMaster.Remove(dts_originator);
+        dts_originator->SetObsolete(false);
+        dts_originator->SetRepeats(FOREVER);
+        eventMaster.Schedule(dts_originator);
+    }
+
 _out:
     cli_node->ShowPrompt();
 }
