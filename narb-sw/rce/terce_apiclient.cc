@@ -946,6 +946,14 @@ int TerceApiTopoOriginator::OriginateTopology ()
         Link* link = (Link*)node->Data();
         if (link != NULL)
         {
+            u_int32_t home_vlsr1 = SystemConfig::FindHomeVlsrByRouterId(link->AdvRtId());
+            u_int32_t home_vlsr2 = SystemConfig::FindHomeVlsrByRouterId(link->Id());
+            // do not originate 'jump' link
+            if (home_vlsr1 == 0 && home_vlsr2 != 0 || home_vlsr1 != 0 && home_vlsr2 == 0)
+            {
+                node = tree->NextNode(node);
+                continue;    
+            }
             ret = this->OriginateTeLink(link);
             if (ret != 0)
             {
