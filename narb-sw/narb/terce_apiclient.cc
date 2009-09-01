@@ -269,7 +269,7 @@ int TerceApiTopoSync::Accept (int asyncport)
     fcntl (sock_accept, F_SETFL, (opts | O_NONBLOCK));
     peeraddrlen = sizeof (sockaddr_in);
     memset (&peeraddr, 0, peeraddrlen);
-    int count =35;
+    int count =3;
     while (count-- > 0) {
         async_fd = accept (sock_accept, (sockaddr *) &peeraddr, &peeraddrlen);
         if (async_fd > 0)

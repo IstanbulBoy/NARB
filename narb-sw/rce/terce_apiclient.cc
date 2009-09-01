@@ -35,6 +35,7 @@
 #include "rce_lsa.hh"
 #include "terce_apiclient.hh"
 #include <stdlib.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <vector>
 
@@ -260,9 +261,19 @@ int TerceApiTopoSync::Accept (int asyncport)
     }
 
     //Accept reverse connection
+    //Set the accept socket to non_blocking. The loop logic will timeout 
+    //the accept process after 3 seconds if no async connection has come. 
+    int opts = fcntl (sock_accept, F_GETFL, 0);
+    fcntl (sock_accept, F_SETFL, (opts | O_NONBLOCK));
     peeraddrlen = sizeof (sockaddr_in);
     memset (&peeraddr, 0, peeraddrlen);
-    async_fd = accept (sock_accept, (sockaddr *) &peeraddr, &peeraddrlen);
+    int count = 3;
+    while (count-- > 0) {
+        async_fd = accept (sock_accept, (sockaddr *) &peeraddr, &peeraddrlen);
+        if (async_fd > 0)
+            break;
+        sleep(1);
+    }
     if (async_fd < 0)
     {
       LOG_CERR<<"TerceApiTopoSync::Accept: accept async failed"<<endl;
