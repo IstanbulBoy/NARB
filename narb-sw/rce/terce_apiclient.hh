@@ -161,6 +161,7 @@ public:
     int OriginateTeLink (Link* link);
     int UpdateTeLink (Link* link);
 
+    static u_int32_t last_originating_time;
     static void* BuildRouterIdOpaqueData(RouterId* rtid);
     static void* BuildTeLinkOpaqueData(Link* link);
 };

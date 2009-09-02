@@ -1856,6 +1856,16 @@ _out:
     cli_node->ShowPrompt();
 }
 
+COMMAND (cmd_set_terce_sync, (char*)"set terce_sync {off|on}",
+       (char*)"Set/Reset Configuration \n TERCE API client\n Sync-Off|Sync-On")
+{
+    if (argv[0].compare(0, 2, "on") == 0)
+        SystemConfig::terce_sync_off = false;
+    else    
+        SystemConfig::terce_sync_off = true;
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
+}
+
 static link_info* link_to_update = NULL;
 
 #define SHOW_LINK(L)   in_addr ip; int i; \
@@ -2805,6 +2815,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_delete_rce_instance);
     node->AddCommand(&cmd_show_rce_instance);
     node->AddCommand(&cmd_set_topology_refresh_interval_instance);
+    node->AddCommand(&cmd_set_terce_sync_instance);
     node->AddCommand(&cmd_show_link_instance);
     node->AddCommand(&cmd_add_link_instance);
     node->AddCommand(&cmd_delete_link_instance);

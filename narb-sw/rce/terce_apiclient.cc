@@ -898,9 +898,13 @@ int TerceApiTopoWriter::UpdateLsa(in_addr adv_id, u_char lsa_type, u_char opaque
 
 
 ///////////TerceApiTopoOriginator//////////
+u_int32_t TerceApiTopoOriginator::last_originating_time = 0;
 
 void TerceApiTopoOriginator::Run()
 {
+    if (SystemConfig::terce_sync_off)
+        return;
+
     // if TERCE client is enabled and the API died, resurrect RceTerceComm
     if (terce_client && !terce_client->RceTerceApiReady())
     {
@@ -913,8 +917,13 @@ void TerceApiTopoOriginator::Run()
     if (terce_client && terce_client->RceTerceApiReady())
     {
         DeleteTopology();
-        OriginateTopology();
-        //LOGF("TerceApiTopoOriginator::OriginateTopology to TERCE server %s:%d.\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        int ret = OriginateTopology();
+        if (ret == 0) {
+            //LOGF("TerceApiTopoOriginator::OriginateTopology to TERCE server %s:%d.\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+            struct timeval time_now;            
+            gettimeofday (&time_now, NULL);
+            last_originating_time = time_now.tv_sec;
+        }
     }
 }
 

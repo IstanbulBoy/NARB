@@ -38,6 +38,7 @@
 #include "toolbox.hh"
 #include "terce_apiclient.hh"
 #include "lsp_broker.hh"
+#include "narb_config.hh"
 #include <fcntl.h>
 #include <errno.h>
 #include <vector>
@@ -293,6 +294,9 @@ int TerceApiTopoSync::Accept (int asyncport)
 
 int TerceApiTopoSync::RunWithoutSyncTopology ()
 {
+    if (SystemConfig::terce_sync_off)
+        return 0;
+
     if (sync_fd < 0)
     {
         if (Connect(terce_host, NARB_TERCE_SYNC_PORT, terce_port) < 0)
@@ -325,6 +329,9 @@ int TerceApiTopoSync::RunWithoutSyncTopology ()
 
 void TerceApiTopoSync::Run ()
 {
+    if (SystemConfig::terce_sync_off)
+        return;
+
     if (sync_fd < 0)
     {
         if (attempt++ >= 2)
@@ -355,8 +362,6 @@ void TerceApiTopoSync::Run ()
     }
 
     //Start SyncTopology
-
-    //@@@@ NARB IP ?
     u_int32_t ucid = domain_id;
     api_msg* amsg = api_msg_new(MSG_TERCE_TOPO_SYNC, ACT_QUERY, 0, NULL, ucid, get_narb_seqnum());
     amsg->header.msgtag[1] = htonl(DOMAIN_MASK_GLOBAL);

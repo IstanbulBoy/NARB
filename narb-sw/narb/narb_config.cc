@@ -60,6 +60,8 @@ DomainInfo SystemConfig::narb_domain_info;
  
 int SystemConfig::topology_refresh_interval = 3500;
 
+bool SystemConfig::terce_sync_off = false;
+
 string SystemConfig::cli_password("dragon");
 string SystemConfig::cli_address("localhost");
 int SystemConfig::cli_timeout = 900; //CLI time out = 15 minutes

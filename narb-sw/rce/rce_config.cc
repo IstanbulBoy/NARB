@@ -60,6 +60,8 @@ int SystemConfig::terce_topo_sync_interval = 60;
 int SystemConfig::ospf_sync_interval = 30;
 int SystemConfig::max_ospf_sync_attempts = 10;
 
+bool SystemConfig::terce_sync_off = false;
+
 int SystemConfig::delta_expire_query = 10;
 int SystemConfig::delta_expire_reserve = 20;
 int SystemConfig::delta_expire_subnet_reserve = 8640000; // 8640000 seconds == 100 days

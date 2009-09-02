@@ -35,6 +35,7 @@
 #include "rce_log.hh"
 #include "rce_config.hh"
 #include "zebra_ospfclient.hh"
+#include "terce_apiclient.hh"
 #include "resource.hh"
 #include "rce_movaz_types.hh"
 #include <stdlib.h>
@@ -1295,7 +1296,10 @@ COMMAND(cmd_show_topology, (char*)"show topology {interdomain | intradomain}",  
     
         node = tree->NextNodeHavingData(node);
     }
-    
+
+    if (TerceApiTopoOriginator::last_originating_time != 0)    
+        CLI_OUT("\t ... Last Time Sync to TERCE at %s ... %s",  ctime((time_t*)&TerceApiTopoOriginator::last_originating_time), cli_cstr_newline);
+
     CLI_OUT("\t  \t .......The End.......%s %s", cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
@@ -1571,6 +1575,16 @@ COMMAND(cmd_connect_ospfd, (char*)"connect ospfd {interdomain | intradomain}", (
 
 _out:
     cli_node->ShowPrompt();
+}
+
+COMMAND (cmd_set_terce_sync, (char*)"set terce_sync {off|on}",
+       (char*)"Set/Reset Configuration \n TERCE API client\n Sync-Off|Sync-On")
+{
+    if (argv[0].compare(0, 2, "on") == 0)
+        SystemConfig::terce_sync_off = false;
+    else    
+        SystemConfig::terce_sync_off = true;
+    cli_node->Reader()->CurrentNode()->ShowPrompt();
 }
 
 COMMAND(cmd_edit_link, (char*)"edit link local_if_addr LCL_IF_ADDR remote_if_addr RMT_IF_ADDR",
@@ -1925,6 +1939,7 @@ void CLIReader::InitSession()
     node->AddCommand(&cmd_configure_exit_instance);
     node->AddCommand(&cmd_set_ospfd_instance);
     node->AddCommand(&cmd_connect_ospfd_instance);
+    node->AddCommand(&cmd_set_terce_sync_instance);
     node->AddCommand(&cmd_edit_link_instance);
     node->AddCommand(&cmd_set_pce_module_default_instance);
     //Edit-link level under configure

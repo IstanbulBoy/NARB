@@ -130,6 +130,8 @@ class SystemConfig
  
     static int topology_refresh_interval;
 
+    static bool terce_sync_off;
+
     static string cli_password;
     static string cli_address;
     static int cli_timeout;

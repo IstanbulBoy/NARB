@@ -116,6 +116,8 @@ public:
     static int ospf_sync_interval;
     static int max_ospf_sync_attempts;
 
+    static bool terce_sync_off;
+
     static int delta_expire_query;
     static int delta_expire_reserve;
     static int delta_expire_subnet_reserve;
