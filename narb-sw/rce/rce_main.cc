@@ -168,14 +168,14 @@ int main( int argc, char* argv[])
         {
             LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
         }
-        Log::options = LOG_STDOUT;
         while (!terce_client->RceTerceApiReady())
         {
-            LOGF("RCE-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds (start TERCE server or change terce config in rce.conf and restart RCE)...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+            Log::options = LOG_STDOUT;
+            LOGF("RCE-TERCE API server (%s:%d) is not ready\n ### Wait 10 seconds (start TERCE or change terce config in rce.conf and restart RCE)...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+            Log::options = log_opt;
             sleep(10);
             terce_client->RunWithoutSyncTopology();
         }
-        Log::options = log_opt;
         //Start abstract domain topology origination via TERCE
         if (topo_originator == NULL)
         {
