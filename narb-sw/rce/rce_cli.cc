@@ -1299,7 +1299,7 @@ COMMAND(cmd_show_topology, (char*)"show topology {interdomain | intradomain}",  
 
     if (TerceApiTopoOriginator::last_originating_time != 0) {
         char* tstr = ctime((time_t*)&TerceApiTopoOriginator::last_originating_time);
-        tstr[strlen(tstr)-2] = 0;
+        tstr[strlen(tstr)-1] = 0;
         CLI_OUT("\t ... Lastest sync to TERCE at %s ... %s",  tstr, cli_cstr_newline);
     }
     

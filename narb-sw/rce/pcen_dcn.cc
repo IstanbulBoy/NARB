@@ -816,7 +816,7 @@ void PCEN_DCN::ReplyEROWithAltPaths()
         }
     }
 
-    LOGF("##---END---## PCEN_DCN::ReplyEROWithAltPaths ---------------##\n");
+    LOGF("##---END--- PCEN_DCN::ReplyEROWithAltPaths ---------------##\n");
     api_writer->PostMessage(msg);
 }
 
