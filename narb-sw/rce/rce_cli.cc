@@ -1297,9 +1297,12 @@ COMMAND(cmd_show_topology, (char*)"show topology {interdomain | intradomain}",  
         node = tree->NextNodeHavingData(node);
     }
 
-    if (TerceApiTopoOriginator::last_originating_time != 0)    
-        CLI_OUT("\t ... Last Time Sync to TERCE at %s ... %s",  ctime((time_t*)&TerceApiTopoOriginator::last_originating_time), cli_cstr_newline);
-
+    if (TerceApiTopoOriginator::last_originating_time != 0) {
+        char* tstr = ctime((time_t*)&TerceApiTopoOriginator::last_originating_time);
+        tstr[strlen(tstr)-2] = 0;
+        CLI_OUT("\t ... Lastest sync to TERCE at %s ... %s",  tstr, cli_cstr_newline);
+    }
+    
     CLI_OUT("\t  \t .......The End.......%s %s", cli_cstr_newline, cli_cstr_newline);
     cli_node->ShowPrompt();
 }
