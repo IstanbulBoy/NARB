@@ -914,7 +914,7 @@ void TerceApiTopoOriginator::Run()
     {
         DeleteTopology();
         OriginateTopology();
-        LOGF("TerceApiTopoOriginator::OriginateTopology to TERCE server %s:%d.\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+        //LOGF("TerceApiTopoOriginator::OriginateTopology to TERCE server %s:%d.\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
     }
 }
 

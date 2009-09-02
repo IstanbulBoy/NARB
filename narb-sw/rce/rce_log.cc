@@ -54,10 +54,10 @@ const string Log::Preamble(LogOption option)
     switch (option)
     {
     case LOG_LOGFILE:
-        s = " ";
+        s = "RCE";
         break;
     case LOG_STDOUT:
-        s = " ";
+        s = "RCE_OUTPUT";
         break;
     case LOG_STDERR:
         s = "ERROR ";

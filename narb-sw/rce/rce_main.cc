@@ -81,6 +81,7 @@ int main( int argc, char* argv[])
 {
     bool is_daemon = false;
     bool has_config_file = false;
+    LogOption log_opt = LOG_ALL;
 
     while (1)
     {
@@ -122,7 +123,7 @@ int main( int argc, char* argv[])
     //u_int32_t pid = getpid();
     //sprintf(log_file, "rce-%d.log", pid);    
     sprintf(log_file, "/var/log/rce.log");    
-    Log::Init(LOG_ALL, log_file);
+    Log::Init(log_opt, log_file);
     Log::SetDebug(true);
     LOG(endl<<endl<<"#####################"<<endl
         <<"DRAGON RCE Started..."<<endl
@@ -167,13 +168,14 @@ int main( int argc, char* argv[])
         {
             LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
         }
+        Log::options = LOG_STDOUT;
         while (!terce_client->RceTerceApiReady())
         {
-            LOGF("RCE-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
+            LOGF("RCE-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds (start TERCE server or change terce config in rce.conf and restart RCE)...\n", SystemConfig::terce_host.c_str(), SystemConfig::terce_port);
             sleep(10);
             terce_client->RunWithoutSyncTopology();
         }
-
+        Log::options = log_opt;
         //Start abstract domain topology origination via TERCE
         if (topo_originator == NULL)
         {

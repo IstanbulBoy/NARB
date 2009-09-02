@@ -224,12 +224,14 @@ int main( int argc, char* argv[])
         {
             LOGF("TerceApiTopoSync failed to start: API server not ready (%s:%d)....\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
         }
+        Log::options = LOG_STDOUT;
         while (!terce_client->NarbTerceApiReady())
         {
-            LOGF("NARB-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
+            LOGF("NARB-TERCE API server (%s:%d) is not ready\n\t... wait 10 seconds (start TERCE server or change terce config in narb.conf and restart NARB) ...\n", NarbDomainInfo.terce.addr, NarbDomainInfo.terce.port);
             sleep(10);
             terce_client->RunWithoutSyncTopology();
         }
+        Log::options = log_opt;
         //Start abstract domain topology origination via TERCE
         TerceApiTopoWriter* terce_apiwriter = terce_client->GetWriter();
         NarbDomainInfo.OriginateTopology(terce_apiwriter);
