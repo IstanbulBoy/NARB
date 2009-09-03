@@ -3,5 +3,43 @@ domain-id {ip 10.100.0.0}
 !
 include-tedb-schema {path /usr/local/dragon/etc/schema_combo.rsd}
 !
-!include-subnet-topology {path /usr/local/dragon/etc/subnet_ciena.conf}
+cli {password dragon}
 !
+!!!!!!!!! Below are optional configuration statements !!!!!!!!!
+!
+!Subnet topology file path for a network that includes a Ciena sunbet.
+include-subnet-topology {path /usr/local/dragon/etc/subnet_ciena.conf}
+!
+!TERCE API configuration. RCE cannot start properly with this
+!statement if the TERCE server is not up running.
+terce {address 140.173.2.2
+       port 2690
+       localport 2694
+       topology-sync-interval 60
+}
+!
+!Default PCE algorithm. Options: mrn-default, a.k.a. mrn-bfs, mrn-ksp, mrn-dcn, 
+!mrn-cg and spf. The system default is 'mrn-default' without the statement
+pce-algorithm {mrn-default}
+!pce-algorithm {mrn-ksp ksp-k 10}
+!
+!Define resource holding times for query, reservation and subnet reservation
+holding-time {
+        query-expire-seconds 60
+        reserve-expire-seconds 5
+        subnet-reserve-expire-seconds 86400
+}
+!
+!Define extra PCE options
+extra-options {
+	wdm-subnet
+        radix-lock
+}
+!
+!EoS mapping table for Ciena subnet
+ethernet-bandwidth-to-sonet-timeslots-mapping {
+        map 1000.0 to 21
+        map 10000.0 to 191
+}
+!
+

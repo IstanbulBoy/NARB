@@ -1,11 +1,23 @@
 !
 domain-id {ip 10.100.0.0}
 !
-inter-domain-ospfd {address localhost port 2607
-        originate-interface 140.173.100.2 area 0.0.0.1}
-!
 intra-domain-ospfd {address localhost port 2617
         originate-interface 10.100.97.166 area 0.0.0.0}
+!
+!Optional TERCE API configuration. NARB cannot start properly with this 
+!statement if the TERCE server is not up running.
+!
+terce {address 140.173.2.2
+       port 2690
+       localport 2692
+}
+!
+!Note that we need none of the following inter-domain-ospfd and topology 
+!router{ link } and inter-domain-te-link config statements for intradomain 
+!only use cases.
+!
+inter-domain-ospfd {address localhost port 2607
+        originate-interface 140.173.100.2 area 0.0.0.1}
 !
 router {id 10.100.10.233
         link {id 10.100.10.240 type 1
@@ -112,5 +124,8 @@ inter-domain-te-link {id 140.173.97.37 narb-peer 140.173.100.1 port 2609}
 inter-domain-te-link {id 140.173.97.45 narb-peer 140.173.100.1 port 2609}
 inter-domain-te-link {id 140.173.97.53 narb-peer 140.173.100.1 port 2609}
 !
+!Finally we must define CLI host name and password
+!
 cli {host hopi-narb password dragon}
 !
+
