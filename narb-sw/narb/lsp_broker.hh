@@ -195,6 +195,8 @@ private:
     list<ero_subobj*> user_ero; // Optional user spplied ERO for TLV_TYPE_NARB_USER_SUPPLIED_ERO
     list<ero_subobj*> subnet_ero; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_ERO
     list<dtl_hop> subnet_dtl; // Optional subnet ERO for TLV_TYPE_NARB_SUBNET_DTL
+    list< list<ero_subobj*> > alt_eros;
+    list< list<ero_subobj*> > alt_subnet_eros;
     bool is_recursive_req;
     bool is_qconf_mode;
     

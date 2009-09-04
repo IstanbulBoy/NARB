@@ -64,7 +64,8 @@ struct msg_narb_vtag_mask;
 
 extern "C" {
     api_msg * narb_new_msg_reply_error (u_int32_t ucid, u_int32_t seqnr, u_int32_t errorcode, u_int32_t previous_lspb_id);
-    api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_narb_vtag_mask* vtagmask, u_int32_t previous_lspb_id, list<ero_subobj*>* p_ero_subnet=NULL, list<dtl_hop>* p_subnet_dtl = NULL);
+    api_msg * narb_new_msg_reply_ero (u_int32_t ucid, u_int32_t seqnr, list<ero_subobj*>& ero, msg_narb_vtag_mask* vtagmask, u_int32_t previous_lspb_id,
+        list<ero_subobj*>* p_ero_subnet=NULL, list<dtl_hop>* p_subnet_dtl = NULL, list< list<ero_subobj*> >* p_alt_eros = NULL, list< list<ero_subobj*> >* p_alt_subnet_eros = NULL);
     api_msg * narb_new_msg_reply_release_confirm (u_int32_t ucid, u_int32_t seqnr, u_int32_t previous_lspb_id);
     u_int32_t narb_get_msg_lspb_id(api_msg* msg);
     void narb_extract_ero_tlv (te_tlv_header& ero_tlv, list<ero_subobj*>& ero);

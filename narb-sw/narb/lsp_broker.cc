@@ -1034,7 +1034,7 @@ int LSPQ::HandleCompleteERO()
     assert(broker);
 
     rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req? previous_lspb_id : 0,
-        (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl);
+        (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl, &alt_eros, &alt_subnet_eros);
     if (!rmsg)
         HandleErrorCode(NARB_ERROR_INTERNAL);
     rmsg->header.tag = htonl(req_vtag);
@@ -1131,7 +1131,7 @@ int LSPQ::HandleCompleteEROWithConfirmationID()
         }
 
         rmsg = narb_new_msg_reply_ero(req_ucid, app_seqnum, ero, (app_options & LSP_OPT_REQ_ALL_VTAGS) == 0 ? NULL : vtag_mask, is_recursive_req ? previous_lspb_id : 0,
-            (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl);
+            (app_options & LSP_OPT_SUBNET_ERO) == 0 ? NULL : &subnet_ero, (app_options & LSP_OPT_SUBNET_DTL) == 0 ? NULL : &subnet_dtl, &alt_eros, &alt_subnet_eros);
         LOGF("HandleCompleteEROWithConfirmationID:: For orignal LSPQuery, sending back  ERO with confirmation ID (ucid=%x,seqnum=%x)\n", req_ucid, app_seqnum);
     }
 
@@ -2001,6 +2001,7 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
     int tlv_len;
     msg_narb_vtag_mask* vtagMask;
     bool hasVtagMask = false;
+    list<ero_subobj*> alt_ero;
 
     while (msg_len > 0)
     {
@@ -2039,11 +2040,17 @@ void LSPQ::HandleOptionalResponseTLVs(api_msg* msg)
             break;
         case TLV_TYPE_NARB_ALTERNATE_ERO:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
-            //TODO
+            if (app_options & LSP_OPT_ALT_PATHS) {
+                GetERO(tlv, alt_ero);
+                alt_eros.push_back(alt_ero);
+            }
             break;
         case TLV_TYPE_NARB_ALTERNATE_SUBNET_ERO:
             tlv_len = ntohs(tlv->length) + TLV_HDR_SIZE;
-            //TODO
+            if (app_options & LSP_OPT_ALT_PATHS) {
+                GetERO(tlv, alt_ero);
+                alt_subnet_eros.push_back(alt_ero);
+            }
             break;
         /* RCE does not suggest vtag in the current implemention
         case TLV_TYPE_NARB_SUGGESTED_VTAG:
