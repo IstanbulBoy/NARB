@@ -156,6 +156,8 @@ void LSPHandler::Run()
 
     if (pce_spec != NULL)
     {
+        //enforce all requests being handled by MRN routing module
+        options |= LSP_OPT_MRN;
         if (strcasecmp(pce_spec->module_name, "mrn-dcn") == 0)
         {
             pcen_event = new PCEN_DCN(source, destination, switching_type_ingress, encoding_type_ingress, bandwidth_ingress, 
