@@ -190,7 +190,7 @@ void*  PCENLink::AttributeByTag (const char * tag)
 #endif
 
 
-PCENNode::PCENNode(int id): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM)
+PCENNode::PCENNode(int id): waveset(MAX_WAVE_NUM, 190000, 100), timeslotset(MAX_SUBWAVE_CHANNELS), vtagset(MAX_VLAN_NUM)
 {
     ref_num=id;
     Init();
@@ -302,7 +302,9 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
         {
             if (tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
             {
-               if (float_equal(iscd->min_lsp_bw, 0) ||float_evenly_dividable(tspec.Bandwidth, iscd->min_lsp_bw))
+               if (tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK && !this->IsCienaOTNXInterface())
+                    return true; // no need for timeslots checking as that will be done by ::ProceedByUpdatingTimeslots
+               else if (float_equal(iscd->min_lsp_bw, 0) ||float_evenly_dividable(tspec.Bandwidth, iscd->min_lsp_bw))
                     return true;
             }
             else if (tspec.SWtype >= LINK_IFSWCAP_SUBTLV_SWCAP_PSC1 && 
@@ -353,6 +355,23 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
         }
     }
 
+    return false;
+}
+
+
+//$$$$ Ciena OTNx-interface
+bool PCENLink::IsCienaOTNXInterface()
+{
+    if (!this->link)
+        return false;
+    list<ISCD*>::iterator it_iscd = link->Iscds().begin();
+    for (; it_iscd != link->Iscds().end(); it_iscd++)
+    {
+        ISCD* iscd = *it_iscd;
+        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
+            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            return true;
+    }
     return false;
 }
 
@@ -424,6 +443,36 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
     
     if (!any_wave_ok)
         next_waveset.Intersect(head_waveset);
+}
+
+//$$$$ Ciena OTNx-interface
+void PCENLink::ProceedByUpdatingONTXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset)
+{
+    if (!IsCienaOTNXInterface()) //currentlywe only constrain timeslots for Ciena-ONTX
+        return;
+
+    next_timeslotset.Clear();
+    bool any_timeslot_ok = head_timeslotset.HasAnyTag();
+
+    // Constrain forward link only as we assume bidirectional, symetric provisioning
+    // Retieve available timeslots
+    list<ISCD*>::iterator it = link->Iscds().begin();
+    for (; it != link->Iscds().end(); it++)
+    {
+        ISCD* iscd = *it;
+        if (!iscd)
+            continue;
+        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
+            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+        {
+            next_timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
+        }
+    }
+
+    if (!any_timeslot_ok)
+        next_timeslotset.Intersect(head_timeslotset);
+
+    PCEN::TrimOTNXTimeslotsByBandwidth(next_timeslotset, this->lcl_end->tspec.Bandwidth);
 }
 
 //$$$$ Only constraining the forward direction (not checking the reverse; assuming symetric L2SC link configurations)
@@ -2025,4 +2074,39 @@ void PCEN::TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>& 
     }
 }
 
+//$$$$ Ciena OTNX (only handling 10G backplanes (64 timeslots) for now)
+void PCEN::TrimOTNXTimeslotsByBandwidth(ConstraintTagSet &timeslotset, float bandwidth)
+{
+    u_int32_t num_sts1s = SystemConfig::MapBandwidthToNumberOfTimeslots(bandwidth);
+    u_int32_t num_opvcx = (num_sts1s+2)/3;
+    u_int32_t i, j, ts, ts_start;
+
+    if (num_opvcx > 16)  //requiring OTU2
+    {
+        for (ts = 1; ts <= 64; ts++)
+            if (!timeslotset.HasTag(ts))
+            {
+                timeslotset.Clear();
+                return;
+            }
+    }
+    else //requiring single OTU1
+    {
+            for (i = 0; i < 4; i++) // 4 OTU1s
+            {
+                for (ts = i*16+1, ts_start = i*16+1; ts < (i+1)*16; ts++)
+                {
+                    if (timeslotset.HasTag(ts_start) && !timeslotset.HasTag(ts))
+                    {
+                        if (ts - ts_start < num_opvcx) //remove unsatisfying blocks
+                        {
+                            for (j = ts_start; j < ts; j++)
+                                timeslotset.DeleteTag(j);
+                        }
+                        ts_start = ts+1;
+                    }
+                }
+            }
+    }
+}
 

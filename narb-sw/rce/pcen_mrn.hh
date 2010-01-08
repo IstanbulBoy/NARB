@@ -47,6 +47,7 @@ protected:
     list<PCENNode*> PStack;
     list<TSpec> TSpecStack;
     list<ConstraintTagSet> WaveSetStack;
+    list<ConstraintTagSet> TimeslotSetStack;
     list<ConstraintTagSet> VtagSetStack;
     list<double> MinCostStack;
     list<bool> PathVisitedStack;
@@ -72,6 +73,8 @@ public:
 
     int InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink);
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
+
+    int InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nextLink);
 
     virtual int PostBuildTopology();
     virtual int PerformComputation();

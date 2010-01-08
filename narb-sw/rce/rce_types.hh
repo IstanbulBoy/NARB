@@ -60,4 +60,9 @@
 #define MAX_WAVE_NUM 80
 #endif
 
+// Maximum number of available timeslots's that a port/IP is assigned to
+#ifndef MAX_SUBWAVE_CHANNELS
+#define MAX_SUBWAVE_CHANNELS 256
+#endif
+
 #endif

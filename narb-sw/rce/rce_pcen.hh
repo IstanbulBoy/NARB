@@ -425,6 +425,7 @@ public:
     //////Variables (sets) Indicating Search Progress//////
     TSpec tspec;
     ConstraintTagSet waveset;
+    ConstraintTagSet timeslotset;
     ConstraintTagSet vtagset;
     bool path_visited;
     
@@ -458,9 +459,9 @@ public:
             router_self_allocated = false;
         }
 
-    PCENNode(): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
+    PCENNode(): waveset(MAX_WAVE_NUM, 190000, 100), timeslotset(MAX_SUBWAVE_CHANNELS), vtagset(MAX_VLAN_NUM), ref_num(-1) { Init(); }
     PCENNode(int id);
-    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM, 190000, 100), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
+    PCENNode(RouterId *router_ptr): waveset(MAX_WAVE_NUM, 190000, 100), timeslotset(MAX_SUBWAVE_CHANNELS), vtagset(MAX_VLAN_NUM), router(router_ptr), ref_num(-1)  { Init(); }
     ~PCENNode()  { if (router_self_allocated) delete router; }
 
     u_int32_t DomainId ();
@@ -539,7 +540,9 @@ public:
 
     bool IsAvailableForTspec(TSpec& tspec);
     bool CanBeEgressLink(TSpec& tspec);
+    bool IsCienaOTNXInterface();
     void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
+    void ProceedByUpdatingONTXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
     void ExcludeAllocatedVtags(ConstraintTagSet &vtagset);
     bool CrossingRegionBoundary(TSpec& tspec);
@@ -701,6 +704,7 @@ public:
     static void TranslateSubnetEROIntoDTL(list<ero_subobj>&ero_hops, list<dtl_hop>& dtl_hops);
     static void TranslateSubnetDTLIntoERO(list<dtl_hop>& dtl_hops, list<ero_subobj>&ero_hops);
 
+    static void TrimOTNXTimeslotsByBandwidth(ConstraintTagSet &timeslotset, float bandwidth);
     // ... more ...
     //To get head and tail-end domain IDs for a TE link call GetRouterDomainId twice on advRtId and linkId
     //To get the intradomain network graph use BuildNodeVector(RTYPE_LOC_RTID) and BuildLinkVector(RTYPE_LOC_PHY_LNK)

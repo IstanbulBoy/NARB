@@ -164,6 +164,20 @@ public:
 #define MAX_TIMESLOTS_NUM 192
 #endif
 
+#ifndef MAX_SUBWAVE_CHANNELS
+#define MAX_SUBWAVE_CHANNELS 256
+#endif
+
+#ifndef  WAVE_GRID_LABEL
+#define WAVE_GRID_LABEL
+struct wavelength_grid_label {
+	u_int32_t		grid_type:3; /*Grid type: 1=ITU-T_DWDM 2=ITU-T_CWDM*/
+	u_int32_t	 	spacing:3; /*Channel spacing: 1=100, 2=50*/
+	u_int32_t	 	reserved:9;
+	int			wavelength:17; /*Wavelength channel number*/
+};
+#endif
+
 struct IfSwCapDesc
 {
     u_char	swtype;
@@ -180,22 +194,44 @@ struct IfSwCapDesc
             u_char      bitmask_alloc[MAX_VLAN_NUM/8];
         }vlan_info;
         struct {
-        	u_int16_t		length;
-        	u_int16_t	 	version;
-        	u_int8_t		subnet_uni_id;
-        	u_int8_t		first_timeslot;
-        	u_char		swtype_ext;
-        	u_char		encoding_ext;
-        	u_int32_t		tna_ipv4;
-        	u_int32_t		nid_ipv4;
-        	u_int32_t		data_ipv4;
-        	u_int32_t		logical_port_number;
-        	u_int32_t		egress_label_downstream;
-        	u_int32_t		egress_label_upstream;
-        	char			control_channel[12];
-        	char			node_name[16];
-        	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8];
+            u_int16_t		length;
+            u_int16_t	 	version;
+            u_int8_t		subnet_uni_id;
+            u_int8_t		first_timeslot;
+            u_char		swtype_ext;
+            u_char		encoding_ext;
+            u_int32_t		tna_ipv4;
+            u_int32_t		nid_ipv4;
+            u_int32_t		data_ipv4;
+            u_int32_t		logical_port_number;
+            u_int32_t		egress_label_downstream;
+            u_int32_t		egress_label_upstream;
+            char			control_channel[12];
+            char			node_name[16];
+            u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8];
         } subnet_uni_info;
+        struct {
+            u_int16_t	length;
+            u_int16_t	version;       // IFSWCAP_SPECIFIC_CIENA_OPVCX
+            u_int32_t	switch_ip;
+            u_int16_t	tl1_port;
+            u_int8_t	eth_edge; // 1 = true, 0 = false
+            union {
+                u_int8_t	reserved;
+                u_int8_t	otnx_if_id;
+            };
+            u_int32_t	data_ipv4;
+            u_int32_t	logical_port_number;
+            u_int16_t 	num_waves; // number of wavelengths
+            u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
+            struct {
+                union {
+                     wavelength_grid_label wave_label; // default = all 0 for single-wave TDM (non-WDM) 
+                    u_int32_t wave_id;
+                };
+                u_int8_t opvc_bitmask[MAX_SUBWAVE_CHANNELS/8]; // bit =1 means available 
+            } wave_opvc_map[1]; // num_waves blocks
+        }ciena_opvcx_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
 #define ISCD_MADATORY_SIZE 36

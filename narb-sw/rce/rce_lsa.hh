@@ -290,6 +290,40 @@ struct link_ifswcap_specific_subnet_uni {
 	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8]; //time slots available == 1
 };
 
+
+#ifndef  WAVE_GRID_LABEL
+#define WAVE_GRID_LABEL
+struct wavelength_grid_label {
+	u_int32_t		grid_type:3; /*Grid type: 1=ITU-T_DWDM 2=ITU-T_CWDM*/
+	u_int32_t	 	spacing:3; /*Channel spacing: 1=100, 2=50*/
+	u_int32_t	 	reserved:9;
+	int			wavelength:17; /*Wavelength channel number*/
+};
+#endif
+#define IFSWCAP_SPECIFIC_CIENA_OPVCX 0x0010
+struct link_ifswcap_specific_ciena_opvcx {
+	u_int16_t		length;
+	u_int16_t	 	version;       // IFSWCAP_SPECIFIC_CIENA_OPVCX
+	u_int32_t		switch_ip;
+	u_int16_t		tl1_port;
+	u_int8_t		eth_edge; // 1 = true, 0 = false
+	union {
+	    u_int8_t	reserved;
+	    u_int8_t	ontx_if_id;
+	};
+	u_int32_t		data_ipv4;
+	u_int32_t		logical_port_number;
+	u_int16_t 	num_waves; // number of wavelengths
+	u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
+	struct {
+		union {
+			wavelength_grid_label wave_label; // default = all 0 for single-wave TDM (non-WDM) 
+			u_int32_t wave_id;
+		};
+		u_int8_t opvc_bitmask[MAX_SUBWAVE_CHANNELS/8]; // bit =1 means available 
+	} wave_opvc_map[1]; // num_waves blocks
+};
+
 #define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)
 #define SET_VLAN(P, VID) P[(VID-1)/8] = (P[(VID-1)/8] | (0x80 >> (VID-1)%8))
 #define RESET_VLAN(P, VID) P[(VID-1)/8] = (P[(VID-1)/8] & ~(0x80 >> (VID-1)%8))
@@ -332,7 +366,6 @@ struct te_link_subtlv_link_ifswcap
 #define LINK_IFSWCAP_SUBTLV_ENC_FIBRCHNL		11
 #define LINK_IFSWCAP_SUBTLV_ENC_G709ODUK	12
 #define LINK_IFSWCAP_SUBTLV_ENC_G709OCH		13
-#define LINK_IFSWCAP_SUBTLV_ENC_ODU1_16		242 //Ciena Slotted ODU1 (242: DRAGON assigned experimental)
 	u_char	encoding;
 
        u_char	reserved[2];

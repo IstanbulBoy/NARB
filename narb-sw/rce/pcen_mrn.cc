@@ -857,6 +857,34 @@ int PCEN_MRN::InitiateMovazWaves(ConstraintTagSet& waveset, PCENLink* nextLink)
     return 0;
 }
 
+
+//$$$$ Ciena OTNx special handling
+int PCEN_MRN::InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nextLink)
+{
+    PCENLink * reverseLink = nextLink->reverse_link;
+    if (!reverseLink || !reverseLink->link)
+        return -1;
+
+    list<ISCD*>::iterator it = reverseLink->link->Iscds().begin();
+    for (; it != reverseLink->link->Iscds().end(); it++)
+    {
+        ISCD* iscd = *it;
+        if (!iscd)
+            continue;
+        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
+            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+        {
+            timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
+        }
+    }
+
+    PCEN::TrimOTNXTimeslotsByBandwidth(timeslotset, reverseLink->rmt_end->tspec.Bandwidth);
+
+    if (timeslotset.IsEmpty())
+        return -1;
+    return 0;
+}
+
 void PCEN_MRN::SetVTagMask(ConstraintTagSet& vtagset)
 {
     if (!vtag_mask)
@@ -1070,6 +1098,7 @@ void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
 {
     TSpecStack.push_front(node.tspec);
     WaveSetStack.push_front(node.waveset);
+    TimeslotSetStack.push_front(node.timeslotset);
     VtagSetStack.push_front(node.vtagset);
     MinCostStack.push_front(node.minCost);
     PathStack.push_front(node.path);
@@ -1087,6 +1116,9 @@ void PCEN_MRN::RestoreSceneFromStacks(PCENNode& node)
     if (&node != destNode)
       node.waveset = WaveSetStack.front();
     WaveSetStack.pop_front();
+    if (&node != destNode)
+      node.timeslotset = TimeslotSetStack.front();
+    TimeslotSetStack.pop_front();
     if (&node != destNode)
       node.vtagset = VtagSetStack.front();
     VtagSetStack.pop_front();
@@ -1150,7 +1182,9 @@ int PCEN_MRN::PerformComputation()
         PCENNode *nextNode;
         bool link_visited;
         ConstraintTagSet nextWaveSet(MAX_WAVE_NUM, 190000, 100);
+        ConstraintTagSet nextTimeslotSet(MAX_SUBWAVE_CHANNELS);
         ConstraintTagSet nextVtagSet(MAX_VLAN_NUM);
+
         TSpec tspec_egress;
         tspec_egress.Update(switching_type_egress, encoding_type_egress, bandwidth_egress);
 
@@ -1193,7 +1227,25 @@ int PCEN_MRN::PerformComputation()
                 if (nextWaveSet.IsEmpty())
                     continue;
             }
-            
+
+            //Handling Ciena OTNX timeslots constraint
+            nextTimeslotSet.Clear();
+            if (headNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && headNode->tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK)
+            {
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "HeadNode->timeslotset: ";
+                headNode->timeslotset.DisplayTags();
+#endif
+                nextLink->ProceedByUpdatingONTXTimeslots(headNode->timeslotset, nextTimeslotSet); 
+                //nextNode->timeslotset to be updaed later
+#ifdef DISPLAY_ROUTING_DETAILS
+                cout << "NextLink ";
+                nextTimeslotSet.DisplayTags();
+#endif
+                if (nextTimeslotSet.IsEmpty())
+                    continue;
+            }
+
             //Handling E2E Tagged VLAN constraint
             nextVtagSet.Clear();
             if (is_e2e_tagged_vlan)
@@ -1274,8 +1326,14 @@ int PCEN_MRN::PerformComputation()
                         continue;
                 }
 
+                //$$$$ Ciena OTNx special handling
+                if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && nextNode->tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK)
+                {
+                    //if (!nextLink->reverse_link || !nextLink->reverse_link->IsCienaOTNXInterface() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
+                    //    continue;
+                }
+
                 //$$$$ TDM (Ciena CDs) subnet special handling 
-                //@@@@ We might want to make a special Ciena sw_type like CIENA_TDM (101) ...
                 if ( SystemConfig::should_incorporate_ciena_subnet ) 
                 {
                     // $$$$ Checking available timeslots on the region-border interface getting out of TDM region
@@ -1320,6 +1378,9 @@ int PCEN_MRN::PerformComputation()
 
             //proceed with new wavelengthSet
             nextNode->waveset = nextWaveSet;
+
+            //proceed with new timeslotSet
+            nextNode->timeslotset = nextTimeslotSet;
 
             //proceed with new vlanTagSet
             nextNode->vtagset = nextVtagSet;
