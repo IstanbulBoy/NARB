@@ -914,7 +914,7 @@ int PCEN_MRN::CheckTimeslotsAvailability(PCENLink* pcen_link, float bandwidth)
         if (HAS_TIMESLOT(iscd->subnet_uni_info.timeslot_bitmask, ts))
             ts_num++;
 		//timeslots handling in contiguous mode --> range starts over when gap is crossed
-        else if ((iscd->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
+        else if ((ntohs(iscd->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
 			ts_num = 0;
 
         if (ts_num >= min_num_ts)
@@ -973,7 +973,7 @@ int PCEN_MRN::InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nex
         if (!iscd)
             continue;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
-            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            && (ntohs(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
         {
             timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
         }
