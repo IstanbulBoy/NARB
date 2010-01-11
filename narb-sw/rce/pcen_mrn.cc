@@ -120,7 +120,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
 
     // costructing fake source or destination node for the attaching local-id
     // the newly constructed source or destination edge node uses local-id as router id
-    RouterId* new_router = new RouterId(is_src?source.s_addr:destination.s_addr+lclid); 
+    RouterId* new_router = new RouterId((is_src?source.s_addr:destination.s_addr)+lclid); 
     new_pcen_node = new PCENNode(new_router);
     new_pcen_node->router_self_allocated = true;
     new_pcen_node->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
