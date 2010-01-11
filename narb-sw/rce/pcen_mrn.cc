@@ -84,8 +84,8 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
             node = tree->NextNode(node);
             continue;
         }
-        if (!lclid_link && link->AdvRtId() == source.s_addr
-             && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((lclid >> 8) & 0xff))
+        if (!lclid_link && link->AdvRtId() == is_src?source.s_addr:destination.s_addr
+             && (*iter_iscd)->ciena_opvcx_info.otnx_if_id == ((lclid >> 8) & 0xff))
         {
             link->removeDeltaByOwner(ucid, seqnum);
             link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
@@ -96,7 +96,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
         node = tree->NextNode(node);
     }
 
-    // verifying and adding the source lclid link into topology
+    // verifying and adding the source/destination lclid link into topology
     if (!lclid_link)
     {
         LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that %s local-id (0x%x) is attaching to the topology\n", is_src?"source":"destination", lclid);
@@ -119,7 +119,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
     }
 
     // costructing fake source or destination node for the attaching local-id
-    // the newly constructed source edge node use source local-id as router id
+    // the newly constructed source or destination edge node uses local-id as router id
     RouterId* new_router = new RouterId(is_src?source.s_addr:destination.s_addr+lclid); 
     new_pcen_node = new PCENNode(new_router);
     new_pcen_node->router_self_allocated = true;
@@ -134,7 +134,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
     pcen_link_backward->rmt_end = new_pcen_node;
     //pcen_link_backward->link_self_allocated = true;
     new_pcen_node->in_links.push_back(pcen_link_backward);
-    // costructing fake source link (reverse direction)
+    // costructing fake source/desination link (reverse direction)
     Link* link_forward = new Link(link_backward->Id(), link_backward->AdvRtId(), 
         link_backward->RmtIfAddr(), link_backward->LclIfAddr());
     // cutomizing link_forward with L2 ISCD
