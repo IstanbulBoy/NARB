@@ -542,7 +542,7 @@ public:
     bool CanBeEgressLink(TSpec& tspec);
     bool IsCienaOTNXInterface();
     void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
-    void ProceedByUpdatingONTXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset);
+    void ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);
     void ExcludeAllocatedVtags(ConstraintTagSet &vtagset);
     bool CrossingRegionBoundary(TSpec& tspec);

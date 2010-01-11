@@ -75,6 +75,7 @@ public:
     void HandleMovazEROTrack(list<ero_subobj>& ero_track,  u_int16_t vtag);
 
     int InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nextLink);
+    int HandleOTNXLocalId(u_int32_t lclid, bool is_src);
 
     virtual int PostBuildTopology();
     virtual int PerformComputation();

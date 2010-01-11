@@ -446,9 +446,9 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
 }
 
 //$$$$ Ciena OTNx-interface
-void PCENLink::ProceedByUpdatingONTXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset)
+void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset)
 {
-    if (!IsCienaOTNXInterface()) //currentlywe only constrain timeslots for Ciena-ONTX
+    if (!IsCienaOTNXInterface()) //currentlywe only constrain timeslots for Ciena-OTNX
         return;
 
     next_timeslotset.Clear();

@@ -50,9 +50,138 @@ PCEN_MRN::PCEN_MRN(in_addr src, in_addr dest, u_int8_t sw_type_ingress, u_int8_t
 
 PCEN_MRN::~PCEN_MRN()
 {
-
+    ;
 }
 
+int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
+{
+    RadixTree<Resource>* tree;
+    RadixNode<Resource> *node;
+    PCENLink *pcen_link;
+    PCENNode *pcen_node, *new_pcen_node;
+    PCENLink* lclid_link = NULL;
+    int i, rNum = routers.size(), lNum = links.size();
+
+    tree = RDB.Tree(RTYPE_LOC_PHY_LNK);
+    node = tree->Root();
+    while (node)
+    {
+        Link* link = (Link*)node->Data();
+        if (link == NULL || link->Iscds().size() == 0)
+        {
+            node = tree->NextNode(node);
+            continue;
+        }
+        list<ISCD*>::iterator iter_iscd = link->Iscds().begin();
+        for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
+        {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (*iter_iscd)->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK 
+                && (htons((*iter_iscd)->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+                break;
+        }
+        if (iter_iscd == link->Iscds().end())
+        {
+            node = tree->NextNode(node);
+            continue;
+        }
+        if (!lclid_link && link->AdvRtId() == source.s_addr
+             && (*iter_iscd)->subnet_uni_info.subnet_uni_id == ((lclid >> 8) & 0xff))
+        {
+            link->removeDeltaByOwner(ucid, seqnum);
+            link->deleteExpiredDeltas(); // handling expired link state deltas. (refer to class Link and class LSPHandler.)
+            link = new Link(link);
+            lclid_link = new PCENLink(link);
+            lclid_link->link_self_allocated = true;
+        }
+        node = tree->NextNode(node);
+    }
+
+    // verifying and adding the source lclid link into topology
+    if (!lclid_link)
+    {
+        LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that %s local-id (0x%x) is attaching to the topology\n", is_src?"source":"destination", lclid);
+        return ERR_PCEN_INVALID_REQ;
+    }
+    else if (lclid_link->link)
+    {
+        lclid_link->linkID = links.back()->linkID+1;
+        links.push_back(lclid_link);
+        lNum += 1;
+        for (i = 0; i < rNum; i++) 
+        {
+            pcen_node = routers[i];
+            if (pcen_node->router && pcen_node->router->Id() == lclid_link->link->AdvRtId())
+            {
+                pcen_node->out_links.push_back(lclid_link);
+                lclid_link->lcl_end = pcen_node;
+            }
+        }
+    }
+
+    // costructing fake source or destination node for the attaching local-id
+    // the newly constructed source edge node use source local-id as router id
+    RouterId* new_router = new RouterId(is_src?source.s_addr:destination.s_addr+lclid); 
+    new_pcen_node = new PCENNode(new_router);
+    new_pcen_node->router_self_allocated = true;
+    new_pcen_node->tspec.Update(switching_type_ingress, encoding_type_ingress, bandwidth_ingress);
+    routers.push_back(new_pcen_node);
+    rNum++;
+    PCENLink * pcen_link_backward = lclid_link;  // reusing the backward pcen_link
+    Link* link_backward = pcen_link_backward->link;
+    // cutomizing link_backward
+    link_backward->id = new_pcen_node->router->id;
+    link_backward->rmtIfAddr = get_slash30_peer(link_backward->lclIfAddr);
+    pcen_link_backward->rmt_end = new_pcen_node;
+    //pcen_link_backward->link_self_allocated = true;
+    new_pcen_node->in_links.push_back(pcen_link_backward);
+    // costructing fake source link (reverse direction)
+    Link* link_forward = new Link(link_backward->Id(), link_backward->AdvRtId(), 
+        link_backward->RmtIfAddr(), link_backward->LclIfAddr());
+    // cutomizing link_forward with L2 ISCD
+    ISCD* iscd = new ISCD;
+    bool has_l2vlan_iscd = false;
+    if (link_backward->Iscds().size() >= 2)
+    {
+        //looking for L2 VLAN ISCD
+        list<ISCD*>::iterator iter_iscd = link_backward->Iscds().begin();
+        for (; iter_iscd != link_backward->Iscds().end(); iter_iscd++)
+        {
+            if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC && (htons((*iter_iscd)->vlan_info.version) & IFSWCAP_SPECIFIC_VLAN_BASIC) != 0)
+            {
+                *iscd = *(*iter_iscd);
+                has_l2vlan_iscd = true;
+                break;
+            }
+        }
+    }
+    if (!has_l2vlan_iscd) //$$$$ no L2 VLAN ISCD found (btw, TDM subnet_uni ISCD must be availalbe when reaching here) --> Obsolete Logic!
+    { 
+        LOGF("ERROR: PCEN_MRN::PostBuildTopology: %s local-id (0x%x) has no L2 ISCD\n", is_src?"source":"destination", lclid);
+        return ERR_PCEN_INVALID_REQ;
+    }
+
+    link_forward->iscds.push_back(iscd);
+    PCENLink* pcen_link_forward = new PCENLink(link_forward); //have to make new
+    pcen_link_forward->link_self_allocated = true;
+    pcen_link_forward->lcl_end = new_pcen_node;
+    pcen_link_forward->rmt_end = pcen_link_backward->lcl_end;
+    pcen_link_forward->reverse_link = pcen_link_backward;
+    pcen_link_backward->reverse_link = pcen_link_forward;
+    new_pcen_node->out_links.push_back(pcen_link_forward);
+    pcen_link_backward->lcl_end->in_links.push_back(pcen_link_forward);
+    pcen_link_forward->linkID = links.back()->linkID+1;
+    links.push_back(pcen_link_forward);
+    lNum++;
+
+    // new source/destination IP
+    if (is_src)
+        source.s_addr = source.s_addr+lclid;
+    else
+        destination.s_addr = destination.s_addr+lclid;
+
+    return 0;
+}
+  
 int PCEN_MRN::PostBuildTopology()
 {
     int i, j, k;
@@ -66,7 +195,7 @@ int PCEN_MRN::PostBuildTopology()
     PCENLink* lclid_link_src = NULL, *lclid_link_dest = NULL;
 
     //$$$$ Local ID based source edge constraint take priority over hopback!
-    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID)
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID || (src_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
     {
         hop_back = 0;
     }
@@ -649,6 +778,13 @@ int PCEN_MRN::PostBuildTopology()
         }
     }
 
+    int ret;
+    if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
+        if ((ret = HandleOTNXLocalId(src_lcl_id, true)) != 0)
+            return ret;
+    if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
+        if ((HandleOTNXLocalId(dest_lcl_id, false)) != 0)
+            return ret;
     return 0;
 }
     
@@ -724,41 +860,6 @@ bool PCEN_MRN::IsLoop(list<PCENLink*> &path, PCENNode* new_node)
 
     return false;
 }
-
-/* 
-  *Moved to bool PCENLink::CrossingRegionBoundary(TSpec& tspec)
-  *
-bool PCEN_MRN::IsCrossingRegionBoundary(PCENLink* pcen_link, TSpec& tspec)
-{
-    assert(pcen_link && pcen_link->link);
-
-    // Check adaptation defined by IACD(s)
-    list<IACD*>::iterator it_iacd;
-    for (it_iacd = pcen_link->link->iacds.begin(); it_iacd != pcen_link->link->iacds.end(); it_iacd++)
-    {
-        //crossing from lower layer to upper layer
-        if ((*it_iacd)->swtype_lower == tspec.SWtype && (*it_iacd)->encoding_lower == tspec.ENCtype)
-            return true;
-        //crossing from upper layer to lower layer
-        if ((*it_iacd)->swtype_upper == tspec.SWtype && (*it_iacd)->encoding_upper == tspec.ENCtype)
-            return true;
-
-         // @@@@ bandwidth criteria to be considered in the future.
-    }
-
-    // Check implicit adaptation
-    if (pcen_link->reverse_link && pcen_link->reverse_link->link && 
-        pcen_link->link->iscds.size() == 1 && pcen_link->reverse_link->link->iscds.size() == 1)
-    {
-        //@@@@ Does encoding matter?
-        if (pcen_link->link->iscds.front()->swtype != pcen_link->reverse_link->link->iscds.front()->swtype
-            || pcen_link->link->iscds.front()->encoding != pcen_link->reverse_link->link->iscds.front()->encoding)
-            return true;
-    }
-
-    return false;
-}
-*/
 
 bool PCEN_MRN::IsInExcludedLayer(PCENNode* node)
 {
@@ -1236,7 +1337,7 @@ int PCEN_MRN::PerformComputation()
                 cout << "HeadNode->timeslotset: ";
                 headNode->timeslotset.DisplayTags();
 #endif
-                nextLink->ProceedByUpdatingONTXTimeslots(headNode->timeslotset, nextTimeslotSet); 
+                nextLink->ProceedByUpdatingOTNXTimeslots(headNode->timeslotset, nextTimeslotSet); 
                 //nextNode->timeslotset to be updaed later
 #ifdef DISPLAY_ROUTING_DETAILS
                 cout << "NextLink ";
@@ -1279,8 +1380,7 @@ int PCEN_MRN::PerformComputation()
                 if (!nextLink->CanBeEgressLink(tspec_egress))
                     continue;
 
-                // @@@@ With VTAG constraint, the link can be egress only if its reverse link also satisfies the vtag constraint.
-                // @@@@ Move to above as part of the *birectional* contraint ???
+                //$$$$ With VTAG constraint, the link can be egress only if its reverse link also satisfies the vtag constraint.
                 //Excluding allocated VLAN tags on the destination node (last hop).
                 if (is_e2e_tagged_vlan)
                 {
@@ -1329,8 +1429,8 @@ int PCEN_MRN::PerformComputation()
                 //$$$$ Ciena OTNx special handling
                 if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && nextNode->tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK)
                 {
-                    //if (!nextLink->reverse_link || !nextLink->reverse_link->IsCienaOTNXInterface() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
-                    //    continue;
+                    if (!nextLink->reverse_link || !nextLink->reverse_link->IsCienaOTNXInterface() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
+                        continue;
                 }
 
                 //$$$$ TDM (Ciena CDs) subnet special handling 
