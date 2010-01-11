@@ -369,7 +369,7 @@ bool PCENLink::IsCienaOTNXInterface()
     {
         ISCD* iscd = *it_iscd;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
-            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            && (htons(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
             return true;
     }
     return false;
@@ -463,7 +463,7 @@ void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset
         if (!iscd)
             continue;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
-            && (iscd->ciena_opvcx_info.version & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            && (htons(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
         {
             next_timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
         }
@@ -1584,7 +1584,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
                 {
                     ts_num++;
                     //default case: timeslots handling in non-contiguous mode --> get the first available timeslot
-                    if (((*iter_iscd)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
+                    if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
                         break;
                 }
                 else
@@ -1628,7 +1628,7 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
                 {
                     ts_num++;
 					//default case: timeslots handling in non-contiguous mode --> get the first available timeslot
-					if (((*iter_iscd)->subnet_uni_info.version & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
+					if ((htons((*iter_iscd)->subnet_uni_info.version) & IFSWCAP_SPECIFIC_SUBNET_CONTIGUOUS) == 0)
 						break;
                 }
                 else
