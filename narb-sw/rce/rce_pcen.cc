@@ -452,7 +452,7 @@ void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset
         return;
 
     next_timeslotset.Clear();
-    bool any_timeslot_ok = head_timeslotset.HasAnyTag();
+    //bool any_timeslot_ok = head_timeslotset.HasAnyTag();
 
     // Constrain forward link only as we assume bidirectional, symetric provisioning
     // Retieve available timeslots
@@ -469,8 +469,10 @@ void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset
         }
     }
 
-    if (!any_timeslot_ok)
-        next_timeslotset.Intersect(head_timeslotset);
+    //$$$$ OTN timeslot swapping is allowed
+    //@@@@ Alightment of OTU1 OPVCX range??
+    //if (!any_timeslot_ok)
+    //    next_timeslotset.Intersect(head_timeslotset);
 
     PCEN::TrimOTNXTimeslotsByBandwidth(next_timeslotset, this->lcl_end->tspec.Bandwidth);
 }

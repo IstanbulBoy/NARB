@@ -84,7 +84,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
             node = tree->NextNode(node);
             continue;
         }
-        if (!lclid_link && link->AdvRtId() == is_src?source.s_addr:destination.s_addr
+        if (!lclid_link && link->AdvRtId() == (is_src?source.s_addr:destination.s_addr)
              && (*iter_iscd)->ciena_opvcx_info.otnx_if_id == ((lclid >> 8) & 0xff))
         {
             link->removeDeltaByOwner(ucid, seqnum);
@@ -783,7 +783,7 @@ int PCEN_MRN::PostBuildTopology()
         if ((ret = HandleOTNXLocalId(src_lcl_id, true)) != 0)
             return ret;
     if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
-        if ((HandleOTNXLocalId(dest_lcl_id, false)) != 0)
+        if ((ret = HandleOTNXLocalId(dest_lcl_id, false)) != 0)
             return ret;
     return 0;
 }
