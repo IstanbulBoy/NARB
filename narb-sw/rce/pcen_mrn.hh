@@ -76,7 +76,8 @@ public:
 
     int InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nextLink);
     int HandleOTNXLocalId(u_int32_t lclid, bool is_src);
-
+    void HandleOTNXEROTrack(list<ero_subobj>& ero_track);
+    
     virtual int PostBuildTopology();
     virtual int PerformComputation();
     virtual void Run();

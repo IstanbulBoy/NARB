@@ -1651,11 +1651,13 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         ISCD* otnx_iscd =  pcen_link->GetOTNXInterfaceISCD();
         if (otnx_iscd)
         {
-            subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->subnet_uni_info.subnet_uni_id <<8) | ANY_TIMESLOT);            
+            subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);            
+            subobj1.l2sc_vlantag = 0;
         }
-        else if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD()) != NULL)
+        if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD()) != NULL)
         {
-            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->subnet_uni_info.subnet_uni_id <<8) | ANY_TIMESLOT);                        
+            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);                        
+            subobj2.l2sc_vlantag = 0;
         }
     }
 

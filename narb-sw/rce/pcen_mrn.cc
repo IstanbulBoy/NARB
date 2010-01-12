@@ -829,10 +829,16 @@ void PCEN_MRN::Run()
         return;
     }
 
-    //@@@@ moved here from end of PerformComputation
     if (SystemConfig::should_incorporate_ciena_subnet)
     {
         HandleSubnetUNIEROTrack(ero);
+        if (ero.size() == 0)
+            ReplyErrorCode(ERR_PCEN_NO_ROUTE);
+    }
+
+    if (has_ciena_otnx)
+    {
+        HandleOTNXEROTrack(ero);
         if (ero.size() == 0)
             ReplyErrorCode(ERR_PCEN_NO_ROUTE);
     }
@@ -1194,6 +1200,31 @@ void PCEN_MRN::HandleSubnetUNIEROTrack(list<ero_subobj>& ero_track)
     if (!is_subnet_ero2dtl_enabled)
     {
         subnet_ero.assign(subnet_ero_tmp.begin(), subnet_ero_tmp.end());
+    }
+}
+
+
+void PCEN_MRN::HandleOTNXEROTrack(list<ero_subobj>& ero_track)
+{
+    list<ero_subobj> subnet_ero_tmp;
+
+    if (ero_track.size() == 0)
+        return;
+
+    // removing ero_subojs from constructed src/dest local-id links
+    if ( (src_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
+    {
+        if (ero_track.front().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+            ero_track.pop_front();
+        if (ero_track.size() == 0)
+            return;
+    }
+    if ( (dest_lcl_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
+    {
+        if (ero_track.back().sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_L2SC)
+            ero_track.pop_back();
+        if (ero_track.size() == 0)
+            return;
     }
 }
 
