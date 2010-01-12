@@ -983,6 +983,8 @@ int PCEN_MRN::InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nex
 
     if (timeslotset.IsEmpty())
         return -1;
+
+    has_ciena_otnx = true;
     return 0;
 }
 
@@ -1429,7 +1431,7 @@ int PCEN_MRN::PerformComputation()
                 //$$$$ Ciena OTNx special handling
                 if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && nextNode->tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK)
                 {
-                    if (!nextLink->reverse_link || !nextLink->reverse_link->IsCienaOTNXInterface() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
+                    if (!nextLink->reverse_link || !nextLink->reverse_link->GetOTNXInterfaceISCD() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
                         continue;
                 }
 
