@@ -76,7 +76,7 @@ int PCEN_MRN::HandleOTNXLocalId(u_int32_t lclid, bool is_src)
         for ( ; iter_iscd != link->Iscds().end(); iter_iscd++)
         {
             if ((*iter_iscd)->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && (*iter_iscd)->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK 
-                && (htons((*iter_iscd)->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+                && (htons((*iter_iscd)->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OTNX) != 0)
                 break;
         }
         if (iter_iscd == link->Iscds().end())
@@ -298,7 +298,7 @@ int PCEN_MRN::PostBuildTopology()
         // verifying and adding the source lclid link into topology
         if ((src_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_src)
         {
-            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source  (0x%x) local-id is attaching to the topology\n", src_lcl_id);
+            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that source local-id (0x%x) is attaching to the topology\n", src_lcl_id);
             return ERR_PCEN_INVALID_REQ;
         }
         else if (lclid_link_src && lclid_link_src->link)
@@ -319,7 +319,7 @@ int PCEN_MRN::PostBuildTopology()
         // verifying and adding the destination lclid link into topology
         if ((dest_lcl_id >> 16) == LOCAL_ID_TYPE_SUBNET_IF_ID && !lclid_link_dest)
         {
-            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination  (0x%x) local-id is attaching to the topology\n", dest_lcl_id);
+            LOGF("ERROR: PCEN_MRN::PostBuildTopology cannot verify that destination local-id (0x%x) is attaching to the topology\n", dest_lcl_id);
             return ERR_PCEN_INVALID_REQ;
         }
         else if (lclid_link_dest && lclid_link_dest->link)
@@ -979,9 +979,9 @@ int PCEN_MRN::InitiateOTNXTimeslots(ConstraintTagSet& timeslotset, PCENLink* nex
         if (!iscd)
             continue;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
-            && (ntohs(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            && (ntohs(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OTNX) != 0)
         {
-            timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
+            timeslotset.AddTags(iscd->ciena_opvcx_info.wave_opvc_bitmask, iscd->ciena_opvcx_info.num_chans);
         }
     }
 

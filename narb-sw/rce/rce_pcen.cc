@@ -370,7 +370,7 @@ ISCD* PCENLink::GetOTNXInterfaceISCD()
     {
         ISCD* iscd = *it_iscd;
         if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
-            && (htons(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OPVCX) != 0)
+            && (htons(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OTNX) != 0)
             return iscd;
     }
     return NULL;
@@ -458,7 +458,7 @@ void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset
 
     // Constrain forward link only as we assume bidirectional, symetric provisioning
     // Retieve available timeslots
-    next_timeslotset.AddTags(otnx_iscd->ciena_opvcx_info.wave_opvc_map[0].opvc_bitmask, otnx_iscd->ciena_opvcx_info.num_chans);
+    next_timeslotset.AddTags(otnx_iscd->ciena_opvcx_info.wave_opvc_bitmask, otnx_iscd->ciena_opvcx_info.num_chans);
 
     //$$$$ OTN timeslot swapping is allowed
     //@@@@ Alightment of OTU1 OPVCX range??
@@ -1651,12 +1651,12 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         ISCD* otnx_iscd =  pcen_link->GetOTNXInterfaceISCD();
         if (otnx_iscd)
         {
-            subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);            
+            subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
             subobj1.l2sc_vlantag = 0;
         }
         if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD()) != NULL)
         {
-            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);                        
+            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
             subobj2.l2sc_vlantag = 0;
         }
     }

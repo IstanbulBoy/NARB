@@ -164,8 +164,8 @@ public:
 #define MAX_TIMESLOTS_NUM 192
 #endif
 
-#ifndef MAX_SUBWAVE_CHANNELS
-#define MAX_SUBWAVE_CHANNELS 256
+#ifndef MAX_OTNX_CHANNELS
+#define MAX_OTNX_CHANNELS 256 //64: 10G with OPVCX; 40: WDM 
 #endif
 
 #ifndef  WAVE_GRID_LABEL
@@ -212,7 +212,7 @@ struct IfSwCapDesc
         } subnet_uni_info;
         struct {
             u_int16_t	length;
-            u_int16_t	version;       // IFSWCAP_SPECIFIC_CIENA_OPVCX
+            u_int16_t	version;       // IFSWCAP_SPECIFIC_CIENA_OTNX
             u_int32_t	switch_ip;
             u_int16_t	tl1_port;
             u_int8_t	eth_edge; // 1 = true, 0 = false
@@ -222,15 +222,9 @@ struct IfSwCapDesc
             };
             u_int32_t	data_ipv4;
             u_int32_t	logical_port_number;
-            u_int16_t 	num_waves; // number of wavelengths
+            u_int16_t 	channel_type;
             u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
-            struct {
-                union {
-                     wavelength_grid_label wave_label; // default = all 0 for single-wave TDM (non-WDM) 
-                    u_int32_t wave_id;
-                };
-                u_int8_t opvc_bitmask[MAX_SUBWAVE_CHANNELS/8]; // bit =1 means available 
-            } wave_opvc_map[1]; // num_waves blocks
+            u_int8_t wave_opvc_bitmask[MAX_OTNX_CHANNELS/8]; // bit =1 means available 
         }ciena_opvcx_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
