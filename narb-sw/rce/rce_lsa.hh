@@ -290,15 +290,14 @@ struct link_ifswcap_specific_subnet_uni {
 	u_int8_t		timeslot_bitmask[MAX_TIMESLOTS_NUM/8]; //time slots available == 1
 };
 
-
 #define IFSWCAP_SPECIFIC_CIENA_OTNX 0x0010
-#define MAX_OTNX_CHANNELS 	256 //64: 10G with OPVCX; 40: WDM 
 #define CIENA_OTNX_OTU1		1
 #define CIENA_OTNX_OTU2		2
 #define CIENA_OTNX_OTU3		4
 #define CIENA_OTNX_OPVC		8
 #define CIENA_OTNX_WDM10G		16
 #define CIENA_OTNX_WDM40G		32
+#define MAX_OTNX_CHAN_NUM 256
 struct link_ifswcap_specific_ciena_opvcx {
 	u_int16_t		length;
 	u_int16_t	 	version;       // IFSWCAP_SPECIFIC_CIENA_OTNX
@@ -313,7 +312,7 @@ struct link_ifswcap_specific_ciena_opvcx {
 	u_int32_t		logical_port_number;
 	u_int16_t 	channel_type;
 	u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
-	u_int8_t   	wave_opvc_bitmask[MAX_OTNX_CHANNELS/8]; // bit =1 means available 
+	u_int8_t   	wave_opvc_bitmask[MAX_OTNX_CHAN_NUM/8]; // bit =1 means available 
 };
 
 #define HAS_VLAN(P, VID) ((P[(VID-1)/8] & (0x80 >> (VID-1)%8)) != 0)

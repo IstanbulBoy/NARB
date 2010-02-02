@@ -164,8 +164,8 @@ public:
 #define MAX_TIMESLOTS_NUM 192
 #endif
 
-#ifndef MAX_OTNX_CHANNELS
-#define MAX_OTNX_CHANNELS 256 //64: 10G with OPVCX; 40: WDM 
+#ifndef MAX_OTNX_CHAN_NUM
+#define MAX_OTNX_CHAN_NUM 256 //64: 10G with OPVCX; 40: WDM 
 #endif
 
 #ifndef  WAVE_GRID_LABEL
@@ -224,7 +224,7 @@ struct IfSwCapDesc
             u_int32_t	logical_port_number;
             u_int16_t 	channel_type;
             u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
-            u_int8_t wave_opvc_bitmask[MAX_OTNX_CHANNELS/8]; // bit =1 means available 
+            u_int8_t wave_opvc_bitmask[MAX_OTNX_CHAN_NUM/8]; // bit =1 means available 
         }ciena_opvcx_info;
     }; // L2SC Specific Infor for E2E Tagged VLAN only...
 };
