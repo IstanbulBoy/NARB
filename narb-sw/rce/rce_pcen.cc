@@ -1654,21 +1654,21 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
         {
             subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
             subobj1.lsc_lambda = 0;
-            if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM)) != NULL)
-            {
-                subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
-                subobj2.lsc_lambda = 0;
-            }
         }
         else if ((otnx_iscd =  pcen_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_LSC)) != NULL)
         {
             subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | 0); // 0 --> to be changed into channel-id
             subobj1.lsc_lambda = 0;
-            if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_LSC)) != NULL)
-            {
-                subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | 0); // 0 --> to be changed into channel-id
-                subobj2.lsc_lambda = 0;
-            }
+        }
+        if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM)) != NULL)
+        {
+            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
+            subobj2.lsc_lambda = 0;
+        }
+        else if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_LSC)) != NULL)
+        {
+            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | 0); // 0 --> to be changed into channel-id
+            subobj2.lsc_lambda = 0;
         }
     }
 
