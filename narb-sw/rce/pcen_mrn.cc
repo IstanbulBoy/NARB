@@ -1226,6 +1226,18 @@ void PCEN_MRN::HandleOTNXEROTrack(list<ero_subobj>& ero_track)
         if (ero_track.size() == 0)
             return;
     }
+
+    PCENNode * destNode = GetNodeByIp(routers, &destination);
+    u_int32_t wave_id = destNode->waveset.LowestTag(); //Channel#
+    list<ero_subobj>::iterator iter;
+    for (iter = ero_track.begin(); iter != ero_track.end(); iter++) 
+    {
+          if ((*iter).sw_type == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && ((*iter).if_id >> 16) == LOCAL_ID_TYPE_OTNX_IF_ID)
+          {
+              (*iter).if_id = htonl((ntohl((*iter).if_id) & 0xffffff00) | (0xff & wave_id));
+              //(*iter).lsc_lambda = wave_id;
+          }
+     }
 }
 
 void PCEN_MRN::PreserveSceneToStacks(PCENNode& node)
@@ -1462,7 +1474,7 @@ int PCEN_MRN::PerformComputation()
                 //$$$$ Ciena OTNx special handling
                 if (nextNode->tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && nextNode->tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK)
                 {
-                    if (!nextLink->reverse_link || !nextLink->reverse_link->GetOTNXInterfaceISCD() || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
+                    if (!nextLink->reverse_link || !nextLink->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM) || InitiateOTNXTimeslots(nextTimeslotSet, nextLink) < 0)
                         continue;
                 }
 

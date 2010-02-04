@@ -540,7 +540,7 @@ public:
 
     bool IsAvailableForTspec(TSpec& tspec);
     bool CanBeEgressLink(TSpec& tspec);
-    ISCD* GetOTNXInterfaceISCD();
+    ISCD* GetOTNXInterfaceISCD(u_int8_t swcap);
     void ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, ConstraintTagSet &next_waveset);
     void ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset);
     void ProceedByUpdatingVtags(ConstraintTagSet &head_vtagset, ConstraintTagSet &next_vtagset);

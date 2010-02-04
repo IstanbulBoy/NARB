@@ -302,7 +302,7 @@ bool PCENLink::IsAvailableForTspec(TSpec& tspec)
         {
             if (tspec.SWtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM)
             {
-               if (tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK && !this->GetOTNXInterfaceISCD())
+               if (tspec.ENCtype == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK && !this->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM))
                     return true; // no need for timeslots checking as that will be done by ::ProceedByUpdatingTimeslots
                else if (float_equal(iscd->min_lsp_bw, 0) ||float_evenly_dividable(tspec.Bandwidth, iscd->min_lsp_bw))
                     return true;
@@ -358,9 +358,8 @@ bool PCENLink::CanBeEgressLink(TSpec& tspec)
     return false;
 }
 
-
 //$$$$ Ciena OTNx-interface
-ISCD* PCENLink::GetOTNXInterfaceISCD()
+ISCD* PCENLink::GetOTNXInterfaceISCD(u_int8_t swcap)
 {
     if (!this->link)
         return NULL;
@@ -369,7 +368,9 @@ ISCD* PCENLink::GetOTNXInterfaceISCD()
     for (; it_iscd != link->Iscds().end(); it_iscd++)
     {
         ISCD* iscd = *it_iscd;
-        if (iscd->swtype == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
+        if (iscd->swtype == swcap && 
+	      (swcap == LINK_IFSWCAP_SUBTLV_SWCAP_TDM && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709ODUK
+	      || swcap == LINK_IFSWCAP_SUBTLV_SWCAP_LSC && iscd->encoding == LINK_IFSWCAP_SUBTLV_ENC_G709OCH)
             && (htons(iscd->ciena_opvcx_info.version) & IFSWCAP_SPECIFIC_CIENA_OTNX) != 0)
             return iscd;
     }
@@ -450,7 +451,7 @@ void PCENLink::ProceedByUpdatingWaves(ConstraintTagSet &head_waveset, Constraint
 void PCENLink::ProceedByUpdatingOTNXTimeslots(ConstraintTagSet &head_timeslotset, ConstraintTagSet &next_timeslotset)
 {
     ISCD* otnx_iscd = NULL;
-    if ((otnx_iscd = GetOTNXInterfaceISCD()) == NULL) //currentlywe only constrain timeslots (not considering WDM) for Ciena-OTNX
+    if ((otnx_iscd = GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM)) == NULL) //currentlywe only constrain timeslots (not considering WDM) for Ciena-OTNX
         return;
 
     next_timeslotset.Clear();
@@ -1648,16 +1649,26 @@ void PCEN::AddLinkToEROTrack(list<ero_subobj>& ero_track,  PCENLink* pcen_link)
 
     if (has_ciena_otnx)
     {
-        ISCD* otnx_iscd =  pcen_link->GetOTNXInterfaceISCD();
+        ISCD* otnx_iscd =  pcen_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM);
         if (otnx_iscd)
         {
             subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
-            subobj1.l2sc_vlantag = 0;
+            subobj1.lsc_lambda = 0;
+            if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_TDM)) != NULL)
+            {
+                subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
+                subobj2.lsc_lambda = 0;
+            }
         }
-        if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD()) != NULL)
+        else if ((otnx_iscd =  pcen_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_LSC)) != NULL)
         {
-            subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | ANY_TIMESLOT);
-            subobj2.l2sc_vlantag = 0;
+            subobj1.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | 0); // 0 --> to be changed into channel-id
+            subobj1.lsc_lambda = 0;
+            if (pcen_link->reverse_link && (otnx_iscd = pcen_link->reverse_link->GetOTNXInterfaceISCD(LINK_IFSWCAP_SUBTLV_SWCAP_LSC)) != NULL)
+            {
+                subobj2.if_id = htonl( (LOCAL_ID_TYPE_OTNX_IF_ID << 16) |(otnx_iscd->ciena_opvcx_info.otnx_if_id <<8) | 0); // 0 --> to be changed into channel-id
+                subobj2.lsc_lambda = 0;
+            }
         }
     }
 
