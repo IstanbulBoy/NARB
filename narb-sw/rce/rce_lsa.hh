@@ -310,7 +310,11 @@ struct link_ifswcap_specific_ciena_opvcx {
 	};
 	u_int32_t		data_ipv4;
 	u_int32_t		logical_port_number;
-	u_int16_t 	channel_type;
+	u_int8_t 	channel_type;
+	union {
+		u_int8_t	add_to_wdm; // 0 = n/a , 0xff = tunable, 0x15~0x40 = CH#
+		u_int8_t	drop_to_otu2; // 0 = n/a; > 0 = otu2: otnx-if-id
+	};
 	u_int16_t 	num_chans; // number of sub-wavelength channels = NUM_SUBWAVE_CHANNELS
 	u_int8_t   	wave_opvc_bitmask[MAX_OTNX_CHAN_NUM/8]; // bit =1 means available 
 };
